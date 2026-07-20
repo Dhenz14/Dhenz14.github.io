@@ -1,7 +1,7 @@
 {
   "schemaVersion": "hivepoa.pages-boundary.v1",
   "surface": "hosted-interface",
-  "sourceCommit": "3953a67e5c9aa9a8f8efea3609851d12cb6c2fb7",
+  "sourceCommit": "4d1817738117f0dd53775d380d934a07bbd30257",
   "artifactAuthority": "none",
   "testerPackageDistribution": "signed-ipfs-only",
   "localStorageControl": "package-bound-ipfs-or-embedded-desktop-only"

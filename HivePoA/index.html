@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script data-hivepoa-pages-spa-restore>
+      (function (location) {
+        if (location.search.slice(0, 2) !== "?/") return;
+        var decoded = location.search.slice(1).split("&").map(function (part) {
+          return part.replace(/~and~/g, "&");
+        }).join("?");
+        window.history.replaceState(null, "", location.pathname.slice(0, -1) + decoded + location.hash);
+      }(window.location));
+    </script>
+    <title>HivePoA</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+
+    <meta property="og:title" content="HivePoA - Decentralized Storage Validator" />
+    <meta property="og:description" content="Decentralized storage validation protocol on Hive blockchain with Proof of Access challenges and HBD rewards." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="HivePoA - Decentralized Storage Validator" />
+    <meta name="twitter:description" content="Decentralized storage validation protocol on Hive blockchain with Proof of Access challenges and HBD rewards." />
+
+    <link rel="icon" type="image/png" href="/HivePoA/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script type="module" crossorigin src="/HivePoA/assets/index-BRGIGd5r.js"></script>
+    <link rel="modulepreload" crossorigin href="/HivePoA/assets/rolldown-runtime-CNC7AqOf.js">
+    <link rel="modulepreload" crossorigin href="/HivePoA/assets/jsx-runtime-CaR_m4Xc.js">
+    <link rel="stylesheet" crossorigin href="/HivePoA/assets/index-Bf3nl2m5.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

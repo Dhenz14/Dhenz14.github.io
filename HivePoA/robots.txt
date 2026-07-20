@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dhenz14.github.io/HivePoA/sitemap.xml

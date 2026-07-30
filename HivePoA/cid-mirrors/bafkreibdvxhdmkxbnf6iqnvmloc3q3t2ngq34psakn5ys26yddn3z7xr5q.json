@@ -1,0 +1,660 @@
+{
+  "schemaVersion": "hivepoa.ipfs_release_receipt.v1",
+  "signed": {
+    "status": "PROVEN",
+    "product": "HivePoA Product Family — Storage Preview",
+    "version": "2.0.1-storage-preview.1",
+    "profile": "storage-preview-desktop-x64.v2",
+    "distribution": "ipfs-only",
+    "provedAt": "2026-07-16T11:27:14.577Z",
+    "source": {
+      "gitCommit": "9c52fd60023a50d427c4aed7fd22872eb0dee140",
+      "originRepository": "Dhenz14/HivePoA",
+      "originCommit": "9c52fd60023a50d427c4aed7fd22872eb0dee140",
+      "originVisibility": "private",
+      "originParity": true
+    },
+    "manifest": {
+      "name": "ipfs-release-manifest-v2.0.1-storage-preview.1.json",
+      "cid": "bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4",
+      "sizeBytes": 12843,
+      "sha256": "73f15a3a205eb212b39d95d88bf4a7e4d3b59e0af868d528af890f9af0d03007",
+      "signatures": [
+        {
+          "algorithm": "Ed25519",
+          "keyId": "hivepoa-storage-preview-operator",
+          "publicKeySha256": "11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081"
+        }
+      ]
+    },
+    "artifacts": [
+      {
+        "name": "HivePoA-Storage-Runtime-Proof-2.0.1-storage-preview.1-universal.json",
+        "role": "metadata",
+        "kind": "runtime-proof",
+        "cid": "bafkreie4kszbz4bjv6kwwlbvk7odeqj7c5emcoqxxj4rst6nds3xdz6kzy",
+        "sizeBytes": 68918,
+        "sha256": "9c54b21cf029af956b2c3557dc32413f1748c13a17ba79194fcd1cb771e7cace",
+        "checksumFile": "build/SHA256SUMS-storage-preview-2.0.1-storage-preview.1.txt"
+      },
+      {
+        "name": "HivePoA-Storage-Tester-2.0.1-storage-preview.1-universal.tar.gz",
+        "role": "tester-entry",
+        "kind": "tester-bundle",
+        "cid": "bafkreieaf6dd7zvlp5q3irb4hi5ec36tcsb3j4prfl7hkinuqearz24alm",
+        "sizeBytes": 42800,
+        "sha256": "802f863fe6ab7f61b4443c3a3a416fd31483b4f1f12afe7521b481011ceb805b",
+        "checksumFile": "build/SHA256SUMS-storage-preview-2.0.1-storage-preview.1.txt"
+      },
+      {
+        "name": "HivePoA-Web-Interface-2.0.1-storage-preview.1-universal.tar.gz",
+        "role": "tester-entry",
+        "kind": "web-interface",
+        "cid": "bafybeiaf4cheuzatjauaompnci6jvkg4p3sobjpthf26b3u3iwnw7i2zxq",
+        "sizeBytes": 319116,
+        "sha256": "bc96e5534a907058ba4f100ff2ba1f33a22f14c45f4d6eca263135eb05f6f074",
+        "checksumFile": "build/SHA256SUMS-storage-preview-2.0.1-storage-preview.1.txt"
+      },
+      {
+        "name": "SpiritBomb-2.0.1-storage-preview.1-amd64.deb",
+        "role": "tester-entry",
+        "kind": "desktop-app",
+        "cid": "bafybeihxxuvxktx3lenvnjijhbzmxiqi3qk6hteq64rgxsld52lvhvq4ma",
+        "sizeBytes": 145197848,
+        "sha256": "262b36468874403c2518c3e37676daac871d6ac1a228ffa0fa7ebb4cddb14a46",
+        "checksumFile": "build/SHA256SUMS-storage-preview-2.0.1-storage-preview.1.txt"
+      },
+      {
+        "name": "SpiritBomb-2.0.1-storage-preview.1-x86_64.AppImage",
+        "role": "tester-entry",
+        "kind": "desktop-app",
+        "cid": "bafybeib77oehpuy6x6onywtxqwo6xxqwltbz2fr5lluihnxm4i4qqgacse",
+        "sizeBytes": 179307675,
+        "sha256": "58db30db54e2167d53e758fcb5534f4b7f728dc2f128c149aa5f58e31943d00a",
+        "checksumFile": "build/SHA256SUMS-storage-preview-2.0.1-storage-preview.1.txt"
+      },
+      {
+        "name": "SpiritBomb-Portable-2.0.1-storage-preview.1.exe",
+        "role": "tester-entry",
+        "kind": "desktop-app",
+        "cid": "bafybeiahxr52ycps3qa6dmavq4f4ll6pttdj6ra45qcase3m6iukumav64",
+        "sizeBytes": 125615280,
+        "sha256": "33b93110fc12a68117ef8f37a29984ddfc6564249e8a2a01c174f0d1478346c6",
+        "checksumFile": "build/SHA256SUMS-storage-preview-2.0.1-storage-preview.1.txt"
+      },
+      {
+        "name": "SHA256SUMS-storage-preview-2.0.1-storage-preview.1.txt",
+        "role": "metadata",
+        "kind": "checksum",
+        "cid": "bafkreiddj5igigqn3g3t6uwpa33jy66fj5rmk627qvglmxjoorfjuuugne",
+        "sizeBytes": 736,
+        "sha256": "634f50641a0dd9b73f52cf06f69c7bc54f62c57b5f854cb65d2e744a9a528669",
+        "checksumFile": null
+      }
+    ],
+    "runtimeProof": {
+      "name": "HivePoA-Storage-Runtime-Proof-2.0.1-storage-preview.1-universal.json",
+      "cid": "bafkreie4kszbz4bjv6kwwlbvk7odeqj7c5emcoqxxj4rst6nds3xdz6kzy",
+      "sizeBytes": 68918,
+      "sha256": "9c54b21cf029af956b2c3557dc32413f1748c13a17ba79194fcd1cb771e7cace",
+      "proofHash": "197cbc0cbee04a9bd21b505b7285226661dd78dd79b3f746939232c668021fef",
+      "sourceHead": "9c52fd60023a50d427c4aed7fd22872eb0dee140",
+      "sourceTreeSha256": "6813e91326efc3f698086c6ffe7ea006aeab17d071b15c8114b69eaa5541e22e",
+      "releaseGate": {
+        "status": "PASS",
+        "requiredStagedE2EChecks": [
+          "staged:artifact-bytes",
+          "staged:deb-install",
+          "staged:packaged-official-web-binding",
+          "staged:bundled-managed-kubo",
+          "staged:storage-default-off",
+          "staged:storage-opt-in",
+          "staged:quota-before-fetch",
+          "staged:official-proof-pack-real-cid-pin",
+          "staged:ack-proof",
+          "staged:corruption-unpin-auto-repair",
+          "staged:restart-same-artifact-state",
+          "staged:low-disk-pause",
+          "staged:drain",
+          "staged:drain-resume",
+          "staged:revoke-services-stopped",
+          "staged:graceful-app-shutdowns",
+          "staged:compute-route-404",
+          "staged:windows-x64-payload",
+          "staged:windows-health",
+          "staged:windows-bundled-kubo",
+          "staged:windows-storage-default-off",
+          "staged:windows-storage-opt-in",
+          "staged:windows-storage-revoke",
+          "staged:windows-graceful-shutdown",
+          "staged:windows-portable-wrapper-exit",
+          "staged:windows-ports-released",
+          "staged:windows-clean-temp"
+        ],
+        "passedStagedE2EChecks": [
+          "staged:artifact-bytes",
+          "staged:deb-install",
+          "staged:packaged-official-web-binding",
+          "staged:bundled-managed-kubo",
+          "staged:storage-default-off",
+          "staged:storage-opt-in",
+          "staged:quota-before-fetch",
+          "staged:official-proof-pack-real-cid-pin",
+          "staged:ack-proof",
+          "staged:corruption-unpin-auto-repair",
+          "staged:restart-same-artifact-state",
+          "staged:low-disk-pause",
+          "staged:drain",
+          "staged:drain-resume",
+          "staged:revoke-services-stopped",
+          "staged:graceful-app-shutdowns",
+          "staged:compute-route-404",
+          "staged:windows-x64-payload",
+          "staged:windows-health",
+          "staged:windows-bundled-kubo",
+          "staged:windows-storage-default-off",
+          "staged:windows-storage-opt-in",
+          "staged:windows-storage-revoke",
+          "staged:windows-graceful-shutdown",
+          "staged:windows-portable-wrapper-exit",
+          "staged:windows-ports-released",
+          "staged:windows-clean-temp"
+        ],
+        "missingStagedE2EChecks": [],
+        "reasonCode": "NONE"
+      }
+    },
+    "officialWeb": {
+      "binding": {
+        "schemaVersion": "hivepoa.official-web-cids.v1",
+        "desktopVersion": "2.0.1-storage-preview.1",
+        "profile": "hivepoa-storage-preview",
+        "addOptions": {
+          "cidVersion": 1,
+          "rawLeaves": true,
+          "chunker": "size-262144",
+          "recursive": true
+        },
+        "webRoots": [
+          {
+            "cid": "bafybeif3e3pjyedtnjn765btaarilnqkyrjyhou734j7mjniibgk6sxkke",
+            "treeSha256": "17f6667c650f4afc9de6709147575ee36110cb8147b1f8434358cdf3a71819f2"
+          }
+        ]
+      },
+      "entryPoint": {
+        "path": "index.html",
+        "sizeBytes": 1692,
+        "sha256": "bf0c682ed6bca30d906d0c4f532a68c45a1c5abf56ae2f7947e66881e2129420"
+      }
+    },
+    "proofPolicy": {
+      "minimumOutsideGatewayHosts": 2,
+      "minimumActiveCoordinatorCustodians": 1,
+      "requireFullByteVerification": true,
+      "requiredArtifactRole": "tester-entry",
+      "localGatewayDoesNotCount": true
+    },
+    "proof": {
+      "localReadback": {
+        "manifest": {
+          "cid": "bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4",
+          "sizeBytes": 12843,
+          "sha256": "73f15a3a205eb212b39d95d88bf4a7e4d3b59e0af868d528af890f9af0d03007",
+          "checkedAt": "2026-07-16T11:05:40.113Z"
+        },
+        "artifacts": [
+          {
+            "cid": "bafkreie4kszbz4bjv6kwwlbvk7odeqj7c5emcoqxxj4rst6nds3xdz6kzy",
+            "sizeBytes": 68918,
+            "sha256": "9c54b21cf029af956b2c3557dc32413f1748c13a17ba79194fcd1cb771e7cace",
+            "checkedAt": "2026-07-16T11:05:40.138Z"
+          },
+          {
+            "cid": "bafkreieaf6dd7zvlp5q3irb4hi5ec36tcsb3j4prfl7hkinuqearz24alm",
+            "sizeBytes": 42800,
+            "sha256": "802f863fe6ab7f61b4443c3a3a416fd31483b4f1f12afe7521b481011ceb805b",
+            "checkedAt": "2026-07-16T11:05:40.164Z"
+          },
+          {
+            "cid": "bafybeiaf4cheuzatjauaompnci6jvkg4p3sobjpthf26b3u3iwnw7i2zxq",
+            "sizeBytes": 319116,
+            "sha256": "bc96e5534a907058ba4f100ff2ba1f33a22f14c45f4d6eca263135eb05f6f074",
+            "checkedAt": "2026-07-16T11:05:40.190Z"
+          },
+          {
+            "cid": "bafybeihxxuvxktx3lenvnjijhbzmxiqi3qk6hteq64rgxsld52lvhvq4ma",
+            "sizeBytes": 145197848,
+            "sha256": "262b36468874403c2518c3e37676daac871d6ac1a228ffa0fa7ebb4cddb14a46",
+            "checkedAt": "2026-07-16T11:05:40.306Z"
+          },
+          {
+            "cid": "bafybeib77oehpuy6x6onywtxqwo6xxqwltbz2fr5lluihnxm4i4qqgacse",
+            "sizeBytes": 179307675,
+            "sha256": "58db30db54e2167d53e758fcb5534f4b7f728dc2f128c149aa5f58e31943d00a",
+            "checkedAt": "2026-07-16T11:05:40.435Z"
+          },
+          {
+            "cid": "bafybeiahxr52ycps3qa6dmavq4f4ll6pttdj6ra45qcase3m6iukumav64",
+            "sizeBytes": 125615280,
+            "sha256": "33b93110fc12a68117ef8f37a29984ddfc6564249e8a2a01c174f0d1478346c6",
+            "checkedAt": "2026-07-16T11:05:40.535Z"
+          },
+          {
+            "cid": "bafkreiddj5igigqn3g3t6uwpa33jy66fj5rmk627qvglmxjoorfjuuugne",
+            "sizeBytes": 736,
+            "sha256": "634f50641a0dd9b73f52cf06f69c7bc54f62c57b5f854cb65d2e744a9a528669",
+            "checkedAt": "2026-07-16T11:05:40.562Z"
+          }
+        ],
+        "officialWebRoots": [
+          {
+            "cid": "bafybeif3e3pjyedtnjn765btaarilnqkyrjyhou734j7mjniibgk6sxkke/index.html",
+            "sizeBytes": 1692,
+            "sha256": "bf0c682ed6bca30d906d0c4f532a68c45a1c5abf56ae2f7947e66881e2129420",
+            "checkedAt": "2026-07-16T11:05:40.589Z"
+          }
+        ]
+      },
+      "coordinatorCustody": {
+        "activeCoordinator": {
+          "custodyRole": "active-coordinator-pc",
+          "peerId": "12D3KooWFqdSmQZe9qqaCUQ5QzrE7YF8NK4GF8PCXVCus9RPM2zh",
+          "apiHost": "127.0.0.1",
+          "apiPort": 5001,
+          "checkedAt": "2026-07-16T11:05:40.000Z",
+          "identityResponseSha256": "bca037cde9425c33edbbc3ccdcd0d26180f84747281d80b2c7db3a2a72794bef",
+          "activeCoordinatorCount": 1,
+          "replicationCount": 1,
+          "redundant": false
+        },
+        "activeCoordinatorCount": 1,
+        "replicationCount": 1,
+        "redundant": false,
+        "pinServices": [
+          {
+            "service": "hivepoa-coordinator",
+            "endpointHost": "127.0.0.1",
+            "pins": [
+              {
+                "pinService": {
+                  "service": "hivepoa-coordinator",
+                  "endpointHost": "127.0.0.1",
+                  "cid": "bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4",
+                  "status": "pinned",
+                  "checkedAt": "2026-07-16T11:05:41.707Z",
+                  "listingSha256": "05c33cf5249de752ee3c84f0ab1dfc60c97c08235de04d81a5a3442ac32f688f",
+                  "publisherOriginSha256": "c261d8487ad5079fff600ef0262f28a97ba986d4b1332e3a4bbac40447ae66f7"
+                },
+                "coordinatorReadback": {
+                  "coordinatorPeerId": "12D3KooWFqdSmQZe9qqaCUQ5QzrE7YF8NK4GF8PCXVCus9RPM2zh",
+                  "rootCid": "bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4",
+                  "readCid": "bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4",
+                  "pinType": "recursive",
+                  "pinListingSha256": "54ab39b9e63d0da2483d8b5222934076e9a5369716de63743cfa8feccaf9509f",
+                  "sizeBytes": 12843,
+                  "sha256": "73f15a3a205eb212b39d95d88bf4a7e4d3b59e0af868d528af890f9af0d03007",
+                  "checkedAt": "2026-07-16T11:05:41.710Z"
+                }
+              },
+              {
+                "pinService": {
+                  "service": "hivepoa-coordinator",
+                  "endpointHost": "127.0.0.1",
+                  "cid": "bafkreie4kszbz4bjv6kwwlbvk7odeqj7c5emcoqxxj4rst6nds3xdz6kzy",
+                  "status": "pinned",
+                  "checkedAt": "2026-07-16T11:05:42.832Z",
+                  "listingSha256": "2b1d6be108202b0bbdc4a5174fb04cf353bcdcfaf8523c04c72d123bb29b3096",
+                  "publisherOriginSha256": "c261d8487ad5079fff600ef0262f28a97ba986d4b1332e3a4bbac40447ae66f7"
+                },
+                "coordinatorReadback": {
+                  "coordinatorPeerId": "12D3KooWFqdSmQZe9qqaCUQ5QzrE7YF8NK4GF8PCXVCus9RPM2zh",
+                  "rootCid": "bafkreie4kszbz4bjv6kwwlbvk7odeqj7c5emcoqxxj4rst6nds3xdz6kzy",
+                  "readCid": "bafkreie4kszbz4bjv6kwwlbvk7odeqj7c5emcoqxxj4rst6nds3xdz6kzy",
+                  "pinType": "recursive",
+                  "pinListingSha256": "bec29fcf2f1101910a34c3d3ab2e9b59bed4eac8f84292b654839e69572488e7",
+                  "sizeBytes": 68918,
+                  "sha256": "9c54b21cf029af956b2c3557dc32413f1748c13a17ba79194fcd1cb771e7cace",
+                  "checkedAt": "2026-07-16T11:05:42.834Z"
+                }
+              },
+              {
+                "pinService": {
+                  "service": "hivepoa-coordinator",
+                  "endpointHost": "127.0.0.1",
+                  "cid": "bafkreieaf6dd7zvlp5q3irb4hi5ec36tcsb3j4prfl7hkinuqearz24alm",
+                  "status": "pinned",
+                  "checkedAt": "2026-07-16T11:05:43.956Z",
+                  "listingSha256": "6ee127be97e92810819551352b9399522d79bcd4374d13d345698b3a62ade788",
+                  "publisherOriginSha256": "c261d8487ad5079fff600ef0262f28a97ba986d4b1332e3a4bbac40447ae66f7"
+                },
+                "coordinatorReadback": {
+                  "coordinatorPeerId": "12D3KooWFqdSmQZe9qqaCUQ5QzrE7YF8NK4GF8PCXVCus9RPM2zh",
+                  "rootCid": "bafkreieaf6dd7zvlp5q3irb4hi5ec36tcsb3j4prfl7hkinuqearz24alm",
+                  "readCid": "bafkreieaf6dd7zvlp5q3irb4hi5ec36tcsb3j4prfl7hkinuqearz24alm",
+                  "pinType": "recursive",
+                  "pinListingSha256": "bed93b54b0ba53b86cceea21e81684c27a3e3e1a048b36596d7ac1cb1ec9df4c",
+                  "sizeBytes": 42800,
+                  "sha256": "802f863fe6ab7f61b4443c3a3a416fd31483b4f1f12afe7521b481011ceb805b",
+                  "checkedAt": "2026-07-16T11:05:43.958Z"
+                }
+              },
+              {
+                "pinService": {
+                  "service": "hivepoa-coordinator",
+                  "endpointHost": "127.0.0.1",
+                  "cid": "bafybeiaf4cheuzatjauaompnci6jvkg4p3sobjpthf26b3u3iwnw7i2zxq",
+                  "status": "pinned",
+                  "checkedAt": "2026-07-16T11:05:43.974Z",
+                  "listingSha256": "c4fe1085794984b0dea5332b0f1ebd1d8ef9a752e77cd3bbd143fb1cce436bbe",
+                  "publisherOriginSha256": "c261d8487ad5079fff600ef0262f28a97ba986d4b1332e3a4bbac40447ae66f7"
+                },
+                "coordinatorReadback": {
+                  "coordinatorPeerId": "12D3KooWFqdSmQZe9qqaCUQ5QzrE7YF8NK4GF8PCXVCus9RPM2zh",
+                  "rootCid": "bafybeiaf4cheuzatjauaompnci6jvkg4p3sobjpthf26b3u3iwnw7i2zxq",
+                  "readCid": "bafybeiaf4cheuzatjauaompnci6jvkg4p3sobjpthf26b3u3iwnw7i2zxq",
+                  "pinType": "recursive",
+                  "pinListingSha256": "65d81eace2fa73f0e20447f96f92b2e9cbe479181f9e20c39ca8e8006a514df0",
+                  "sizeBytes": 319116,
+                  "sha256": "bc96e5534a907058ba4f100ff2ba1f33a22f14c45f4d6eca263135eb05f6f074",
+                  "checkedAt": "2026-07-16T11:05:43.976Z"
+                }
+              },
+              {
+                "pinService": {
+                  "service": "hivepoa-coordinator",
+                  "endpointHost": "127.0.0.1",
+                  "cid": "bafybeihxxuvxktx3lenvnjijhbzmxiqi3qk6hteq64rgxsld52lvhvq4ma",
+                  "status": "pinned",
+                  "checkedAt": "2026-07-16T11:05:45.099Z",
+                  "listingSha256": "c164205c328e4e2bfe7909e05c7cd1c8079bbeea294e8faaea51ffb1b338eb36",
+                  "publisherOriginSha256": "c261d8487ad5079fff600ef0262f28a97ba986d4b1332e3a4bbac40447ae66f7"
+                },
+                "coordinatorReadback": {
+                  "coordinatorPeerId": "12D3KooWFqdSmQZe9qqaCUQ5QzrE7YF8NK4GF8PCXVCus9RPM2zh",
+                  "rootCid": "bafybeihxxuvxktx3lenvnjijhbzmxiqi3qk6hteq64rgxsld52lvhvq4ma",
+                  "readCid": "bafybeihxxuvxktx3lenvnjijhbzmxiqi3qk6hteq64rgxsld52lvhvq4ma",
+                  "pinType": "recursive",
+                  "pinListingSha256": "b10e6a5acee2542a4ea344736fe7b1478417723d9164db7fb1cc13f40d0b7947",
+                  "sizeBytes": 145197848,
+                  "sha256": "262b36468874403c2518c3e37676daac871d6ac1a228ffa0fa7ebb4cddb14a46",
+                  "checkedAt": "2026-07-16T11:05:45.266Z"
+                }
+              },
+              {
+                "pinService": {
+                  "service": "hivepoa-coordinator",
+                  "endpointHost": "127.0.0.1",
+                  "cid": "bafybeib77oehpuy6x6onywtxqwo6xxqwltbz2fr5lluihnxm4i4qqgacse",
+                  "status": "pinned",
+                  "checkedAt": "2026-07-16T11:05:46.401Z",
+                  "listingSha256": "ddbb7591c926cb5da1141178b559264dfd3f0bcc93724ee2363889b701fedd03",
+                  "publisherOriginSha256": "c261d8487ad5079fff600ef0262f28a97ba986d4b1332e3a4bbac40447ae66f7"
+                },
+                "coordinatorReadback": {
+                  "coordinatorPeerId": "12D3KooWFqdSmQZe9qqaCUQ5QzrE7YF8NK4GF8PCXVCus9RPM2zh",
+                  "rootCid": "bafybeib77oehpuy6x6onywtxqwo6xxqwltbz2fr5lluihnxm4i4qqgacse",
+                  "readCid": "bafybeib77oehpuy6x6onywtxqwo6xxqwltbz2fr5lluihnxm4i4qqgacse",
+                  "pinType": "recursive",
+                  "pinListingSha256": "a4d80827c765d87bcfc253401b545e8d3503fbb27d64aaa283d0759bec82bf7b",
+                  "sizeBytes": 179307675,
+                  "sha256": "58db30db54e2167d53e758fcb5534f4b7f728dc2f128c149aa5f58e31943d00a",
+                  "checkedAt": "2026-07-16T11:05:46.605Z"
+                }
+              },
+              {
+                "pinService": {
+                  "service": "hivepoa-coordinator",
+                  "endpointHost": "127.0.0.1",
+                  "cid": "bafybeiahxr52ycps3qa6dmavq4f4ll6pttdj6ra45qcase3m6iukumav64",
+                  "status": "pinned",
+                  "checkedAt": "2026-07-16T11:05:47.738Z",
+                  "listingSha256": "6f5ea15023898dd81901d5defca8b4dad80b733c001f210fe56eebd9f5a04f3c",
+                  "publisherOriginSha256": "c261d8487ad5079fff600ef0262f28a97ba986d4b1332e3a4bbac40447ae66f7"
+                },
+                "coordinatorReadback": {
+                  "coordinatorPeerId": "12D3KooWFqdSmQZe9qqaCUQ5QzrE7YF8NK4GF8PCXVCus9RPM2zh",
+                  "rootCid": "bafybeiahxr52ycps3qa6dmavq4f4ll6pttdj6ra45qcase3m6iukumav64",
+                  "readCid": "bafybeiahxr52ycps3qa6dmavq4f4ll6pttdj6ra45qcase3m6iukumav64",
+                  "pinType": "recursive",
+                  "pinListingSha256": "f8ef4881f759338a5e51f8963ef3a284591c82264f19612de6fb68c1a52aaa63",
+                  "sizeBytes": 125615280,
+                  "sha256": "33b93110fc12a68117ef8f37a29984ddfc6564249e8a2a01c174f0d1478346c6",
+                  "checkedAt": "2026-07-16T11:05:47.868Z"
+                }
+              },
+              {
+                "pinService": {
+                  "service": "hivepoa-coordinator",
+                  "endpointHost": "127.0.0.1",
+                  "cid": "bafkreiddj5igigqn3g3t6uwpa33jy66fj5rmk627qvglmxjoorfjuuugne",
+                  "status": "pinned",
+                  "checkedAt": "2026-07-16T11:05:47.979Z",
+                  "listingSha256": "0caac1dca72f3edaf6334ff5f29ce0165b9ba9e609faca76a11e07d9e914801f",
+                  "publisherOriginSha256": "c261d8487ad5079fff600ef0262f28a97ba986d4b1332e3a4bbac40447ae66f7"
+                },
+                "coordinatorReadback": {
+                  "coordinatorPeerId": "12D3KooWFqdSmQZe9qqaCUQ5QzrE7YF8NK4GF8PCXVCus9RPM2zh",
+                  "rootCid": "bafkreiddj5igigqn3g3t6uwpa33jy66fj5rmk627qvglmxjoorfjuuugne",
+                  "readCid": "bafkreiddj5igigqn3g3t6uwpa33jy66fj5rmk627qvglmxjoorfjuuugne",
+                  "pinType": "recursive",
+                  "pinListingSha256": "c7748888afdcbcf5429e97321e83d51a42039aca2782c9022bb0253e5205f692",
+                  "sizeBytes": 736,
+                  "sha256": "634f50641a0dd9b73f52cf06f69c7bc54f62c57b5f854cb65d2e744a9a528669",
+                  "checkedAt": "2026-07-16T11:05:47.981Z"
+                }
+              },
+              {
+                "pinService": {
+                  "service": "hivepoa-coordinator",
+                  "endpointHost": "127.0.0.1",
+                  "cid": "bafybeif3e3pjyedtnjn765btaarilnqkyrjyhou734j7mjniibgk6sxkke",
+                  "status": "pinned",
+                  "checkedAt": "2026-07-16T11:05:47.999Z",
+                  "listingSha256": "5638a740241d12a4b7f6fce50b4f11cfff9cdcd226f926bffc4ecdc4e7ece57f",
+                  "publisherOriginSha256": "c261d8487ad5079fff600ef0262f28a97ba986d4b1332e3a4bbac40447ae66f7"
+                },
+                "coordinatorReadback": {
+                  "coordinatorPeerId": "12D3KooWFqdSmQZe9qqaCUQ5QzrE7YF8NK4GF8PCXVCus9RPM2zh",
+                  "rootCid": "bafybeif3e3pjyedtnjn765btaarilnqkyrjyhou734j7mjniibgk6sxkke",
+                  "readCid": "bafybeif3e3pjyedtnjn765btaarilnqkyrjyhou734j7mjniibgk6sxkke/index.html",
+                  "pinType": "recursive",
+                  "pinListingSha256": "e606fc7237ed3790754a271c69877750f77ec3d9b0ca88b5bb5a1e443e0b82e6",
+                  "sizeBytes": 1692,
+                  "sha256": "bf0c682ed6bca30d906d0c4f532a68c45a1c5abf56ae2f7947e66881e2129420",
+                  "checkedAt": "2026-07-16T11:05:48.001Z"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "outsideRetrievals": [
+        {
+          "gatewayHost": "dweb.link",
+          "manifest": {
+            "gatewayHost": "dweb.link",
+            "finalGatewayHost": "bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4.ipfs.dweb.link",
+            "redirectCount": 1,
+            "cid": "bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4",
+            "path": null,
+            "sizeBytes": 12843,
+            "sha256": "73f15a3a205eb212b39d95d88bf4a7e4d3b59e0af868d528af890f9af0d03007",
+            "checkedAt": "2026-07-16T11:05:49.917Z"
+          },
+          "artifacts": [
+            {
+              "gatewayHost": "dweb.link",
+              "finalGatewayHost": "bafkreie4kszbz4bjv6kwwlbvk7odeqj7c5emcoqxxj4rst6nds3xdz6kzy.ipfs.dweb.link",
+              "redirectCount": 1,
+              "cid": "bafkreie4kszbz4bjv6kwwlbvk7odeqj7c5emcoqxxj4rst6nds3xdz6kzy",
+              "path": null,
+              "sizeBytes": 68918,
+              "sha256": "9c54b21cf029af956b2c3557dc32413f1748c13a17ba79194fcd1cb771e7cace",
+              "checkedAt": "2026-07-16T11:05:50.568Z"
+            },
+            {
+              "gatewayHost": "dweb.link",
+              "finalGatewayHost": "bafkreieaf6dd7zvlp5q3irb4hi5ec36tcsb3j4prfl7hkinuqearz24alm.ipfs.dweb.link",
+              "redirectCount": 1,
+              "cid": "bafkreieaf6dd7zvlp5q3irb4hi5ec36tcsb3j4prfl7hkinuqearz24alm",
+              "path": null,
+              "sizeBytes": 42800,
+              "sha256": "802f863fe6ab7f61b4443c3a3a416fd31483b4f1f12afe7521b481011ceb805b",
+              "checkedAt": "2026-07-16T11:05:51.108Z"
+            },
+            {
+              "gatewayHost": "dweb.link",
+              "finalGatewayHost": "bafybeiaf4cheuzatjauaompnci6jvkg4p3sobjpthf26b3u3iwnw7i2zxq.ipfs.dweb.link",
+              "redirectCount": 1,
+              "cid": "bafybeiaf4cheuzatjauaompnci6jvkg4p3sobjpthf26b3u3iwnw7i2zxq",
+              "path": null,
+              "sizeBytes": 319116,
+              "sha256": "bc96e5534a907058ba4f100ff2ba1f33a22f14c45f4d6eca263135eb05f6f074",
+              "checkedAt": "2026-07-16T11:05:51.480Z"
+            },
+            {
+              "gatewayHost": "dweb.link",
+              "finalGatewayHost": "bafybeihxxuvxktx3lenvnjijhbzmxiqi3qk6hteq64rgxsld52lvhvq4ma.ipfs.dweb.link",
+              "redirectCount": 1,
+              "cid": "bafybeihxxuvxktx3lenvnjijhbzmxiqi3qk6hteq64rgxsld52lvhvq4ma",
+              "path": null,
+              "sizeBytes": 145197848,
+              "sha256": "262b36468874403c2518c3e37676daac871d6ac1a228ffa0fa7ebb4cddb14a46",
+              "checkedAt": "2026-07-16T11:08:22.715Z"
+            },
+            {
+              "gatewayHost": "dweb.link",
+              "finalGatewayHost": "bafybeib77oehpuy6x6onywtxqwo6xxqwltbz2fr5lluihnxm4i4qqgacse.ipfs.dweb.link",
+              "redirectCount": 1,
+              "cid": "bafybeib77oehpuy6x6onywtxqwo6xxqwltbz2fr5lluihnxm4i4qqgacse",
+              "path": null,
+              "sizeBytes": 179307675,
+              "sha256": "58db30db54e2167d53e758fcb5534f4b7f728dc2f128c149aa5f58e31943d00a",
+              "checkedAt": "2026-07-16T11:11:40.533Z"
+            },
+            {
+              "gatewayHost": "dweb.link",
+              "finalGatewayHost": "bafybeiahxr52ycps3qa6dmavq4f4ll6pttdj6ra45qcase3m6iukumav64.ipfs.dweb.link",
+              "redirectCount": 1,
+              "cid": "bafybeiahxr52ycps3qa6dmavq4f4ll6pttdj6ra45qcase3m6iukumav64",
+              "path": null,
+              "sizeBytes": 125615280,
+              "sha256": "33b93110fc12a68117ef8f37a29984ddfc6564249e8a2a01c174f0d1478346c6",
+              "checkedAt": "2026-07-16T11:13:28.592Z"
+            }
+          ],
+          "officialWebRoots": [
+            {
+              "gatewayHost": "dweb.link",
+              "finalGatewayHost": "bafybeif3e3pjyedtnjn765btaarilnqkyrjyhou734j7mjniibgk6sxkke.ipfs.dweb.link",
+              "redirectCount": 1,
+              "cid": "bafybeif3e3pjyedtnjn765btaarilnqkyrjyhou734j7mjniibgk6sxkke",
+              "path": "index.html",
+              "sizeBytes": 1692,
+              "sha256": "bf0c682ed6bca30d906d0c4f532a68c45a1c5abf56ae2f7947e66881e2129420",
+              "checkedAt": "2026-07-16T11:13:28.913Z"
+            }
+          ]
+        },
+        {
+          "gatewayHost": "ipfs.filebase.io",
+          "manifest": {
+            "gatewayHost": "ipfs.filebase.io",
+            "finalGatewayHost": "ipfs.filebase.io",
+            "redirectCount": 0,
+            "cid": "bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4",
+            "path": null,
+            "sizeBytes": 12843,
+            "sha256": "73f15a3a205eb212b39d95d88bf4a7e4d3b59e0af868d528af890f9af0d03007",
+            "checkedAt": "2026-07-16T11:13:37.826Z"
+          },
+          "artifacts": [
+            {
+              "gatewayHost": "ipfs.filebase.io",
+              "finalGatewayHost": "ipfs.filebase.io",
+              "redirectCount": 0,
+              "cid": "bafkreie4kszbz4bjv6kwwlbvk7odeqj7c5emcoqxxj4rst6nds3xdz6kzy",
+              "path": null,
+              "sizeBytes": 68918,
+              "sha256": "9c54b21cf029af956b2c3557dc32413f1748c13a17ba79194fcd1cb771e7cace",
+              "checkedAt": "2026-07-16T11:13:47.294Z"
+            },
+            {
+              "gatewayHost": "ipfs.filebase.io",
+              "finalGatewayHost": "ipfs.filebase.io",
+              "redirectCount": 0,
+              "cid": "bafkreieaf6dd7zvlp5q3irb4hi5ec36tcsb3j4prfl7hkinuqearz24alm",
+              "path": null,
+              "sizeBytes": 42800,
+              "sha256": "802f863fe6ab7f61b4443c3a3a416fd31483b4f1f12afe7521b481011ceb805b",
+              "checkedAt": "2026-07-16T11:13:47.894Z"
+            },
+            {
+              "gatewayHost": "ipfs.filebase.io",
+              "finalGatewayHost": "ipfs.filebase.io",
+              "redirectCount": 0,
+              "cid": "bafybeiaf4cheuzatjauaompnci6jvkg4p3sobjpthf26b3u3iwnw7i2zxq",
+              "path": null,
+              "sizeBytes": 319116,
+              "sha256": "bc96e5534a907058ba4f100ff2ba1f33a22f14c45f4d6eca263135eb05f6f074",
+              "checkedAt": "2026-07-16T11:13:48.270Z"
+            },
+            {
+              "gatewayHost": "ipfs.filebase.io",
+              "finalGatewayHost": "ipfs.filebase.io",
+              "redirectCount": 0,
+              "cid": "bafybeihxxuvxktx3lenvnjijhbzmxiqi3qk6hteq64rgxsld52lvhvq4ma",
+              "path": null,
+              "sizeBytes": 145197848,
+              "sha256": "262b36468874403c2518c3e37676daac871d6ac1a228ffa0fa7ebb4cddb14a46",
+              "checkedAt": "2026-07-16T11:17:53.014Z"
+            },
+            {
+              "gatewayHost": "ipfs.filebase.io",
+              "finalGatewayHost": "ipfs.filebase.io",
+              "redirectCount": 0,
+              "cid": "bafybeib77oehpuy6x6onywtxqwo6xxqwltbz2fr5lluihnxm4i4qqgacse",
+              "path": null,
+              "sizeBytes": 179307675,
+              "sha256": "58db30db54e2167d53e758fcb5534f4b7f728dc2f128c149aa5f58e31943d00a",
+              "checkedAt": "2026-07-16T11:23:30.920Z"
+            },
+            {
+              "gatewayHost": "ipfs.filebase.io",
+              "finalGatewayHost": "ipfs.filebase.io",
+              "redirectCount": 0,
+              "cid": "bafybeiahxr52ycps3qa6dmavq4f4ll6pttdj6ra45qcase3m6iukumav64",
+              "path": null,
+              "sizeBytes": 125615280,
+              "sha256": "33b93110fc12a68117ef8f37a29984ddfc6564249e8a2a01c174f0d1478346c6",
+              "checkedAt": "2026-07-16T11:27:14.428Z"
+            }
+          ],
+          "officialWebRoots": [
+            {
+              "gatewayHost": "ipfs.filebase.io",
+              "finalGatewayHost": "ipfs.filebase.io",
+              "redirectCount": 0,
+              "cid": "bafybeif3e3pjyedtnjn765btaarilnqkyrjyhou734j7mjniibgk6sxkke",
+              "path": "index.html",
+              "sizeBytes": 1692,
+              "sha256": "bf0c682ed6bca30d906d0c4f532a68c45a1c5abf56ae2f7947e66881e2129420",
+              "checkedAt": "2026-07-16T11:27:14.577Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "signatures": [
+    {
+      "algorithm": "Ed25519",
+      "keyId": "hivepoa-storage-preview-operator",
+      "publicKeySpkiBase64": "MCowBQYDK2VwAyEAzExvNnIwqDCR4M9UfX/LRVCgd752NHpcPrTmOwM5xvI=",
+      "publicKeySha256": "11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081",
+      "signedAt": "2026-07-16T11:27:14.578Z",
+      "signatureBase64": "DGHy5ERlV/i3BRkiNy9mZNOkJhq+aJjHyOQ2ardPHey+M36U3Urk5dnpUscQyy8RuIKTkvhDa6F0pIfYUN1rCg=="
+    }
+  ]
+}

@@ -1,6 +1,0 @@
-{
-  "schema": "hivepoa.public_ipfs_gateway_tip.v1",
-  "updatedAt": "2026-07-30T05:30:08Z",
-  "ipfsGatewayBase": "https://soccer-wellness-style-officially.trycloudflare.com/ipfs",
-  "note": "Unsigned live tip for cloudflared/public gateway; bytes still sha256-checked against the signed index."
-}

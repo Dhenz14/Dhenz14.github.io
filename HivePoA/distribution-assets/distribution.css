@@ -83,6 +83,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   padding-bottom: 0.4rem;
 }
 .meta dt { color: var(--muted); }
+/* SHA-256 is a 64-character unbroken token. Without this it forces the whole
+   document wider than a phone viewport and the digest a tester must compare
+   scrolls off-screen. */
+.meta dd { margin: 0; overflow-wrap: anywhere; }
+code, .mono { overflow-wrap: anywhere; }
 .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1.5rem 0; }
 .status { color: var(--muted); }
 .status[data-state="blocked"] { color: var(--danger); }
@@ -96,6 +101,36 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 .drop input { display: block; margin: 1rem auto 0; }
 .ceiling { color: var(--muted); }
+
+/* Artifact-digest table: hashes are wider than a phone, so the table scrolls
+   inside its own box instead of dragging the page sideways. */
+table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; }
+th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+td code { font-size: 0.9em; }
+
+/* Release standing: a tester must never guess which build is installable. */
+[data-release-list] { list-style: none; padding: 0; display: grid; gap: 0.6rem; }
+[data-release-list] li {
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  padding: 0.7rem 0.9rem;
+  background: rgba(255,255,255,0.55);
+}
+[data-release-list] li span { color: var(--muted); }
+[data-release-list] li[data-release-state="tip"] { border-left-color: var(--accent); }
+[data-release-list] li[data-release-state="tip"] span { color: var(--accent); font-weight: 700; }
+[data-release-list] li[data-release-state="withdrawn"] { border-left-color: var(--danger); }
+[data-release-list] li[data-release-state="withdrawn"] span { color: var(--danger); }
+[data-release-list] li[data-release-state="superseded"] { opacity: 0.75; }
+
+a.button { display: inline-block; text-decoration: none; }
+
+@media (max-width: 34rem) {
+  /* Stack label/value so a 64-char digest gets the full column width. */
+  .meta div { grid-template-columns: 1fr; gap: 0.15rem; }
+  .actions button, .actions .button { width: 100%; }
+}
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; }
 }

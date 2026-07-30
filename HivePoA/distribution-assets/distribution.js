@@ -178,11 +178,29 @@
   function fillList(signed) {
     var list = document.querySelector("[data-release-list]");
     if (!list || !signed) return;
+    var tipSeq = Number(signed.latestBetaSequence || 0);
+    var reasons = {};
+    (signed.revocations || []).forEach(function (entry) {
+      if (entry && entry.releaseSequence != null) reasons[String(entry.releaseSequence)] = entry.reason || "";
+    });
     list.innerHTML = "";
     signed.releases.forEach(function (release) {
+      // A tester must never have to guess which row is installable. Every row
+      // states its own standing: current tip, withdrawn, or simply superseded.
+      var seq = Number(release.releaseSequence);
+      var state;
+      if (release.revoked) state = "WITHDRAWN — do not install";
+      else if (seq === tipSeq) state = "CURRENT TIP — install this one";
+      else state = "superseded — not the current tip";
       var li = document.createElement("li");
-      li.textContent = release.version + " · seq " + release.releaseSequence + " · " + release.channel
-        + (release.revoked ? " · REVOKED" : "");
+      li.setAttribute("data-release-state", release.revoked ? "withdrawn" : (seq === tipSeq ? "tip" : "superseded"));
+      var head = document.createElement("strong");
+      head.textContent = release.version + " · seq " + release.releaseSequence + " · " + release.channel;
+      var tail = document.createElement("span");
+      var reason = reasons[String(seq)];
+      tail.textContent = " · " + state + (release.revoked && reason ? " (" + reason + ")" : "");
+      li.appendChild(head);
+      li.appendChild(tail);
       list.appendChild(li);
     });
   }

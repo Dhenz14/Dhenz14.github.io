@@ -1,0 +1,40 @@
+{
+  "schema": "hivepoa.distribution-mirror-publish.v1",
+  "publishedAt": "2026-07-30T22:15:02.804Z",
+  "bundleDir": "/home/theyc/projects/HivePoA-lanes/pages-polish-atoz-20260730/dist-distribution",
+  "targetDir": "/home/theyc/projects/HivePoA-lanes/dhenz14-github-io/HivePoA",
+  "sourceCommit": "22014fb43c7b2f843f3a7f04599221c681fb0710",
+  "replacedDirs": [
+    "download",
+    "verify",
+    "releases",
+    "get-started",
+    "distribution",
+    "distribution-assets"
+  ],
+  "mergedDirs": [
+    "cid-mirrors"
+  ],
+  "copiedFiles": [
+    "index.html",
+    "sitemap.xml",
+    "robots.txt",
+    "hivepoa-distribution-boundary.json",
+    "build-receipt.json",
+    ".nojekyll"
+  ],
+  "retainedMirrorEntries": [
+    "cid-mirrors/bafkreibdvxhdmkxbnf6iqnvmloc3q3t2ngq34psakn5ys26yddn3z7xr5q.json",
+    "cid-mirrors/bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4.json",
+    "cid-mirrors/bafkreihsrbx7h4sycmuf5mkmogpbvhqtbbhp7lajwxulrvjslsslzmjjky.json"
+  ],
+  "untouched": [
+    "assets",
+    "favicon.png",
+    "opengraph.jpg",
+    "404.html",
+    "README.md",
+    "hivepoa-pages-boundary.json",
+    "gateway.json"
+  ]
+}

@@ -1,21 +1,45 @@
 :root {
   --bg: #f3efe6;
+  --surface: rgba(255, 255, 255, 0.55);
   --ink: #1c1915;
   --muted: #5c554c;
   --accent: #0f5c4c;
+  --accent-ink: #fff;
   --border: #cfc4b2;
   --danger: #8a1f1f;
+  --ok: #0f5c4c;
   --focus: #0b3d74;
+  --page: radial-gradient(circle at top left, #fff8ea 0, transparent 45%),
+          linear-gradient(160deg, #efe7d8, #f7f3eb 40%, #e7efe9);
+  color-scheme: light dark;
   font-family: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+}
+
+/* Testers open this on a phone, often at night. The palette keeps the same
+   contrast relationships rather than inverting into a washed-out grey. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161a;
+    --surface: rgba(255, 255, 255, 0.04);
+    --ink: #ece6db;
+    --muted: #a49c8f;
+    --accent: #5fd3b2;
+    --accent-ink: #06231c;
+    --border: #3a4048;
+    --danger: #ff9b9b;
+    --ok: #5fd3b2;
+    --focus: #8ab8ff;
+    --page: radial-gradient(circle at top left, #1d2128 0, transparent 45%),
+            linear-gradient(160deg, #171a1f, #14161a 40%, #121a18);
+  }
 }
 
 * { box-sizing: border-box; }
 body {
   margin: 0;
   color: var(--ink);
-  background:
-    radial-gradient(circle at top left, #fff8ea 0, transparent 45%),
-    linear-gradient(160deg, #efe7d8, #f7f3eb 40%, #e7efe9);
+  background: var(--page);
+  background-color: var(--bg);
   min-height: 100vh;
   line-height: 1.5;
 }
@@ -60,7 +84,7 @@ h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.15; }
   appearance: none;
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
   padding: 0.7rem 1rem;
   font: inherit;
   cursor: pointer;
@@ -68,6 +92,7 @@ h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.15; }
 button:disabled {
   background: #9aa39a;
   border-color: #9aa39a;
+  color: #fff;
   cursor: not-allowed;
 }
 button:focus-visible, a:focus-visible, input:focus-visible {
@@ -94,13 +119,84 @@ code, .mono { overflow-wrap: anywhere; }
 .drop {
   display: block;
   border: 2px dashed var(--border);
+  border-radius: 8px;
   padding: 2rem;
   text-align: center;
-  background: rgba(255,255,255,0.55);
+  background: var(--surface);
   margin: 1rem 0;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
 }
-.drop input { display: block; margin: 1rem auto 0; }
+.drop:hover { border-color: var(--accent); }
+/* Set while a file is dragged over the zone — the affordance the copy promises. */
+.drop[data-dragging] {
+  border-color: var(--accent);
+  border-style: solid;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.drop-title { display: block; font-size: 1.15rem; font-weight: 700; }
+.drop-hint { display: block; color: var(--muted); margin-top: 0.35rem; font-size: 0.95rem; }
+.drop input { display: block; margin: 1rem auto 0; max-width: 100%; }
 .ceiling { color: var(--muted); }
+
+/* Hashing ~120 MB is long enough that silence reads as a hang. */
+.progress { margin: 0.75rem 0; }
+.progress .bar {
+  height: 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.progress .bar span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 120ms linear;
+}
+
+/* The verdict is the whole point of the page, so it is stated in words rather
+   than left for the reader to infer by comparing two hex strings. */
+.verdict {
+  display: grid;
+  gap: 0.3rem;
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-left-width: 5px;
+  border-radius: 6px;
+  background: var(--surface);
+}
+.verdict strong { font-size: 1.1rem; }
+.verdict span { color: var(--muted); }
+.verdict[data-verdict="match"] { border-left-color: var(--ok); }
+.verdict[data-verdict="match"] strong { color: var(--ok); }
+.verdict[data-verdict="mismatch"] { border-left-color: var(--danger); }
+.verdict[data-verdict="mismatch"] strong { color: var(--danger); }
+.verdict[data-verdict="unknown"] { border-left-color: var(--muted); }
+
+.copy-value { overflow-wrap: anywhere; }
+.copy-button {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  vertical-align: middle;
+  background: transparent;
+  color: var(--accent);
+  border-radius: 4px;
+}
+.copy-button:hover { background: var(--accent); color: var(--accent-ink); }
+
+.next-step {
+  margin-top: 2.5rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.next-step h2 { margin-top: 0; }
 
 /* Artifact-digest table: hashes are wider than a phone, so the table scrolls
    inside its own box instead of dragging the page sideways. */
@@ -114,8 +210,9 @@ td code { font-size: 0.9em; }
 [data-release-list] li {
   border: 1px solid var(--border);
   border-left-width: 4px;
+  border-radius: 4px;
   padding: 0.7rem 0.9rem;
-  background: rgba(255,255,255,0.55);
+  background: var(--surface);
 }
 [data-release-list] li span { color: var(--muted); }
 [data-release-list] li[data-release-state="tip"] { border-left-color: var(--accent); }

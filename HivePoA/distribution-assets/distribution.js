@@ -169,10 +169,25 @@
     set("version", release.version || "unavailable");
     set("platform", release.platform || "windows/linux");
     set("architecture", release.architecture || "x64");
-    set("bytes", release.bytes != null ? String(release.bytes) : "see manifest");
+    // "125623659" is not a size a person can sanity-check against their
+    // download; "119.8 MiB" is.
+    set("bytes", release.bytes != null ? formatBytes(release.bytes) : "see manifest");
     set("sha256", digest || release.manifestSha256 || "unavailable");
     set("signer", (signed && signed.signer) || "signed index");
     set("ceiling", (signed && signed.capabilityCeilingText) || "storage-preview only");
+    document.querySelectorAll('[data-field="sha256"]').forEach(function (node) {
+      var value = digest || release.manifestSha256;
+      if (!value) return;
+      node.setAttribute("data-copy", "");
+      node.setAttribute("data-copy-value", value);
+    });
+    if (release.primaryArtifact) {
+      document.querySelectorAll("[data-field-filename]").forEach(function (node) {
+        node.textContent = release.primaryArtifact;
+        node.setAttribute("data-copy", "");
+        node.setAttribute("data-copy-value", release.primaryArtifact);
+      });
+    }
   }
 
   function fillList(signed) {
@@ -214,7 +229,11 @@
       var tdName = document.createElement("td");
       var tdHash = document.createElement("td");
       tdName.textContent = name;
-      tdHash.innerHTML = "<code>" + release.artifactDigests[name] + "</code>";
+      var code = document.createElement("code");
+      code.textContent = release.artifactDigests[name];
+      code.setAttribute("data-copy", "");
+      code.setAttribute("data-copy-value", release.artifactDigests[name]);
+      tdHash.appendChild(code);
       row.appendChild(tdName);
       row.appendChild(tdHash);
       table.appendChild(row);
@@ -227,42 +246,375 @@
     }).join("");
   }
 
-  async function hashLocalFile(file) {
-    var buffer = await file.arrayBuffer();
-    var digest = await crypto.subtle.digest("SHA-256", buffer);
+  var SHA256_K = new Uint32Array([
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ]);
+
+  /**
+   * Incremental SHA-256. crypto.subtle.digest cannot stream, so verifying the
+   * ~120 MB portable meant allocating the whole file at once and showing the
+   * tester nothing for the duration — a progress-free pause long enough to look
+   * like the page had hung on the one step that actually protects them.
+   * This hashes 4 MiB at a time and reports progress. It is never trusted
+   * blind: see incrementalDigestTrustworthy().
+   */
+  function Sha256Stream() {
+    this.h = new Uint32Array([
+      0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+    ]);
+    this.w = new Uint32Array(64);
+    this.block = new Uint8Array(64);
+    this.blockLen = 0;
+    this.totalLen = 0;
+  }
+
+  Sha256Stream.prototype.compress = function (bytes, offset) {
+    var w = this.w;
+    var i, x, y, s0, s1, ch, maj, t1, t2;
+    for (i = 0; i < 16; i += 1) {
+      var o = offset + i * 4;
+      w[i] = (bytes[o] << 24) | (bytes[o + 1] << 16) | (bytes[o + 2] << 8) | bytes[o + 3];
+    }
+    for (i = 16; i < 64; i += 1) {
+      x = w[i - 15];
+      y = w[i - 2];
+      s0 = ((x >>> 7) | (x << 25)) ^ ((x >>> 18) | (x << 14)) ^ (x >>> 3);
+      s1 = ((y >>> 17) | (y << 15)) ^ ((y >>> 19) | (y << 13)) ^ (y >>> 10);
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+    }
+    var a = this.h[0], b = this.h[1], c = this.h[2], d = this.h[3];
+    var e = this.h[4], f = this.h[5], g = this.h[6], hh = this.h[7];
+    for (i = 0; i < 64; i += 1) {
+      s1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+      ch = (e & f) ^ (~e & g);
+      t1 = (hh + s1 + ch + SHA256_K[i] + w[i]) | 0;
+      s0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+      maj = (a & b) ^ (a & c) ^ (b & c);
+      t2 = (s0 + maj) | 0;
+      hh = g; g = f; f = e; e = (d + t1) | 0;
+      d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    this.h[0] = (this.h[0] + a) | 0;
+    this.h[1] = (this.h[1] + b) | 0;
+    this.h[2] = (this.h[2] + c) | 0;
+    this.h[3] = (this.h[3] + d) | 0;
+    this.h[4] = (this.h[4] + e) | 0;
+    this.h[5] = (this.h[5] + f) | 0;
+    this.h[6] = (this.h[6] + g) | 0;
+    this.h[7] = (this.h[7] + hh) | 0;
+  };
+
+  Sha256Stream.prototype.update = function (bytes) {
+    var offset = 0;
+    var len = bytes.length;
+    this.totalLen += len;
+    if (this.blockLen > 0) {
+      var take = Math.min(64 - this.blockLen, len);
+      this.block.set(bytes.subarray(0, take), this.blockLen);
+      this.blockLen += take;
+      offset = take;
+      if (this.blockLen === 64) {
+        this.compress(this.block, 0);
+        this.blockLen = 0;
+      }
+    }
+    while (offset + 64 <= len) {
+      this.compress(bytes, offset);
+      offset += 64;
+    }
+    if (offset < len) {
+      this.block.set(bytes.subarray(offset), 0);
+      this.blockLen = len - offset;
+    }
+  };
+
+  Sha256Stream.prototype.hex = function () {
+    var total = this.totalLen;
+    var padLen = this.blockLen < 56 ? 56 - this.blockLen : 120 - this.blockLen;
+    var tail = new Uint8Array(padLen + 8);
+    tail[0] = 0x80;
+    // 64-bit bit length without overflowing a 32-bit int on multi-GB inputs.
+    var hi = Math.floor(total / 536870912);
+    var lo = (total % 536870912) * 8;
+    tail[padLen] = (hi >>> 24) & 0xff;
+    tail[padLen + 1] = (hi >>> 16) & 0xff;
+    tail[padLen + 2] = (hi >>> 8) & 0xff;
+    tail[padLen + 3] = hi & 0xff;
+    tail[padLen + 4] = (lo >>> 24) & 0xff;
+    tail[padLen + 5] = (lo >>> 16) & 0xff;
+    tail[padLen + 6] = (lo >>> 8) & 0xff;
+    tail[padLen + 7] = lo & 0xff;
+    this.update(tail);
+    var out = "";
+    for (var i = 0; i < 8; i += 1) {
+      out += (this.h[i] >>> 0).toString(16).padStart(8, "0");
+    }
+    return out;
+  };
+
+  var incrementalTrust = null;
+
+  /**
+   * A wrong hash here would tell a tester that a bad file is good, so the
+   * streaming implementation is checked against the browser's own SHA-256 on
+   * every page load before it is used, over random bytes fed at deliberately
+   * awkward block boundaries. If it does not agree exactly, it is not used.
+   */
+  /** crypto.getRandomValues rejects anything over 65536 bytes per call. */
+  function randomSample(length) {
+    var out = new Uint8Array(length);
+    for (var offset = 0; offset < length; offset += 65536) {
+      crypto.getRandomValues(out.subarray(offset, Math.min(offset + 65536, length)));
+    }
+    return out;
+  }
+
+  async function incrementalDigestTrustworthy() {
+    if (incrementalTrust !== null) return incrementalTrust;
+    try {
+      var sample = randomSample(200000);
+      var expected = await sha256Hex(sample.buffer);
+      var streamed = new Sha256Stream();
+      var cuts = [0, 1, 64, 65, 127, 128, 4096, 100003, sample.length];
+      for (var i = 1; i < cuts.length; i += 1) {
+        streamed.update(sample.subarray(cuts[i - 1], cuts[i]));
+      }
+      incrementalTrust = streamed.hex() === expected;
+    } catch (error) {
+      incrementalTrust = false;
+    }
+    return incrementalTrust;
+  }
+
+  async function streamFileDigest(file, onProgress) {
+    var hasher = new Sha256Stream();
+    var CHUNK = 4 * 1024 * 1024;
+    var read = 0;
+    if (onProgress) onProgress(0, file.size);
+    while (read < file.size) {
+      var end = Math.min(read + CHUNK, file.size);
+      var buffer = await file.slice(read, end).arrayBuffer();
+      hasher.update(new Uint8Array(buffer));
+      read = end;
+      if (onProgress) onProgress(read, file.size);
+      // Yield to the event loop so the progress bar actually paints.
+      await new Promise(function (resolve) { setTimeout(resolve, 0); });
+    }
+    return hasher.hex();
+  }
+
+  /**
+   * Below this, buffering the whole file is cheap and the native digest returns
+   * faster than a progress bar could usefully render. Above it, the allocation
+   * is worth avoiding and the wait is long enough to need feedback — the
+   * ~120 MB portable takes about four seconds streamed, against a silent
+   * whole-file allocation the other way.
+   */
+  var STREAMING_THRESHOLD_BYTES = 32 * 1024 * 1024;
+
+  async function subtleFileDigest(file, onProgress) {
+    if (onProgress) onProgress(0, file.size);
+    var digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+    if (onProgress) onProgress(file.size, file.size);
     return hex(digest);
+  }
+
+  async function hashLocalFile(file, onProgress) {
+    if (file.size >= STREAMING_THRESHOLD_BYTES && await incrementalDigestTrustworthy()) {
+      return streamFileDigest(file, onProgress);
+    }
+    // Fail safe: the platform digest beats a streaming implementation that just
+    // failed its own agreement check, and beats it for small files anyway.
+    return subtleFileDigest(file, onProgress);
+  }
+
+  function formatBytes(value) {
+    var n = Number(value);
+    if (!Number.isFinite(n)) return String(value);
+    var mib = n / (1024 * 1024);
+    var pretty = mib >= 1024 ? (mib / 1024).toFixed(2) + " GiB" : mib.toFixed(1) + " MiB";
+    return pretty + " (" + n.toLocaleString("en-US") + " bytes)";
+  }
+
+  /**
+   * Reports whether the file was matched by its own name or only compared
+   * against the primary artifact as a fallback. Without that distinction any
+   * unrelated file a tester dropped was compared to the installer and reported
+   * as "do not run this file", and the page's own "nothing to compare against"
+   * branch could never be reached.
+   */
+  function expectedDigestFor(release, fileName) {
+    if (!release || !release.artifactDigests) return null;
+    if (release.artifactDigests[fileName]) {
+      return { digest: release.artifactDigests[fileName], namedAsset: true };
+    }
+    if (release.primaryArtifact && release.artifactDigests[release.primaryArtifact]) {
+      return { digest: release.artifactDigests[release.primaryArtifact], namedAsset: false };
+    }
+    return null;
   }
 
   function wireHashing(release) {
     var input = document.getElementById("file-input");
     var status = document.querySelector("[data-hash-status]");
     if (!input || !status) return;
-    input.addEventListener("change", async function () {
-      var file = input.files && input.files[0];
-      if (!file) return;
-      status.textContent = "Hashing locally…";
+    var dropzone = document.querySelector("[data-dropzone]");
+    var progressWrap = document.querySelector("[data-hash-progress]");
+    var progressBar = document.querySelector("[data-hash-progress] span");
+    var verdict = document.querySelector("[data-hash-verdict]");
+    var busy = false;
+
+    function showVerdict(state, headline, detail) {
+      if (!verdict) return;
+      verdict.hidden = false;
+      verdict.setAttribute("data-verdict", state);
+      verdict.innerHTML = "";
+      var strong = document.createElement("strong");
+      strong.textContent = headline;
+      verdict.appendChild(strong);
+      if (detail) {
+        var p = document.createElement("span");
+        p.textContent = detail;
+        verdict.appendChild(p);
+      }
+    }
+
+    async function verifyFile(file) {
+      if (!file || busy) return;
+      busy = true;
+      if (verdict) verdict.hidden = true;
+      if (progressWrap) progressWrap.hidden = false;
+      status.removeAttribute("data-state");
       try {
-        var digest = await hashLocalFile(file);
-        var expected = null;
-        if (release && release.artifactDigests && release.artifactDigests[file.name]) {
-          expected = release.artifactDigests[file.name];
-        } else if (release && release.primaryArtifact && release.artifactDigests) {
-          expected = release.artifactDigests[release.primaryArtifact];
-        }
-        if (expected && digest === expected) {
-          status.textContent = "Match for " + file.name + ": " + digest;
-          status.removeAttribute("data-state");
-        } else if (expected) {
-          status.textContent = "Mismatch for " + file.name + ". Local=" + digest + " expected=" + expected;
-          status.setAttribute("data-state", "blocked");
+        var digest = await hashLocalFile(file, function (done, total) {
+          var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+          if (progressBar) progressBar.style.width = pct + "%";
+          status.textContent = "Hashing " + file.name + " locally… " + pct + "%";
+        });
+        if (progressWrap) progressWrap.hidden = true;
+        var expected = expectedDigestFor(release, file.name);
+        var streamed = incrementalTrust === true && file.size >= STREAMING_THRESHOLD_BYTES;
+        var how = streamed ? "streamed in 4 MiB chunks" : "hashed with the browser digest";
+        var primary = (release && release.primaryArtifact) || "the signed installer";
+        if (!expected) {
+          status.textContent = "SHA-256 " + digest;
+          showVerdict("unknown", "Hashed, but there is nothing to compare it to.",
+            "The signed tip lists no artifact digests, so this hash cannot be checked here.");
+        } else if (digest === expected.digest) {
+          status.textContent = "SHA-256 " + digest;
+          showVerdict("match", "Match — this is the signed file.", expected.namedAsset
+            ? file.name + " " + how + " in your browser. It matches the signed release index exactly. Safe to run."
+            : file.name + " is not named like a release asset, but its contents " + how
+              + " match " + primary + " exactly. Safe to run.");
+        } else if (expected.namedAsset) {
+          status.textContent = "Local " + digest + " · expected " + expected.digest;
+          showVerdict("mismatch", "Does not match — do not run this file.",
+            file.name + " does not hash to the signed digest. Delete it and download again from the front door.");
         } else {
-          status.textContent = "Local SHA-256 (" + file.name + "): " + digest
-            + " — rename to a known release asset for automatic match, or compare against SHA256SUMS.";
+          // Not a release asset name and not the installer's bytes either —
+          // saying "do not run this file" would be a verdict on the wrong file.
+          status.textContent = "SHA-256 " + digest;
+          showVerdict("unknown", "This is not the signed installer.",
+            file.name + " is not a release asset name, and its contents do not match " + primary
+              + " either. If you meant to check the installer, drop that file instead.");
         }
       } catch (error) {
+        if (progressWrap) progressWrap.hidden = true;
         status.textContent = "Local hashing failed";
         status.setAttribute("data-state", "blocked");
+        showVerdict("mismatch", "Could not hash that file.", "Nothing was uploaded. Try choosing it again.");
+      } finally {
+        busy = false;
       }
+    }
+
+    input.addEventListener("change", function () {
+      verifyFile(input.files && input.files[0]);
+    });
+
+    // The label has always said "drop a file here" while nothing listened for a
+    // drop, so the browser navigated away from the page and opened the file.
+    if (dropzone) {
+      ["dragenter", "dragover"].forEach(function (name) {
+        dropzone.addEventListener(name, function (event) {
+          event.preventDefault();
+          dropzone.setAttribute("data-dragging", "true");
+        });
+      });
+      ["dragleave", "dragend"].forEach(function (name) {
+        dropzone.addEventListener(name, function () {
+          dropzone.removeAttribute("data-dragging");
+        });
+      });
+      dropzone.addEventListener("drop", function (event) {
+        event.preventDefault();
+        dropzone.removeAttribute("data-dragging");
+        var dropped = event.dataTransfer && event.dataTransfer.files;
+        if (dropped && dropped.length) verifyFile(dropped[0]);
+      });
+    }
+    // A drop that misses the zone must not navigate away mid-verification.
+    ["dragover", "drop"].forEach(function (name) {
+      window.addEventListener(name, function (event) {
+        if (dropzone && dropzone.contains(event.target)) return;
+        event.preventDefault();
+      });
+    });
+  }
+
+  /** Copy-to-clipboard for the long hex values a tester has to compare by eye. */
+  function wireCopyButtons() {
+    document.querySelectorAll("[data-copy]").forEach(function (node) {
+      if (node.querySelector(".copy-button")) return;
+      // Capture the value before the button joins the element, so the button's
+      // own label can never end up in what gets copied.
+      var value = (node.getAttribute("data-copy-value") || node.textContent || "").trim();
+      if (!value || value === "unavailable") return;
+      node.setAttribute("data-copy-value", value);
+
+      var label = document.createElement("span");
+      label.className = "copy-value";
+      label.textContent = value;
+
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "copy-button";
+      button.textContent = "Copy";
+      button.setAttribute("aria-label", "Copy value to clipboard");
+
+      node.textContent = "";
+      node.appendChild(label);
+      node.appendChild(button);
+
+      button.addEventListener("click", async function (event) {
+        event.preventDefault();
+        try {
+          await navigator.clipboard.writeText(value);
+          button.textContent = "Copied";
+        } catch (error) {
+          // Clipboard access can be refused (insecure context, permissions).
+          // Select the value so the keyboard shortcut still works instead of
+          // telling the tester to press a key that would copy nothing.
+          try {
+            var range = document.createRange();
+            range.selectNodeContents(label);
+            var selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            button.textContent = "Selected — Ctrl+C";
+          } catch (selectError) {
+            button.textContent = "Select manually";
+          }
+        }
+        setTimeout(function () { button.textContent = "Copy"; }, 2000);
+      });
     });
   }
 
@@ -390,6 +742,7 @@
     if (!auth.ok) {
       failClosed(auth.reason);
       wireHashing(auth.release);
+      wireCopyButtons();
       return;
     }
 
@@ -424,6 +777,7 @@
       });
     }
     wireHashing(release);
+    wireCopyButtons();
   }
 
   boot();

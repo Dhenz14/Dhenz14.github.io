@@ -1,0 +1,1 @@
+function e(){let e=`/HivePoA/`;return e.endsWith(`/`)?e:`${e}/`}function t(){return`${e()}download/`}function n(){return`${e()}verify/`}function r(){return`${e()}get-started/`}var i=`storage-preview-2.0.1`;function a(){return`https://github.com/Dhenz14/HivePoA-Distribution/releases/tag/${i}`}export{n as a,r as i,a as n,t as r,i as t};

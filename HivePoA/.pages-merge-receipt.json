@@ -1,0 +1,32 @@
+{
+  "schema": "hivepoa.pages-mirror-merge.v1",
+  "mergedAt": "2026-07-30T05:40:04.136Z",
+  "spaDir": "/home/theyc/projects/HivePoA-lanes/pages-spa-sync-20260729/dist-pages",
+  "targetDir": "/home/theyc/projects/HivePoA-lanes/dhenz14-github-io/HivePoA",
+  "preservedDirs": [
+    "download",
+    "verify",
+    "releases",
+    "get-started",
+    "cid-mirrors",
+    "distribution-assets",
+    "distribution"
+  ],
+  "preservedFiles": [
+    "gateway.json",
+    "hivepoa-distribution-boundary.json",
+    "build-receipt.json"
+  ],
+  "replacedSpaFiles": [
+    "index.html",
+    "404.html",
+    ".nojekyll",
+    "favicon.png",
+    "opengraph.jpg",
+    "robots.txt",
+    "sitemap.xml",
+    "README.md",
+    "hivepoa-pages-boundary.json"
+  ],
+  "replacedAssets": true
+}

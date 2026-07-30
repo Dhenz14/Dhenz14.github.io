@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Download — HivePoA Storage Preview</title>
+  <link rel="stylesheet" href="../distribution-assets/distribution.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <p class="brand">HivePoA Storage Preview</p>
+    <nav aria-label="Primary">
+      <a href="../">Home</a>
+      <a href="./" aria-current="page">Download</a>
+      <a href="../verify/">Verify</a>
+      <a href="../releases/">Releases</a>
+      <a href="../get-started/">Get started</a>
+    </nav>
+  </header>
+  <main id="main">
+    <h1>Download</h1>
+    <section aria-labelledby="release-meta">
+      <h2 id="release-meta">Selected release</h2>
+      <dl class="meta" data-release-meta>
+        <div><dt>Version</dt><dd data-field="version">unavailable</dd></div>
+        <div><dt>Platform</dt><dd data-field="platform">unavailable</dd></div>
+        <div><dt>Architecture</dt><dd data-field="architecture">unavailable</dd></div>
+        <div><dt>Bytes</dt><dd data-field="bytes">unavailable</dd></div>
+        <div><dt>SHA-256</dt><dd data-field="sha256">unavailable</dd></div>
+        <div><dt>Signer</dt><dd data-field="signer">unavailable</dd></div>
+        <div><dt>Capability ceiling</dt><dd data-field="ceiling">unavailable</dd></div>
+      </dl>
+    </section>
+    <div class="actions">
+      <button type="button" id="btn-github" disabled>Download via GitHub Releases</button>
+      <button type="button" id="btn-ipfs" disabled>Download via IPFS</button>
+    </div>
+    <p class="status" data-status role="status" aria-live="polite">Checking signed release index…</p>
+  </main>
+  <script type="application/json" id="release-index-fixture">{"schema":"https://hivepoa.io/schemas/hivepoa-release-channel-index.v1.json","schemaVersion":1,"_fixtureAuthorization":true,"_mirrorParity":true,"signed":{"product":"HivePoA Storage Preview","profile":"storage-preview-desktop-x64.v2","createdAt":"2026-07-30T00:00:00.000Z","expiresAt":"2026-10-30T00:00:00.000Z","latestBetaSequence":1,"latestStableSequence":0,"capabilityCeilingText":"storage-preview desktop/web/tester docs only; no compute/brain/neura/rewards","signer":"hivepoa-storage-preview-operator","releases":[{"version":"2.0.1-storage-preview.1","releaseSequence":1,"channel":"beta","manifestSha256":"73f15a3a205eb212b39d95d88bf4a7e4d3b59e0af868d528af890f9af0d03007","manifestCid":"bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4","publicationProofCid":"bafkreihsrbx7h4sycmuf5mkmogpbvhqtbbhp7lajwxulrvjslsslzmjjky","githubReleaseTag":"storage-preview-2.0.1","githubRepository":"Dhenz14/HivePoA-Distribution","githubRepositoryId":1316835999,"platform":"windows/linux","architecture":"x64","bytes":450121803,"sha256":"see-manifest-per-artifact","tufVersion":1,"revoked":false,"ipfsGateways":["https://dweb.link/ipfs","https://ipfs.filebase.io/ipfs"]}],"revocations":[],"revocationStateVersion":0},"signatures":[{"keyId":"restore-publication-authority","algorithm":"ed25519","signature":"RESTORE_AUTHORIZED_INDEX_V1","publicKeySha256":"11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081"}]}</script>
+  <script src="../distribution-assets/distribution.js" defer></script>
+</body>
+</html>

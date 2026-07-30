@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "hivepoa.distribution-pages-boundary.v1",
+  "surface": "distribution-front-door",
+  "sourceCommit": "71f01907f19b9783a3b77233386ee6ee927ba08e",
+  "artifactAuthority": "signed-release-index",
+  "dualChannelDefault": "on-for-pages-front-door",
+  "publicationAuthorized": true,
+  "testerPackageDistribution": "ipfs-and-github-releases",
+  "publicDistributionRepository": "Dhenz14/HivePoA-Distribution",
+  "publicDistributionRepositoryId": 1316835999,
+  "routes": [
+    "/",
+    "/download/",
+    "/verify/",
+    "/releases/",
+    "/get-started/"
+  ],
+  "trackers": false,
+  "autoDownload": false
+}

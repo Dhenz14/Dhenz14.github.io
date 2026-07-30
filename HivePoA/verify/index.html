@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Verify — HivePoA Storage Preview</title>
+  <link rel="stylesheet" href="../distribution-assets/distribution.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <p class="brand">HivePoA Storage Preview</p>
+    <nav aria-label="Primary">
+      <a href="../">Home</a>
+      <a href="../download/">Download</a>
+      <a href="./" aria-current="page">Verify</a>
+      <a href="../releases/">Releases</a>
+      <a href="../get-started/">Get started</a>
+    </nav>
+  </header>
+  <main id="main">
+    <h1>Local verify</h1>
+    <p>Hash a downloaded installer locally. The file never leaves your browser.</p>
+    <label class="drop" for="file-input">
+      <span>Drop a file here or choose one</span>
+      <input id="file-input" type="file" />
+    </label>
+    <p>Expected SHA-256: <code data-field="sha256">unavailable</code></p>
+    <p class="status" data-hash-status role="status" aria-live="polite">Waiting for a local file…</p>
+  </main>
+  <script type="application/json" id="release-index-fixture">{"schema":"https://hivepoa.io/schemas/hivepoa-release-channel-index.v1.json","schemaVersion":1,"_fixtureAuthorization":true,"_mirrorParity":true,"signed":{"product":"HivePoA Storage Preview","profile":"storage-preview-desktop-x64.v2","createdAt":"2026-07-30T00:00:00.000Z","expiresAt":"2026-10-30T00:00:00.000Z","latestBetaSequence":1,"latestStableSequence":0,"capabilityCeilingText":"storage-preview desktop/web/tester docs only; no compute/brain/neura/rewards","signer":"hivepoa-storage-preview-operator","releases":[{"version":"2.0.1-storage-preview.1","releaseSequence":1,"channel":"beta","manifestSha256":"73f15a3a205eb212b39d95d88bf4a7e4d3b59e0af868d528af890f9af0d03007","manifestCid":"bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4","publicationProofCid":"bafkreihsrbx7h4sycmuf5mkmogpbvhqtbbhp7lajwxulrvjslsslzmjjky","githubReleaseTag":"storage-preview-2.0.1","githubRepository":"Dhenz14/HivePoA-Distribution","githubRepositoryId":1316835999,"platform":"windows/linux","architecture":"x64","bytes":450121803,"sha256":"see-manifest-per-artifact","tufVersion":1,"revoked":false,"ipfsGateways":["https://dweb.link/ipfs","https://ipfs.filebase.io/ipfs"]}],"revocations":[],"revocationStateVersion":0},"signatures":[{"keyId":"restore-publication-authority","algorithm":"ed25519","signature":"RESTORE_AUTHORIZED_INDEX_V1","publicKeySha256":"11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081"}]}</script>
+  <script src="../distribution-assets/distribution.js" defer></script>
+</body>
+</html>

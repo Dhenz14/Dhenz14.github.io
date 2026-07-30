@@ -1,6 +1,11 @@
 (function () {
   "use strict";
 
+  // Out-of-band Pages pin (operator-controlled). The fixture PEM must match this
+  // fingerprint; Pages alone must not introduce a substitute key+signature pair.
+  var PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256 =
+    "11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081";
+
   function readFixture() {
     var node = document.getElementById("release-index-fixture");
     if (!node) return { ok: false, reason: "missing release-index fixture" };
@@ -20,7 +25,10 @@
     }
     var github = document.getElementById("btn-github");
     var ipfs = document.getElementById("btn-ipfs");
-    if (github) github.disabled = true;
+    if (github) {
+      github.disabled = true;
+      github.textContent = "GitHub mirror (not trust root)";
+    }
     if (ipfs) ipfs.disabled = true;
   }
 
@@ -69,6 +77,9 @@
     if (!bootstrap || !bootstrap.publicKeyPem || !bootstrap.publicKeySha256) {
       return { ok: false, reason: "missing trust bootstrap public key" };
     }
+    if (bootstrap.publicKeySha256 !== PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256) {
+      return { ok: false, reason: "trust bootstrap fingerprint is not the pinned Pages key" };
+    }
     var signed = index.signed;
     if (!signed.expiresAt || Date.now() >= Date.parse(signed.expiresAt)) {
       return { ok: false, reason: "expired or missing expiry" };
@@ -76,10 +87,26 @@
     if (!Array.isArray(signed.releases) || signed.releases.length < 1) {
       return { ok: false, reason: "no releases in index" };
     }
-    var selected = signed.releases.find(function (item) { return item.revoked !== true; });
-    if (!selected) return { ok: false, reason: "all releases revoked" };
+    var tipSeq = Number(signed.latestBetaSequence || 0);
+    if (!Number.isFinite(tipSeq) || tipSeq < 1) {
+      return {
+        ok: false,
+        reason: "no approved tester tip (public .2/.3 withdrawn — use operator three-file handoff)",
+        signed: signed,
+      };
+    }
+    var selected = signed.releases.find(function (item) {
+      return item && item.revoked !== true && Number(item.releaseSequence) === tipSeq;
+    });
+    if (!selected) {
+      return {
+        ok: false,
+        reason: "approved tip sequence missing or revoked — not tester authority",
+        signed: signed,
+      };
+    }
     if (signed.mirrorParity !== true) {
-      return { ok: false, reason: "mirror parity not proven in signed index" };
+      return { ok: false, reason: "mirror parity not proven in signed index", signed: signed };
     }
     if (!selected.githubReleaseTag || !selected.manifestCid || !selected.manifestSha256) {
       return { ok: false, reason: "release missing dual-channel pointers" };
@@ -88,7 +115,7 @@
     var payload = new TextEncoder().encode(canonicalStringify(signed));
     var keyBytes = pemToSpki(bootstrap.publicKeyPem);
     var keyHash = await sha256Hex(keyBytes);
-    if (keyHash !== bootstrap.publicKeySha256) {
+    if (keyHash !== bootstrap.publicKeySha256 || keyHash !== PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256) {
       return { ok: false, reason: "trust bootstrap key fingerprint mismatch" };
     }
 

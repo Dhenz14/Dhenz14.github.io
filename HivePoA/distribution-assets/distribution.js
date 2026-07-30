@@ -235,9 +235,34 @@
       + encodeURIComponent(tag) + "/" + encodeURIComponent(assetName);
   }
 
-  async function probeUrl(url, expectedSha256) {
+  function isPrivateOrLocalHostUrl(url) {
     try {
-      var response = await fetch(url, { method: "GET", cache: "no-store" });
+      var parsed = new URL(url);
+      var host = String(parsed.hostname || "").toLowerCase();
+      if (host === "localhost" || host === "127.0.0.1" || host === "::1") return true;
+      if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+      if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+      if (/^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+      return false;
+    } catch (error) {
+      return true;
+    }
+  }
+
+  async function probeUrl(url, expectedSha256) {
+    var controller = typeof AbortController === "function" ? new AbortController() : null;
+    var timer = null;
+    try {
+      if (controller) {
+        timer = setTimeout(function () {
+          try { controller.abort(); } catch (error) { /* ignore */ }
+        }, 8000);
+      }
+      var response = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
+        signal: controller ? controller.signal : undefined,
+      });
       if (!response.ok) return { ok: false, status: response.status };
       var buffer = await response.arrayBuffer();
       if (expectedSha256) {
@@ -249,12 +274,20 @@
       return { ok: true, status: response.status, url: url };
     } catch (error) {
       return { ok: false, reason: String(error && error.message || error) };
+    } finally {
+      if (timer) clearTimeout(timer);
     }
   }
 
   async function resolveIpfsManifest(release) {
     var candidates = [];
-    // Optional unsigned live tip (cloudflared URL rotates); still sha256-checked.
+    function pushCandidate(url) {
+      if (!url || isPrivateOrLocalHostUrl(url)) return;
+      if (candidates.indexOf(url) !== -1) return;
+      candidates.push(url);
+    }
+
+    // 1) Optional unsigned live tip (cloudflared URL rotates); still sha256-checked.
     try {
       var tipResp = await fetch(new URL("../gateway.json", window.location.href).toString(), {
         cache: "no-store",
@@ -262,29 +295,33 @@
       if (tipResp.ok) {
         var tip = await tipResp.json();
         if (tip && tip.ipfsGatewayBase) {
-          candidates.push(String(tip.ipfsGatewayBase).replace(/\/$/, "") + "/" + release.manifestCid);
+          pushCandidate(String(tip.ipfsGatewayBase).replace(/\/$/, "") + "/" + release.manifestCid);
         }
       }
     } catch (error) {
       // tip is optional
     }
+
+    // 2) Pages cid-mirror + GitHub manifest asset before flaky public gateways.
+    if (release.cidMirrorPath) {
+      pushCandidate(new URL("../" + release.cidMirrorPath, window.location.href).toString());
+    }
+    var asset = githubAssetUrl(release, release.githubManifestAsset);
+    if (asset) pushCandidate(asset);
+
+    // 3) Signed public gateways only (skip LAN/RFC1918 — remote friends cannot use them).
     var gateways = (release.ipfsGateways && release.ipfsGateways.length)
       ? release.ipfsGateways.slice()
       : [];
     gateways.forEach(function (gw) {
-      candidates.push(String(gw).replace(/\/$/, "") + "/" + release.manifestCid);
+      pushCandidate(String(gw).replace(/\/$/, "") + "/" + release.manifestCid);
     });
-    if (release.cidMirrorPath) {
-      candidates.push(new URL("../" + release.cidMirrorPath, window.location.href).toString());
-    }
-    var asset = githubAssetUrl(release, release.githubManifestAsset);
-    if (asset) candidates.push(asset);
 
     for (var i = 0; i < candidates.length; i += 1) {
       var result = await probeUrl(candidates[i], release.manifestSha256);
       if (result.ok) return result;
     }
-    return { ok: false, reason: "no reachable IPFS/mirror source passed sha256 check" };
+    return { ok: false, reason: "no reachable public IPFS/mirror source passed sha256 check" };
   }
 
   async function boot() {

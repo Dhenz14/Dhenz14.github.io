@@ -34,6 +34,9 @@
     </nav>
   </header>
   <main id="main">
+  <noscript>
+    <p class="status" data-state="blocked">This page needs JavaScript to check the signed release index. Nothing is downloaded or verified without it.</p>
+  </noscript>
     <h1>Local verify</h1>
     <p>Drop the installer you downloaded onto the box below. It is hashed inside your own browser — the file is never uploaded anywhere.</p>
     <label class="drop" for="file-input" data-dropzone>
@@ -42,9 +45,12 @@
       <input id="file-input" type="file" />
     </label>
     <div class="progress" data-hash-progress hidden>
-      <div class="bar"><span></span></div>
+      <div class="bar" role="progressbar" aria-label="Hashing progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
     </div>
-    <p class="status" data-hash-status role="status" aria-live="polite">Waiting for a local file…</p>
+    <!-- aria-live is off here on purpose: this line updates once per 4 MiB
+         chunk, which queued ~30 announcements for the 120 MB installer. The
+         verdict below is the live region that matters. -->
+    <p class="status" data-hash-status aria-live="off">Waiting for a local file…</p>
     <p class="verdict" data-hash-verdict role="status" aria-live="polite" hidden></p>
     <p>Expected primary SHA-256: <code data-field="sha256">unavailable</code></p>
     <h2>Release artifact digests</h2>

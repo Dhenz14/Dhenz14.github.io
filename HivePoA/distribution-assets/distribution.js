@@ -196,7 +196,12 @@
     var tipSeq = Number(signed.latestBetaSequence || 0);
     var reasons = {};
     (signed.revocations || []).forEach(function (entry) {
-      if (entry && entry.releaseSequence != null) reasons[String(entry.releaseSequence)] = entry.reason || "";
+      if (entry && entry.releaseSequence != null) {
+        // Reasons already begin "WITHDRAWN:", which rendered as
+        // "WITHDRAWN — do not install (WITHDRAWN: …)" and read like a copy bug.
+        reasons[String(entry.releaseSequence)] =
+          String(entry.reason || "").replace(/^\s*withdrawn:\s*/i, "");
+      }
     });
     list.innerHTML = "";
     signed.releases.forEach(function (release) {
@@ -438,8 +443,10 @@
   function formatBytes(value) {
     var n = Number(value);
     if (!Number.isFinite(n)) return String(value);
+    // MB/GB, not MiB/GiB: this number is compared against what Windows Explorer
+    // shows next to the downloaded file, and Explorer says MB.
     var mib = n / (1024 * 1024);
-    var pretty = mib >= 1024 ? (mib / 1024).toFixed(2) + " GiB" : mib.toFixed(1) + " MiB";
+    var pretty = mib >= 1024 ? (mib / 1024).toFixed(2) + " GB" : mib.toFixed(1) + " MB";
     return pretty + " (" + n.toLocaleString("en-US") + " bytes)";
   }
 
@@ -496,6 +503,9 @@
         var digest = await hashLocalFile(file, function (done, total) {
           var pct = total > 0 ? Math.round((done / total) * 100) : 0;
           if (progressBar) progressBar.style.width = pct + "%";
+          if (progressBar && progressBar.parentNode) {
+            progressBar.parentNode.setAttribute("aria-valuenow", String(pct));
+          }
           status.textContent = "Hashing " + file.name + " locally… " + pct + "%";
         });
         if (progressWrap) progressWrap.hidden = true;

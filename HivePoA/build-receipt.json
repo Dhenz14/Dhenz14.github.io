@@ -1,10 +1,10 @@
 {
-  "cssSha256": "2a123dba405c9498eded0e3d55b757922c17e26da572836eef3c6c29c1642c3d",
-  "jsSha256": "67d8552a3f8ecdf2d496f26a17ab240b3e2a9994ea4cc6d4e6c1b655eb675c70",
+  "cssSha256": "660a32e53c8cb950ccbda8b0a0b5806d1d16e40d877a5439a81d30615c4d1157",
+  "jsSha256": "b417a29b68636c3d7dede6308b99c316306f1c99d4f122a7438608392861a631",
   "boundary": {
     "schemaVersion": "hivepoa.distribution-pages-boundary.v1",
     "surface": "distribution-front-door",
-    "sourceCommit": "5262ad7bdc2be2318a1d0d69d4bb8c07d2bc6668",
+    "sourceCommit": "5808eeefea761c181f7636c9025e57cd32e84c44",
     "artifactAuthority": "signed-release-index",
     "dualChannelDefault": "on-for-pages-front-door",
     "publicationAuthorized": true,

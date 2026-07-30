@@ -47,8 +47,11 @@ body {
   position: absolute;
   left: -999px;
   top: 0;
-  background: #fff;
+  /* Hardcoded white here rendered near-white-on-white once dark mode landed,
+     so the first thing a keyboard user tabbed to was invisible. */
+  background: var(--bg);
   color: var(--ink);
+  border: 2px solid var(--focus);
   padding: 0.5rem 1rem;
 }
 .skip-link:focus { left: 0; z-index: 10; }
@@ -89,12 +92,18 @@ h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.15; }
   font: inherit;
   cursor: pointer;
 }
+/* failClosed() writes the reason into the disabled button, so this state is an
+   information carrier and has to stay legible in both schemes. */
 button:disabled {
-  background: #9aa39a;
-  border-color: #9aa39a;
-  color: #fff;
+  background: color-mix(in srgb, var(--muted) 22%, var(--bg));
+  border-color: var(--muted);
+  color: var(--ink);
   cursor: not-allowed;
 }
+.button, button { border-radius: 6px; transition: filter 120ms ease; }
+.button:hover, button:not(:disabled):hover { filter: brightness(1.08); }
+.button:active, button:not(:disabled):active { transform: translateY(1px); }
+nav a { padding: 0.35rem 0.15rem; }
 button:focus-visible, a:focus-visible, input:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
@@ -230,4 +239,6 @@ a.button { display: inline-block; text-decoration: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; }
+  .button, button { transition: none; }
+  .button:active, button:not(:disabled):active { transform: none; }
 }

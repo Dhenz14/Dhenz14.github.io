@@ -4,7 +4,7 @@
   "boundary": {
     "schemaVersion": "hivepoa.distribution-pages-boundary.v1",
     "surface": "distribution-front-door",
-    "sourceCommit": "da19ff31f16d4f7cc368ae8103cf4a77b83c2cfe",
+    "sourceCommit": "650f3cf84d33046d58344655bf973b5d21ccd0f7",
     "artifactAuthority": "signed-release-index",
     "dualChannelDefault": "on-for-pages-front-door",
     "publicationAuthorized": true,

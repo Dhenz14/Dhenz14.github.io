@@ -1,3 +1,12 @@
-# HivePoA Hosted Interface (generated)
+# HivePoA Storage Preview — distribution front door (generated)
 
-This directory is a generated, non-authoritative frontend mirror from private HivePoA source commit `838bf1a2f71466378833f99f87ad6ecc73e68b77`. It is not a source repository, package channel, signed bootstrap handoff, or storage-release authority. Tester packages and the package-bound storage-control web interface remain signed-IPFS-only.
+Generated, non-authoritative frontend mirror from private HivePoA source commit `049c9dcc558eda2846a36c1c370ce4ebfb43b45d`.
+It is not a source repository, package channel, signed bootstrap handoff, or storage-release
+authority. Tester packages and the package-bound storage-control web interface remain
+signed-IPFS-only.
+
+Routes served: /, /download/, /verify/, /releases/, /get-started/. `/distribution/` redirects to `/`.
+
+Regenerate and publish with `npm run build:distribution-static` then
+`npm run publish:distribution-mirror -- --target <mirror>/HivePoA`. Do not hand-copy files
+into this directory: the publisher asserts that every generated file came from one build.

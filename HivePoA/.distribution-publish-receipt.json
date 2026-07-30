@@ -1,9 +1,9 @@
 {
   "schema": "hivepoa.distribution-mirror-publish.v1",
-  "publishedAt": "2026-07-30T22:15:02.804Z",
+  "publishedAt": "2026-07-30T22:35:12.101Z",
   "bundleDir": "/home/theyc/projects/HivePoA-lanes/pages-polish-atoz-20260730/dist-distribution",
   "targetDir": "/home/theyc/projects/HivePoA-lanes/dhenz14-github-io/HivePoA",
-  "sourceCommit": "22014fb43c7b2f843f3a7f04599221c681fb0710",
+  "sourceCommit": "049c9dcc558eda2846a36c1c370ce4ebfb43b45d",
   "replacedDirs": [
     "download",
     "verify",
@@ -19,6 +19,7 @@
     "index.html",
     "sitemap.xml",
     "robots.txt",
+    "README.md",
     "hivepoa-distribution-boundary.json",
     "build-receipt.json",
     ".nojekyll"
@@ -33,7 +34,6 @@
     "favicon.png",
     "opengraph.jpg",
     "404.html",
-    "README.md",
     "hivepoa-pages-boundary.json",
     "gateway.json"
   ]

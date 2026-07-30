@@ -324,6 +324,10 @@
     return { ok: false, reason: "no reachable public IPFS/mirror source passed sha256 check" };
   }
 
+  function githubPrimaryDownloadUrl(release) {
+    return githubAssetUrl(release, release.primaryArtifact) || githubReleaseUrl(release);
+  }
+
   async function boot() {
     var loaded = readFixture();
     if (!loaded.ok) {
@@ -351,8 +355,12 @@
     var release = auth.release;
     if (github) {
       github.disabled = false;
+      github.textContent = release.primaryArtifact
+        ? ("Download " + release.primaryArtifact)
+        : "Download via GitHub Releases";
       github.addEventListener("click", function () {
-        window.location.href = githubReleaseUrl(release);
+        // One click → portable exe bytes. Do not drop grandma on a tag page.
+        window.location.href = githubPrimaryDownloadUrl(release);
       });
     }
     if (ipfs) {

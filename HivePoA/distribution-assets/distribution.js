@@ -742,20 +742,34 @@
    * The content address of the package itself, when the release actually
    * published one.
    *
-   * storage-preview.1 shipped a full `ipfs-release-manifest.v1` carrying a CID
-   * per artifact, so IPFS genuinely carried the bytes. .2/.3/.4 ship
-   * `github-primary-manifest.v1`, which has no artifacts array and names GitHub
-   * as the source — for those the manifest is metadata only, and this returns
-   * null so the page says so instead of implying an IPFS package exists.
+   * Preferred source is the SIGNED index entry: `primaryArtifactCid` is covered
+   * by the operator signature this page already verified, so it needs no
+   * further trust and no network round-trip. storage-preview.5 is the first tip
+   * to carry it.
+   *
+   * The manifest fallbacks are for older releases: .1 carried a CID per
+   * artifact in `signed.artifacts[]`, and the `github-primary-manifest.v1`
+   * shape carries `primaryArtifactCid` at the top level. A release that
+   * published neither is metadata-only, and this returns null so the page says
+   * so instead of implying an IPFS package exists.
    */
-  function packageCidFromManifest(manifest, artifactName) {
+  function packageCidFromRelease(release, manifest) {
+    if (release && typeof release.primaryArtifactCid === "string" && release.primaryArtifactCid) {
+      return { cid: release.primaryArtifactCid, bytes: release.bytes };
+    }
+    var name = release && release.primaryArtifact;
     var artifacts = manifest && manifest.signed && manifest.signed.artifacts;
-    if (!Array.isArray(artifacts) || !artifactName) return null;
-    for (var i = 0; i < artifacts.length; i += 1) {
-      var entry = artifacts[i];
-      if (entry && entry.name === artifactName && typeof entry.cid === "string" && entry.cid) {
-        return { cid: entry.cid, bytes: entry.bytes };
+    if (Array.isArray(artifacts) && name) {
+      for (var i = 0; i < artifacts.length; i += 1) {
+        var entry = artifacts[i];
+        if (entry && entry.name === name && typeof entry.cid === "string" && entry.cid) {
+          return { cid: entry.cid, bytes: entry.bytes };
+        }
       }
+    }
+    if (manifest && typeof manifest.primaryArtifactCid === "string" && manifest.primaryArtifactCid
+      && (!name || manifest.primaryArtifact === name)) {
+      return { cid: manifest.primaryArtifactCid, bytes: manifest.bytes };
     }
     return null;
   }
@@ -788,6 +802,13 @@
     if (!document.querySelector("[data-channels]")) return;
     setChannelState("github", "package",
       release.primaryArtifact + " · " + formatBytes(release.bytes));
+    // The signed index already states whether a package CID exists, and that
+    // claim is covered by the signature this page verified — no fetch needed.
+    var signedPkg = packageCidFromRelease(release, null);
+    if (signedPkg) {
+      setChannelState("ipfs", "package", "Package CID " + signedPkg.cid);
+      return;
+    }
     setChannelState("ipfs", "checking", "Resolving the signed manifest…");
     var resolved = await resolveIpfsManifest(release);
     if (!resolved.ok) {
@@ -795,7 +816,7 @@
         "No reachable IPFS source passed the SHA-256 check.");
       return;
     }
-    var pkg = packageCidFromManifest(resolved.manifest, release.primaryArtifact);
+    var pkg = packageCidFromRelease(release, resolved.manifest);
     if (pkg) {
       setChannelState("ipfs", "package", "Package CID " + pkg.cid);
     } else {
@@ -869,7 +890,7 @@
           ipfs.disabled = false;
           return;
         }
-        var pkg = packageCidFromManifest(resolved.manifest, release.primaryArtifact);
+        var pkg = packageCidFromRelease(release, resolved.manifest);
         if (!pkg) {
           setChannelState("ipfs", "metadata-only",
             "This build published signed metadata to IPFS, not the package. The bytes are on GitHub.");

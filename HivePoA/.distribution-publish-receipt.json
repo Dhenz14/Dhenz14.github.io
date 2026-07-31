@@ -1,9 +1,9 @@
 {
   "schema": "hivepoa.distribution-mirror-publish.v1",
-  "publishedAt": "2026-07-31T19:11:33.276Z",
-  "bundleDir": "/home/theyc/projects/HivePoA-lanes/app-start-tdz-20260730/dist-distribution",
+  "publishedAt": "2026-07-31T19:19:51.290Z",
+  "bundleDir": "/home/theyc/projects/HivePoA-lanes/dual-channel-truth-20260731/dist-distribution",
   "targetDir": "/home/theyc/projects/HivePoA-lanes/dhenz14-github-io/HivePoA",
-  "sourceCommit": "577cdd48e931e02aeb64e3483e5fede41701edb6",
+  "sourceCommit": "4519b167d76f959a1155c2fda9c890a684929861",
   "replacedDirs": [
     "download",
     "verify",

@@ -678,7 +678,7 @@
           return { ok: false, status: response.status, reason: "sha256 mismatch" };
         }
       }
-      return { ok: true, status: response.status, url: url };
+      return { ok: true, status: response.status, url: url, buffer: buffer };
     } catch (error) {
       return { ok: false, reason: String(error && error.message || error) };
     } finally {
@@ -726,9 +726,92 @@
 
     for (var i = 0; i < candidates.length; i += 1) {
       var result = await probeUrl(candidates[i], release.manifestSha256);
-      if (result.ok) return result;
+      if (result.ok) {
+        try {
+          result.manifest = JSON.parse(new TextDecoder().decode(result.buffer));
+        } catch (error) {
+          result.manifest = null;
+        }
+        return result;
+      }
     }
     return { ok: false, reason: "no reachable public IPFS/mirror source passed sha256 check" };
+  }
+
+  /**
+   * The content address of the package itself, when the release actually
+   * published one.
+   *
+   * storage-preview.1 shipped a full `ipfs-release-manifest.v1` carrying a CID
+   * per artifact, so IPFS genuinely carried the bytes. .2/.3/.4 ship
+   * `github-primary-manifest.v1`, which has no artifacts array and names GitHub
+   * as the source — for those the manifest is metadata only, and this returns
+   * null so the page says so instead of implying an IPFS package exists.
+   */
+  function packageCidFromManifest(manifest, artifactName) {
+    var artifacts = manifest && manifest.signed && manifest.signed.artifacts;
+    if (!Array.isArray(artifacts) || !artifactName) return null;
+    for (var i = 0; i < artifacts.length; i += 1) {
+      var entry = artifacts[i];
+      if (entry && entry.name === artifactName && typeof entry.cid === "string" && entry.cid) {
+        return { cid: entry.cid, bytes: entry.bytes };
+      }
+    }
+    return null;
+  }
+
+  var CHANNEL_LABELS = {
+    checking: "checking…",
+    package: "package available",
+    "metadata-only": "signed metadata only",
+    unavailable: "unavailable",
+  };
+
+  function setChannelState(channel, state, detail) {
+    var row = document.querySelector('[data-channel="' + channel + '"]');
+    if (!row) return;
+    row.setAttribute("data-state", state);
+    var stateNode = row.querySelector("[data-channel-state]");
+    var detailNode = row.querySelector("[data-channel-detail]");
+    if (stateNode) stateNode.textContent = CHANNEL_LABELS[state] || state;
+    if (detailNode) detailNode.textContent = detail || "";
+  }
+
+  /**
+   * Both channels are stated up front rather than implied by two equal buttons.
+   * GitHub and IPFS are not interchangeable for every build: .1 published the
+   * package to IPFS, .2/.3/.4 publish only signed metadata there.
+   */
+  async function renderChannels(release) {
+    // Only the download page carries the channel table; everywhere else this
+    // would be a network round-trip for markup that does not exist.
+    if (!document.querySelector("[data-channels]")) return;
+    setChannelState("github", "package",
+      release.primaryArtifact + " · " + formatBytes(release.bytes));
+    setChannelState("ipfs", "checking", "Resolving the signed manifest…");
+    var resolved = await resolveIpfsManifest(release);
+    if (!resolved.ok) {
+      setChannelState("ipfs", "unavailable",
+        "No reachable IPFS source passed the SHA-256 check.");
+      return;
+    }
+    var pkg = packageCidFromManifest(resolved.manifest, release.primaryArtifact);
+    if (pkg) {
+      setChannelState("ipfs", "package", "Package CID " + pkg.cid);
+    } else {
+      setChannelState("ipfs", "metadata-only",
+        "Signed manifest only — this build's package bytes are on GitHub.");
+    }
+  }
+
+  /** Public gateway URLs for a package CID, LAN gateways excluded. */
+  function ipfsPackageUrls(release, cid) {
+    var out = [];
+    ((release.ipfsGateways && release.ipfsGateways.length) ? release.ipfsGateways : []).forEach(function (gw) {
+      var url = String(gw).replace(/\/$/, "") + "/" + cid;
+      if (!isPrivateOrLocalHostUrl(url) && out.indexOf(url) === -1) out.push(url);
+    });
+    return out;
   }
 
   function githubPrimaryDownloadUrl(release) {
@@ -774,20 +857,46 @@
     if (ipfs) {
       ipfs.disabled = false;
       ipfs.addEventListener("click", async function () {
-        if (status) status.textContent = "Resolving IPFS manifest via gateways/mirrors…";
+        if (status) status.textContent = "Resolving the signed manifest over IPFS…";
         ipfs.disabled = true;
         var resolved = await resolveIpfsManifest(release);
         if (!resolved.ok) {
-          failClosed(resolved.reason || "IPFS resolve failed");
-          github.disabled = false;
+          // Scoped to this channel: GitHub still has the bytes, so do not
+          // fail-closed the whole page over an unreachable gateway.
+          setChannelState("ipfs", "unavailable",
+            "No reachable IPFS source passed the SHA-256 check. Use the GitHub download above.");
+          if (status) status.textContent = "IPFS unreachable — the GitHub download above still works.";
+          ipfs.disabled = false;
           return;
         }
-        if (status) status.textContent = "IPFS manifest verified at " + resolved.url;
-        window.location.href = resolved.url;
+        var pkg = packageCidFromManifest(resolved.manifest, release.primaryArtifact);
+        if (!pkg) {
+          setChannelState("ipfs", "metadata-only",
+            "This build published signed metadata to IPFS, not the package. The bytes are on GitHub.");
+          if (status) {
+            status.textContent = "Signed manifest verified over IPFS. This build does not publish "
+              + "the package itself to IPFS — use the GitHub download above.";
+          }
+          ipfs.disabled = false;
+          return;
+        }
+        var urls = ipfsPackageUrls(release, pkg.cid);
+        if (!urls.length) {
+          setChannelState("ipfs", "unavailable", "The signed index lists no public IPFS gateway.");
+          ipfs.disabled = false;
+          return;
+        }
+        setChannelState("ipfs", "package", "Package CID " + pkg.cid);
+        if (status) {
+          status.textContent = "Manifest verified. Fetching " + release.primaryArtifact
+            + " from IPFS — check its SHA-256 on Verify before running it.";
+        }
+        window.location.href = urls[0];
       });
     }
     wireHashing(release);
     wireCopyButtons();
+    void renderChannels(release);
   }
 
   boot();

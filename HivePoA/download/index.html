@@ -55,6 +55,22 @@
       <button type="button" id="btn-github" disabled>Download via GitHub Releases</button>
       <button type="button" id="btn-ipfs" disabled>Download via IPFS</button>
     </div>
+    <section class="channels" aria-labelledby="channels-h">
+      <h2 id="channels-h">Distribution channels</h2>
+      <p>Both channels are signed against the same release index. They do not always carry the same thing — this says which is which for the build above.</p>
+      <ul data-channels>
+        <li data-channel="github">
+          <strong>GitHub Releases</strong>
+          <span class="channel-state" data-channel-state>checking…</span>
+          <span class="channel-detail" data-channel-detail></span>
+        </li>
+        <li data-channel="ipfs">
+          <strong>IPFS</strong>
+          <span class="channel-state" data-channel-state>checking…</span>
+          <span class="channel-detail" data-channel-detail></span>
+        </li>
+      </ul>
+    </section>
     <p class="status" data-status role="status" aria-live="polite">Checking signed release index…</p>
     <section class="next-step" aria-labelledby="after-download">
       <h2 id="after-download">After it downloads</h2>

@@ -198,6 +198,35 @@ code, .mono { overflow-wrap: anywhere; }
 }
 .copy-button:hover { background: var(--accent); color: var(--accent-ink); }
 
+/* Two equal buttons implied two equal channels. They are not always equal:
+   a build can publish the package to one and only metadata to the other. */
+.channels { margin: 1.75rem 0; }
+.channels h2 { margin-bottom: 0.35rem; }
+[data-channels] { list-style: none; padding: 0; display: grid; gap: 0.6rem; }
+[data-channels] li {
+  display: grid;
+  grid-template-columns: 11rem auto;
+  gap: 0.15rem 0.75rem;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: 4px;
+  padding: 0.65rem 0.9rem;
+  background: var(--surface);
+}
+[data-channels] strong { grid-column: 1; }
+.channel-state { grid-column: 2; font-weight: 700; }
+.channel-detail { grid-column: 1 / -1; color: var(--muted); overflow-wrap: anywhere; font-size: 0.95rem; }
+[data-channels] li[data-state="package"] { border-left-color: var(--ok); }
+[data-channels] li[data-state="package"] .channel-state { color: var(--ok); }
+[data-channels] li[data-state="metadata-only"] { border-left-color: var(--muted); }
+[data-channels] li[data-state="metadata-only"] .channel-state { color: var(--muted); }
+[data-channels] li[data-state="unavailable"] { border-left-color: var(--danger); }
+[data-channels] li[data-state="unavailable"] .channel-state { color: var(--danger); }
+@media (max-width: 34rem) {
+  [data-channels] li { grid-template-columns: 1fr; }
+  .channel-state, [data-channels] strong { grid-column: 1; }
+}
+
 .next-step {
   margin-top: 2.5rem;
   padding: 1rem 1.2rem;

@@ -1,6 +1,6 @@
 # HivePoA Storage Preview — distribution front door (generated)
 
-Generated, non-authoritative frontend mirror from private HivePoA source commit `4519b167d76f959a1155c2fda9c890a684929861`.
+Generated, non-authoritative frontend mirror from private HivePoA source commit `99c1343e4e7b67cbb64dcef796e1c4e91eead3b8`.
 It is not a source repository, package channel, signed bootstrap handoff, or storage-release
 authority. Tester packages and the package-bound storage-control web interface remain
 signed-IPFS-only.

@@ -38,7 +38,7 @@
     <p class="status" data-state="blocked">This page needs JavaScript to check the signed release index. Nothing is downloaded or verified without it.</p>
   </noscript>
     <h1>Get started</h1>
-    <p><strong>Current tip:</strong> <code>2.0.1-storage-preview.4</code> (supervised one-PC beta). <code>.2</code> and <code>.3</code> remain <strong>withdrawn</strong>. GitHub is a byte mirror only — verify SHA-256 before running.</p>
+    <p><strong>Current tip:</strong> <code data-field="version">checking the signed index…</code> (supervised one-PC beta). Any release the signed index marks <strong>revoked</strong> is withdrawn and not approved for testing; Releases lists each one with its recorded reason. GitHub is a byte mirror only — verify SHA-256 before running.</p>
     <p>Windows will probably warn you about this file: it is not code-signed. Expect <strong>“isn’t commonly downloaded”</strong> in the browser and possibly <strong>“Windows protected your PC”</strong> on first run. Verify the SHA-256 first — once it matches, you have proof it is the exact file the operator published.</p>
     <ol>
       <li>Prefer the authenticated <strong>three-file handoff</strong> when the operator issues one; otherwise use the signed Pages tip <code>.4</code> and verify the SHA-256 on Verify.</li>
@@ -50,20 +50,22 @@
     <p>This page never auto-downloads packages and never silently switches mirrors. IPFS-first signed artifacts plus an independently authenticated handoff are the authority.</p>
 
     <h2>Friend card (Forever Drive + voluntary pins)</h2>
-    <p>Storage Preview identity is a <strong>private enrollment packet</strong> bound to your Hive username — there is no Keychain login form in the portable app. Friend usernames for this cohort:</p>
+    <p>These steps work today on their own. The app runs its own embedded coordinator, so it needs no enrollment packet to contribute storage:</p>
+    <ol>
+      <li>Download the current tip <code data-field="version">checking the signed index…</code> from Download (or operator handoff), verify SHA-256, and launch.</li>
+      <li>Opt in Forever Drive at 20% inside the app.</li>
+      <li>Browse → pin videos you choose. Voluntary pins share the same 20% quota; Forever Drive reservations keep priority. No compute, Brain, Neura, or paid rewards are claimed from local pins alone.</li>
+    </ol>
+
+    <h3>Joining the shared pool is not available yet</h3>
+    <p>Pool assignment needs a private enrollment packet issued against a <strong>live HTTPS coordinator</strong>, and no such coordinator is published today. Until the operator announces one and issues you a packet, the tray's <strong>Copy Enrollment Request</strong> and <strong>Import Private Enrollment</strong> items have nothing to register against and will fail closed rather than pretend. That is expected, not a fault in your setup.</p>
+    <p><code>readyForPool</code> stays truthful throughout — embedded-only mode is deliberately not pool-ready, and the app will keep saying so until a real coordinator assigns work.</p>
+    <p>When enrollment does open, identity will be a <strong>private enrollment packet</strong> bound to your Hive username — there is no Keychain login form in the portable app. Names reserved for this cohort:</p>
     <ul>
       <li><code>dandandan123</code></li>
       <li><code>app.operator</code></li>
       <li><code>coolmole</code></li>
     </ul>
-    <ol>
-      <li>Download tip <code>2.0.1-storage-preview.4</code> from Download (or operator handoff), verify SHA-256, and launch.</li>
-      <li>Tray → <strong>Copy Enrollment Request</strong> → send that JSON to the operator.</li>
-      <li>Import the private enrollment packet for your assigned name above.</li>
-      <li>Opt in Forever Drive at 20%.</li>
-      <li>Leave the app running so the coordinator can auto-allocate and run Proof-of-Access when the live HTTPS pool assigns work. <code>readyForPool</code> stays truthful — embedded-only mode is not pool-ready.</li>
-      <li>Browse → pin videos you choose. Voluntary pins share the same 20% quota; Forever Drive reservations keep priority. No compute, Brain, Neura, or paid rewards are claimed from local pins alone.</li>
-    </ol>
 
     <h2>If the app does not open</h2>
     <p>Storage Preview only recovers a <strong>verified owned</strong> leftover on its local port. A healthy foreign or unverifiable listener is never force-killed. If an older Storage Preview window is already open, use the system-tray icon — a second double-click focuses that window.</p>

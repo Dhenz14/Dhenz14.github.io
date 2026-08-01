@@ -1,9 +1,9 @@
 {
   "schema": "hivepoa.distribution-mirror-publish.v1",
-  "publishedAt": "2026-07-31T19:19:51.290Z",
+  "publishedAt": "2026-08-01T19:32:21.245Z",
   "bundleDir": "/home/theyc/projects/HivePoA-lanes/dual-channel-truth-20260731/dist-distribution",
   "targetDir": "/home/theyc/projects/HivePoA-lanes/dhenz14-github-io/HivePoA",
-  "sourceCommit": "4519b167d76f959a1155c2fda9c890a684929861",
+  "sourceCommit": "99c1343e4e7b67cbb64dcef796e1c4e91eead3b8",
   "replacedDirs": [
     "download",
     "verify",
@@ -24,10 +24,7 @@
     "build-receipt.json",
     ".nojekyll"
   ],
-  "retainedMirrorEntries": [
-    "cid-mirrors/bafkreibdvxhdmkxbnf6iqnvmloc3q3t2ngq34psakn5ys26yddn3z7xr5q.json",
-    "cid-mirrors/bafkreihsrbx7h4sycmuf5mkmogpbvhqtbbhp7lajwxulrvjslsslzmjjky.json"
-  ],
+  "retainedMirrorEntries": [],
   "untouched": [
     "assets",
     "favicon.png",

@@ -41,7 +41,7 @@
     <p><strong>Current tip:</strong> <code data-field="version">checking the signed index…</code> (supervised one-PC beta). Any release the signed index marks <strong>revoked</strong> is withdrawn and not approved for testing; Releases lists each one with its recorded reason. GitHub is a byte mirror only — verify SHA-256 before running.</p>
     <p>Windows will probably warn you about this file: it is not code-signed. Expect <strong>“isn’t commonly downloaded”</strong> in the browser and possibly <strong>“Windows protected your PC”</strong> on first run. Verify the SHA-256 first — once it matches, you have proof it is the exact file the operator published.</p>
     <ol>
-      <li>Prefer the authenticated <strong>three-file handoff</strong> when the operator issues one; otherwise use the signed Pages tip <code>.4</code> and verify the SHA-256 on Verify.</li>
+      <li>Prefer the authenticated <strong>three-file handoff</strong> when the operator issues one; otherwise use the signed Pages tip shown on Download and verify its SHA-256 on Verify.</li>
       <li>Two channels carry releases: <strong>GitHub Releases</strong> and <strong>IPFS</strong>. They are signed against the same release index, but a given build may publish the package to one and only signed metadata to the other — Download says which is which. Whichever you use, the SHA-256 you verify is the same.</li>
       <li>Confirm the pinned channel-index fingerprint locally; the webpage alone is not the trust root.</li>
       <li>Verify filename, bytes, and SHA-256 before running anything.</li>

@@ -10,12 +10,12 @@ export const PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256 =
   "11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081";
 
 export const TESTER_NETWORK_RELEASE = Object.freeze({
-  version: "2.0.1-storage-preview.6",
-  releaseSequence: 6,
-  githubReleaseTag: "storage-preview-2.0.1-6",
+  version: "2.0.1-storage-preview.7",
+  releaseSequence: 7,
+  githubReleaseTag: "storage-preview-2.0.1-7",
   githubRepository: "Dhenz14/HivePoA-Distribution",
   githubRepositoryId: 1316835999,
-  primaryArtifact: "SpiritBomb-2.0.1-storage-preview.6-x86_64.AppImage",
+  primaryArtifact: "SpiritBomb-2.0.1-storage-preview.7-x86_64.AppImage",
   platform: "linux",
   architecture: "x64",
 });
@@ -23,6 +23,7 @@ export const TESTER_NETWORK_RELEASE = Object.freeze({
 export const TESTER_NETWORK_METADATA_ROLES = Object.freeze([
   "manifest",
   "receipt",
+  "runtimeAcceptance",
   "publicationProof",
 ]);
 
@@ -126,7 +127,9 @@ function fixedTesterPolicy(policy) {
 
 function validateMetadataBindings(release) {
   const mirrors = release.metadataMirrors;
-  if (!exactKeys(mirrors, TESTER_NETWORK_METADATA_ROLES)) return "metadata mirror roles must be exactly manifest, receipt, and publicationProof";
+  if (!exactKeys(mirrors, TESTER_NETWORK_METADATA_ROLES)) {
+    return "metadata mirror roles must include manifest, receipt, runtimeAcceptance, and publicationProof";
+  }
   for (const role of TESTER_NETWORK_METADATA_ROLES) {
     const binding = mirrors[role];
     if (!exactKeys(binding, ["filename", "bytes", "sha256", "cid", "path"])
@@ -152,6 +155,7 @@ function validateMetadataBindings(release) {
     || release.manifestSha256 !== mirrors.manifest.sha256
     || release.cidMirrorPath !== mirrors.manifest.path
     || release.receiptCid !== mirrors.receipt.cid
+    || release.runtimeAcceptanceCid !== mirrors.runtimeAcceptance.cid
     || release.publicationProofCid !== mirrors.publicationProof.cid) {
     return "release metadata pointers disagree with metadataMirrors";
   }
@@ -169,7 +173,7 @@ function validateFixedRelease(release) {
     || release.platform !== fixed.platform
     || release.architecture !== fixed.architecture
     || release.channel !== "beta" || release.revoked !== false) {
-    return "current tip is not the fixed Tester Network .6 release";
+    return "current tip is not the fixed Tester Network .7 release";
   }
   if (!Number.isSafeInteger(release.bytes) || release.bytes < 1
     || !CID.test(release.primaryArtifactCid)
@@ -206,7 +210,33 @@ export async function verifyAuthorizedTesterNetworkIndex(index, options = {}) {
       return rejected("index is not currently valid", signed);
     }
     if (!Array.isArray(signed.releases) || signed.releases.length < 1) return rejected("no releases in index", signed);
-    if (signed.latestBetaSequence !== TESTER_NETWORK_RELEASE.releaseSequence) return rejected("signed tip is not Tester Network .6", signed);
+    if (signed.latestBetaSequence !== TESTER_NETWORK_RELEASE.releaseSequence) return rejected("signed tip is not Tester Network .7", signed);
+    const previous = signed.previousIndex;
+    if (!exactKeys(previous, ["version", "releaseSequence", "filename", "bytes", "sha256", "cid", "githubReleaseTag"])
+      || previous.version !== "2.0.1-storage-preview.6" || previous.releaseSequence !== 6
+      || previous.filename !== "hivepoa-release-channel-index-2.0.1-storage-preview.6.json"
+      || previous.bytes !== 14512
+      || previous.sha256 !== "e329fa0d4d06ef80e09cac2a5fd6a6e83510937da8d5198d06d7ba0c59820477"
+      || previous.cid !== "bafkreihdfh5a2tig56aobhfmfjp5njxiguijg7ni2umy2bwxxigftaqeo4"
+      || previous.githubReleaseTag !== "storage-preview-2.0.1-6") {
+      return rejected("signed .6 predecessor binding is missing or invalid", signed);
+    }
+    const predecessor = signed.releases.filter((entry) => entry?.releaseSequence === 6);
+    const predecessorRevocations = Array.isArray(signed.revocations)
+      ? signed.revocations.filter((entry) => entry?.releaseSequence === 6)
+      : [];
+    if (predecessor.length !== 1 || predecessor[0].revoked !== true
+      || predecessorRevocations.length !== 1
+      || predecessorRevocations[0].reason
+        !== "WITHDRAWN: publication completed before two-worker public acceptance; no acceptance receipt was produced; superseded by .7") {
+      return rejected("unaccepted .6 predecessor is not withdrawn", signed);
+    }
+    const sequences = signed.releases.map((entry) => entry?.releaseSequence);
+    if (new Set(sequences).size !== sequences.length
+      || sequences.some((sequence, index) => index > 0 && sequence >= sequences[index - 1])
+      || signed.revocationStateVersion !== 4) {
+      return rejected("release ordering or revocation state is invalid", signed);
+    }
     const matches = signed.releases.filter((entry) => entry?.releaseSequence === signed.latestBetaSequence);
     if (matches.length !== 1 || matches[0].revoked === true) return rejected("approved tip sequence is missing, duplicated, or revoked", signed);
     if (Array.isArray(signed.revocations)

@@ -1,0 +1,286 @@
+{
+  "schema": "https://hivepoa.io/schemas/hivepoa-release-channel-index.v1.json",
+  "schemaVersion": 1,
+  "signed": {
+    "product": "HivePoA Storage Preview",
+    "profile": "storage-preview-desktop-x64.v2",
+    "createdAt": "2026-08-03T08:20:58.924Z",
+    "expiresAt": "2026-11-01T08:20:58.924Z",
+    "latestBetaSequence": 6,
+    "latestStableSequence": 0,
+    "capabilityCeilingText": "Tester Network storage PoA; 100 valueless test credits exactly once per accepted proof; no transfer, redemption, monetary reward, posting key, or Hive transaction",
+    "signer": "hivepoa-storage-preview-operator",
+    "mirrorParity": true,
+    "releases": [
+      {
+        "version": "2.0.1-storage-preview.6",
+        "releaseSequence": 6,
+        "channel": "beta",
+        "manifestSha256": "d99ae92cdfe42bbe7d78db578af7a242f57ab324941ac7afcf0facde9c0b4c50",
+        "manifestCid": "bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka",
+        "publicationProofCid": "bafkreihnwn65vtnyrohj5vbi6efzv3vvlfholk7pz2nqirutic63qcevea",
+        "receiptCid": "bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge",
+        "githubReleaseTag": "storage-preview-2.0.1-6",
+        "githubRepository": "Dhenz14/HivePoA-Distribution",
+        "githubRepositoryId": 1316835999,
+        "githubManifestAsset": "tester-network-manifest-2.0.1-storage-preview.6.json",
+        "platform": "linux",
+        "architecture": "x64",
+        "bytes": 179361113,
+        "artifactDigests": {
+          "SpiritBomb-2.0.1-storage-preview.6-x86_64.AppImage": "9178c8d4a6c7f3e1fe210061b712c63b232d77554883d0c18576331825b76212",
+          "tester-network-manifest-2.0.1-storage-preview.6.json": "d99ae92cdfe42bbe7d78db578af7a242f57ab324941ac7afcf0facde9c0b4c50",
+          "tester-network-publication-receipt-2.0.1-storage-preview.6.json": "134242b5643598da3bad84fc437e4759196737139cb80f7f803df960f5c24731",
+          "tester-network-publication-proof-2.0.1-storage-preview.6.json": "edb37ddacdb88b8e9ed428f10b9aeeb5594ee5abefce9b04469340bdb8089520"
+        },
+        "primaryArtifactCid": "bafybeict7ct2hhbp74cvwf3j3kh345n7wcedpzsnfolcqo65hqvibg3h5i",
+        "primaryArtifact": "SpiritBomb-2.0.1-storage-preview.6-x86_64.AppImage",
+        "tufVersion": 6,
+        "revoked": false,
+        "ipfsGateways": [
+          "https://dweb.link/ipfs",
+          "https://ipfs.filebase.io/ipfs"
+        ],
+        "cidMirrorPath": "cid-mirrors/bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka.json",
+        "metadataMirrors": {
+          "manifest": {
+            "filename": "tester-network-manifest-2.0.1-storage-preview.6.json",
+            "bytes": 6728,
+            "sha256": "d99ae92cdfe42bbe7d78db578af7a242f57ab324941ac7afcf0facde9c0b4c50",
+            "cid": "bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka",
+            "path": "cid-mirrors/bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka.json"
+          },
+          "receipt": {
+            "filename": "tester-network-publication-receipt-2.0.1-storage-preview.6.json",
+            "bytes": 1826,
+            "sha256": "134242b5643598da3bad84fc437e4759196737139cb80f7f803df960f5c24731",
+            "cid": "bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge",
+            "path": "cid-mirrors/bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge.json"
+          },
+          "publicationProof": {
+            "filename": "tester-network-publication-proof-2.0.1-storage-preview.6.json",
+            "bytes": 5610,
+            "sha256": "edb37ddacdb88b8e9ed428f10b9aeeb5594ee5abefce9b04469340bdb8089520",
+            "cid": "bafkreihnwn65vtnyrohj5vbi6efzv3vvlfholk7pz2nqirutic63qcevea",
+            "path": "cid-mirrors/bafkreihnwn65vtnyrohj5vbi6efzv3vvlfholk7pz2nqirutic63qcevea.json"
+          }
+        },
+        "testerNetwork": {
+          "capability": "storage-poa-tester-network-v1",
+          "runbook": {
+            "path": "docs/handoffs/STORAGE_POA_TESTER_NETWORK_RUNBOOK_20260802.md",
+            "sha256": "c6fd4b9259bf9e87559596e0f063d556714e9223823f8b5e9d6c334bc30cdeb4"
+          },
+          "bootstrap": {
+            "minimumWorkers": 2,
+            "distinctWorkerIdentities": true,
+            "operatorEnrollmentRequired": true,
+            "realKuboRequired": true,
+            "minimumHiveApiEndpoints": 3
+          },
+          "proofPolicy": {
+            "multiBlock": true,
+            "irreversibleEntropyQuorum": "2-of-3-hive-api",
+            "replayIdempotent": true,
+            "restartPersistenceRequired": true,
+            "revocationSupported": true
+          },
+          "creditPolicy": {
+            "schema": "hivepoa.storage-poa-test-credit-policy.v1",
+            "amountPerAcceptedProof": 100,
+            "replayAward": 0,
+            "unit": "test-credit",
+            "awardExactlyOnce": true,
+            "transferable": false,
+            "redeemable": false,
+            "monetaryValue": false
+          },
+          "hiveBoundary": {
+            "readOnlyBlockData": true,
+            "postingKeyRequired": false,
+            "broadcastsTransactions": false,
+            "fabricatedTransactionIds": false
+          }
+        }
+      },
+      {
+        "version": "2.0.1-storage-preview.5",
+        "releaseSequence": 5,
+        "channel": "beta",
+        "manifestSha256": "459f050699d215ba2dca7c0dbd3aa45f06f46b1d3a7e2441b2c418be32fd94fe",
+        "manifestCid": "bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y",
+        "publicationProofCid": "bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y",
+        "receiptCid": "bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y",
+        "githubReleaseTag": "storage-preview-2.0.1-5",
+        "githubRepository": "Dhenz14/HivePoA-Distribution",
+        "githubRepositoryId": 1316835999,
+        "githubManifestAsset": "ipfs-release-manifest-v2.0.1-storage-preview.5.json",
+        "platform": "windows",
+        "architecture": "x64",
+        "bytes": 123798810,
+        "artifactDigests": {
+          "SpiritBomb-Portable-2.0.1-storage-preview.5.exe": "79b91356eb39daa6dac5d88882d02df63fcf969c3a7c00b0c8e932a66c539570",
+          "ipfs-release-manifest-v2.0.1-storage-preview.5.json": "459f050699d215ba2dca7c0dbd3aa45f06f46b1d3a7e2441b2c418be32fd94fe"
+        },
+        "primaryArtifactCid": "bafybeicdwxaa73mj4ypk2ockpnzgizlelp2ytqwgkkjjibzlgkfs32yn4u",
+        "primaryArtifact": "SpiritBomb-Portable-2.0.1-storage-preview.5.exe",
+        "tufVersion": 1,
+        "revoked": false,
+        "ipfsGateways": [
+          "https://dweb.link/ipfs",
+          "https://ipfs.filebase.io/ipfs"
+        ],
+        "cidMirrorPath": "cid-mirrors/bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y.json"
+      },
+      {
+        "version": "2.0.1-storage-preview.4",
+        "releaseSequence": 4,
+        "channel": "beta",
+        "manifestSha256": "cb8f3d0cde71b6101dfc9dc495662c6aebd881d019ec46fd1566d18a9936e7ad",
+        "manifestCid": "bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu",
+        "publicationProofCid": "bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu",
+        "receiptCid": "bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu",
+        "githubReleaseTag": "storage-preview-2.0.1-4",
+        "githubRepository": "Dhenz14/HivePoA-Distribution",
+        "githubRepositoryId": 1316835999,
+        "githubManifestAsset": "ipfs-release-manifest-v2.0.1-storage-preview.4.json",
+        "platform": "windows",
+        "architecture": "x64",
+        "bytes": 125623659,
+        "artifactDigests": {
+          "SpiritBomb-Portable-2.0.1-storage-preview.4.exe": "e273ab1129e31aa7a58f5aa725f70b2e0589bb5bdbb651239672a83c1dad28ae",
+          "ipfs-release-manifest-v2.0.1-storage-preview.4.json": "cb8f3d0cde71b6101dfc9dc495662c6aebd881d019ec46fd1566d18a9936e7ad"
+        },
+        "primaryArtifact": "SpiritBomb-Portable-2.0.1-storage-preview.4.exe",
+        "tufVersion": 1,
+        "revoked": true,
+        "ipfsGateways": [
+          "https://dweb.link/ipfs",
+          "https://ipfs.filebase.io/ipfs"
+        ],
+        "cidMirrorPath": "cid-mirrors/bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu.json"
+      },
+      {
+        "version": "2.0.1-storage-preview.3",
+        "releaseSequence": 3,
+        "channel": "beta",
+        "manifestSha256": "feefa0e2dfbdb0725e052f8b0aae3d7dfbe80cc136f22ef6fcdeb0aeb7fb8552",
+        "manifestCid": "bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki",
+        "publicationProofCid": "bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki",
+        "receiptCid": "bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki",
+        "githubReleaseTag": "storage-preview-2.0.1-3",
+        "githubRepository": "Dhenz14/HivePoA-Distribution",
+        "githubRepositoryId": 1316835999,
+        "githubManifestAsset": "ipfs-release-manifest-v2.0.1-storage-preview.3.json",
+        "platform": "windows/linux",
+        "architecture": "x64",
+        "bytes": 125620962,
+        "artifactDigests": {
+          "SpiritBomb-Portable-2.0.1-storage-preview.3.exe": "93c9d1ee63a40ff9600a9004d0b8621864abc9c60db822216abab0d23a204b77",
+          "ipfs-release-manifest-v2.0.1-storage-preview.3.json": "feefa0e2dfbdb0725e052f8b0aae3d7dfbe80cc136f22ef6fcdeb0aeb7fb8552"
+        },
+        "primaryArtifact": "SpiritBomb-Portable-2.0.1-storage-preview.3.exe",
+        "tufVersion": 1,
+        "revoked": true,
+        "ipfsGateways": [
+          "https://dweb.link/ipfs",
+          "https://ipfs.filebase.io/ipfs"
+        ],
+        "cidMirrorPath": "cid-mirrors/bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki.json"
+      },
+      {
+        "version": "2.0.1-storage-preview.2",
+        "releaseSequence": 2,
+        "channel": "beta",
+        "manifestSha256": "df2efd735564927a7981c108dbe11d0653fe9c36445e6f8821eefb9c0e155286",
+        "manifestCid": "bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy",
+        "publicationProofCid": "bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy",
+        "receiptCid": "bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy",
+        "githubReleaseTag": "storage-preview-2.0.1-2",
+        "githubRepository": "Dhenz14/HivePoA-Distribution",
+        "githubRepositoryId": 1316835999,
+        "githubManifestAsset": "ipfs-release-manifest-v2.0.1-storage-preview.2.json",
+        "platform": "windows/linux",
+        "architecture": "x64",
+        "bytes": 125619577,
+        "artifactDigests": {
+          "SpiritBomb-Portable-2.0.1-storage-preview.2.exe": "ac1b08969d53ce4338b0768f21144e14934c5b8e65bdc9f175fd0d2e2fbe8015",
+          "ipfs-release-manifest-v2.0.1-storage-preview.2.json": "df2efd735564927a7981c108dbe11d0653fe9c36445e6f8821eefb9c0e155286"
+        },
+        "primaryArtifact": "SpiritBomb-Portable-2.0.1-storage-preview.2.exe",
+        "tufVersion": 1,
+        "revoked": true,
+        "ipfsGateways": [
+          "https://dweb.link/ipfs",
+          "https://ipfs.filebase.io/ipfs"
+        ],
+        "cidMirrorPath": "cid-mirrors/bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy.json"
+      },
+      {
+        "version": "2.0.1-storage-preview.1",
+        "releaseSequence": 1,
+        "channel": "beta",
+        "manifestSha256": "73f15a3a205eb212b39d95d88bf4a7e4d3b59e0af868d528af890f9af0d03007",
+        "manifestCid": "bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4",
+        "publicationProofCid": "bafkreihsrbx7h4sycmuf5mkmogpbvhqtbbhp7lajwxulrvjslsslzmjjky",
+        "receiptCid": "bafkreibdvxhdmkxbnf6iqnvmloc3q3t2ngq34psakn5ys26yddn3z7xr5q",
+        "githubReleaseTag": "storage-preview-2.0.1",
+        "githubRepository": "Dhenz14/HivePoA-Distribution",
+        "githubRepositoryId": 1316835999,
+        "githubManifestAsset": "ipfs-release-manifest-v2.0.1-storage-preview.1.json",
+        "platform": "windows/linux",
+        "architecture": "x64",
+        "bytes": 450121803,
+        "artifactDigests": {
+          "HivePoA-Storage-Runtime-Proof-2.0.1-storage-preview.1-universal.json": "9c54b21cf029af956b2c3557dc32413f1748c13a17ba79194fcd1cb771e7cace",
+          "HivePoA-Storage-Tester-2.0.1-storage-preview.1-universal.tar.gz": "802f863fe6ab7f61b4443c3a3a416fd31483b4f1f12afe7521b481011ceb805b",
+          "HivePoA-Web-Interface-2.0.1-storage-preview.1-universal.tar.gz": "bc96e5534a907058ba4f100ff2ba1f33a22f14c45f4d6eca263135eb05f6f074",
+          "SpiritBomb-2.0.1-storage-preview.1-amd64.deb": "262b36468874403c2518c3e37676daac871d6ac1a228ffa0fa7ebb4cddb14a46",
+          "SpiritBomb-2.0.1-storage-preview.1-x86_64.AppImage": "58db30db54e2167d53e758fcb5534f4b7f728dc2f128c149aa5f58e31943d00a",
+          "SpiritBomb-Portable-2.0.1-storage-preview.1.exe": "33b93110fc12a68117ef8f37a29984ddfc6564249e8a2a01c174f0d1478346c6"
+        },
+        "primaryArtifact": "SpiritBomb-Portable-2.0.1-storage-preview.1.exe",
+        "tufVersion": 1,
+        "revoked": false,
+        "ipfsGateways": [
+          "https://dweb.link/ipfs",
+          "https://ipfs.filebase.io/ipfs",
+          "http://192.168.1.117:8080/ipfs"
+        ],
+        "cidMirrorPath": "cid-mirrors/bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4.json"
+      }
+    ],
+    "revocations": [
+      {
+        "releaseSequence": 2,
+        "revokedAt": "2026-07-30T21:45:53.540Z",
+        "reason": "WITHDRAWN: not approved for testing; incomplete proof; do not install"
+      },
+      {
+        "releaseSequence": 3,
+        "revokedAt": "2026-07-30T21:45:53.540Z",
+        "reason": "WITHDRAWN: superseded by storage-preview.4 remediation tip"
+      },
+      {
+        "releaseSequence": 4,
+        "revokedAt": "2026-07-31T19:08:57.238Z",
+        "reason": "WITHDRAWN: never starts — shadowed-require temporal dead zone in the packaged main process; superseded by .5"
+      }
+    ],
+    "revocationStateVersion": 3
+  },
+  "signatures": [
+    {
+      "keyId": "hivepoa-storage-preview-operator",
+      "algorithm": "ed25519",
+      "signature": "gjJGdah7W3rQzYd4L163CCVnykx7nDmoradXATwasfQ0BE/SFSQHDt8iKc88bJzWtqac9W4XeFJQfAwIoawqBg==",
+      "publicKeySha256": "11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081"
+    }
+  ],
+  "trustBootstrap": {
+    "keyId": "hivepoa-storage-preview-operator",
+    "algorithm": "ed25519",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAzExvNnIwqDCR4M9UfX/LRVCgd752NHpcPrTmOwM5xvI=\n-----END PUBLIC KEY-----\n",
+    "publicKeySha256": "11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081"
+  }
+}

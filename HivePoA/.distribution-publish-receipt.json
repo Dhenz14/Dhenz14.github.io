@@ -1,10 +1,10 @@
 {
   "schema": "hivepoa.distribution-mirror-publish.v1",
-  "publishedAt": "2026-08-03T08:22:10.575Z",
+  "publishedAt": "2026-08-03T20:13:07.856Z",
   "bundleId": "dist-distribution",
   "targetRepository": "Dhenz14/Dhenz14.github.io",
   "targetSubdirectory": "HivePoA",
-  "sourceCommit": "2d42c3fdc1f02494d400c4baacdf19c80d489155",
+  "sourceCommit": "71a29b21c8cd62c503582aefe76c7b303aa61708",
   "replacedDirs": [
     "download",
     "verify",
@@ -27,19 +27,25 @@
     ".nojekyll"
   ],
   "retainedMirrorEntries": [
+    "cid-mirrors/bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge.json",
     "cid-mirrors/bafkreibdvxhdmkxbnf6iqnvmloc3q3t2ngq34psakn5ys26yddn3z7xr5q.json",
     "cid-mirrors/bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y.json",
     "cid-mirrors/bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4.json",
     "cid-mirrors/bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy.json",
     "cid-mirrors/bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu.json",
+    "cid-mirrors/bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka.json",
     "cid-mirrors/bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki.json",
+    "cid-mirrors/bafkreihnwn65vtnyrohj5vbi6efzv3vvlfholk7pz2nqirutic63qcevea.json",
     "cid-mirrors/bafkreihsrbx7h4sycmuf5mkmogpbvhqtbbhp7lajwxulrvjslsslzmjjky.json"
   ],
   "reusedImmutableEntries": [],
   "newImmutableEntries": [
-    "cid-mirrors/bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge.json",
-    "cid-mirrors/bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka.json",
-    "cid-mirrors/bafkreihnwn65vtnyrohj5vbi6efzv3vvlfholk7pz2nqirutic63qcevea.json"
+    "cid-mirrors/bafkreicglv7rvpweykprefu72z742ynj6by3p6vmwtnnqzti553njjvg24.json",
+    "cid-mirrors/bafkreicnn2esivmzvtaqucmjcyysqixqaff2z32glicfs6ifsuckwvdc2a.json",
+    "cid-mirrors/bafkreiepwx7dxa4ljdfr2ygtclzfex7qhmwjpxdbgl54v6pcmdtjenpdaq.json",
+    "cid-mirrors/bafkreifzenpkcb4pcu7ih5j3eb4jf6ooki6vnunxqg3bjd5a4tmrwwguly.json",
+    "cid-mirrors/bafkreihdfh5a2tig56aobhfmfjp5njxiguijg7ni2umy2bwxxigftaqeo4.json",
+    "cid-mirrors/bafkreihhvomr6ncawwsg6fd4ma5rkrtkpsqgqzdyu4w6yd7egdzh7rqqte.json"
   ],
   "untouched": [
     "assets",
@@ -50,7 +56,7 @@
     "gateway.json"
   ],
   "targetIdentity": {
-    "head": "8c35d64482b8ea849bf0bd788c20d88f2ae7dcc5",
+    "head": "8d9a8ff704deb43ccdded0005d684e108e9e5651",
     "repositoryId": 1307028925
   }
 }

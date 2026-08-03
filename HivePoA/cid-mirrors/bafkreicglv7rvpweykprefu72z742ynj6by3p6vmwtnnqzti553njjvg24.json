@@ -1,0 +1,114 @@
+{
+  "schema": "hivepoa.tester-network-runtime-acceptance.v1",
+  "schemaVersion": 1,
+  "signed": {
+    "releaseVersion": "2.0.1-storage-preview.7",
+    "releaseSequence": 7,
+    "manifest": {
+      "filename": "tester-network-manifest-2.0.1-storage-preview.7.json",
+      "bytes": 6728,
+      "sha256": "8fb5fe3b838b48cb1d60d312f2525ff03b2c97dc6132fbcaf9e260e69235e304",
+      "cid": "bafkreiepwx7dxa4ljdfr2ygtclzfex7qhmwjpxdbgl54v6pcmdtjenpdaq"
+    },
+    "package": {
+      "filename": "SpiritBomb-2.0.1-storage-preview.7-x86_64.AppImage",
+      "bytes": 181632556,
+      "sha256": "b6d79ef80986cbc5967ab58d2ae4678a0acb6e7ad0856a182e0c2073f4ffadef",
+      "cid": "bafybeibhwapxwf5ojdtrw7pe23ijstbdt6pbzz6gqcdmnr5lhu2564pqqm"
+    },
+    "acceptance": {
+      "schema": "hivepoa.storage-poa-two-worker-runtime-acceptance.v1",
+      "status": "ACCEPTED",
+      "startedAt": "2026-08-03T19:43:25.047Z",
+      "completedAt": "2026-08-03T19:57:39.677Z",
+      "publicDistribution": {
+        "stage": "pre-publication-candidate",
+        "pagesUrl": null,
+        "version": "2.0.1-storage-preview.7",
+        "releaseSequence": 7,
+        "sourceCommit": "71a29b21c8cd62c503582aefe76c7b303aa61708",
+        "sourceTree": "9f8a505e72d1788554872c6263eda64c14d322b8",
+        "artifact": {
+          "filename": "SpiritBomb-2.0.1-storage-preview.7-x86_64.AppImage",
+          "bytes": 181632556,
+          "sha256": "b6d79ef80986cbc5967ab58d2ae4678a0acb6e7ad0856a182e0c2073f4ffadef",
+          "cid": "bafybeibhwapxwf5ojdtrw7pe23ijstbdt6pbzz6gqcdmnr5lhu2564pqqm"
+        },
+        "metadataCids": {},
+        "mirrorParity": false
+      },
+      "workers": {
+        "distinctNodeIdentityHashes": [
+          "75b06e615a51343442afcde976dd00120346a452bbcbbf7a3179b38a850032e0",
+          "9ebab307a6dfa27ef8533691d10403cc87abb6c80466028b2a9f1796515ed118"
+        ],
+        "distinctPeerIdentityHashes": [
+          "73d87fc3e48e51518e748cf80835465b3e596fd806a134436996ec19aa048e3a",
+          "c29da38c1c3ac8f8d1f99321bcc0428668a6a66aea174cfaf3ee96f9d1034bf9"
+        ],
+        "worker1": {
+          "credits": 100,
+          "acceptedProofs": 1
+        },
+        "worker2": {
+          "credits": 0,
+          "acceptedProofs": 0,
+          "revoked": true
+        }
+      },
+      "storage": {
+        "rootCid": "bafybeibhl2q46gy6apj36yzv2ydeacygapyr5gx5vqgf5otixcmohov3oe",
+        "payloadBytes": 787456,
+        "cumulativeSize": 787662,
+        "blockCount": 5,
+        "worker1PinnedAfterRestart": true,
+        "worker2PinnedAfterRestart": true
+      },
+      "poa": {
+        "challengeId": "50048951-4fab-45ad-9f0c-db364079636b",
+        "anchorTxId": null,
+        "anchorBlockNum": 108709499,
+        "anchorBlockId": "067ac67bb1d7453cf50ade997a8f72c18e1a90a1",
+        "entropyBlockNum": 108709737,
+        "entropyBlockId": "067ac769a147aa6324e0adb506e33c6f83698a16",
+        "hiveHeadQuorum": 2,
+        "hiveAnchorQuorum": 2,
+        "hiveEndpointHosts": [
+          "api.hive.blog",
+          "api.deathwing.me",
+          "hive-api.arcange.eu"
+        ],
+        "multiBlock": true,
+        "replayAdditionalCredits": 0
+      },
+      "persistence": {
+        "workersRestarted": true,
+        "coordinatorRestarted": true,
+        "creditsPersisted": true,
+        "pinsPersisted": true,
+        "enrollmentPersisted": true,
+        "workerKeysResignedAfterRestart": true,
+        "revocationPersisted": true
+      },
+      "authorityBoundary": {
+        "testOnly": true,
+        "unit": "test-credit",
+        "transferable": false,
+        "redeemable": false,
+        "monetaryValue": false,
+        "postingKey": false,
+        "transactionBroadcast": false,
+        "fabricatedTransactionIds": false
+      }
+    },
+    "signedAt": "2026-08-03T19:58:01.272Z"
+  },
+  "signatures": [
+    {
+      "keyId": "hivepoa-storage-preview-operator",
+      "algorithm": "ed25519",
+      "signature": "ZDAjTzyp3pi8HeVqGxZL6CHFyKzcu0WVrk05WLavy5SWpwT2vIUoKQGJtJCBYCIfTawL5itCssub6S4jwmoXAw==",
+      "publicKeySha256": "11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081"
+    }
+  ]
+}

@@ -1,14 +1,16 @@
 {
   "schema": "hivepoa.distribution-mirror-publish.v1",
-  "publishedAt": "2026-08-01T21:20:55.873Z",
-  "bundleDir": "/home/theyc/projects/HivePoA-lanes/dual-channel-truth-20260731/dist-distribution",
-  "targetDir": "/home/theyc/projects/HivePoA-lanes/dhenz14-github-io/HivePoA",
-  "sourceCommit": "3d8c49ac9a3289abfc8c820901ae0ed2556c5227",
+  "publishedAt": "2026-08-03T08:22:10.575Z",
+  "bundleId": "dist-distribution",
+  "targetRepository": "Dhenz14/Dhenz14.github.io",
+  "targetSubdirectory": "HivePoA",
+  "sourceCommit": "2d42c3fdc1f02494d400c4baacdf19c80d489155",
   "replacedDirs": [
     "download",
     "verify",
     "releases",
     "get-started",
+    "tester-network",
     "distribution",
     "distribution-assets"
   ],
@@ -24,7 +26,21 @@
     "build-receipt.json",
     ".nojekyll"
   ],
-  "retainedMirrorEntries": [],
+  "retainedMirrorEntries": [
+    "cid-mirrors/bafkreibdvxhdmkxbnf6iqnvmloc3q3t2ngq34psakn5ys26yddn3z7xr5q.json",
+    "cid-mirrors/bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y.json",
+    "cid-mirrors/bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4.json",
+    "cid-mirrors/bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy.json",
+    "cid-mirrors/bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu.json",
+    "cid-mirrors/bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki.json",
+    "cid-mirrors/bafkreihsrbx7h4sycmuf5mkmogpbvhqtbbhp7lajwxulrvjslsslzmjjky.json"
+  ],
+  "reusedImmutableEntries": [],
+  "newImmutableEntries": [
+    "cid-mirrors/bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge.json",
+    "cid-mirrors/bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka.json",
+    "cid-mirrors/bafkreihnwn65vtnyrohj5vbi6efzv3vvlfholk7pz2nqirutic63qcevea.json"
+  ],
   "untouched": [
     "assets",
     "favicon.png",
@@ -32,5 +48,9 @@
     "404.html",
     "hivepoa-pages-boundary.json",
     "gateway.json"
-  ]
+  ],
+  "targetIdentity": {
+    "head": "8c35d64482b8ea849bf0bd788c20d88f2ae7dcc5",
+    "repositoryId": 1307028925
+  }
 }

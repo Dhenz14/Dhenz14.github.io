@@ -1,11 +1,11 @@
 {
   "schemaVersion": "hivepoa.distribution-pages-boundary.v1",
   "surface": "distribution-front-door",
-  "sourceCommit": "3d8c49ac9a3289abfc8c820901ae0ed2556c5227",
-  "artifactAuthority": "signed-release-index",
+  "sourceCommit": "2d42c3fdc1f02494d400c4baacdf19c80d489155",
+  "artifactAuthority": "none",
   "dualChannelDefault": "on-for-pages-front-door",
   "publicationAuthorized": true,
-  "testerPackageDistribution": "ipfs-and-github-releases",
+  "testerPackageDistribution": "ipfs-primary-with-github-byte-mirror",
   "publicDistributionRepository": "Dhenz14/HivePoA-Distribution",
   "publicDistributionRepositoryId": 1316835999,
   "publicRoot": "https://dhenz14.github.io/HivePoA/",
@@ -14,7 +14,8 @@
     "/download/",
     "/verify/",
     "/releases/",
-    "/get-started/"
+    "/get-started/",
+    "/tester-network/"
   ],
   "legacyRedirects": {
     "/distribution/": "/"

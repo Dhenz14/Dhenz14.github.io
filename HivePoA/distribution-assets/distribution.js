@@ -1,10 +1,10 @@
+import {
+  sha256Hex,
+  verifyAuthorizedTesterNetworkIndex,
+} from "./tester-network-authorization.js";
+
 (function () {
   "use strict";
-
-  // Out-of-band Pages pin (operator-controlled). The fixture PEM must match this
-  // fingerprint; Pages alone must not introduce a substitute key+signature pair.
-  var PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256 =
-    "11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081";
 
   function readFixture() {
     var node = document.getElementById("release-index-fixture");
@@ -32,130 +32,6 @@
     if (ipfs) ipfs.disabled = true;
   }
 
-  function canonicalStringify(value) {
-    if (value === null || typeof value !== "object") return JSON.stringify(value);
-    if (Array.isArray(value)) {
-      return "[" + value.map(canonicalStringify).join(",") + "]";
-    }
-    var keys = Object.keys(value).sort();
-    return "{" + keys.map(function (key) {
-      return JSON.stringify(key) + ":" + canonicalStringify(value[key]);
-    }).join(",") + "}";
-  }
-
-  function pemToSpki(pem) {
-    var b64 = String(pem || "")
-      .replace(/-----BEGIN PUBLIC KEY-----/g, "")
-      .replace(/-----END PUBLIC KEY-----/g, "")
-      .replace(/\s+/g, "");
-    var raw = atob(b64);
-    var bytes = new Uint8Array(raw.length);
-    for (var i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);
-    return bytes.buffer;
-  }
-
-  function b64ToBuf(b64) {
-    var raw = atob(b64);
-    var bytes = new Uint8Array(raw.length);
-    for (var i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);
-    return bytes.buffer;
-  }
-
-  async function sha256Hex(buffer) {
-    var digest = await crypto.subtle.digest("SHA-256", buffer);
-    return Array.from(new Uint8Array(digest)).map(function (b) {
-      return b.toString(16).padStart(2, "0");
-    }).join("");
-  }
-
-  async function verifySignatures(index) {
-    if (!index || index.schemaVersion !== 1) return { ok: false, reason: "unsupported index schema" };
-    if (!index.signed || !Array.isArray(index.signatures) || index.signatures.length < 1) {
-      return { ok: false, reason: "missing signatures" };
-    }
-    var bootstrap = index.trustBootstrap;
-    if (!bootstrap || !bootstrap.publicKeyPem || !bootstrap.publicKeySha256) {
-      return { ok: false, reason: "missing trust bootstrap public key" };
-    }
-    if (bootstrap.publicKeySha256 !== PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256) {
-      return { ok: false, reason: "trust bootstrap fingerprint is not the pinned Pages key" };
-    }
-    var signed = index.signed;
-    if (!signed.expiresAt || Date.now() >= Date.parse(signed.expiresAt)) {
-      return { ok: false, reason: "expired or missing expiry" };
-    }
-    if (!Array.isArray(signed.releases) || signed.releases.length < 1) {
-      return { ok: false, reason: "no releases in index" };
-    }
-    var tipSeq = Number(signed.latestBetaSequence || 0);
-    if (!Number.isFinite(tipSeq) || tipSeq < 1) {
-      return {
-        ok: false,
-        reason: "no approved tester tip (public .2/.3 withdrawn — use operator three-file handoff)",
-        signed: signed,
-      };
-    }
-    var selected = signed.releases.find(function (item) {
-      return item && item.revoked !== true && Number(item.releaseSequence) === tipSeq;
-    });
-    if (!selected) {
-      return {
-        ok: false,
-        reason: "approved tip sequence missing or revoked — not tester authority",
-        signed: signed,
-      };
-    }
-    if (signed.mirrorParity !== true) {
-      return { ok: false, reason: "mirror parity not proven in signed index", signed: signed };
-    }
-    if (!selected.githubReleaseTag || !selected.manifestCid || !selected.manifestSha256) {
-      return { ok: false, reason: "release missing dual-channel pointers" };
-    }
-
-    var payload = new TextEncoder().encode(canonicalStringify(signed));
-    var keyBytes = pemToSpki(bootstrap.publicKeyPem);
-    var keyHash = await sha256Hex(keyBytes);
-    if (keyHash !== bootstrap.publicKeySha256 || keyHash !== PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256) {
-      return { ok: false, reason: "trust bootstrap key fingerprint mismatch" };
-    }
-
-    var cryptoKey;
-    try {
-      cryptoKey = await crypto.subtle.importKey(
-        "spki",
-        keyBytes,
-        { name: "Ed25519" },
-        false,
-        ["verify"],
-      );
-    } catch (error) {
-      return { ok: false, reason: "browser cannot import Ed25519 trust key" };
-    }
-
-    var valid = 0;
-    for (var i = 0; i < index.signatures.length; i += 1) {
-      var entry = index.signatures[i];
-      if (!entry || entry.algorithm !== "ed25519") {
-        return { ok: false, reason: "unsupported signature algorithm" };
-      }
-      if (entry.publicKeySha256 !== bootstrap.publicKeySha256) {
-        return { ok: false, reason: "signature key is not the trust bootstrap key" };
-      }
-      if (String(entry.signature || "").indexOf("RESTORE_AUTHORIZED") === 0) {
-        return { ok: false, reason: "stub signature rejected" };
-      }
-      var ok = await crypto.subtle.verify(
-        { name: "Ed25519" },
-        cryptoKey,
-        b64ToBuf(entry.signature),
-        payload,
-      );
-      if (!ok) return { ok: false, reason: "invalid ed25519 signature" };
-      valid += 1;
-    }
-    if (valid < 1) return { ok: false, reason: "no valid signatures" };
-    return { ok: true, release: selected, signed: signed };
-  }
 
   function fillMeta(release, signed) {
     function set(field, value) {
@@ -839,26 +715,56 @@
     return githubAssetUrl(release, release.primaryArtifact) || githubReleaseUrl(release);
   }
 
+  function fillTesterNetwork(release) {
+    var policy = release && release.testerNetwork;
+    document.querySelectorAll("[data-tester-network]").forEach(function (node) {
+      node.hidden = !policy;
+    });
+    document.querySelectorAll("[data-storage-preview-only]").forEach(function (node) {
+      node.hidden = !!policy;
+    });
+    document.querySelectorAll("[data-tester-network-unavailable]").forEach(function (node) {
+      node.hidden = !!policy;
+      if (!policy) node.textContent = "The signed current tip does not authorize Tester Network mode.";
+    });
+    if (!policy) return;
+    var fields = {
+      capability: policy.capability,
+      workers: String(policy.bootstrap.minimumWorkers) + " distinct enrolled workers",
+      credits: String(policy.creditPolicy.amountPerAcceptedProof) + " valueless "
+        + policy.creditPolicy.unit + " units exactly once",
+      replay: String(policy.creditPolicy.replayAward),
+      entropy: policy.proofPolicy.irreversibleEntropyQuorum,
+    };
+    Object.keys(fields).forEach(function (name) {
+      document.querySelectorAll('[data-tester-field="' + name + '"]').forEach(function (node) {
+        node.textContent = fields[name];
+      });
+    });
+  }
+
   async function boot() {
     var loaded = readFixture();
     if (!loaded.ok) {
       failClosed(loaded.reason);
       return;
     }
-    var auth = await verifySignatures(loaded.index);
-    fillMeta(auth.release, loaded.index.signed);
-    fillList(loaded.index.signed);
-    fillArtifactTable(auth.release);
-    var ceiling = document.querySelector("[data-capability-ceiling]");
-    if (ceiling && loaded.index.signed && loaded.index.signed.capabilityCeilingText) {
-      ceiling.textContent = "Capability ceiling: " + loaded.index.signed.capabilityCeilingText;
-    }
+    var auth = await verifyAuthorizedTesterNetworkIndex(loaded.index);
     if (!auth.ok) {
+      fillTesterNetwork(null);
       failClosed(auth.reason);
-      wireHashing(auth.release);
+      wireHashing(null);
       wireCopyButtons();
       return;
     }
+    fillMeta(auth.release, auth.signed);
+    fillList(auth.signed);
+    fillArtifactTable(auth.release);
+    var ceiling = document.querySelector("[data-capability-ceiling]");
+    if (ceiling && auth.signed.capabilityCeilingText) {
+      ceiling.textContent = "Capability ceiling: " + auth.signed.capabilityCeilingText;
+    }
+    fillTesterNetwork(auth.release);
 
     var status = document.querySelector("[data-status]");
     if (status) status.textContent = "Signed dual-channel index verified. Downloads enabled.";

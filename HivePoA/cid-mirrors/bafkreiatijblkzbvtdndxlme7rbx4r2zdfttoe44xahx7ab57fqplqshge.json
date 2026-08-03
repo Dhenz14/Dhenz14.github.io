@@ -1,0 +1,46 @@
+{
+  "schema": "hivepoa.tester-network-publication-receipt.v1",
+  "schemaVersion": 1,
+  "signed": {
+    "releaseVersion": "2.0.1-storage-preview.6",
+    "releaseSequence": 6,
+    "manifest": {
+      "filename": "tester-network-manifest-2.0.1-storage-preview.6.json",
+      "bytes": 6728,
+      "sha256": "d99ae92cdfe42bbe7d78db578af7a242f57ab324941ac7afcf0facde9c0b4c50",
+      "cid": "bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka"
+    },
+    "package": {
+      "filename": "SpiritBomb-2.0.1-storage-preview.6-x86_64.AppImage",
+      "bytes": 179361113,
+      "sha256": "9178c8d4a6c7f3e1fe210061b712c63b232d77554883d0c18576331825b76212",
+      "cid": "bafybeict7ct2hhbp74cvwf3j3kh345n7wcedpzsnfolcqo65hqvibg3h5i"
+    },
+    "custody": {
+      "custodian": "self-hosted-hivepoa-coordinator",
+      "coordinatorPeerId": "12D3KooWBFKyqf2HkpBZz62w3gaFGwmoHmRzmBaWpqNoKgFXqQBV",
+      "pinState": "pinned",
+      "persistentAfterPublisherStop": true,
+      "releasePublisherStopped": true,
+      "packageReadback": {
+        "cid": "bafybeict7ct2hhbp74cvwf3j3kh345n7wcedpzsnfolcqo65hqvibg3h5i",
+        "bytes": 179361113,
+        "sha256": "9178c8d4a6c7f3e1fe210061b712c63b232d77554883d0c18576331825b76212"
+      },
+      "manifestReadback": {
+        "cid": "bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka",
+        "bytes": 6728,
+        "sha256": "d99ae92cdfe42bbe7d78db578af7a242f57ab324941ac7afcf0facde9c0b4c50"
+      },
+      "checkedAt": "2026-08-03T08:03:26.463Z"
+    }
+  },
+  "signatures": [
+    {
+      "keyId": "hivepoa-storage-preview-operator",
+      "algorithm": "ed25519",
+      "signature": "I9PbG+L8MjM/uf1gKSZhi28iLFgSV/mJAPwflUxQMkMEWpRQbknV2cczlJ75yYxtAzJrYEio/3Yoe/iVZVK6Cg==",
+      "publicKeySha256": "11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081"
+    }
+  ]
+}

@@ -1,11 +1,11 @@
 # HivePoA Storage Preview — distribution front door (generated)
 
-Generated, non-authoritative frontend mirror from private HivePoA source commit `3d8c49ac9a3289abfc8c820901ae0ed2556c5227`.
+Generated, non-authoritative frontend mirror from private HivePoA source commit `2d42c3fdc1f02494d400c4baacdf19c80d489155`.
 It is not a source repository, package channel, signed bootstrap handoff, or storage-release
-authority. Tester packages and the package-bound storage-control web interface remain
-signed-IPFS-only.
+authority. Signed IPFS metadata is the trust root; GitHub Releases may mirror the exact
+bytes but never supplies trust.
 
-Routes served: /, /download/, /verify/, /releases/, /get-started/. `/distribution/` redirects to `/`.
+Routes served: /, /download/, /verify/, /releases/, /get-started/, /tester-network/. `/distribution/` redirects to `/`.
 
 Regenerate and publish with `npm run build:distribution-static` then
 `npm run publish:distribution-mirror -- --target <mirror>/HivePoA`. Do not hand-copy files

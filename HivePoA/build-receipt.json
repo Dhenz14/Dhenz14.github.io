@@ -1,14 +1,14 @@
 {
   "cssSha256": "7690acd6a34f2341964d4b3dfa2f06f64b8f107e5e7a3a46f026e9e32631547e",
-  "jsSha256": "58d99f9e1060f87abeb9c1b00d09bfc04061fbe3fd8de5ca2e83bd4f77993fdf",
+  "jsSha256": "de4de5fa4638d70e3f64cecc4d20da587b46dabe00211091e9fec3213a41a809",
   "boundary": {
     "schemaVersion": "hivepoa.distribution-pages-boundary.v1",
     "surface": "distribution-front-door",
-    "sourceCommit": "3d8c49ac9a3289abfc8c820901ae0ed2556c5227",
-    "artifactAuthority": "signed-release-index",
+    "sourceCommit": "2d42c3fdc1f02494d400c4baacdf19c80d489155",
+    "artifactAuthority": "none",
     "dualChannelDefault": "on-for-pages-front-door",
     "publicationAuthorized": true,
-    "testerPackageDistribution": "ipfs-and-github-releases",
+    "testerPackageDistribution": "ipfs-primary-with-github-byte-mirror",
     "publicDistributionRepository": "Dhenz14/HivePoA-Distribution",
     "publicDistributionRepositoryId": 1316835999,
     "publicRoot": "https://dhenz14.github.io/HivePoA/",
@@ -17,7 +17,8 @@
       "/download/",
       "/verify/",
       "/releases/",
-      "/get-started/"
+      "/get-started/",
+      "/tester-network/"
     ],
     "legacyRedirects": {
       "/distribution/": "/"

@@ -26,7 +26,8 @@
   <header class="site-header">
     <p class="brand">HivePoA Storage Preview</p>
     <nav aria-label="Primary">
-      <a href="../">Home</a>
+      <a href="/">Hive ecosystem hub</a>
+      <a href="../">HivePoA home</a>
       <a href="./" aria-current="page">Download</a>
       <a href="../verify/">Verify</a>
       <a href="../releases/">Releases</a>
@@ -39,7 +40,7 @@
     <p class="status" data-state="blocked">This page needs JavaScript to check the signed release index. Nothing is downloaded or verified without it.</p>
   </noscript>
     <h1>Download</h1>
-    <p><strong>Tip <code data-field="version">checking the signed index…</code></strong> is the current signed tester build. Any release the signed index marks revoked stays withdrawn — the table below shows each release with its standing. GitHub is an untrusted byte mirror until local SHA-256 verification succeeds.</p>
+    <p><strong>Current authorized tester release: <code data-field="version">checking the signed index…</code>.</strong> Until the signed index verifies, this page approves no build. Any release it marks revoked stays withdrawn. GitHub and IPFS are byte transports; authenticate the expected digest, then compare SHA-256 locally.</p>
     <section data-tester-network hidden>
       <h2>Tester Network package</h2>
       <p>This tip authorizes two-worker storage PoA testing. Each accepted proof awards exactly 100 valueless, non-transferable, non-redeemable test credits once; replay awards zero.</p>
@@ -80,8 +81,14 @@
     <p class="status" data-status role="status" aria-live="polite">Checking signed release index…</p>
     <section class="next-step" aria-labelledby="after-download">
       <h2 id="after-download">After it downloads</h2>
-      <p>Your browser may warn that this file <strong>“isn’t commonly downloaded”</strong> — choose <strong>Keep</strong>. This build is not code-signed, so the first time you run it Windows may also show a blue <strong>“Windows protected your PC”</strong> screen. Both are expected for a small supervised beta.</p>
-      <p>Check the file first. Once this site says <strong>Match</strong>, you have proof it is the exact file the operator published, and you can use <strong>More info → Run anyway</strong>.</p>
+      <p data-platform-summary>Platform-specific launch steps appear only after the signed current tip verifies.</p>
+      <div data-platform-guidance="linux" hidden>
+        <p>The verified package targets Linux. Mark the AppImage executable, then launch it locally: <code>chmod +x ./SpiritBomb-*.AppImage</code>.</p>
+      </div>
+      <div data-platform-guidance="windows" hidden>
+        <p>The verified package targets Windows and is not code-signed. Windows may show reputation warnings. Verify the authenticated digest and independently decide whether you trust the source; do not bypass Windows protections solely because a hash matches.</p>
+      </div>
+      <p>A <strong>Match</strong> confirms byte-for-byte integrity against the authenticated signed release index. It does not, by itself, establish software safety.</p>
       <p>The download is only half of it — the check below takes a few seconds and the file never leaves your machine.</p>
       <p><a class="button" href="../verify/">Check the file I downloaded</a></p>
     </section>

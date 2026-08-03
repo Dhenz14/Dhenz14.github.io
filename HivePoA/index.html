@@ -26,7 +26,8 @@
   <header class="site-header">
     <p class="brand">HivePoA Storage Preview</p>
     <nav aria-label="Primary">
-      <a href="./">Home</a>
+      <a href="/">Hive ecosystem hub</a>
+      <a href="./" aria-current="page">HivePoA home</a>
       <a href="./download/">Download</a>
       <a href="./verify/">Verify</a>
       <a href="./releases/">Releases</a>
@@ -40,9 +41,9 @@
   </noscript>
     <h1>HivePoA Tester Network distribution</h1>
     <p>
-      This static Pages surface is non-authoritative. Signed release metadata carries
-      authority. GitHub and IPFS download buttons stay disabled until dual-channel v2
-      authorization, signatures, sequence, expiry, revocation, and mirror parity all pass.
+      Pages, GitHub, and IPFS are discovery or transport surfaces, not release authority.
+      A build is authorized here only after its signed index validates against pinned trust
+      material and passes sequence, expiry, revocation, fixed-policy, and channel-role checks.
     </p>
     <p class="ceiling" data-capability-ceiling></p>
     <p><a class="button" href="./download/">Go to downloads</a> <a class="button" href="./tester-network/">Tester Network</a></p>

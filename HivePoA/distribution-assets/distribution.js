@@ -56,14 +56,31 @@ import {
       if (!value) return;
       node.setAttribute("data-copy", "");
       node.setAttribute("data-copy-value", value);
+      node.setAttribute("data-copy-label", "expected SHA-256 digest");
     });
     if (release.primaryArtifact) {
       document.querySelectorAll("[data-field-filename]").forEach(function (node) {
         node.textContent = release.primaryArtifact;
         node.setAttribute("data-copy", "");
         node.setAttribute("data-copy-value", release.primaryArtifact);
+        node.setAttribute("data-copy-label", "release filename");
       });
     }
+  }
+
+  function fillPlatformGuidance(release) {
+    if (!release) return;
+    var platform = String(release.platform || "").toLowerCase();
+    var architecture = String(release.architecture || "unknown architecture");
+    var labels = { linux: "Linux", windows: "Windows", darwin: "macOS" };
+    var label = labels[platform] || platform || "the declared platform";
+    document.querySelectorAll("[data-platform-summary]").forEach(function (node) {
+      node.textContent = "The verified package targets " + label + " / " + architecture
+        + ". Follow only the guidance for that declared platform. A matching hash establishes byte integrity against the authenticated digest, not software safety.";
+    });
+    document.querySelectorAll("[data-platform-guidance]").forEach(function (node) {
+      node.hidden = node.getAttribute("data-platform-guidance") !== platform;
+    });
   }
 
   function fillList(signed) {
@@ -114,6 +131,7 @@ import {
       code.textContent = release.artifactDigests[name];
       code.setAttribute("data-copy", "");
       code.setAttribute("data-copy-value", release.artifactDigests[name]);
+      code.setAttribute("data-copy-label", name + " SHA-256 digest");
       tdHash.appendChild(code);
       row.appendChild(tdName);
       row.appendChild(tdHash);
@@ -348,6 +366,12 @@ import {
     var input = document.getElementById("file-input");
     var status = document.querySelector("[data-hash-status]");
     if (!input || !status) return;
+    input.disabled = !release;
+    input.setAttribute("aria-disabled", String(!release));
+    if (!release) {
+      status.textContent = "Waiting for an authenticated expected digest — file selection is disabled.";
+      return;
+    }
     var dropzone = document.querySelector("[data-dropzone]");
     var progressWrap = document.querySelector("[data-hash-progress]");
     var progressBar = document.querySelector("[data-hash-progress] span");
@@ -395,10 +419,10 @@ import {
             "The signed tip lists no artifact digests, so this hash cannot be checked here.");
         } else if (digest === expected.digest) {
           status.textContent = "SHA-256 " + digest;
-          showVerdict("match", "Match — this is the signed file.", expected.namedAsset
-            ? file.name + " " + how + " in your browser. It matches the signed release index exactly. Safe to run."
+          showVerdict("match", "Match — authenticity and integrity verified.", expected.namedAsset
+            ? file.name + " " + how + " in your browser. It matches the authenticated signed release index exactly. This result does not establish software safety."
             : file.name + " is not named like a release asset, but its contents " + how
-              + " match " + primary + " exactly. Safe to run.");
+              + " match " + primary + " exactly. Integrity is verified; software safety is not established by a hash.");
         } else if (expected.namedAsset) {
           status.textContent = "Local " + digest + " · expected " + expected.digest;
           showVerdict("mismatch", "Does not match — do not run this file.",
@@ -473,7 +497,10 @@ import {
       button.type = "button";
       button.className = "copy-button";
       button.textContent = "Copy";
-      button.setAttribute("aria-label", "Copy value to clipboard");
+      var descriptor = node.getAttribute("data-copy-label") || "value";
+      var idleLabel = "Copy " + descriptor + " to clipboard";
+      button.setAttribute("aria-label", idleLabel);
+      button.setAttribute("aria-live", "polite");
 
       node.textContent = "";
       node.appendChild(label);
@@ -484,6 +511,7 @@ import {
         try {
           await navigator.clipboard.writeText(value);
           button.textContent = "Copied";
+          button.setAttribute("aria-label", "Copied " + descriptor);
         } catch (error) {
           // Clipboard access can be refused (insecure context, permissions).
           // Select the value so the keyboard shortcut still works instead of
@@ -495,11 +523,16 @@ import {
             selection.removeAllRanges();
             selection.addRange(range);
             button.textContent = "Selected — Ctrl+C";
+            button.setAttribute("aria-label", "Selected " + descriptor + "; press Control C to copy");
           } catch (selectError) {
             button.textContent = "Select manually";
+            button.setAttribute("aria-label", "Copy unavailable; select " + descriptor + " manually");
           }
         }
-        setTimeout(function () { button.textContent = "Copy"; }, 2000);
+        setTimeout(function () {
+          button.textContent = "Copy";
+          button.setAttribute("aria-label", idleLabel);
+        }, 2000);
       });
     });
   }
@@ -758,6 +791,7 @@ import {
       return;
     }
     fillMeta(auth.release, auth.signed);
+    fillPlatformGuidance(auth.release);
     fillList(auth.signed);
     fillArtifactTable(auth.release);
     var ceiling = document.querySelector("[data-capability-ceiling]");
@@ -777,7 +811,7 @@ import {
         ? ("Download " + release.primaryArtifact)
         : "Download via GitHub Releases";
       github.addEventListener("click", function () {
-        // One click → portable exe bytes. Do not drop grandma on a tag page.
+        // One click goes to the exact platform package, never a generic tag page.
         window.location.href = githubPrimaryDownloadUrl(release);
       });
     }

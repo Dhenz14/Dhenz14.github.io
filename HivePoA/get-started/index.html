@@ -26,7 +26,8 @@
   <header class="site-header">
     <p class="brand">HivePoA Storage Preview</p>
     <nav aria-label="Primary">
-      <a href="../">Home</a>
+      <a href="/">Hive ecosystem hub</a>
+      <a href="../">HivePoA home</a>
       <a href="../download/">Download</a>
       <a href="../verify/">Verify</a>
       <a href="../releases/">Releases</a>
@@ -39,8 +40,8 @@
     <p class="status" data-state="blocked">This page needs JavaScript to check the signed release index. Nothing is downloaded or verified without it.</p>
   </noscript>
     <h1>Get started</h1>
-    <p><strong>Current tip:</strong> <code data-field="version">checking the signed index…</code>. Any release the signed index marks <strong>revoked</strong> is withdrawn and not approved for testing; Releases lists each one with its recorded reason. GitHub is a byte mirror only — verify SHA-256 before running.</p>
-    <p>Windows will probably warn you about this file: it is not code-signed. Expect <strong>“isn’t commonly downloaded”</strong> in the browser and possibly <strong>“Windows protected your PC”</strong> on first run. Verify the SHA-256 first — once it matches, you have proof it is the exact file the operator published.</p>
+    <p><strong>Current authorized tip:</strong> <code data-field="version">checking the signed index…</code>. Until index verification succeeds, this page approves no build. Revoked releases stay withdrawn. GitHub and IPFS are byte transports; authenticate the expected digest and compare SHA-256 locally.</p>
+    <p data-platform-summary>Platform-specific launch guidance appears only after the signed current tip verifies. A matching hash establishes byte integrity against that authenticated digest, not software safety.</p>
     <ol>
       <li>Prefer the authenticated <strong>three-file handoff</strong> when the operator issues one; otherwise use the signed Pages tip shown on Download and verify its SHA-256 on Verify.</li>
       <li>Two channels carry releases: <strong>GitHub Releases</strong> and <strong>IPFS</strong>. They are signed against the same release index, but a given build may publish the package to one and only signed metadata to the other — Download says which is which. Whichever you use, the SHA-256 you verify is the same.</li>
@@ -57,8 +58,8 @@
     </section>
 
     <section data-storage-preview-only>
-    <h2>Friend card (Forever Drive + voluntary pins)</h2>
-    <p>These steps work today on their own. The app runs its own embedded coordinator, so it needs no enrollment packet to contribute storage:</p>
+    <h2>Standalone card (Forever Drive + voluntary pins)</h2>
+    <p>When the verified current manifest authorizes standalone storage, the intended path is:</p>
     <ol>
       <li>Download the current tip <code data-field="version">checking the signed index…</code> from Download (or operator handoff), verify SHA-256, and launch.</li>
       <li>Opt in Forever Drive at 20% inside the app.</li>
@@ -68,12 +69,7 @@
     <h3>Joining the shared pool is not available yet</h3>
     <p>Pool assignment needs a private enrollment packet issued against a <strong>live HTTPS coordinator</strong>, and no such coordinator is published today. Until the operator announces one and issues you a packet, the tray's <strong>Copy Enrollment Request</strong> and <strong>Import Private Enrollment</strong> items have nothing to register against and will fail closed rather than pretend. That is expected, not a fault in your setup.</p>
     <p><code>readyForPool</code> stays truthful throughout — embedded-only mode is deliberately not pool-ready, and the app will keep saying so until a real coordinator assigns work.</p>
-    <p>When enrollment does open, identity will be a <strong>private enrollment packet</strong> bound to your Hive username — there is no Keychain login form in the portable app. Names reserved for this cohort:</p>
-    <ul>
-      <li><code>dandandan123</code></li>
-      <li><code>app.operator</code></li>
-      <li><code>coolmole</code></li>
-    </ul>
+    <p>When enrollment opens, identity is established only by an operator-issued authenticated packet bound to the tester. A username displayed on Pages would not imply access or reservation, so none is published here.</p>
     </section>
 
     <h2>If the app does not open</h2>

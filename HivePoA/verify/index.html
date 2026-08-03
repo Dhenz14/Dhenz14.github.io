@@ -26,7 +26,8 @@
   <header class="site-header">
     <p class="brand">HivePoA Storage Preview</p>
     <nav aria-label="Primary">
-      <a href="../">Home</a>
+      <a href="/">Hive ecosystem hub</a>
+      <a href="../">HivePoA home</a>
       <a href="../download/">Download</a>
       <a href="./" aria-current="page">Verify</a>
       <a href="../releases/">Releases</a>
@@ -38,12 +39,12 @@
   <noscript>
     <p class="status" data-state="blocked">This page needs JavaScript to check the signed release index. Nothing is downloaded or verified without it.</p>
   </noscript>
-    <h1>Local verify</h1>
-    <p>Drop the installer you downloaded onto the box below. It is hashed inside your own browser — the file is never uploaded anywhere.</p>
+    <h1>Local SHA-256 integrity check</h1>
+    <p>Drop the package you downloaded onto the box below. The intended behavior is local browser hashing with no upload. A result is meaningful only after this page authenticates the expected digest from the signed index, and a match does not establish software safety.</p>
     <label class="drop" for="file-input" data-dropzone>
       <span class="drop-title">Drop the installer here</span>
       <span class="drop-hint">or choose a file — expected: <code data-field-filename>the signed release asset</code></span>
-      <input id="file-input" type="file" />
+      <input id="file-input" type="file" disabled aria-disabled="true" />
     </label>
     <div class="progress" data-hash-progress hidden>
       <div class="bar" role="progressbar" aria-label="Hashing progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>

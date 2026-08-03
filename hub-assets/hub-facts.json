@@ -1,0 +1,26 @@
+{
+  "schema": "hive.ecosystem.public-source-snapshot.v1",
+  "capturedAt": "2026-08-03T21:16:02Z",
+  "hiveAi": {
+    "sourceCommit": "edb81711d002b4c05cf98c86692ac853f71727a0",
+    "sourceBranch": "main",
+    "graphSource": "docs/generated/living_anatomy_graph.v2.json",
+    "graphSchema": "hiveai.living_anatomy_graph.v2",
+    "graphHash": "89d892c3a554cc3869d6c6cdfd473deb5a941c7f72335894596505708071fc46",
+    "sourceFingerprint": "572f6b6dd8dad4349e9f9b14655fd2f7ba311f3de2d02b4be388890c2d1cfda5",
+    "neurons": 640,
+    "trainableNeurons": 448,
+    "nodes": 1183,
+    "edges": 1219,
+    "divisions": 16,
+    "moons": 9,
+    "organs": 84,
+    "components": 433
+  },
+  "boundaries": {
+    "snapshotOnly": true,
+    "runtimeTelemetry": false,
+    "grantsAuthority": false,
+    "localChatUrl": "http://127.0.0.1:5002/chat"
+  }
+}

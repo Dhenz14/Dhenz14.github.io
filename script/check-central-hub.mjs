@@ -35,6 +35,7 @@ const required = [
   "sitemap.xml",
   "site.webmanifest",
   ".github/workflows/sync-living-galaxy.yml",
+  ".github/workflows/verify-public-hub.yml",
   "docs/PUBLIC_GALAXY_SYNC.md",
   "favicon.svg",
   "favicon.ico",
@@ -311,6 +312,7 @@ const inactiveRefresh = facts.refresh?.automaticBridgeEnabled === false
 if (!activeRefresh && !activeLocalRefresh && !inactiveRefresh) throw new Error("refresh automation boundary drifted");
 
 const syncWorkflow = read(".github/workflows/sync-living-galaxy.yml");
+const verifyWorkflow = read(".github/workflows/verify-public-hub.yml");
 const syncDocs = read("docs/PUBLIC_GALAXY_SYNC.md");
 const requirements = read("script/requirements-galaxy-sync.txt");
 const compileStart = syncWorkflow.indexOf("  compile:\n");
@@ -322,13 +324,18 @@ requireMatch(syncWorkflow, /cron:\s*["']\*\/5 \* \* \* \*["']/, "five-minute liv
 requireMatch(syncWorkflow, /workflow_dispatch:/, "manual living-main refresh");
 requireMatch(syncWorkflow, /vars\.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true'/, "explicit cloud publisher activation gate");
 requireMatch(syncWorkflow, /permissions:\s*\n\s+contents:\s*read/, "default read-only workflow authority");
+for (const [workflowName, workflow] of [["sync", syncWorkflow], ["verify", verifyWorkflow]]) {
+  requireMatch(workflow, /actions\/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09/, `${workflowName} Node-24 checkout pin`);
+  requireMatch(workflow, /actions\/setup-node@a0853c24544627f65ddf259abe73b1d18a591444/, `${workflowName} Node-24 setup-node pin`);
+}
+requireNoMatch(`${syncWorkflow}\n${verifyWorkflow}`, /11d5960a326750d5838078e36cf38b85af677262|49933ea5288caeca8642d1e84afbd3f7d6820020/, "deprecated Node-20 action pin");
 requireMatch(compileJob, /permissions:\s*\n\s+contents:\s*read/, "credential-free compiler authority");
 requireNoMatch(compileJob, /contents:\s*write|pages:\s*write/, "compiler publication authority");
 requireMatch(publishJob, /permissions:\s*\n\s+contents:\s*write\s*\n\s+pages:\s*write/, "isolated publisher authority");
 requireMatch(compileJob, /persist-credentials:\s*false/, "trusted Pages compiler checkout credential removal");
 requireMatch(compileJob, /sync-galaxy-snapshot\.mjs/, "living-main snapshot compiler call");
-requireMatch(compileJob, /actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/, "pinned inert candidate upload");
-requireMatch(publishJob, /actions\/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093/, "pinned inert candidate download");
+requireMatch(compileJob, /actions\/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4/, "pinned inert candidate upload");
+requireMatch(publishJob, /actions\/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0/, "pinned inert candidate download");
 requireMatch(publishJob, /candidate_bytes[\s\S]*524288[\s\S]*candidate_sha[\s\S]*installed_sha/, "bounded artifact admission and copy hash proof");
 requireNoMatch(publishJob, /repository:\s*Dhenz14\/Hive-AI|HIVE_AI_READ_DEPLOY_KEY|GALAXY_BRIDGE_MODE|python\s+-m\s+pip/, "publisher private compiler execution");
 requireNoMatch(publishJob, /git rebase/, "candidate-mutating Pages reconciliation");

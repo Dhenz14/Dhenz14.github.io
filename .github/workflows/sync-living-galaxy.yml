@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   publish:
-    if: github.repository == 'Dhenz14/Dhenz14.github.io'
+    if: github.repository == 'Dhenz14/Dhenz14.github.io' && (github.event_name == 'workflow_dispatch' || vars.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -92,6 +92,7 @@ jobs:
         if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome == 'success'
         env:
           GALAXY_AUTOMATIC_BRIDGE: "true"
+          GALAXY_BRIDGE_MODE: "cloud"
         shell: bash
         run: |
           set -euo pipefail

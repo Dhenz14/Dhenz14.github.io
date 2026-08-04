@@ -13,6 +13,7 @@ import {
   projectGalaxyPoint,
   resolveGalaxySelection,
   selectGalaxyHit,
+  snapshotFreshness,
   snapshotResponseCanCommit,
   validSnapshot,
 } from "../hub-assets/galaxy-core.mjs";
@@ -83,6 +84,11 @@ assert(!missingCanvas.baseAvailable && missingCanvas.reasonCode === "CANVAS_UNAV
 assert(snapshotResponseCanCommit({ requestGeneration: 7, currentGeneration: 7 }), "current snapshot response rejected");
 assert(!snapshotResponseCanCommit({ requestGeneration: 6, currentGeneration: 7 }), "stale snapshot response accepted");
 assert(!snapshotResponseCanCommit({ requestGeneration: 7, currentGeneration: 7, aborted: true }), "aborted snapshot response accepted");
+const freshnessNow = Date.parse("2026-08-04T21:00:00Z");
+assert(snapshotFreshness("2026-08-04T20:50:00Z", freshnessNow).state === "current", "current snapshot marked delayed");
+assert(snapshotFreshness("2026-08-04T20:30:00Z", freshnessNow).state === "delayed", "delayed snapshot marked current");
+assert(snapshotFreshness("2026-08-04T19:00:00Z", freshnessNow).state === "critical", "critical snapshot age hidden");
+assert(snapshotFreshness("not-a-date", freshnessNow).state === "invalid", "invalid snapshot time accepted");
 
 const occupied = [];
 const firstLabel = placeCanvasLabel(80, 18, -100, -100, 320, 180, occupied, true);
@@ -184,4 +190,4 @@ for (const viewport of viewports) {
   }
 }
 
-console.log(`GALAXY_CORE_OK negative_snapshots=5 exact_centers=${checkedCenters} viewports=${viewports.length} lenses=${Object.keys(GALAXY_LENS_PROFILES).length} pointer_policies=3 render_states=3 label_cases=3 refresh_gates=3 selection_cases=2`);
+console.log(`GALAXY_CORE_OK negative_snapshots=5 exact_centers=${checkedCenters} viewports=${viewports.length} lenses=${Object.keys(GALAXY_LENS_PROFILES).length} pointer_policies=3 render_states=3 label_cases=3 refresh_gates=3 freshness_states=4 selection_cases=2`);

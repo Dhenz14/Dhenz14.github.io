@@ -7,9 +7,10 @@ import {
   projectGalaxyPoint,
   resolveGalaxySelection,
   selectGalaxyHit,
+  snapshotFreshness,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=stark-galaxy-v3";
+} from "./galaxy-core.mjs?v=stark-galaxy-v4";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -319,7 +320,16 @@ async function loadSourceSnapshot() {
     const previous = window.hivePublicSnapshot;
     window.hivePublicSnapshot = snapshot;
     document.body.classList.remove("snapshot-unavailable");
-    setSourceBadge("", "Living main snapshot", `Exact published view of Hive-AI main captured ${snapshot.capturedAt}; not runtime telemetry.`);
+    const freshness = snapshotFreshness(snapshot.capturedAt);
+    if (!snapshot.refresh?.automaticBridgeEnabled) {
+      setSourceBadge("stale", "Source-bound snapshot", `Exact Hive-AI ${facts.sourceCommit.slice(0, 12)} snapshot; automatic convergence is not currently active.`);
+    } else if (freshness.state === "critical") {
+      setSourceBadge("stale", "Sync delayed · last good", `The last validated snapshot is more than one hour old (${snapshot.capturedAt}); no counters were reset.`);
+    } else if (freshness.state === "delayed") {
+      setSourceBadge("stale", "Last-good snapshot", `Automatic convergence is delayed; retaining the validated snapshot captured ${snapshot.capturedAt}.`);
+    } else {
+      setSourceBadge("", "Living main snapshot", `Exact published view of Hive-AI main captured ${snapshot.capturedAt}; not runtime telemetry.`);
+    }
     if (!previous
       || previous.hiveAi?.sourceCommit !== snapshot.hiveAi.sourceCommit
       || previous.galaxy?.projectionHash !== snapshot.galaxy.projectionHash) {

@@ -128,7 +128,12 @@ requireMatch(html, /Current authorized beta tester package/, "tester authorizati
 requireMatch(html, /Not verified here/, "local-byte boundary");
 requireMatch(html, /A same-origin compromise is outside the signature guarantee/, "same-origin boundary");
 requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/chat/, "local chat route");
-requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1/, "local galaxy route");
+requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1/, "local presentation body route");
+requireMatch(html, /http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0/, "local operator body route");
+requireMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1"[^>]*target="_blank"[^>]*rel="noreferrer"/, "safe presentation body navigation");
+requireMatch(html, /href="http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0"[^>]*target="_blank"[^>]*rel="noreferrer"/, "safe operator body navigation");
+requireMatch(html, /data-body-surface="atlas"[\s\S]*data-body-surface="presentation"[\s\S]*data-body-surface="operator"/, "three-surface Living Anatomy bridge");
+requireMatch(html, /public page never claims or probes local availability/, "truthful local availability boundary");
 requireMatch(html, /GitHub Pages never receives your prompt/, "prompt privacy");
 requireNoMatch(html, /href=["']#anatomy["']/, "obsolete anatomy anchor");
 const disabledDownload = html.match(/<a\b[^>]*data-release-download[^>]*>/)?.[0] || "";
@@ -155,7 +160,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "stark-galaxy-v5" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "stark-galaxy-v6" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)) {
@@ -221,7 +226,9 @@ requireMatch(css, /\.galaxy-stage\s*{[\s\S]*?touch-action:\s*pan-y;/, "touch pag
 requireMatch(css, /\.galaxy-stage\.is-engaged\s*{[\s\S]*?touch-action:\s*none;/, "engaged touch orbit ownership");
 requireMatch(css, /\.map-readout\s*{[\s\S]*?pointer-events:\s*none;/, "non-blocking graph readout overlay");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.map-readout\s*{[\s\S]*?inset:\s*1rem 1rem auto auto;/, "separated mobile galaxy overlays");
+requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.body-surface-links\s*{[\s\S]*?grid-template-columns:\s*1fr;/, "mobile Living Anatomy bridge stack");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-controls\s*{\s*display:\s*none;/, "forced-colors camera fallback");
+requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-atmosphere,[\s\S]*\.galaxy-scanline,[\s\S]*display:\s*none;/, "forced-colors decorative overlay removal");
 requireMatch(css, /\.galaxy-fallback-active \.galaxy-controls\s*{\s*display:\s*none;/, "no-canvas camera fallback");
 requireMatch(css, /\.lens-bar button:disabled,[\s\S]*\.galaxy-controls button:disabled/, "disabled galaxy control styling");
 requireNoMatch(css, /@import\s|url\(\s*["']?https?:/i, "third-party CSS runtime dependency");

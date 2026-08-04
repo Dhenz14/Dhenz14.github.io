@@ -1,0 +1,43 @@
+name: Verify public hub
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-hub-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Verify JavaScript syntax
+        run: |
+          node --check hub-assets/hub.js
+          node --check hub-assets/galaxy-core.mjs
+          node --check script/check-central-hub.mjs
+          node --check script/check-galaxy-bridge.mjs
+          node --check script/check-http-surface.mjs
+          node --check script/check-galaxy-core.mjs
+          node --check script/check-live-parity.mjs
+          node --check script/check-signed-release.mjs
+          node --check script/sync-galaxy-snapshot.mjs
+          node --check script/mark-galaxy-bridge-inactive.mjs
+      - name: Verify public hub contract
+        run: |
+          node script/check-central-hub.mjs
+          node script/check-galaxy-bridge.mjs
+          node script/check-galaxy-core.mjs
+          node script/check-http-surface.mjs
+          node script/check-signed-release.mjs

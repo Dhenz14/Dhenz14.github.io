@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Hive Ecosystem">
+  <defs>
+    <radialGradient id="g" cx="50%" cy="42%" r="62%">
+      <stop offset="0" stop-color="#d8fbff"/>
+      <stop offset="0.38" stop-color="#68e4ff"/>
+      <stop offset="1" stop-color="#7868f7"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="#05070d"/>
+  <circle cx="32" cy="32" r="22" fill="none" stroke="#68e4ff" stroke-opacity=".24"/>
+  <path d="M32 8l6.2 17.8L56 32l-17.8 6.2L32 56l-6.2-17.8L8 32l17.8-6.2z" fill="url(#g)"/>
+  <circle cx="32" cy="32" r="5.5" fill="#f6feff"/>
+</svg>

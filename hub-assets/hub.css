@@ -1516,6 +1516,7 @@ h3 {
   padding: 0.65rem 0.8rem;
   border-left: 2px solid var(--cyan);
   background: rgba(5, 9, 16, 0.7);
+  pointer-events: none;
 }
 
 .map-readout span {
@@ -4019,6 +4020,10 @@ h3 {
     right: auto;
     left: 1rem;
     font-size: 0.57rem;
+  }
+
+  .map-readout {
+    inset: 1rem 1rem auto auto;
   }
 
   .galaxy-index {

@@ -19,6 +19,13 @@ const exactKeys = (value, expected, label) => {
     throw new Error(`${label} keys drifted: ${actual.join(",")}`);
   }
 };
+const boundedBlock = (value, start, end, label) => {
+  const startIndex = value.indexOf(start);
+  if (startIndex === -1) throw new Error(`${label} start marker missing`);
+  const endIndex = value.indexOf(end, startIndex + start.length);
+  if (endIndex === -1) throw new Error(`${label} end marker missing`);
+  return value.slice(startIndex, endIndex + end.length);
+};
 
 const required = [
   "index.html",
@@ -36,6 +43,8 @@ const required = [
   "hub-assets/hub-facts.json",
   "hub-assets/og.png",
   "script/sync-galaxy-snapshot.mjs",
+  "script/mark-galaxy-bridge-inactive.mjs",
+  "script/check-galaxy-bridge.mjs",
   "script/check-http-surface.mjs",
   "script/check-galaxy-core.mjs",
   "script/check-signed-release.mjs",
@@ -58,7 +67,26 @@ const css = read("hub-assets/hub.css");
 const js = read("hub-assets/hub.js");
 const galaxyCore = read("hub-assets/galaxy-core.mjs");
 const generator = read("script/sync-galaxy-snapshot.mjs");
+const bridgeFailClosed = read("script/mark-galaxy-bridge-inactive.mjs");
 const facts = JSON.parse(read("hub-assets/hub-facts.json"));
+const pointerDownBlock = boundedBlock(
+  js,
+  'this.canvas.addEventListener("pointerdown"',
+  'this.canvas.addEventListener("pointermove"',
+  "pointerdown handler",
+);
+const pointerMoveBlock = boundedBlock(
+  js,
+  'this.canvas.addEventListener("pointermove"',
+  "const release =",
+  "pointermove handler",
+);
+const forcedColorsWiring = boundedBlock(
+  js,
+  "const onForcedColorsChange =",
+  "this.applyRenderAvailability(this.forcedColors.matches);",
+  "forced-colors wiring",
+);
 
 for (const [name, source] of [["index.html", html], ["404.html", notFound]]) {
   if (/<meta[^>]+http-equiv=["']refresh/i.test(source) || /window\.location\.(?:replace|assign)/.test(source)) {
@@ -128,11 +156,13 @@ requireMatch(js, /placeCanvasLabel\(/, "collision-aware label placement");
 requireMatch(js, /GALAXY_LENS_PROFILES/, "lens-specific topology weighting");
 requireMatch(js, /selectGalaxyHit\(/, "child-first global hit resolver call");
 requireNoMatch(js, /point\.divisionIndex !== focusDivision/, "parent-first hit restriction");
-requireMatch(js, /pointerdown[\s\S]*this\.updatePointer\(event\);[\s\S]*this\.hitTest\(\);/, "touch tap coordinate capture");
+requireMatch(pointerDownBlock, /this\.updatePointer\(event\);\s*this\.hitTest\(\);/, "touch tap coordinate capture");
+requireMatch(pointerDownBlock, /const pointerPolicy = galaxyPointerPolicy\(event\.pointerType, this\.engaged\);\s*this\.pointer\.orbitAllowed = pointerPolicy\.orbitAllowed;/, "behavioral pointer policy integration");
+requireMatch(pointerMoveBlock, /this\.dragMoved \|\|= Math\.hypot\(dx, dy\) > 4;\s*if \(!this\.pointer\.orbitAllowed\) return;/, "unengaged touch drag cannot orbit");
 requireMatch(js, /pointercancel[^\n]+release\(event, true\)/, "non-activating pointer cancellation");
 requireMatch(js, /focusedFamilyIndex[\s\S]*data-family-geometry-index[\s\S]*focus\(\{ preventScroll: true \}\)/, "family focus continuity");
 requireMatch(js, /focusedNeuronId[\s\S]*data-neuron-id[\s\S]*focus\(\{ preventScroll: true \}\)/, "neuron focus continuity");
-requireMatch(js, /previousNeuronId[\s\S]*neuronIndexById\.get\(previousNeuronId\)/, "semantic snapshot selection continuity");
+requireMatch(js, /resolveGalaxySelection\([\s\S]*previousNeuronId/, "semantic snapshot selection continuity integration");
 requireMatch(js, /galaxy-fallback-active/, "semantic no-canvas fallback activation");
 requireMatch(js, /1 - Math\.exp\(-elapsed \/ 145\)/, "time-based camera damping");
 requireMatch(js, /if \(!this\.engaged \|\| atMinimum \|\| atMaximum\) return;/, "non-trapping wheel gate");
@@ -145,6 +175,11 @@ requireMatch(js, /SNAPSHOT_REFRESH_MS = 60_000/, "visibility-aware snapshot refr
 requireMatch(js, /Last-good snapshot/, "last-good refresh behavior");
 requireMatch(js, /AbortController/, "snapshot request cancellation");
 requireMatch(js, /snapshotRequestGeneration/, "snapshot response generation gate");
+requireMatch(js, /snapshotResponseCanCommit\([\s\S]*aborted:/, "behavioral snapshot response gate integration");
+requireMatch(forcedColorsWiring, /const onForcedColorsChange = \(event\) => this\.applyRenderAvailability\(Boolean\(event\.matches\)\);/, "live forced-colors transition callback");
+requireMatch(forcedColorsWiring, /this\.forcedColors\.addEventListener\("change", onForcedColorsChange\)/, "live forced-colors transition listener");
+requireMatch(forcedColorsWiring, /this\.forcedColors\.addListener\(onForcedColorsChange\)/, "legacy forced-colors transition listener");
+requireMatch(js, /applyRenderAvailability\(forcedColorsActive\)/, "live render fallback transition");
 requireMatch(js, /if \(\$\("\[data-source-stamp\], \[data-galaxy-canvas\]"\)\)[\s\S]*loadSourceSnapshot\(\)\.finally\(startSnapshotRefresh\)/, "snapshot refresh surface gate");
 requireMatch(js, /runSafely\("Offscreen scene control", wireSceneActivity\)/, "offscreen CSS animation control");
 requireNoMatch(js, /time\s*-\s*this\.lastFrame\s*<\s*32/, "30fps frame throttle");
@@ -159,6 +194,8 @@ requireMatch(css, /@keyframes centered-orbit-spin[\s\S]*translate\(-50%, -50%\) 
 requireMatch(css, /\.motion-scene-paused[\s\S]*animation-play-state:\s*paused !important/, "offscreen CSS animation pause");
 requireMatch(css, /\.galaxy-stage\s*{[\s\S]*?touch-action:\s*pan-y;/, "touch page-scroll preservation");
 requireMatch(css, /\.galaxy-stage\.is-engaged\s*{[\s\S]*?touch-action:\s*none;/, "engaged touch orbit ownership");
+requireMatch(css, /\.map-readout\s*{[\s\S]*?pointer-events:\s*none;/, "non-blocking graph readout overlay");
+requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.map-readout\s*{[\s\S]*?inset:\s*1rem 1rem auto auto;/, "separated mobile galaxy overlays");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-controls\s*{\s*display:\s*none;/, "forced-colors camera fallback");
 requireMatch(css, /\.galaxy-fallback-active \.galaxy-controls\s*{\s*display:\s*none;/, "no-canvas camera fallback");
 requireNoMatch(css, /@import\s|url\(\s*["']?https?:/i, "third-party CSS runtime dependency");
@@ -237,9 +274,13 @@ const serializedFacts = JSON.stringify(facts);
 for (const forbidden of ["/home/", "C:\\\\"]) {
   if (serializedFacts.includes(forbidden)) throw new Error(`private public-snapshot field leaked: ${forbidden}`);
 }
-if (facts.refresh?.automaticBridgeEnabled !== true || facts.refresh?.reasonCode !== "SCHEDULED_LIVING_MAIN_PUBLISHER") {
-  throw new Error("refresh automation boundary drifted");
-}
+const activeRefresh = facts.refresh?.automaticBridgeEnabled === true
+  && facts.refresh?.privateSourceMode === "scheduled-living-main-publisher"
+  && facts.refresh?.reasonCode === "SCHEDULED_LIVING_MAIN_PUBLISHER";
+const inactiveRefresh = facts.refresh?.automaticBridgeEnabled === false
+  && facts.refresh?.privateSourceMode === "manual-source-bound-snapshot"
+  && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED"].includes(facts.refresh?.reasonCode);
+if (!activeRefresh && !inactiveRefresh) throw new Error("refresh automation boundary drifted");
 
 const syncWorkflow = read(".github/workflows/sync-living-galaxy.yml");
 requireMatch(syncWorkflow, /cron:\s*["']\*\/5 \* \* \* \*["']/, "five-minute living-main schedule");
@@ -250,16 +291,35 @@ requireMatch(syncWorkflow, /sync-galaxy-snapshot\.mjs/, "living-main snapshot co
 requireMatch(syncWorkflow, /check-central-hub\.mjs/, "pre-publish hub verification");
 requireMatch(syncWorkflow, /git push origin HEAD:main/, "atomic Pages main publication");
 requireMatch(syncWorkflow, /POST ["']repos\/\$GITHUB_REPOSITORY\/pages\/builds["']/, "explicit workflow-authored Pages build");
-requireNoMatch(syncWorkflow, /secrets\.|personal_access_token|\bPAT\b/i, "broad sync credential");
+requireMatch(syncWorkflow, /secrets\.HIVE_AI_READ_DEPLOY_KEY/, "read-only private-source deploy key");
+requireMatch(syncWorkflow, /mark-galaxy-bridge-inactive\.mjs --credential-missing/, "credential-removal fail-closed path");
+requireMatch(syncWorkflow, /mark-galaxy-bridge-inactive\.mjs --checkout-failed/, "credential-failure fail-closed path");
+const secretNames = [...syncWorkflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((match) => match[1]);
+if (secretNames.some((name) => name !== "HIVE_AI_READ_DEPLOY_KEY")) throw new Error("unexpected workflow secret authority");
+requireNoMatch(syncWorkflow, /personal_access_token|\bPAT\b/i, "broad sync credential");
 
-requireMatch(generator, /git", \["ls-remote"/, "live remote source proof");
+requireMatch(generator, /"-C", hiveAiRepo, "ls-remote", "origin"/, "credential-preserving live remote source proof");
+requireMatch(generator, /rev-parse", "HEAD\^\{commit\}"[\s\S]*checkoutCommit !== sourceCommit/, "exact compiled checkout identity");
+requireMatch(generator, /--ignored=matching/, "ignored-input refusal");
+requireMatch(generator, /truth-input commit[\s\S]*shallow boundary/, "shallow provenance refusal");
 requireMatch(generator, /fs\.fsyncSync/, "atomic durable snapshot write");
 requireMatch(generator, /process\.argv\.includes\("--check"\)/, "snapshot check mode");
 requireMatch(generator, /statusProjection:\s*"none"/, "no status projection");
 requireMatch(generator, /git", \["-C", hiveAiRepo, "show"/, "source-manifest byte proof");
+requireMatch(generator, /GALAXY_AUTOMATIC_BRIDGE === "true"/, "explicit bridge activation input");
+requireNoMatch(bridgeFailClosed, /automaticBridgeEnabled:\s*true/, "fail-closed script authority escalation");
+requireMatch(bridgeFailClosed, /CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED/, "missing-credential fail-closed reason");
+requireMatch(bridgeFailClosed, /PRIVATE_SOURCE_CHECKOUT_FAILED/, "failed-checkout fail-closed reason");
 requireMatch(galaxyCore, /galaxy\?\.sourceGraphHash !== facts\?\.graphHash/, "runtime graph binding");
 requireMatch(galaxyCore, /projectionHash === await sha256Hex/, "runtime projection hash binding");
 requireMatch(galaxyCore, /export function selectGalaxyHit/, "testable global hit selection");
+requireMatch(galaxyCore, /export function galaxyPointerPolicy/, "testable pointer policy");
+requireMatch(galaxyCore, /export function galaxyRenderState/, "testable render fallback state");
+requireMatch(galaxyCore, /export function placeCanvasLabel/, "testable collision-aware labels");
+requireMatch(galaxyCore, /export function resolveGalaxySelection/, "testable semantic selection continuity");
+requireMatch(syncWorkflow, /fetch-depth:\s*128/, "bounded initial source history");
+requireMatch(syncWorkflow, /persist-credentials:\s*true/, "authenticated post-checkout source proof");
+requireMatch(syncWorkflow, /--deepen=896[\s\S]*--unshallow/, "progressive source history proof");
 
 const png = fs.readFileSync(path.join(root, "hub-assets/og.png"));
 if (png.subarray(1, 4).toString("ascii") !== "PNG" || png.readUInt32BE(16) !== 1200 || png.readUInt32BE(20) !== 630) {

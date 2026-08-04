@@ -28,8 +28,9 @@ private `Dhenz14/HivePoA` build.
 The snapshot compiler proves that its local Hive-AI ref is the live GitHub
 `main`, freezes that exact commit, recompiles Living Anatomy without writing to
 Hive-AI, validates the graph and compatibility contracts, verifies every source
-manifest byte against the frozen commit, and atomically publishes only the
-strict public allowlist:
+manifest byte against the frozen commit, refuses a mismatched or dirty checkout,
+and rejects shallow history that cannot prove canonical truth-input provenance.
+It atomically publishes only the strict public allowlist:
 
 ```bash
 node script/sync-galaxy-snapshot.mjs \
@@ -47,14 +48,17 @@ is not current remote `main`. The page fetches this one snapshot with
 page rechecks the same-origin snapshot every 60 seconds while visible and keeps
 the last validated snapshot if a refresh fails.
 
-The living-main publisher in `.github/workflows/sync-living-galaxy.yml` repeats
-that exact source-bound build every five minutes and on manual dispatch. It uses
-only this repository's short-lived `GITHUB_TOKEN`, can change only the public
-snapshot, and leaves the last-good public bytes untouched on any failure. It is
-scheduled convergence—not a real-time guarantee—so each rendered snapshot
-always names the exact Hive-AI commit it represents. The full race, retry, and
-future seconds-level dispatch design is documented in
-`docs/PUBLIC_GALAXY_SYNC.md`.
+The living-main publisher in `.github/workflows/sync-living-galaxy.yml` attempts
+that exact source-bound build every five minutes and on manual dispatch. Private
+source access is intentionally limited to the `HIVE_AI_READ_DEPLOY_KEY` Actions
+secret: a read-only deploy key installed only on Hive-AI. If it is absent, the
+workflow succeeds fail-closed, retains the last-good source snapshot, and marks
+the bridge inactive instead of pretending to refresh. When configured, the
+workflow can change only the public snapshot with this repository's short-lived
+`GITHUB_TOKEN`. This is scheduled convergence—not a real-time guarantee—so each
+rendered snapshot always names the exact Hive-AI commit it represents. The full
+race, retry, credential, and future seconds-level dispatch design is documented
+in `docs/PUBLIC_GALAXY_SYNC.md`.
 
 `HivePoA/` remains generated output. Publish it with the canonical HivePoA
 workflow; do not hand-edit those mirrored bytes. The publisher intentionally
@@ -67,6 +71,7 @@ Run the dependency-free hub contract before publishing:
 
 ```bash
 node script/check-central-hub.mjs
+node script/check-galaxy-bridge.mjs
 node script/check-galaxy-core.mjs
 node script/check-http-surface.mjs
 node script/check-signed-release.mjs

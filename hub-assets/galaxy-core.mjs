@@ -6,7 +6,72 @@ export const GALAXY_LENS_PROFILES = Object.freeze({
   product: { links: 0.72, divisions: 1.35, families: 0.72, neurons: 0.78, familyThreshold: 1.28 },
 });
 
+export const GALAXY_PUBLIC_CONTRACT = Object.freeze({
+  neurons: 640,
+  divisions: 16,
+  families: 64,
+  familiesPerDivision: 4,
+  neuronsPerFamily: 10,
+  lensNames: Object.freeze(["mastery", "artifact", "evidence", "runtime", "product"]),
+});
+
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+
+const boxesOverlap = (left, right, gap = 4) => left.x < right.x + right.width + gap
+  && left.x + left.width + gap > right.x
+  && left.y < right.y + right.height + gap
+  && left.y + left.height + gap > right.y;
+
+export function placeCanvasLabel(width, height, desiredX, desiredY, canvasWidth, canvasHeight, occupied, priority = false) {
+  const margin = 5;
+  const baseX = clamp(desiredX, margin, Math.max(margin, canvasWidth - width - margin));
+  const baseY = clamp(desiredY, margin, Math.max(margin, canvasHeight - height - margin));
+  const verticalStep = height + 5;
+  const horizontalStep = Math.max(20, Math.min(width * 0.62, 86));
+  const offsets = priority ? [
+    [0, 0], [0, verticalStep], [0, -verticalStep],
+    [horizontalStep, 0], [-horizontalStep, 0],
+    [horizontalStep, verticalStep], [-horizontalStep, verticalStep],
+    [horizontalStep, -verticalStep], [-horizontalStep, -verticalStep],
+    [0, verticalStep * 2], [0, -verticalStep * 2],
+    [horizontalStep * 2, 0], [-horizontalStep * 2, 0],
+  ] : [[0, 0]];
+  for (const [offsetX, offsetY] of offsets) {
+    const box = {
+      x: clamp(baseX + offsetX, margin, Math.max(margin, canvasWidth - width - margin)),
+      y: clamp(baseY + offsetY, margin, Math.max(margin, canvasHeight - height - margin)),
+      width,
+      height,
+    };
+    if (!occupied.some((other) => boxesOverlap(box, other))) {
+      occupied.push(box);
+      return box;
+    }
+  }
+  return null;
+}
+
+export function galaxyPointerPolicy(pointerType, engaged) {
+  const isTouch = pointerType === "touch";
+  return {
+    engage: !isTouch,
+    focusCanvas: !isTouch || Boolean(engaged),
+    orbitAllowed: !isTouch || Boolean(engaged),
+  };
+}
+
+export function galaxyRenderState({ hasContext, hasResizeObserver, forcedColorsActive }) {
+  const baseAvailable = Boolean(hasContext && hasResizeObserver);
+  return {
+    baseAvailable,
+    renderAvailable: baseAvailable && !forcedColorsActive,
+    reasonCode: !baseAvailable ? "CANVAS_UNAVAILABLE" : forcedColorsActive ? "FORCED_COLORS" : "READY",
+  };
+}
+
+export function snapshotResponseCanCommit({ requestGeneration, currentGeneration, aborted = false }) {
+  return !aborted && requestGeneration === currentGeneration;
+}
 
 export function buildGalaxyGeometry(divisions) {
   const divisionGeometry = [];
@@ -63,6 +128,29 @@ export function buildGalaxyGeometry(divisions) {
   return { divisionGeometry, familyGeometry, neurons, neuronIndexById };
 }
 
+export function resolveGalaxySelection({
+  divisions,
+  familyGeometry,
+  neurons,
+  neuronIndexById,
+  previousDivisionCode,
+  previousFamilyCode,
+  previousNeuronId,
+}) {
+  let activeDivision = Math.max(0, divisions.findIndex((division) => division.code === previousDivisionCode));
+  let activeFamily = previousFamilyCode
+    ? familyGeometry.findIndex((geometry) => divisions[geometry.divisionIndex]?.families?.[geometry.familyIndex]?.code === previousFamilyCode)
+    : -1;
+  const activeNeuron = previousNeuronId ? (neuronIndexById.get(previousNeuronId) ?? -1) : -1;
+  if (activeNeuron >= 0) {
+    activeDivision = neurons[activeNeuron].divisionIndex;
+    activeFamily = neurons[activeNeuron].familyGeometryIndex;
+  } else if (activeFamily >= 0) {
+    activeDivision = familyGeometry[activeFamily].divisionIndex;
+  }
+  return { activeDivision, activeFamily, activeNeuron };
+}
+
 export function projectGalaxyPoint(point, { rotationX, rotationY, zoom, width, height }) {
   const cosY = Math.cos(rotationY);
   const sinY = Math.sin(rotationY);
@@ -94,6 +182,9 @@ async function sha256Hex(value) {
 export function validGalaxyProjection(galaxy, facts) {
   if (galaxy?.schema !== "hive.ecosystem.public-galaxy.v1"
     || galaxy?.statusProjection !== "none"
+    || facts?.neurons !== GALAXY_PUBLIC_CONTRACT.neurons
+    || facts?.divisions !== GALAXY_PUBLIC_CONTRACT.divisions
+    || facts?.families !== GALAXY_PUBLIC_CONTRACT.families
     || galaxy?.representedNeurons !== facts?.neurons
     || galaxy?.sourceGraphHash !== facts?.graphHash
     || !/^[a-f0-9]{64}$/.test(galaxy?.projectionHash || "")
@@ -108,13 +199,13 @@ export function validGalaxyProjection(galaxy, facts) {
     if (division?.code !== expectedDivision
       || typeof division?.name !== "string"
       || !Array.isArray(division?.families)
-      || division.families.length !== 4) return false;
+      || division.families.length !== GALAXY_PUBLIC_CONTRACT.familiesPerDivision) return false;
     let divisionNeurons = 0;
     for (const [familyIndex, family] of division.families.entries()) {
       if (family?.code !== `${expectedDivision}${familyIndex + 1}`
         || typeof family?.name !== "string"
         || !Array.isArray(family?.neuronIds)
-        || family.neuronIds.length !== 10) return false;
+        || family.neuronIds.length !== GALAXY_PUBLIC_CONTRACT.neuronsPerFamily) return false;
       familyCount += 1;
       divisionNeurons += family.neuronIds.length;
       for (const neuronId of family.neuronIds) {
@@ -140,11 +231,16 @@ export async function validSnapshot(snapshot) {
     && snapshot?.boundaries?.grantsAuthority === false
     && /^[a-f0-9]{40}$/.test(facts?.sourceCommit || "")
     && /^[a-f0-9]{64}$/.test(facts?.graphHash || "")
-    && [facts?.neurons, facts?.components, facts?.organs, facts?.nodes, facts?.edges, facts?.moons, facts?.divisions, facts?.families]
+    && facts?.neurons === GALAXY_PUBLIC_CONTRACT.neurons
+    && facts?.divisions === GALAXY_PUBLIC_CONTRACT.divisions
+    && facts?.families === GALAXY_PUBLIC_CONTRACT.families
+    && facts?.trainableNeurons + facts?.deterministicNeurons === facts?.neurons
+    && [facts?.neurons, facts?.trainableNeurons, facts?.deterministicNeurons, facts?.components, facts?.organs, facts?.nodes, facts?.edges, facts?.moons, facts?.divisions, facts?.families]
       .every((value) => Number.isSafeInteger(value) && value > 0)
     && [facts?.purposeMastered, facts?.twitches, facts?.pmOnly, facts?.notPurposeMastered]
       .every((value) => Number.isSafeInteger(value) && value >= 0)
     && facts.twitches <= facts.purposeMastered
+    && facts.purposeMastered <= facts.neurons
     && facts.pmOnly === facts.purposeMastered - facts.twitches
     && facts.notPurposeMastered === facts.neurons - facts.purposeMastered
     && validGalaxyProjection(snapshot?.galaxy, facts))) return false;

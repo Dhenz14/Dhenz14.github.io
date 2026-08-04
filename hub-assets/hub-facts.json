@@ -1,11 +1,11 @@
 {
   "schema": "hive.ecosystem.public-source-snapshot.v2",
   "hiveAi": {
-    "sourceCommit": "444e78eecd7086159b57cd421d9075a584ff54af",
+    "sourceCommit": "9dbf959df486ba7fcc9927a00634ffde2970853d",
     "sourceBranch": "main",
     "graphSource": "compiled from source manifest; no private graph bytes published",
     "graphSchema": "hiveai.living_anatomy_graph.v2",
-    "graphHash": "a8b9798cc52bfa32cd10d067f588d6284616999253e8c27afcdf85e509402236",
+    "graphHash": "1a71930e20c95aa05f0b631175da97500a966e191ef6e69ba1a36f28399150f5",
     "sourceFingerprint": "9e1d3edde89c45eebe1db63a27e1ced129dc7e8ac8dc2ab1f474ed2f5e57aca4",
     "neurons": 640,
     "trainableNeurons": 448,
@@ -26,7 +26,7 @@
   "galaxy": {
     "schema": "hive.ecosystem.public-galaxy.v1",
     "generatorVersion": "2.0.0",
-    "sourceGraphHash": "a8b9798cc52bfa32cd10d067f588d6284616999253e8c27afcdf85e509402236",
+    "sourceGraphHash": "1a71930e20c95aa05f0b631175da97500a966e191ef6e69ba1a36f28399150f5",
     "geometry": "deterministic-authored-clusters",
     "representedNeurons": 640,
     "divisions": [
@@ -1169,7 +1169,7 @@
     ],
     "statusProjection": "none",
     "claimBoundary": "The public atlas shows topology and family purpose only. Gold Twitch, mastery, runtime, work-lane, mission, and urgency states remain on the authenticated local Living Anatomy surface.",
-    "projectionHash": "239e93b026de555e3768f16d85d41cc92d5939de825f2ccb212eb707eddfed25"
+    "projectionHash": "894b98cef17c309e7e98894b34303fc6ecd663a83490a6d1f88d129bfdfd13eb"
   },
   "ecosystem": {
     "schema": "hive.ecosystem.public-organ-map.v1",
@@ -1214,9 +1214,9 @@
     "federationRepositories": 20
   },
   "refresh": {
-    "privateSourceMode": "scheduled-living-main-publisher",
-    "automaticBridgeEnabled": true,
-    "reasonCode": "SCHEDULED_LIVING_MAIN_PUBLISHER",
+    "privateSourceMode": "manual-source-bound-snapshot",
+    "automaticBridgeEnabled": false,
+    "reasonCode": "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
     "lastGoodBehavior": "retain_previous_snapshot"
   },
   "boundaries": {
@@ -1227,5 +1227,5 @@
     "localChatUrl": "http://127.0.0.1:5002/chat",
     "localGalaxyUrl": "http://127.0.0.1:5002/constellation/body?presentation=1"
   },
-  "capturedAt": "2026-08-04T20:29:27Z"
+  "capturedAt": "2026-08-04T21:07:29Z"
 }

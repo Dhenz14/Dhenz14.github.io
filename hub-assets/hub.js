@@ -1,10 +1,15 @@
 import {
   GALAXY_LENS_PROFILES,
   buildGalaxyGeometry,
+  galaxyPointerPolicy,
+  galaxyRenderState,
+  placeCanvasLabel,
   projectGalaxyPoint,
+  resolveGalaxySelection,
   selectGalaxyHit,
+  snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=stark-galaxy-v2";
+} from "./galaxy-core.mjs?v=stark-galaxy-v3";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -267,7 +272,11 @@ async function loadSourceSnapshot() {
     if (!response.ok) throw new Error(`snapshot HTTP ${response.status}`);
     const snapshot = await response.json();
     if (!await validSnapshot(snapshot)) throw new Error("snapshot contract rejected");
-    if (requestGeneration !== snapshotRequestGeneration) return false;
+    if (!snapshotResponseCanCommit({
+      requestGeneration,
+      currentGeneration: snapshotRequestGeneration,
+      aborted: Boolean(controller?.signal.aborted),
+    })) return false;
     const facts = snapshot.hiveAi;
     const values = {
       neurons: facts.neurons,
@@ -693,42 +702,6 @@ function roundedRectPath(context, x, y, width, height, radius) {
   context.closePath();
 }
 
-function boxesOverlap(left, right, gap = 4) {
-  return left.x < right.x + right.width + gap
-    && left.x + left.width + gap > right.x
-    && left.y < right.y + right.height + gap
-    && left.y + left.height + gap > right.y;
-}
-
-function placeCanvasLabel(width, height, desiredX, desiredY, canvasWidth, canvasHeight, occupied, priority = false) {
-  const margin = 5;
-  const baseX = clamp(desiredX, margin, Math.max(margin, canvasWidth - width - margin));
-  const baseY = clamp(desiredY, margin, Math.max(margin, canvasHeight - height - margin));
-  const verticalStep = height + 5;
-  const horizontalStep = Math.max(20, Math.min(width * 0.62, 86));
-  const offsets = priority ? [
-    [0, 0], [0, verticalStep], [0, -verticalStep],
-    [horizontalStep, 0], [-horizontalStep, 0],
-    [horizontalStep, verticalStep], [-horizontalStep, verticalStep],
-    [horizontalStep, -verticalStep], [-horizontalStep, -verticalStep],
-    [0, verticalStep * 2], [0, -verticalStep * 2],
-    [horizontalStep * 2, 0], [-horizontalStep * 2, 0],
-  ] : [[0, 0]];
-  for (const [offsetX, offsetY] of offsets) {
-    const box = {
-      x: clamp(baseX + offsetX, margin, Math.max(margin, canvasWidth - width - margin)),
-      y: clamp(baseY + offsetY, margin, Math.max(margin, canvasHeight - height - margin)),
-      width,
-      height,
-    };
-    if (!occupied.some((other) => boxesOverlap(box, other))) {
-      occupied.push(box);
-      return box;
-    }
-  }
-  return null;
-}
-
 class GalaxyAtlas {
   constructor(canvas) {
     this.canvas = canvas;
@@ -772,7 +745,12 @@ class GalaxyAtlas {
     this.visible = this.documentVisible;
     this.paused = reduceMotion.matches || document.body.classList.contains("motion-paused");
     this.forcedColors = window.matchMedia("(forced-colors: active)");
-    this.renderAvailable = Boolean(this.context && "ResizeObserver" in window && !this.forcedColors.matches);
+    this.baseRenderAvailable = galaxyRenderState({
+      hasContext: Boolean(this.context),
+      hasResizeObserver: "ResizeObserver" in window,
+      forcedColorsActive: false,
+    }).baseAvailable;
+    this.renderAvailable = false;
 
     window.addEventListener("hive:snapshot", (event) => this.setSnapshot(event.detail?.snapshot));
     window.addEventListener("hive:snapshot-error", () => {
@@ -785,12 +763,8 @@ class GalaxyAtlas {
       this.draw(performance.now());
     });
     this.setEngaged(false);
-    if (!this.renderAvailable) {
-      this.stage?.classList.add("galaxy-static-fallback");
-      this.canvas.closest("#galaxy")?.classList.add("galaxy-fallback-active");
-      this.setCameraControlsAvailable(false, this.forcedColors.matches
-        ? "Camera controls are hidden in forced-colors mode; use the semantic division and family controls."
-        : "Canvas rendering is unavailable; use the semantic division and family controls.");
+    if (!this.baseRenderAvailable) {
+      this.applyRenderAvailability(this.forcedColors.matches);
       return;
     }
 
@@ -815,7 +789,13 @@ class GalaxyAtlas {
       this.paused = Boolean(event.detail?.paused) || reduceMotion.matches;
       this.syncLoop();
     });
-    this.resize();
+    const onForcedColorsChange = (event) => this.applyRenderAvailability(Boolean(event.matches));
+    if (typeof this.forcedColors.addEventListener === "function") {
+      this.forcedColors.addEventListener("change", onForcedColorsChange);
+    } else if (typeof this.forcedColors.addListener === "function") {
+      this.forcedColors.addListener(onForcedColorsChange);
+    }
+    this.applyRenderAvailability(this.forcedColors.matches);
   }
 
   setSnapshot(snapshot) {
@@ -828,18 +808,18 @@ class GalaxyAtlas {
     this.divisions = snapshot.galaxy.divisions;
     this.buildGeometry();
 
-    this.activeDivision = Math.max(0, this.divisions.findIndex((division) => division.code === previousDivisionCode));
-    this.activeFamily = previousFamilyCode
-      ? this.familyGeometry.findIndex((geometry) => this.divisions[geometry.divisionIndex]?.families?.[geometry.familyIndex]?.code === previousFamilyCode)
-      : -1;
-    this.activeNeuron = previousNeuronId ? (this.neuronIndexById.get(previousNeuronId) ?? -1) : -1;
-    if (this.activeNeuron >= 0) {
-      const neuron = this.neurons[this.activeNeuron];
-      this.activeDivision = neuron.divisionIndex;
-      this.activeFamily = neuron.familyGeometryIndex;
-    } else if (this.activeFamily >= 0) {
-      this.activeDivision = this.familyGeometry[this.activeFamily].divisionIndex;
-    }
+    const selection = resolveGalaxySelection({
+      divisions: this.divisions,
+      familyGeometry: this.familyGeometry,
+      neurons: this.neurons,
+      neuronIndexById: this.neuronIndexById,
+      previousDivisionCode,
+      previousFamilyCode,
+      previousNeuronId,
+    });
+    this.activeDivision = selection.activeDivision;
+    this.activeFamily = selection.activeFamily;
+    this.activeNeuron = selection.activeNeuron;
     this.buildDivisionIndex();
     this.showDivision(this.activeDivision, false, true);
     this.draw(performance.now());
@@ -1060,7 +1040,31 @@ class GalaxyAtlas {
       button.disabled = !available;
       button.title = available ? "" : reason;
     });
-    if (!available) this.canvas.removeAttribute("tabindex");
+    if (available) this.canvas.setAttribute("tabindex", "0");
+    else this.canvas.removeAttribute("tabindex");
+  }
+
+  applyRenderAvailability(forcedColorsActive) {
+    const state = galaxyRenderState({
+      hasContext: Boolean(this.context),
+      hasResizeObserver: "ResizeObserver" in window,
+      forcedColorsActive,
+    });
+    this.renderAvailable = state.renderAvailable;
+    const fallback = !state.renderAvailable;
+    this.stage?.classList.toggle("galaxy-static-fallback", fallback);
+    this.canvas.closest("#galaxy")?.classList.toggle("galaxy-fallback-active", fallback);
+    if (fallback) this.setEngaged(false);
+    const reason = state.reasonCode === "FORCED_COLORS"
+      ? "Camera controls are hidden in forced-colors mode; use the semantic division and family controls."
+      : "Canvas rendering is unavailable; use the semantic division and family controls.";
+    this.setCameraControlsAvailable(state.renderAvailable, reason);
+    window.cancelAnimationFrame(this.raf);
+    this.raf = 0;
+    if (state.renderAvailable) {
+      this.resize();
+      this.syncLoop();
+    }
   }
 
   wireControls() {
@@ -1116,8 +1120,10 @@ class GalaxyAtlas {
       if (event.button !== 0) return;
       this.updatePointer(event);
       this.hitTest();
-      this.setEngaged(true);
-      this.canvas.focus({ preventScroll: true });
+      const pointerPolicy = galaxyPointerPolicy(event.pointerType, this.engaged);
+      this.pointer.orbitAllowed = pointerPolicy.orbitAllowed;
+      if (pointerPolicy.engage) this.setEngaged(true);
+      if (pointerPolicy.focusCanvas) this.canvas.focus({ preventScroll: true });
       this.dragging = true;
       this.dragMoved = false;
       this.pointer.startX = event.clientX;
@@ -1133,6 +1139,7 @@ class GalaxyAtlas {
         const dx = event.clientX - this.pointer.startX;
         const dy = event.clientY - this.pointer.startY;
         this.dragMoved ||= Math.hypot(dx, dy) > 4;
+        if (!this.pointer.orbitAllowed) return;
         this.targetRotationY = this.pointer.rotationY + dx * 0.006;
         this.targetRotationX = clamp(this.pointer.rotationX + dy * 0.0048, -1.15, 1.15);
         this.syncLoop();
@@ -1241,6 +1248,7 @@ class GalaxyAtlas {
   }
 
   resize() {
+    if (!this.context || !this.renderAvailable) return;
     const rect = (this.stage || this.canvas).getBoundingClientRect();
     this.width = Math.max(1, rect.width);
     this.height = Math.max(1, rect.height);
@@ -1269,7 +1277,7 @@ class GalaxyAtlas {
   }
 
   draw(time = 0) {
-    if (!this.context) return;
+    if (!this.context || !this.renderAvailable) return;
     const context = this.context;
     context.clearRect(0, 0, this.width, this.height);
     if (!this.divisions.length) {

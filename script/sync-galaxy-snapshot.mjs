@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputPath = path.join(siteRoot, "hub-assets", "hub-facts.json");
 const GENERATOR_VERSION = "2.0.0";
+const automaticBridgeEnabled = process.env.GALAXY_AUTOMATIC_BRIDGE === "true";
 
 const PYTHON_BUILD = String.raw`
 import json
@@ -39,6 +40,7 @@ physiology = v1.get("physiology") or {}
 summary = v1.get("summary") or {}
 payload = {
     "graph": strip_pr1_meta(v2),
+    "truth_input_commit": (v2.get("_pr1_meta") or {}).get("source_commit"),
     "summary": summary,
     "physiology": {
         "purpose_mastered": physiology.get("purpose_mastered_total"),
@@ -118,27 +120,21 @@ if (!fs.existsSync(hiveAiRepo)) fail(`Hive-AI repository missing: ${hiveAiRepo}`
 
 const sourceCommit = run("git", ["-C", hiveAiRepo, "rev-parse", `${sourceRef}^{commit}`]);
 if (!/^[a-f0-9]{40}$/.test(sourceCommit)) fail("source commit is not an exact SHA-1");
+const checkoutCommit = run("git", ["-C", hiveAiRepo, "rev-parse", "HEAD^{commit}"]);
+if (checkoutCommit !== sourceCommit) {
+  fail(`compiled checkout does not equal the selected source: HEAD=${checkoutCommit} source=${sourceCommit}`);
+}
 
-const originUrl = run("git", ["-C", hiveAiRepo, "remote", "get-url", "origin"]);
-const remoteMainLine = run("git", ["ls-remote", originUrl, "refs/heads/main"]);
+const remoteMainLine = run("git", ["-C", hiveAiRepo, "ls-remote", "origin", "refs/heads/main"]);
 const remoteMain = remoteMainLine.split(/\s+/)[0] || "";
 if (remoteMain !== sourceCommit) {
   fail(`local ${sourceRef} is not live GitHub main: local=${sourceCommit} remote=${remoteMain || "missing"}`);
 }
 
-try {
-  run("git", [
-    "-C", hiveAiRepo, "diff", "--quiet", sourceCommit, "--",
-    "hiveai/living_anatomy", "scripts/build_living_anatomy.py",
-  ]);
-} catch {
-  fail("local compiler code differs from the frozen source commit");
-}
-const compilerStatus = run("git", [
-  "-C", hiveAiRepo, "status", "--porcelain", "--untracked-files=all", "--",
-  "hiveai/living_anatomy", "scripts/build_living_anatomy.py",
+const checkoutStatus = run("git", [
+  "-C", hiveAiRepo, "status", "--porcelain", "--untracked-files=all", "--ignored=matching",
 ]);
-if (compilerStatus) fail("local compiler paths contain uncommitted or untracked changes");
+if (checkoutStatus) fail("compiled checkout contains modified, untracked, or ignored files");
 
 const compiled = JSON.parse(run("env", [
   "PYTHONDONTWRITEBYTECODE=1",
@@ -160,6 +156,18 @@ if (!Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) {
 }
 if (!Array.isArray(graph.source_manifest) || graph.source_manifest.length < 1) {
   fail("compiled graph has no source manifest");
+}
+const truthInputCommit = String(compiled.truth_input_commit || "").toLowerCase();
+if (!/^[a-f0-9]{40}$/.test(truthInputCommit)) {
+  fail(`source history is too shallow to prove the truth-input commit: ${truthInputCommit || "missing"}`);
+}
+const shallowPathRaw = run("git", ["-C", hiveAiRepo, "rev-parse", "--git-path", "shallow"]);
+const shallowPath = path.isAbsolute(shallowPathRaw) ? shallowPathRaw : path.resolve(hiveAiRepo, shallowPathRaw);
+if (fs.existsSync(shallowPath)) {
+  const shallowBoundaries = new Set(fs.readFileSync(shallowPath, "utf8").trim().split(/\s+/).filter(Boolean));
+  if (shallowBoundaries.has(truthInputCommit)) {
+    fail(`truth-input commit ${truthInputCommit} is a shallow boundary; deepen source history`);
+  }
 }
 
 for (const source of graph.source_manifest) {
@@ -298,9 +306,11 @@ const base = {
     federationRepositories: graph.edges.filter((edge) => edge.relationship_type === "federation_member").length,
   },
   refresh: {
-    privateSourceMode: "scheduled-living-main-publisher",
-    automaticBridgeEnabled: true,
-    reasonCode: "SCHEDULED_LIVING_MAIN_PUBLISHER",
+    privateSourceMode: automaticBridgeEnabled ? "scheduled-living-main-publisher" : "manual-source-bound-snapshot",
+    automaticBridgeEnabled,
+    reasonCode: automaticBridgeEnabled
+      ? "SCHEDULED_LIVING_MAIN_PUBLISHER"
+      : "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
     lastGoodBehavior: "retain_previous_snapshot",
   },
   boundaries: {

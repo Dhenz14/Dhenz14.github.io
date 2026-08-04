@@ -26,15 +26,34 @@ jobs:
           path: site
           fetch-depth: 0
 
+      - name: Check private-source credential availability
+        id: source-auth
+        env:
+          HIVE_AI_READ_DEPLOY_KEY: ${{ secrets.HIVE_AI_READ_DEPLOY_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${HIVE_AI_READ_DEPLOY_KEY:-}" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "The read-only Hive-AI deploy key is not configured; keeping the last source snapshot and publishing an inactive bridge boundary."
+          fi
+
       - name: Check out the living Hive-AI source
+        id: source-checkout
+        if: steps.source-auth.outputs.configured == 'true'
+        continue-on-error: true
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: Dhenz14/Hive-AI
           ref: main
           path: hive-ai
-          fetch-depth: 1
+          ssh-key: ${{ secrets.HIVE_AI_READ_DEPLOY_KEY }}
+          ssh-strict: true
+          fetch-depth: 128
           filter: blob:none
-          persist-credentials: false
+          persist-credentials: true
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /hiveai/__init__.py
@@ -70,12 +89,15 @@ jobs:
           node-version: 22
 
       - name: Compile the newest coherent Hive-AI main
+        if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome == 'success'
+        env:
+          GALAXY_AUTOMATIC_BRIDGE: "true"
         shell: bash
         run: |
           set -euo pipefail
           source_repo="$GITHUB_WORKSPACE/hive-ai"
           for attempt in 1 2 3; do
-            git -C "$source_repo" fetch --filter=blob:none --depth=1 origin main
+            git -C "$source_repo" fetch --filter=blob:none origin main
             git -C "$source_repo" switch --detach FETCH_HEAD
             if node site/script/sync-galaxy-snapshot.mjs \
               --hive-ai-repo "$source_repo" \
@@ -83,10 +105,25 @@ jobs:
               exit 0
             fi
             if [[ "$attempt" == 3 ]]; then
-              echo "Hive-AI main moved through all three bounded attempts; the last-good snapshot remains published."
+              echo "Hive-AI source or provenance stayed unprovable through all bounded attempts; the last-good snapshot remains published."
               exit 1
             fi
+            if [[ "$attempt" == 1 ]]; then
+              git -C "$source_repo" fetch --filter=blob:none --deepen=896 origin main
+            elif git -C "$source_repo" rev-parse --is-shallow-repository | grep -qx true; then
+              git -C "$source_repo" fetch --filter=blob:none --unshallow origin main
+            fi
           done
+
+      - name: Fail closed when the source credential is absent
+        if: steps.source-auth.outputs.configured != 'true'
+        shell: bash
+        run: node site/script/mark-galaxy-bridge-inactive.mjs --credential-missing
+
+      - name: Fail closed when private-source checkout fails
+        if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome != 'success'
+        shell: bash
+        run: node site/script/mark-galaxy-bridge-inactive.mjs --checkout-failed
 
       - name: Refuse unexpected generated changes
         working-directory: site
@@ -111,7 +148,9 @@ jobs:
           node --check hub-assets/hub.js
           node --check hub-assets/galaxy-core.mjs
           node --check script/sync-galaxy-snapshot.mjs
+          node --check script/mark-galaxy-bridge-inactive.mjs
           node script/check-central-hub.mjs
+          node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
           node script/check-http-surface.mjs
           node script/check-signed-release.mjs
@@ -128,10 +167,15 @@ jobs:
             exit 0
           fi
           source_sha="$(node -p "require('./hub-assets/hub-facts.json').hiveAi.sourceCommit")"
+          bridge_enabled="$(node -p "require('./hub-assets/hub-facts.json').refresh.automaticBridgeEnabled")"
           git config user.name "hive-living-main[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add hub-assets/hub-facts.json
-          git commit -m "chore(galaxy): absorb Hive-AI ${source_sha:0:12}"
+          if [[ "$bridge_enabled" == "true" ]]; then
+            git commit -m "chore(galaxy): absorb Hive-AI ${source_sha:0:12}"
+          else
+            git commit -m "chore(galaxy): mark private source bridge inactive"
+          fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
           for attempt in 1 2 3; do
@@ -145,6 +189,7 @@ jobs:
               exit 1
             fi
             node script/check-central-hub.mjs
+            node script/check-galaxy-bridge.mjs
             node script/check-galaxy-core.mjs
             node script/check-http-surface.mjs
             node script/check-signed-release.mjs

@@ -6,25 +6,27 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pages: write
+  contents: read
 
 concurrency:
   group: living-galaxy-main-publisher
   cancel-in-progress: false
 
 jobs:
-  publish:
+  compile:
     if: github.repository == 'Dhenz14/Dhenz14.github.io' && (github.event_name == 'workflow_dispatch' || vars.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - name: Check out Pages main
+      - name: Check out trusted Pages compiler
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
           path: site
-          fetch-depth: 0
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Check private-source credential availability
         id: source-auth
@@ -37,7 +39,7 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "The read-only Hive-AI deploy key is not configured; keeping the last source snapshot and publishing an inactive bridge boundary."
+            echo "The read-only Hive-AI deploy key is not configured; retaining the last source snapshot behind an inactive bridge boundary."
           fi
 
       - name: Check out the living Hive-AI source
@@ -66,6 +68,7 @@ jobs:
             /hiveai/physiology/
             /configs/hivebrain/
             /configs/federation_manifest.json
+            /data/neuron_swarm/portable_green_evidence_membership_20260722.json
             /docs/soak_receipts/neuron_swarm/
             /docs/soak_receipts/*.json
             /docs/soak_receipts/*.jsonl
@@ -82,13 +85,28 @@ jobs:
             /scripts/build_neuron_dossiers.py
             /scripts/materialize_full_neuron_swarm.py
             /schemas/living_anatomy_*.schema.json
+            /tests/fixtures/physiology/formal_l3_e01_v2/RATIFY_L3_E01_V2.json
+            /tests/fixtures/physiology/formal_l3_e02/window_seal/RATIFY_L3_E02_V1.json
 
       - name: Use Node.js 22
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
 
-      - name: Compile the newest coherent Hive-AI main
+      - name: Use Python 3.12
+        if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome == 'success'
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: site/script/requirements-galaxy-sync.txt
+
+      - name: Install the hash-locked compiler dependency
+        if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome == 'success'
+        shell: bash
+        run: "python -m pip install --require-hashes --only-binary=:all: -r site/script/requirements-galaxy-sync.txt"
+
+      - name: Compile one coherent observation of living main
         if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome == 'success'
         env:
           GALAXY_AUTOMATIC_BRIDGE: "true"
@@ -106,7 +124,7 @@ jobs:
               exit 0
             fi
             if [[ "$attempt" == 3 ]]; then
-              echo "Hive-AI source or provenance stayed unprovable through all bounded attempts; the last-good snapshot remains published."
+              echo "Hive-AI main kept moving or stayed unprovable through all bounded attempts; no candidate will be published."
               exit 1
             fi
             if [[ "$attempt" == 1 ]]; then
@@ -126,22 +144,20 @@ jobs:
         shell: bash
         run: node site/script/mark-galaxy-bridge-inactive.mjs --checkout-failed
 
-      - name: Refuse unexpected generated changes
+      - name: Refuse unexpected compiler changes
         working-directory: site
         shell: bash
         run: |
           set -euo pipefail
           changed="$(git status --porcelain | sed -E 's/^...//' | sort -u)"
           if [[ -z "$changed" ]]; then
-            echo "Snapshot already represents the newest observed source."
-            exit 0
-          fi
-          if [[ "$changed" != "hub-assets/hub-facts.json" ]]; then
+            echo "Snapshot already represents the newest coherent observation."
+          elif [[ "$changed" != "hub-assets/hub-facts.json" ]]; then
             printf 'Unexpected generated paths:\n%s\n' "$changed" >&2
             exit 1
           fi
 
-      - name: Verify before publication
+      - name: Verify the credential-free candidate
         working-directory: site
         shell: bash
         run: |
@@ -154,53 +170,193 @@ jobs:
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
           node script/check-http-surface.mjs
+          node script/check-publisher-races.mjs
           node script/check-signed-release.mjs
           git diff --check
 
-      - name: Publish one source-bound snapshot commit
+      - name: Upload only the inert snapshot candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: living-galaxy-candidate
+          path: site/hub-assets/hub-facts.json
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  publish:
+    needs: compile
+    if: needs.compile.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pages: write
+    steps:
+      - name: Check out current Pages main
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          path: site
+          fetch-depth: 0
+
+      - name: Download the inert snapshot candidate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: living-galaxy-candidate
+          path: candidate
+
+      - name: Admit exactly one bounded JSON artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' entries < <(find candidate -mindepth 1 -maxdepth 1 -print0)
+          if [[ "${#entries[@]}" -ne 1 || "${entries[0]}" != "candidate/hub-facts.json" ]]; then
+            printf 'Candidate artifact has an unexpected path set:\n' >&2
+            printf '%s\n' "${entries[@]}" >&2
+            exit 1
+          fi
+          if [[ ! -f candidate/hub-facts.json || -L candidate/hub-facts.json ]]; then
+            echo "Candidate must be one regular JSON file." >&2
+            exit 1
+          fi
+          candidate_bytes="$(stat -c %s candidate/hub-facts.json)"
+          if (( candidate_bytes < 1024 || candidate_bytes > 524288 )); then
+            echo "Candidate size is outside the 1 KiB to 512 KiB publication envelope: $candidate_bytes" >&2
+            exit 1
+          fi
+          candidate_sha="$(sha256sum candidate/hub-facts.json | cut -d' ' -f1)"
+          install -m 0644 candidate/hub-facts.json site/hub-assets/hub-facts.json
+          installed_sha="$(sha256sum site/hub-assets/hub-facts.json | cut -d' ' -f1)"
+          if [[ "$candidate_sha" != "$installed_sha" ]]; then
+            echo "Candidate changed while crossing the publisher boundary." >&2
+            exit 1
+          fi
+          echo "Admitted hub-facts.json sha256=$candidate_sha bytes=$candidate_bytes"
+
+      - name: Refuse every path except the public facts file
+        working-directory: site
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git status --porcelain | sed -E 's/^...//' | sort -u)"
+          if [[ -z "$changed" ]]; then
+            echo "Current Pages main already contains this candidate."
+          elif [[ "$changed" != "hub-assets/hub-facts.json" ]]; then
+            printf 'Unexpected publication paths:\n%s\n' "$changed" >&2
+            exit 1
+          fi
+
+      - name: Verify with the trusted current-main test suite
+        working-directory: site
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check hub-assets/hub.js
+          node --check hub-assets/galaxy-core.mjs
+          node --check script/sync-galaxy-snapshot.mjs
+          node --check script/mark-galaxy-bridge-inactive.mjs
+          node script/check-central-hub.mjs
+          node script/check-galaxy-bridge.mjs
+          node script/check-galaxy-core.mjs
+          node script/check-http-surface.mjs
+          node script/check-publisher-races.mjs
+          node script/check-signed-release.mjs
+          git diff --check
+
+      - name: Publish one exact snapshot commit onto living Pages main
         id: publish
         working-directory: site
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- hub-assets/hub-facts.json; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
+          candidate_path="$GITHUB_WORKSPACE/candidate/hub-facts.json"
+          candidate_sha="$(sha256sum "$candidate_path" | cut -d' ' -f1)"
+          base_sha="$(git show HEAD:hub-assets/hub-facts.json | sha256sum | cut -d' ' -f1)"
+          observed_sha="$(node -p 'require(process.argv[1]).hiveAi.sourceCommit' "$candidate_path")"
+          bridge_enabled="$(node -p 'require(process.argv[1]).refresh.automaticBridgeEnabled' "$candidate_path")"
+          if [[ "$bridge_enabled" == "true" ]]; then
+            commit_subject="chore(galaxy): absorb Hive-AI ${observed_sha:0:12}"
+          else
+            commit_subject="chore(galaxy): mark private source bridge inactive"
           fi
-          source_sha="$(node -p "require('./hub-assets/hub-facts.json').hiveAi.sourceCommit")"
-          bridge_enabled="$(node -p "require('./hub-assets/hub-facts.json').refresh.automaticBridgeEnabled")"
           git config user.name "hive-living-main[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add hub-assets/hub-facts.json
-          if [[ "$bridge_enabled" == "true" ]]; then
-            git commit -m "chore(galaxy): absorb Hive-AI ${source_sha:0:12}"
-          else
-            git commit -m "chore(galaxy): mark private source bridge inactive"
-          fi
-          echo "changed=true" >> "$GITHUB_OUTPUT"
 
           for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
+            git fetch origin main
+            remote_sha="$(git show origin/main:hub-assets/hub-facts.json | sha256sum | cut -d' ' -f1)"
+            decision="$(node script/publisher-candidate-policy.mjs \
+              --base "$base_sha" --remote "$remote_sha" --candidate "$candidate_sha")"
+            if [[ "$decision" == "ALREADY_LANDED" ]]; then
+              git restore --source=HEAD --staged --worktree hub-assets/hub-facts.json
+              git switch --detach origin/main
+              echo "changed=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            git fetch origin main
-            if ! git rebase origin/main; then
-              git rebase --abort || true
-              echo "Pages main changed incompatibly; preserving its winner and retrying on the next scheduled run."
+            if [[ "$decision" == "CONCURRENT_FACTS_WINNER" ]]; then
+              echo "A concurrent Pages writer changed the facts artifact; preserving that winner for a fresh source compilation." >&2
               exit 1
             fi
+
+            git restore --source=HEAD --staged --worktree hub-assets/hub-facts.json
+            git switch --detach origin/main
+            install -m 0644 "$candidate_path" hub-assets/hub-facts.json
+            installed_sha="$(sha256sum hub-assets/hub-facts.json | cut -d' ' -f1)"
+            if [[ "$installed_sha" != "$candidate_sha" ]]; then
+              echo "Exact candidate bytes changed during current-main reconstruction." >&2
+              exit 1
+            fi
+            changed_paths="$(git status --porcelain | sed -E 's/^...//' | sort -u)"
+            if [[ "$changed_paths" != "hub-assets/hub-facts.json" ]]; then
+              printf 'Reconstructed candidate changed an unexpected path:\n%s\n' "$changed_paths" >&2
+              exit 1
+            fi
+
             node script/check-central-hub.mjs
             node script/check-galaxy-bridge.mjs
             node script/check-galaxy-core.mjs
             node script/check-http-surface.mjs
+            node script/check-publisher-races.mjs
             node script/check-signed-release.mjs
+            git diff --check
+            git add hub-assets/hub-facts.json
+            git commit -m "$commit_subject"
+            committed_candidate_sha="$(git show HEAD:hub-assets/hub-facts.json | sha256sum | cut -d' ' -f1)"
+            if [[ "$committed_candidate_sha" != "$candidate_sha" ]]; then
+              echo "Committed snapshot does not equal the admitted candidate." >&2
+              exit 1
+            fi
+            changed_paths="$(git diff --name-only origin/main...HEAD)"
+            if [[ "$changed_paths" != "hub-assets/hub-facts.json" ]]; then
+              printf 'Snapshot commit contains unexpected paths:\n%s\n' "$changed_paths" >&2
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
           done
-          echo "Pages main kept moving through all bounded push attempts; the next scheduled run will converge."
+          echo "Pages main moved through all bounded pushes; the next scheduled run will reconcile again."
           exit 1
 
-      - name: Request the legacy Pages build explicitly
-        if: steps.publish.outputs.changed == 'true'
+      - name: Ensure current Pages main has a build or retry
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
-        run: gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
+        run: |
+          set -euo pipefail
+          landed_sha="$(git -C site rev-parse HEAD)"
+          latest_commit=""
+          latest_status=""
+          if latest_commit="$(gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest" --jq '.commit // ""')" \
+            && latest_status="$(gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest" --jq '.status // ""')"; then
+            echo "Latest Pages build commit=${latest_commit:-missing} status=${latest_status:-missing}"
+          else
+            echo "Latest Pages build could not be read; requesting a recovery build."
+          fi
+          if [[ "$latest_commit" != "$landed_sha" \
+            || ( "$latest_status" != "built" && "$latest_status" != "building" ) ]]; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
+          else
+            echo "Pages already has a built or building deployment for current main."
+          fi

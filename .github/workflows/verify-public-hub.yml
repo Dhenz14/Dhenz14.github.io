@@ -31,13 +31,16 @@ jobs:
           node --check script/check-http-surface.mjs
           node --check script/check-galaxy-core.mjs
           node --check script/check-live-parity.mjs
+          node --check script/check-publisher-races.mjs
           node --check script/check-signed-release.mjs
           node --check script/sync-galaxy-snapshot.mjs
           node --check script/mark-galaxy-bridge-inactive.mjs
+          node --check script/publisher-candidate-policy.mjs
       - name: Verify public hub contract
         run: |
           node script/check-central-hub.mjs
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
           node script/check-http-surface.mjs
+          node script/check-publisher-races.mjs
           node script/check-signed-release.mjs

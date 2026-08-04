@@ -35,6 +35,7 @@ const required = [
   "sitemap.xml",
   "site.webmanifest",
   ".github/workflows/sync-living-galaxy.yml",
+  "docs/PUBLIC_GALAXY_SYNC.md",
   "favicon.svg",
   "favicon.ico",
   "hub-assets/hub.css",
@@ -49,6 +50,9 @@ const required = [
   "script/check-galaxy-core.mjs",
   "script/check-signed-release.mjs",
   "script/check-live-parity.mjs",
+  "script/check-publisher-races.mjs",
+  "script/publisher-candidate-policy.mjs",
+  "script/requirements-galaxy-sync.txt",
   "HivePoA/index.html",
   "HivePoA/download/index.html",
   "HivePoA/verify/index.html",
@@ -101,9 +105,23 @@ for (const [name, source] of [["index.html", html], ["404.html", notFound]]) {
 
 requireMatch(html, /One organism\.[\s\S]*Every system in orbit\./, "hero identity");
 requireMatch(html, /Hive-AI is the reasoning brain\.[\s\S]*HivePoA is the proof and storage plane\./, "system boundary");
+requireMatch(html, /source-badge[^>]+title="JavaScript verifies[^>]*>[\s\S]*Snapshot verification pending/, "truthful no-JS source state");
+requireMatch(html, /data-motion-toggle[^>]+aria-disabled="true"[^>]+disabled[^>]*>[\s\S]*Motion control pending/, "inert no-JS motion control");
+requireMatch(html, /<noscript>[\s\S]*no package or live-source claim is authorized/, "explicit no-JS truth boundary");
 requireMatch(html, /id="galaxy"/, "public galaxy section");
-requireMatch(html, /data-galaxy-engage[^>]+aria-pressed="false"/, "explicit galaxy engagement");
-requireMatch(html, /data-galaxy-canvas[^>]+tabindex="0"[^>]+role="img"/, "keyboard-addressable galaxy canvas");
+const rootButtonTags = [...html.matchAll(/<button\b[^>]*>/g)].map((match) => match[0]);
+const startupLensButtons = rootButtonTags.filter((tag) => /\sdata-lens=/.test(tag));
+if (startupLensButtons.length !== 5 || startupLensButtons.some((tag) => !/\sdisabled(?:\s|>)/.test(tag))) {
+  throw new Error("all five startup lens controls must be disabled");
+}
+const startupCameraButtons = rootButtonTags.filter((tag) => /\sdata-galaxy-(?:engage|zoom|reset)(?:=|\s|>)/.test(tag));
+if (startupCameraButtons.length !== 4 || startupCameraButtons.some((tag) => (
+  !/\sdisabled(?:\s|>)/.test(tag) || !/\saria-disabled="true"/.test(tag)
+))) {
+  throw new Error("all four startup camera controls must be disabled and aria-disabled");
+}
+requireMatch(html, /data-galaxy-engage[^>]+aria-pressed="false"/, "explicit galaxy engagement state");
+requireMatch(html, /data-galaxy-canvas[^>]+tabindex="-1"[^>]+aria-disabled="true"[^>]+role="img"/, "inert startup galaxy canvas");
 requireMatch(html, /data-galaxy-index-list[^>]+aria-label="Jump to a galaxy division"/, "semantic division navigation");
 requireMatch(html, /Current authorized beta tester package/, "tester authorization label");
 requireMatch(html, /Not verified here/, "local-byte boundary");
@@ -136,7 +154,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (!rootCssVersion || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "stark-galaxy-v5" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)) {
@@ -144,9 +162,12 @@ if (!rootCssVersion || rootCssVersion !== rootJsVersion
 }
 
 requireMatch(js, /Signed release index verified/, "signed-index status");
+requireMatch(js, /button\.disabled = systemReduced;[\s\S]*button\.setAttribute\("aria-disabled", String\(systemReduced\)\)/, "motion control runtime enablement");
 requireMatch(js, /PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256/, "pinned verifier fingerprint");
 requireMatch(js, /data-release-evidence-index/, "separate evidence states");
 requireMatch(js, /class GalaxyAtlas/, "galaxy renderer");
+requireMatch(js, /function wireLenses\(\)[\s\S]*button\.disabled = false;/, "lens controls enabled only after module boot");
+requireMatch(js, /setCameraControlsAvailable\(available[\s\S]*button\.disabled = !available;[\s\S]*aria-disabled[\s\S]*tabindex[\s\S]*aria-disabled/, "camera controls runtime availability gate");
 requireMatch(js, /runSafely\("Living Anatomy galaxy", startGalaxy\)/, "galaxy call chain");
 requireMatch(js, /focusFamily\(familyGeometryIndex\)/, "family semantic zoom");
 requireMatch(js, /focusNeuron\(neuronIndex\)/, "neuron semantic zoom");
@@ -171,6 +192,7 @@ requireMatch(js, /this\.intersecting = true;[\s\S]*this\.documentVisible = !docu
 requireMatch(js, /if \(!this\.context\) return;/, "canvas fail-soft guard");
 requireMatch(js, /download\.removeAttribute\("href"\)/, "blocked download deauthorization");
 requireMatch(galaxyCore, /facts\.pmOnly === facts\.purposeMastered - facts\.twitches/, "PM Twitch invariant");
+requireMatch(galaxyCore, /captured - now > 5 \* 60_000[\s\S]*snapshotFreshness\(snapshot\?\.capturedAt\)\.state !== "invalid"/, "capture timestamp validity and future-skew gate");
 requireMatch(js, /SNAPSHOT_REFRESH_MS = 60_000/, "visibility-aware snapshot refresh interval");
 requireMatch(js, /Last-good snapshot/, "last-good refresh behavior");
 requireMatch(js, /AbortController/, "snapshot request cancellation");
@@ -188,6 +210,7 @@ requireNoMatch(js, /Math\.random\(/, "non-deterministic visual geometry");
 
 requireMatch(css, /@media \(prefers-reduced-motion: reduce\)/, "reduced motion");
 requireMatch(css, /button:focus-visible,[\s\S]*a:focus-visible/, "visible focus");
+requireMatch(css, /\.motion-toggle:hover:not\(:disabled\)/, "inert motion control hover state");
 requireMatch(css, /\[data-reveal\]\s*{\s*opacity:\s*1;/, "progressive no-JS visibility");
 requireMatch(css, /\[data-reveal\]\.reveal-ready/, "enhanced reveal state");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-canvas/, "forced-colors galaxy fallback");
@@ -199,6 +222,7 @@ requireMatch(css, /\.map-readout\s*{[\s\S]*?pointer-events:\s*none;/, "non-block
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.map-readout\s*{[\s\S]*?inset:\s*1rem 1rem auto auto;/, "separated mobile galaxy overlays");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-controls\s*{\s*display:\s*none;/, "forced-colors camera fallback");
 requireMatch(css, /\.galaxy-fallback-active \.galaxy-controls\s*{\s*display:\s*none;/, "no-canvas camera fallback");
+requireMatch(css, /\.lens-bar button:disabled,[\s\S]*\.galaxy-controls button:disabled/, "disabled galaxy control styling");
 requireNoMatch(css, /@import\s|url\(\s*["']?https?:/i, "third-party CSS runtime dependency");
 
 for (const forbidden of [
@@ -287,21 +311,59 @@ const inactiveRefresh = facts.refresh?.automaticBridgeEnabled === false
 if (!activeRefresh && !activeLocalRefresh && !inactiveRefresh) throw new Error("refresh automation boundary drifted");
 
 const syncWorkflow = read(".github/workflows/sync-living-galaxy.yml");
+const syncDocs = read("docs/PUBLIC_GALAXY_SYNC.md");
+const requirements = read("script/requirements-galaxy-sync.txt");
+const compileStart = syncWorkflow.indexOf("  compile:\n");
+const publishStart = syncWorkflow.indexOf("  publish:\n");
+if (compileStart === -1 || publishStart <= compileStart) throw new Error("split compiler/publisher jobs are missing");
+const compileJob = syncWorkflow.slice(compileStart, publishStart);
+const publishJob = syncWorkflow.slice(publishStart);
 requireMatch(syncWorkflow, /cron:\s*["']\*\/5 \* \* \* \*["']/, "five-minute living-main schedule");
 requireMatch(syncWorkflow, /workflow_dispatch:/, "manual living-main refresh");
 requireMatch(syncWorkflow, /vars\.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true'/, "explicit cloud publisher activation gate");
-requireMatch(syncWorkflow, /contents:\s*write/, "same-repository snapshot publish authority");
-requireMatch(syncWorkflow, /pages:\s*write/, "legacy Pages build authority");
-requireMatch(syncWorkflow, /sync-galaxy-snapshot\.mjs/, "living-main snapshot compiler call");
-requireMatch(syncWorkflow, /check-central-hub\.mjs/, "pre-publish hub verification");
-requireMatch(syncWorkflow, /git push origin HEAD:main/, "atomic Pages main publication");
-requireMatch(syncWorkflow, /POST ["']repos\/\$GITHUB_REPOSITORY\/pages\/builds["']/, "explicit workflow-authored Pages build");
-requireMatch(syncWorkflow, /secrets\.HIVE_AI_READ_DEPLOY_KEY/, "read-only private-source deploy key");
-requireMatch(syncWorkflow, /mark-galaxy-bridge-inactive\.mjs --credential-missing/, "credential-removal fail-closed path");
-requireMatch(syncWorkflow, /mark-galaxy-bridge-inactive\.mjs --checkout-failed/, "credential-failure fail-closed path");
+requireMatch(syncWorkflow, /permissions:\s*\n\s+contents:\s*read/, "default read-only workflow authority");
+requireMatch(compileJob, /permissions:\s*\n\s+contents:\s*read/, "credential-free compiler authority");
+requireNoMatch(compileJob, /contents:\s*write|pages:\s*write/, "compiler publication authority");
+requireMatch(publishJob, /permissions:\s*\n\s+contents:\s*write\s*\n\s+pages:\s*write/, "isolated publisher authority");
+requireMatch(compileJob, /persist-credentials:\s*false/, "trusted Pages compiler checkout credential removal");
+requireMatch(compileJob, /sync-galaxy-snapshot\.mjs/, "living-main snapshot compiler call");
+requireMatch(compileJob, /actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/, "pinned inert candidate upload");
+requireMatch(publishJob, /actions\/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093/, "pinned inert candidate download");
+requireMatch(publishJob, /candidate_bytes[\s\S]*524288[\s\S]*candidate_sha[\s\S]*installed_sha/, "bounded artifact admission and copy hash proof");
+requireNoMatch(publishJob, /repository:\s*Dhenz14\/Hive-AI|HIVE_AI_READ_DEPLOY_KEY|GALAXY_BRIDGE_MODE|python\s+-m\s+pip/, "publisher private compiler execution");
+requireNoMatch(publishJob, /git rebase/, "candidate-mutating Pages reconciliation");
+requireMatch(publishJob, /base_sha[\s\S]*remote_sha[\s\S]*publisher-candidate-policy\.mjs[\s\S]*CONCURRENT_FACTS_WINNER/, "immutable candidate moving-main policy");
+requireMatch(publishJob, /committed_candidate_sha[\s\S]*candidate_sha[\s\S]*git diff --name-only origin\/main\.\.\.HEAD/, "post-reconstruction candidate and path proof");
+requireMatch(publishJob, /check-central-hub\.mjs/, "trusted pre-publish hub verification");
+requireMatch(compileJob, /check-publisher-races\.mjs/, "credential-free publisher race verification");
+requireMatch(publishJob, /check-publisher-races\.mjs/, "current-main publisher race verification");
+requireMatch(publishJob, /git push origin HEAD:main/, "atomic Pages main publication");
+requireMatch(publishJob, /pages\/builds\/latest[\s\S]*latest_commit[\s\S]*latest_status[\s\S]*"built"[\s\S]*"building"[\s\S]*POST/, "recoverable Pages deployment request");
+requireMatch(publishJob, /POST ["']repos\/\$GITHUB_REPOSITORY\/pages\/builds["']/, "explicit workflow-authored Pages build");
+requireMatch(compileJob, /secrets\.HIVE_AI_READ_DEPLOY_KEY/, "read-only private-source deploy key");
+requireMatch(compileJob, /mark-galaxy-bridge-inactive\.mjs --credential-missing/, "credential-removal fail-closed path");
+requireMatch(compileJob, /mark-galaxy-bridge-inactive\.mjs --checkout-failed/, "credential-failure fail-closed path");
 const secretNames = [...syncWorkflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((match) => match[1]);
 if (secretNames.some((name) => name !== "HIVE_AI_READ_DEPLOY_KEY")) throw new Error("unexpected workflow secret authority");
 requireNoMatch(syncWorkflow, /personal_access_token|\bPAT\b/i, "broad sync credential");
+requireMatch(syncDocs, /read-only `compile` job[\s\S]*separate `publish` job[\s\S]*never checks out Hive-AI or executes its\s+code/, "documented split publisher trust boundary");
+requireMatch(syncDocs, /remote `main` both before and after compilation[\s\S]*never a mixed-era artifact/, "documented living-main race boundary");
+requireMatch(syncDocs, /never rebases[\s\S]*reconstructs the exact candidate bytes[\s\S]*concurrent writer changed the facts/, "documented immutable candidate reconciliation");
+requireMatch(syncDocs, /compares the latest Pages[\s\S]*requests or retries the legacy build/, "documented Pages deployment recovery");
+requireMatch(compileJob, /actions\/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1/, "pinned Python runtime");
+requireMatch(compileJob, /pip install --require-hashes --only-binary=:all:/, "hash-locked binary-only Python install");
+for (const requiredPath of [
+  "/data/neuron_swarm/portable_green_evidence_membership_20260722.json",
+  "/tests/fixtures/physiology/formal_l3_e01_v2/RATIFY_L3_E01_V2.json",
+  "/tests/fixtures/physiology/formal_l3_e02/window_seal/RATIFY_L3_E02_V1.json",
+]) {
+  if (!compileJob.includes(requiredPath)) throw new Error(`publisher sparse evidence path missing: ${requiredPath}`);
+}
+const requirementSpecs = requirements.split(/\r?\n/).filter((line) => /^[a-z0-9-]+==/i.test(line));
+const requirementHashes = [...requirements.matchAll(/--hash=sha256:[a-f0-9]{64}/g)];
+if (requirementSpecs.length !== 6 || requirementHashes.length !== 6 || /(?:~=|>=|<=|>|<)/.test(requirements)) {
+  throw new Error("galaxy compiler dependency lock must contain six exact, hash-bound artifacts");
+}
 
 requireMatch(generator, /"-C", hiveAiRepo, "ls-remote", "origin"/, "credential-preserving live remote source proof");
 requireMatch(generator, /rev-parse", "HEAD\^\{commit\}"[\s\S]*checkoutCommit !== sourceCommit/, "exact compiled checkout identity");
@@ -310,7 +372,21 @@ requireMatch(generator, /truth-input commit[\s\S]*shallow boundary/, "shallow pr
 requireMatch(generator, /fs\.fsyncSync/, "atomic durable snapshot write");
 requireMatch(generator, /process\.argv\.includes\("--check"\)/, "snapshot check mode");
 requireMatch(generator, /statusProjection:\s*"none"/, "no status projection");
-requireMatch(generator, /git", \["-C", hiveAiRepo, "show"/, "source-manifest byte proof");
+requireMatch(generator, /gitBlobSha1[\s\S]*ls-tree[\s\S]*verifyMaterializedSource/, "tracked source byte proof");
+requireMatch(generator, /REQUIRED_PUBLISHER_EVIDENCE_PATHS[\s\S]*portable_green_evidence_membership_20260722[\s\S]*RATIFY_L3_E01_V2[\s\S]*RATIFY_L3_E02_V1/, "publisher evidence closure roster");
+requireMatch(generator, /graph\.evidence[\s\S]*evidenceByPath[\s\S]*sourceTreeEntries\.has\(repositoryPath\)[\s\S]*verifyMaterializedSource\(repositoryPath, expected\)/, "generic tracked evidence closure");
+requireMatch(generator, /required publisher evidence did not enter the compiled closure/, "required evidence compiler inclusion gate");
+const compiledIndex = generator.indexOf("const compiled =");
+const postCompileRaceIndex = generator.indexOf("const remoteMainAfterCompile = remoteMainCommit();");
+const snapshotAssemblyIndex = generator.indexOf("const galaxyWithoutHash =");
+const snapshotDecisionIndex = generator.indexOf("if (checkOnly) {");
+if (compiledIndex === -1
+  || snapshotAssemblyIndex <= compiledIndex
+  || postCompileRaceIndex <= snapshotAssemblyIndex
+  || snapshotDecisionIndex <= postCompileRaceIndex) {
+  throw new Error("post-compile living-main race gate is missing or out of order");
+}
+requireMatch(generator, /Hive-AI main moved during compilation/, "moving-main retry signal");
 requireMatch(generator, /GALAXY_AUTOMATIC_BRIDGE === "true"/, "explicit bridge activation input");
 requireMatch(generator, /GALAXY_BRIDGE_MODE === "local"/, "local convergence mode");
 requireNoMatch(bridgeFailClosed, /automaticBridgeEnabled:\s*true/, "fail-closed script authority escalation");
@@ -324,9 +400,9 @@ requireMatch(galaxyCore, /export function galaxyRenderState/, "testable render f
 requireMatch(galaxyCore, /export function placeCanvasLabel/, "testable collision-aware labels");
 requireMatch(galaxyCore, /export function resolveGalaxySelection/, "testable semantic selection continuity");
 requireMatch(galaxyCore, /export function snapshotFreshness/, "testable snapshot freshness state");
-requireMatch(syncWorkflow, /fetch-depth:\s*128/, "bounded initial source history");
-requireMatch(syncWorkflow, /persist-credentials:\s*true/, "authenticated post-checkout source proof");
-requireMatch(syncWorkflow, /--deepen=896[\s\S]*--unshallow/, "progressive source history proof");
+requireMatch(compileJob, /fetch-depth:\s*128/, "bounded initial source history");
+requireMatch(compileJob, /persist-credentials:\s*true/, "authenticated post-checkout source proof");
+requireMatch(compileJob, /--deepen=896[\s\S]*--unshallow/, "progressive source history proof");
 
 const png = fs.readFileSync(path.join(root, "hub-assets/og.png"));
 if (png.subarray(1, 4).toString("ascii") !== "PNG" || png.readUInt32BE(16) !== 1200 || png.readUInt32BE(20) !== 630) {

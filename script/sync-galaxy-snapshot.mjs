@@ -8,7 +8,12 @@ import { fileURLToPath } from "node:url";
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputPath = path.join(siteRoot, "hub-assets", "hub-facts.json");
-const GENERATOR_VERSION = "2.0.0";
+const GENERATOR_VERSION = "2.1.0";
+const REQUIRED_PUBLISHER_EVIDENCE_PATHS = Object.freeze([
+  "data/neuron_swarm/portable_green_evidence_membership_20260722.json",
+  "tests/fixtures/physiology/formal_l3_e01_v2/RATIFY_L3_E01_V2.json",
+  "tests/fixtures/physiology/formal_l3_e02/window_seal/RATIFY_L3_E02_V1.json",
+]);
 const automaticBridgeEnabled = process.env.GALAXY_AUTOMATIC_BRIDGE === "true";
 const bridgeMode = automaticBridgeEnabled && process.env.GALAXY_BRIDGE_MODE === "local"
   ? "local"
@@ -86,6 +91,43 @@ function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
+function gitBlobSha1(value) {
+  return crypto.createHash("sha1")
+    .update(`blob ${value.length}\0`)
+    .update(value)
+    .digest("hex");
+}
+
+function normalizedEvidencePath(value) {
+  const raw = String(value || "");
+  const repositoryPath = raw.split("#", 1)[0];
+  if (!repositoryPath
+    || repositoryPath.includes("\\")
+    || path.posix.isAbsolute(repositoryPath)
+    || path.posix.normalize(repositoryPath) !== repositoryPath
+    || repositoryPath === ".."
+    || repositoryPath.startsWith("../")) {
+    fail(`unsafe evidence path: ${raw || "missing"}`);
+  }
+  return repositoryPath;
+}
+
+function sourceTree(commit, repository) {
+  const entries = new Map();
+  const listing = runBytes("git", ["-C", repository, "ls-tree", "-r", "-z", commit]);
+  for (const record of listing.toString("utf8").split("\0")) {
+    if (!record) continue;
+    const match = record.match(/^(\d{6})\s+(\S+)\s+([a-f0-9]+)\t([\s\S]+)$/);
+    if (!match) fail("source tree contains an unreadable entry");
+    entries.set(match[4], {
+      mode: match[1],
+      type: match[2],
+      objectId: match[3],
+    });
+  }
+  return entries;
+}
+
 function naturalId(left, right) {
   return left.localeCompare(right, "en", { numeric: true, sensitivity: "base" });
 }
@@ -128,16 +170,60 @@ if (checkoutCommit !== sourceCommit) {
   fail(`compiled checkout does not equal the selected source: HEAD=${checkoutCommit} source=${sourceCommit}`);
 }
 
-const remoteMainLine = run("git", ["-C", hiveAiRepo, "ls-remote", "origin", "refs/heads/main"]);
-const remoteMain = remoteMainLine.split(/\s+/)[0] || "";
-if (remoteMain !== sourceCommit) {
-  fail(`local ${sourceRef} is not live GitHub main: local=${sourceCommit} remote=${remoteMain || "missing"}`);
+function remoteMainCommit() {
+  return run("git", ["-C", hiveAiRepo, "ls-remote", "origin", "refs/heads/main"])
+    .split(/\s+/)[0] || "";
+}
+
+const remoteMainBeforeCompile = remoteMainCommit();
+if (remoteMainBeforeCompile !== sourceCommit) {
+  fail(`local ${sourceRef} is not live GitHub main: local=${sourceCommit} remote=${remoteMainBeforeCompile || "missing"}`);
 }
 
 const checkoutStatus = run("git", [
   "-C", hiveAiRepo, "status", "--porcelain", "--untracked-files=all", "--ignored=matching",
 ]);
 if (checkoutStatus) fail("compiled checkout contains modified, untracked, or ignored files");
+
+const objectFormat = run("git", ["-C", hiveAiRepo, "rev-parse", "--show-object-format"]);
+if (objectFormat !== "sha1") fail(`unsupported source object format: ${objectFormat}`);
+const sourceTreeEntries = sourceTree(sourceCommit, hiveAiRepo);
+const verifiedCheckoutPaths = new Map();
+
+function verifyMaterializedSource(repositoryPath, expected = null) {
+  const previous = verifiedCheckoutPaths.get(repositoryPath);
+  if (previous) {
+    if (expected && (expected.bytes !== previous.bytes || expected.sha256 !== previous.sha256)) {
+      fail(`contradictory evidence metadata for ${repositoryPath}`);
+    }
+    return previous;
+  }
+  const entry = sourceTreeEntries.get(repositoryPath);
+  if (!entry || entry.type !== "blob" || !/^100\d{3}$/.test(entry.mode)) {
+    fail(`evidence path is not a regular tracked blob at ${sourceCommit}: ${repositoryPath}`);
+  }
+  const checkoutPath = path.join(hiveAiRepo, ...repositoryPath.split("/"));
+  let bytes;
+  try {
+    bytes = fs.readFileSync(checkoutPath);
+  } catch (error) {
+    if (error?.code === "ENOENT") fail(`tracked evidence is unresolved in the materialized checkout: ${repositoryPath}`);
+    throw error;
+  }
+  const observed = { bytes: bytes.length, sha256: sha256(bytes) };
+  if (gitBlobSha1(bytes) !== entry.objectId) {
+    fail(`working evidence is not byte-bound to ${sourceCommit}: ${repositoryPath}`);
+  }
+  if (expected && (expected.bytes !== observed.bytes || expected.sha256 !== observed.sha256)) {
+    fail(`compiled evidence metadata is not byte-bound to ${sourceCommit}: ${repositoryPath}`);
+  }
+  verifiedCheckoutPaths.set(repositoryPath, observed);
+  return observed;
+}
+
+for (const repositoryPath of REQUIRED_PUBLISHER_EVIDENCE_PATHS) {
+  verifyMaterializedSource(repositoryPath);
+}
 
 const compiled = JSON.parse(run("env", [
   "PYTHONDONTWRITEBYTECODE=1",
@@ -177,9 +263,45 @@ for (const source of graph.source_manifest) {
   if (!source || typeof source.path !== "string" || !/^[a-f0-9]{64}$/.test(source.sha256 || "")) {
     fail("compiled graph contains a malformed source manifest entry");
   }
-  const frozenBytes = runBytes("git", ["-C", hiveAiRepo, "show", `${sourceCommit}:${source.path}`]);
-  if (frozenBytes.length !== source.bytes || sha256(frozenBytes) !== source.sha256) {
-    fail(`working source is not byte-bound to ${sourceCommit}: ${source.path}`);
+  if (!Number.isSafeInteger(source.bytes) || source.bytes < 0) {
+    fail(`compiled graph contains invalid source bytes: ${source.path}`);
+  }
+  verifyMaterializedSource(normalizedEvidencePath(source.path), source);
+}
+
+if (!Array.isArray(graph.evidence) || graph.evidence.length < 1) {
+  fail("compiled graph contains no evidence closure");
+}
+const evidenceByPath = new Map();
+for (const evidence of graph.evidence) {
+  if (!evidence
+    || typeof evidence.path !== "string"
+    || !/^[a-f0-9]{64}$/.test(evidence.sha256 || "")
+    || !Number.isSafeInteger(evidence.bytes)
+    || evidence.bytes < 0) {
+    fail("compiled graph contains a malformed evidence entry");
+  }
+  const repositoryPath = normalizedEvidencePath(evidence.path);
+  const expected = { bytes: evidence.bytes, sha256: evidence.sha256 };
+  const prior = evidenceByPath.get(repositoryPath);
+  if (prior && (prior.bytes !== expected.bytes || prior.sha256 !== expected.sha256)) {
+    fail(`compiled graph contains contradictory evidence entries: ${repositoryPath}`);
+  }
+  evidenceByPath.set(repositoryPath, expected);
+}
+for (const repositoryPath of REQUIRED_PUBLISHER_EVIDENCE_PATHS) {
+  if (!evidenceByPath.has(repositoryPath)) {
+    fail(`required publisher evidence did not enter the compiled closure: ${repositoryPath}`);
+  }
+}
+for (const [repositoryPath, expected] of evidenceByPath) {
+  if (sourceTreeEntries.has(repositoryPath)) {
+    verifyMaterializedSource(repositoryPath, expected);
+    continue;
+  }
+  const unresolvedCheckoutPath = path.join(hiveAiRepo, ...repositoryPath.split("/"));
+  if (fs.existsSync(unresolvedCheckoutPath)) {
+    fail(`evidence resolves to an untracked checkout path: ${repositoryPath}`);
   }
 }
 
@@ -341,6 +463,11 @@ const next = {
 const rendered = `${JSON.stringify(next, null, 2)}\n`;
 const current = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : "";
 const stale = current !== rendered;
+
+const remoteMainAfterCompile = remoteMainCommit();
+if (remoteMainAfterCompile !== sourceCommit) {
+  fail(`Hive-AI main moved during compilation: selected=${sourceCommit} remote=${remoteMainAfterCompile || "missing"}`);
+}
 
 if (checkOnly) {
   if (stale) {

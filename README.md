@@ -28,8 +28,10 @@ private `Dhenz14/HivePoA` build.
 The snapshot compiler proves that its local Hive-AI ref is the live GitHub
 `main`, freezes that exact commit, recompiles Living Anatomy without writing to
 Hive-AI, validates the graph and compatibility contracts, verifies every source
-manifest byte against the frozen commit, refuses a mismatched or dirty checkout,
-and rejects shallow history that cannot prove canonical truth-input provenance.
+manifest and tracked evidence byte against the frozen commit, requires the
+publisher-only ratification inputs, checks remote `main` again after compilation,
+refuses a mismatched or dirty checkout, and rejects shallow history that cannot
+prove canonical truth-input provenance.
 It atomically publishes only the strict public allowlist:
 
 ```bash
@@ -53,12 +55,15 @@ that exact source-bound build every five minutes and on manual dispatch. Private
 source access is intentionally limited to the `HIVE_AI_READ_DEPLOY_KEY` Actions
 secret: a read-only deploy key installed only on Hive-AI. If it is absent, the
 workflow succeeds fail-closed, retains the last-good source snapshot, and marks
-the bridge inactive instead of pretending to refresh. When configured, the
-workflow can change only the public snapshot with this repository's short-lived
-`GITHUB_TOKEN`. This is scheduled convergence—not a real-time guarantee—so each
-rendered snapshot always names the exact Hive-AI commit it represents. The full
-race, retry, credential, and future seconds-level dispatch design is documented
-in `docs/PUBLIC_GALAXY_SYNC.md`.
+the bridge inactive instead of pretending to refresh. The compiler job is
+read-only and has no Pages publication credential; it uploads one bounded JSON
+candidate. A separate publisher job starts from fresh Pages `main`, never runs
+Hive-AI code, validates that candidate with the trusted current-main tests, and
+alone receives the short-lived write token. This is scheduled convergence—not
+a stable-main or real-time assumption—so each rendered snapshot always names
+the exact Hive-AI commit it represents. The full race, retry, credential, and
+future seconds-level dispatch design is documented in
+`docs/PUBLIC_GALAXY_SYNC.md`.
 
 Cloud runs remain explicitly gated by the `LIVING_GALAXY_CLOUD_SYNC_ENABLED`
 repository variable. Until a dedicated read-only cloud key is authorized, an

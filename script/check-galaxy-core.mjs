@@ -67,6 +67,14 @@ badCardinality.galaxy.divisions.pop();
 badCardinality.galaxy.projectionHash = projectionHash(badCardinality.galaxy);
 assert(!await validSnapshot(badCardinality), "runtime validator accepted a self-consistent non-640 projection");
 
+const badCapturedAt = clone(facts);
+badCapturedAt.capturedAt = "not-a-time";
+assert(!await validSnapshot(badCapturedAt), "runtime validator accepted a malformed capture timestamp");
+
+const futureCapturedAt = clone(facts);
+futureCapturedAt.capturedAt = "2999-01-01T00:00:00Z";
+assert(!await validSnapshot(futureCapturedAt), "runtime validator accepted a far-future capture timestamp");
+
 const touchIdle = galaxyPointerPolicy("touch", false);
 const touchEngaged = galaxyPointerPolicy("touch", true);
 const mouseIdle = galaxyPointerPolicy("mouse", false);
@@ -89,6 +97,8 @@ assert(snapshotFreshness("2026-08-04T20:50:00Z", freshnessNow).state === "curren
 assert(snapshotFreshness("2026-08-04T20:30:00Z", freshnessNow).state === "delayed", "delayed snapshot marked current");
 assert(snapshotFreshness("2026-08-04T19:00:00Z", freshnessNow).state === "critical", "critical snapshot age hidden");
 assert(snapshotFreshness("not-a-date", freshnessNow).state === "invalid", "invalid snapshot time accepted");
+assert(snapshotFreshness("2999-01-01T00:00:00Z", freshnessNow).state === "invalid", "far-future snapshot marked current");
+assert(snapshotFreshness("2026-08-04T21:04:00Z", freshnessNow).state === "current", "bounded clock skew rejected");
 
 const occupied = [];
 const firstLabel = placeCanvasLabel(80, 18, -100, -100, 320, 180, occupied, true);
@@ -190,4 +200,4 @@ for (const viewport of viewports) {
   }
 }
 
-console.log(`GALAXY_CORE_OK negative_snapshots=5 exact_centers=${checkedCenters} viewports=${viewports.length} lenses=${Object.keys(GALAXY_LENS_PROFILES).length} pointer_policies=3 render_states=3 label_cases=3 refresh_gates=3 freshness_states=4 selection_cases=2`);
+console.log(`GALAXY_CORE_OK negative_snapshots=7 exact_centers=${checkedCenters} viewports=${viewports.length} lenses=${Object.keys(GALAXY_LENS_PROFILES).length} pointer_policies=3 render_states=3 label_cases=3 refresh_gates=3 freshness_states=6 selection_cases=2`);

@@ -27,14 +27,17 @@ const required = [
   "robots.txt",
   "sitemap.xml",
   "site.webmanifest",
+  ".github/workflows/sync-living-galaxy.yml",
   "favicon.svg",
   "favicon.ico",
   "hub-assets/hub.css",
   "hub-assets/hub.js",
+  "hub-assets/galaxy-core.mjs",
   "hub-assets/hub-facts.json",
   "hub-assets/og.png",
   "script/sync-galaxy-snapshot.mjs",
   "script/check-http-surface.mjs",
+  "script/check-galaxy-core.mjs",
   "script/check-signed-release.mjs",
   "script/check-live-parity.mjs",
   "HivePoA/index.html",
@@ -53,6 +56,7 @@ const html = read("index.html");
 const notFound = read("404.html");
 const css = read("hub-assets/hub.css");
 const js = read("hub-assets/hub.js");
+const galaxyCore = read("hub-assets/galaxy-core.mjs");
 const generator = read("script/sync-galaxy-snapshot.mjs");
 const facts = JSON.parse(read("hub-assets/hub-facts.json"));
 
@@ -85,6 +89,31 @@ if (!disabledDownload || /\shref=/.test(disabledDownload) || !/tabindex="-1"/.te
   throw new Error("unverified release download must be inert and unfocusable");
 }
 requireNoMatch(html, /galaxy-inspector["'][^>]*aria-live/, "hover-driven live-region noise");
+const csp = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i;
+for (const [name, source] of [["index.html", html], ["404.html", notFound]]) {
+  const policy = source.match(csp)?.[1] || "";
+  requireMatch(policy, /default-src 'self'/, `${name} default CSP`);
+  requireMatch(policy, /object-src 'none'/, `${name} object CSP`);
+  requireMatch(policy, /base-uri 'none'/, `${name} base CSP`);
+  requireMatch(policy, /script-src 'self' 'sha256-[A-Za-z0-9+/=]+'/i, `${name} hashed-script CSP`);
+  requireNoMatch(policy, /script-src[^;]*'unsafe-inline'/i, `${name} unsafe inline scripts`);
+  requireNoMatch(policy, /upgrade-insecure-requests/i, `${name} local-runtime navigation upgrade`);
+}
+const rootPolicy = html.match(csp)?.[1] || "";
+const inlineScripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)];
+if (inlineScripts.length !== 1) throw new Error(`expected one hashed inline script, found ${inlineScripts.length}`);
+for (const match of inlineScripts) {
+  const digest = crypto.createHash("sha256").update(match[1]).digest("base64");
+  if (!rootPolicy.includes(`'sha256-${digest}'`)) throw new Error("inline script CSP hash drifted");
+}
+const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
+const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
+if (!rootCssVersion || rootCssVersion !== rootJsVersion
+  || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
+  || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
+  || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)) {
+  throw new Error("root and 404 asset versions must remain identical");
+}
 
 requireMatch(js, /Signed release index verified/, "signed-index status");
 requireMatch(js, /PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256/, "pinned verifier fingerprint");
@@ -97,15 +126,26 @@ requireMatch(js, /drawFamilyLabel\(/, "family canvas labels");
 requireMatch(js, /drawNeuronLabel\(/, "neuron identity label");
 requireMatch(js, /placeCanvasLabel\(/, "collision-aware label placement");
 requireMatch(js, /GALAXY_LENS_PROFILES/, "lens-specific topology weighting");
+requireMatch(js, /selectGalaxyHit\(/, "child-first global hit resolver call");
+requireNoMatch(js, /point\.divisionIndex !== focusDivision/, "parent-first hit restriction");
+requireMatch(js, /pointerdown[\s\S]*this\.updatePointer\(event\);[\s\S]*this\.hitTest\(\);/, "touch tap coordinate capture");
+requireMatch(js, /pointercancel[^\n]+release\(event, true\)/, "non-activating pointer cancellation");
+requireMatch(js, /focusedFamilyIndex[\s\S]*data-family-geometry-index[\s\S]*focus\(\{ preventScroll: true \}\)/, "family focus continuity");
+requireMatch(js, /focusedNeuronId[\s\S]*data-neuron-id[\s\S]*focus\(\{ preventScroll: true \}\)/, "neuron focus continuity");
+requireMatch(js, /previousNeuronId[\s\S]*neuronIndexById\.get\(previousNeuronId\)/, "semantic snapshot selection continuity");
+requireMatch(js, /galaxy-fallback-active/, "semantic no-canvas fallback activation");
 requireMatch(js, /1 - Math\.exp\(-elapsed \/ 145\)/, "time-based camera damping");
 requireMatch(js, /if \(!this\.engaged \|\| atMinimum \|\| atMaximum\) return;/, "non-trapping wheel gate");
-requireMatch(js, /event\.key === "Escape" && this\.engaged[\s\S]*this\.setEngaged\(false, true\);[\s\S]*this\.canvas\.blur\(\)/, "keyboard scroll release");
+requireMatch(js, /event\.key !== "Escape" \|\| !this\.engaged[\s\S]*this\.setEngaged\(false, true\);[\s\S]*data-galaxy-engage[\s\S]*focus\(\{ preventScroll: true \}\)/, "keyboard scroll release and focus return");
 requireMatch(js, /this\.intersecting = true;[\s\S]*this\.documentVisible = !document\.hidden;/, "visibility state separation");
 requireMatch(js, /if \(!this\.context\) return;/, "canvas fail-soft guard");
 requireMatch(js, /download\.removeAttribute\("href"\)/, "blocked download deauthorization");
-requireMatch(js, /facts\.pmOnly === facts\.purposeMastered - facts\.twitches/, "PM Twitch invariant");
+requireMatch(galaxyCore, /facts\.pmOnly === facts\.purposeMastered - facts\.twitches/, "PM Twitch invariant");
 requireMatch(js, /SNAPSHOT_REFRESH_MS = 60_000/, "visibility-aware snapshot refresh interval");
 requireMatch(js, /Last-good snapshot/, "last-good refresh behavior");
+requireMatch(js, /AbortController/, "snapshot request cancellation");
+requireMatch(js, /snapshotRequestGeneration/, "snapshot response generation gate");
+requireMatch(js, /if \(\$\("\[data-source-stamp\], \[data-galaxy-canvas\]"\)\)[\s\S]*loadSourceSnapshot\(\)\.finally\(startSnapshotRefresh\)/, "snapshot refresh surface gate");
 requireMatch(js, /runSafely\("Offscreen scene control", wireSceneActivity\)/, "offscreen CSS animation control");
 requireNoMatch(js, /time\s*-\s*this\.lastFrame\s*<\s*32/, "30fps frame throttle");
 requireNoMatch(js, /Math\.random\(/, "non-deterministic visual geometry");
@@ -118,6 +158,9 @@ requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-canvas/, "for
 requireMatch(css, /@keyframes centered-orbit-spin[\s\S]*translate\(-50%, -50%\) rotate\(-13deg\)[\s\S]*translate\(-50%, -50%\) rotate\(347deg\)/, "stable centered hero orbit");
 requireMatch(css, /\.motion-scene-paused[\s\S]*animation-play-state:\s*paused !important/, "offscreen CSS animation pause");
 requireMatch(css, /\.galaxy-stage\s*{[\s\S]*?touch-action:\s*pan-y;/, "touch page-scroll preservation");
+requireMatch(css, /\.galaxy-stage\.is-engaged\s*{[\s\S]*?touch-action:\s*none;/, "engaged touch orbit ownership");
+requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-controls\s*{\s*display:\s*none;/, "forced-colors camera fallback");
+requireMatch(css, /\.galaxy-fallback-active \.galaxy-controls\s*{\s*display:\s*none;/, "no-canvas camera fallback");
 requireNoMatch(css, /@import\s|url\(\s*["']?https?:/i, "third-party CSS runtime dependency");
 
 for (const forbidden of [
@@ -194,15 +237,29 @@ const serializedFacts = JSON.stringify(facts);
 for (const forbidden of ["/home/", "C:\\\\"]) {
   if (serializedFacts.includes(forbidden)) throw new Error(`private public-snapshot field leaked: ${forbidden}`);
 }
-if (facts.refresh?.automaticBridgeEnabled !== false || facts.refresh?.reasonCode !== "CROSS_REPOSITORY_NOTIFIER_APP_NOT_CONFIGURED") {
+if (facts.refresh?.automaticBridgeEnabled !== true || facts.refresh?.reasonCode !== "SCHEDULED_LIVING_MAIN_PUBLISHER") {
   throw new Error("refresh automation boundary drifted");
 }
+
+const syncWorkflow = read(".github/workflows/sync-living-galaxy.yml");
+requireMatch(syncWorkflow, /cron:\s*["']\*\/5 \* \* \* \*["']/, "five-minute living-main schedule");
+requireMatch(syncWorkflow, /workflow_dispatch:/, "manual living-main refresh");
+requireMatch(syncWorkflow, /contents:\s*write/, "same-repository snapshot publish authority");
+requireMatch(syncWorkflow, /pages:\s*write/, "legacy Pages build authority");
+requireMatch(syncWorkflow, /sync-galaxy-snapshot\.mjs/, "living-main snapshot compiler call");
+requireMatch(syncWorkflow, /check-central-hub\.mjs/, "pre-publish hub verification");
+requireMatch(syncWorkflow, /git push origin HEAD:main/, "atomic Pages main publication");
+requireMatch(syncWorkflow, /POST ["']repos\/\$GITHUB_REPOSITORY\/pages\/builds["']/, "explicit workflow-authored Pages build");
+requireNoMatch(syncWorkflow, /secrets\.|personal_access_token|\bPAT\b/i, "broad sync credential");
 
 requireMatch(generator, /git", \["ls-remote"/, "live remote source proof");
 requireMatch(generator, /fs\.fsyncSync/, "atomic durable snapshot write");
 requireMatch(generator, /process\.argv\.includes\("--check"\)/, "snapshot check mode");
 requireMatch(generator, /statusProjection:\s*"none"/, "no status projection");
 requireMatch(generator, /git", \["-C", hiveAiRepo, "show"/, "source-manifest byte proof");
+requireMatch(galaxyCore, /galaxy\?\.sourceGraphHash !== facts\?\.graphHash/, "runtime graph binding");
+requireMatch(galaxyCore, /projectionHash === await sha256Hex/, "runtime projection hash binding");
+requireMatch(galaxyCore, /export function selectGalaxyHit/, "testable global hit selection");
 
 const png = fs.readFileSync(path.join(root, "hub-assets/og.png"));
 if (png.subarray(1, 4).toString("ascii") !== "PNG" || png.readUInt32BE(16) !== 1200 || png.readUInt32BE(20) !== 630) {

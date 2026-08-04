@@ -1,0 +1,160 @@
+name: Sync living galaxy
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: living-galaxy-main-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'Dhenz14/Dhenz14.github.io'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out Pages main
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          path: site
+          fetch-depth: 0
+
+      - name: Check out the living Hive-AI source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: Dhenz14/Hive-AI
+          ref: main
+          path: hive-ai
+          fetch-depth: 1
+          filter: blob:none
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /hiveai/__init__.py
+            /hiveai/_optional_scripts.py
+            /hiveai/living_anatomy/
+            /hiveai/moons/universal_manifest.py
+            /hiveai/neuron_swarm/
+            /hiveai/one_turn/
+            /hiveai/orbs/
+            /hiveai/physiology/
+            /configs/hivebrain/
+            /configs/federation_manifest.json
+            /docs/soak_receipts/neuron_swarm/
+            /docs/soak_receipts/*.json
+            /docs/soak_receipts/*.jsonl
+            /docs/FORMAL_CORTEX_LEDGER_V1.json
+            /docs/c14_moon_lattice/
+            /docs/HIVE_INTEGRITY_DEPENDENCY_GRAPH.json
+            /docs/handoffs/
+            /docs/UNIFIED_CAPABILITY_REGISTRY.json
+            /docs/soak_receipts/proof_carrying_memory_fabric_20260727/
+            /docs/soak_receipts/physiology/
+            /docs/generated/proof_carrying_memory_galaxy.mmd
+            /scripts/build_living_anatomy.py
+            /scripts/audit_served_influence_reachability.py
+            /scripts/build_neuron_dossiers.py
+            /scripts/materialize_full_neuron_swarm.py
+            /schemas/living_anatomy_*.schema.json
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: Compile the newest coherent Hive-AI main
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_repo="$GITHUB_WORKSPACE/hive-ai"
+          for attempt in 1 2 3; do
+            git -C "$source_repo" fetch --filter=blob:none --depth=1 origin main
+            git -C "$source_repo" switch --detach FETCH_HEAD
+            if node site/script/sync-galaxy-snapshot.mjs \
+              --hive-ai-repo "$source_repo" \
+              --hive-ai-ref HEAD; then
+              exit 0
+            fi
+            if [[ "$attempt" == 3 ]]; then
+              echo "Hive-AI main moved through all three bounded attempts; the last-good snapshot remains published."
+              exit 1
+            fi
+          done
+
+      - name: Refuse unexpected generated changes
+        working-directory: site
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git status --porcelain | sed -E 's/^...//' | sort -u)"
+          if [[ -z "$changed" ]]; then
+            echo "Snapshot already represents the newest observed source."
+            exit 0
+          fi
+          if [[ "$changed" != "hub-assets/hub-facts.json" ]]; then
+            printf 'Unexpected generated paths:\n%s\n' "$changed" >&2
+            exit 1
+          fi
+
+      - name: Verify before publication
+        working-directory: site
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check hub-assets/hub.js
+          node --check hub-assets/galaxy-core.mjs
+          node --check script/sync-galaxy-snapshot.mjs
+          node script/check-central-hub.mjs
+          node script/check-galaxy-core.mjs
+          node script/check-http-surface.mjs
+          node script/check-signed-release.mjs
+          git diff --check
+
+      - name: Publish one source-bound snapshot commit
+        id: publish
+        working-directory: site
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- hub-assets/hub-facts.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          source_sha="$(node -p "require('./hub-assets/hub-facts.json').hiveAi.sourceCommit")"
+          git config user.name "hive-living-main[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add hub-assets/hub-facts.json
+          git commit -m "chore(galaxy): absorb Hive-AI ${source_sha:0:12}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "Pages main changed incompatibly; preserving its winner and retrying on the next scheduled run."
+              exit 1
+            fi
+            node script/check-central-hub.mjs
+            node script/check-galaxy-core.mjs
+            node script/check-http-surface.mjs
+            node script/check-signed-release.mjs
+          done
+          echo "Pages main kept moving through all bounded push attempts; the next scheduled run will converge."
+          exit 1
+
+      - name: Request the legacy Pages build explicitly
+        if: steps.publish.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"

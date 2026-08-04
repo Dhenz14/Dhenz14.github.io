@@ -11,6 +11,7 @@ const routes = [
   "/hub-assets/hub-facts.json",
   "/hub-assets/hub.css?v=stark-galaxy-v2",
   "/hub-assets/hub.js?v=stark-galaxy-v2",
+  "/hub-assets/galaxy-core.mjs?v=stark-galaxy-v2",
   "/robots.txt",
   "/sitemap.xml",
   "/site.webmanifest",
@@ -26,6 +27,7 @@ const contentTypes = new Map([
   [".html", "text/html; charset=utf-8"],
   [".ico", "image/x-icon"],
   [".js", "text/javascript; charset=utf-8"],
+  [".mjs", "text/javascript; charset=utf-8"],
   [".json", "application/json; charset=utf-8"],
   [".svg", "image/svg+xml"],
   [".txt", "text/plain; charset=utf-8"],
@@ -63,6 +65,9 @@ try {
   for (const route of routes) {
     const response = await fetch(`${origin}${route}`);
     if (response.status !== 200) throw new Error(`HTTP surface failed: ${route} -> ${response.status}`);
+    if (route.includes(".mjs") && !/(?:javascript|ecmascript)/i.test(response.headers.get("content-type") || "")) {
+      throw new Error(`HTTP module MIME failed: ${route}`);
+    }
   }
   const rootHtml = await (await fetch(`${origin}/`)).text();
   if (!rootHtml.includes("data-galaxy-canvas") || !rootHtml.includes("data-release-console")) {

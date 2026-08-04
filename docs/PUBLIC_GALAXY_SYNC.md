@@ -15,39 +15,49 @@ credentials, or per-neuron status. The public renderer therefore cannot color
 Twitches gold or imply runtime health; those facts belong to the authenticated
 local Living Anatomy surface.
 
-## Event-driven activation design
+## Active living-main publisher
 
-The safe automatic path is PR-gated:
+Hive-AI has a deliberately living `main`; freshness therefore means bounded,
+truthful convergence rather than waiting for the branch to stop moving. The
+active `.github/workflows/sync-living-galaxy.yml` publisher runs every five
+minutes and on manual dispatch:
 
-1. Hive-AI `main` lands and completes its private truth/declassification gate.
-2. A narrowly scoped GitHub App sends a revision-bound dispatch containing only
-   the source commit—not graph data or credentials.
-3. An isolated publisher checks out that exact Hive-AI commit and this Pages
-   repository, runs the snapshot generator, then runs both contracts.
-4. The publisher opens or updates one idempotent Pages pull request containing
-   only the allowlisted snapshot and any deliberate presentation changes.
-5. A human reviews and merges. GitHub Pages remains sourced from `main`.
-6. A post-deploy probe compares the public snapshot hash and source commit to
-   the landed Pages bytes. Failure retains the last known-good page and alerts;
-   it never publishes partial or invented state.
+1. It checks out Pages `main` and a blob-filtered, sparse Hive-AI `main` in
+   isolated runner directories.
+2. It retries up to three times if Hive-AI advances while the compiler is
+   freezing its source commit.
+3. The generator accepts only an exact commit that still equals remote `main`,
+   validates the graph, and emits the strict public projection atomically.
+4. The workflow refuses every changed path except `hub-assets/hub-facts.json`,
+   then runs syntax, hub, HTTP, signed-release, and whitespace contracts.
+5. It publishes one source-bound snapshot commit using only this repository's
+   short-lived `GITHUB_TOKEN`. A non-fast-forward Pages update is rebased and
+   rechecked; an incompatible concurrent edit wins and the next run retries.
+6. GitHub intentionally does not start branch-based Pages builds for commits
+   authored with `GITHUB_TOKEN`, so a changed snapshot explicitly requests the
+   repository's legacy Pages build through the Pages API.
+7. Any source, validation, Actions, push, or deployment-request failure leaves the last-good public
+   snapshot untouched. The page identifies the exact represented commit and
+   continues polling the deployed same-origin snapshot while visible.
 
-Required activation authority is intentionally absent today: create a GitHub
-App with read-only Hive-AI contents and pull-request-only Pages permissions,
-install it on exactly those two repositories, restore working Actions billing,
-and protect Pages `main` with the static contract as a required check. Do not
-reuse a broad personal token, auto-merge the generated PR, or turn Pages into a
-private runtime proxy.
+GitHub's five-minute schedule is a convergence target, not a real-time SLA;
+scheduled runs can be delayed by the service. Seconds-level push triggering
+would additionally require a narrowly scoped GitHub App installed on exactly
+Hive-AI and Pages. The scheduled publisher needs no personal token, broad
+secret, private runtime proxy, or write access to Hive-AI.
 
 ## Local verification
 
 ```bash
 node script/sync-galaxy-snapshot.mjs --check \
-  --hive-ai-repo /home/theyc/src/Hive-AI \
-  --hive-ai-ref origin/main
+  --hive-ai-repo /path/to/clean/isolated/Hive-AI \
+  --hive-ai-ref HEAD
 node script/check-central-hub.mjs
+node script/check-galaxy-core.mjs
 node script/check-http-surface.mjs
 node script/check-signed-release.mjs
 node --check hub-assets/hub.js
+node --check hub-assets/galaxy-core.mjs
 node --check script/sync-galaxy-snapshot.mjs
 node script/check-live-parity.mjs --origin https://dhenz14.github.io
 ```

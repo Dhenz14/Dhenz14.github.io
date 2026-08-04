@@ -16,6 +16,7 @@ const paths = [
   ["/hub-assets/hub-facts.json", "hub-assets/hub-facts.json"],
   ["/hub-assets/hub.css", "hub-assets/hub.css"],
   ["/hub-assets/hub.js", "hub-assets/hub.js"],
+  ["/hub-assets/galaxy-core.mjs", "hub-assets/galaxy-core.mjs"],
   ["/robots.txt", "robots.txt"],
   ["/sitemap.xml", "sitemap.xml"],
   ["/site.webmanifest", "site.webmanifest"],
@@ -33,6 +34,10 @@ for (const [publicPath, localRelative] of paths) {
   });
   if (!response.ok) {
     mismatches.push(`${publicPath}:HTTP_${response.status}`);
+    continue;
+  }
+  if (publicPath.endsWith(".mjs") && !/(?:javascript|ecmascript)/i.test(response.headers.get("content-type") || "")) {
+    mismatches.push(`${publicPath}:BAD_MODULE_MIME`);
     continue;
   }
   const remote = Buffer.from(await response.arrayBuffer());

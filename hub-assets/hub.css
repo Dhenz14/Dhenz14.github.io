@@ -1862,7 +1862,39 @@ h3 {
 }
 
 .galaxy-stage.is-engaged {
+  touch-action: none;
   box-shadow: inset 0 0 0 1px rgba(104, 228, 255, 0.38), inset 0 0 4rem rgba(104, 228, 255, 0.035);
+}
+
+.galaxy-stage.galaxy-static-fallback {
+  min-height: 12rem;
+  cursor: default;
+}
+
+.galaxy-fallback-active .galaxy-controls {
+  display: none;
+}
+
+.galaxy-stage.galaxy-static-fallback::after {
+  content: "Semantic galaxy navigation active";
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  width: max-content;
+  height: auto;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--line-bright);
+  border-radius: 0.5rem;
+  color: var(--muted-bright);
+  background: rgba(4, 9, 17, 0.92);
+  font: 700 0.68rem/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: none;
+  transform: translate(-50%, -50%);
 }
 
 .galaxy-stage::before {
@@ -4063,6 +4095,10 @@ body.motion-paused *::after {
   .galaxy-stage {
     min-height: 12rem;
     border: 1px solid CanvasText;
+  }
+
+  .galaxy-controls {
+    display: none;
   }
 
   .galaxy-canvas:focus-visible,

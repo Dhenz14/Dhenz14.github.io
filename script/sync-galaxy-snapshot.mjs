@@ -298,9 +298,9 @@ const base = {
     federationRepositories: graph.edges.filter((edge) => edge.relationship_type === "federation_member").length,
   },
   refresh: {
-    privateSourceMode: "publisher-bound",
-    automaticBridgeEnabled: false,
-    reasonCode: "CROSS_REPOSITORY_NOTIFIER_APP_NOT_CONFIGURED",
+    privateSourceMode: "scheduled-living-main-publisher",
+    automaticBridgeEnabled: true,
+    reasonCode: "SCHEDULED_LIVING_MAIN_PUBLISHER",
     lastGoodBehavior: "retain_previous_snapshot",
   },
   boundaries: {

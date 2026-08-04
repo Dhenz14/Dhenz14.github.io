@@ -33,12 +33,12 @@ strict public allowlist:
 
 ```bash
 node script/sync-galaxy-snapshot.mjs \
-  --hive-ai-repo /home/theyc/src/Hive-AI \
-  --hive-ai-ref origin/main
+  --hive-ai-repo /path/to/clean/isolated/Hive-AI \
+  --hive-ai-ref HEAD
 
 node script/sync-galaxy-snapshot.mjs --check \
-  --hive-ai-repo /home/theyc/src/Hive-AI \
-  --hive-ai-ref origin/main
+  --hive-ai-repo /path/to/clean/isolated/Hive-AI \
+  --hive-ai-ref HEAD
 ```
 
 `--check` exits nonzero if the checked-in projection is stale or the local ref
@@ -47,11 +47,14 @@ is not current remote `main`. The page fetches this one snapshot with
 page rechecks the same-origin snapshot every 60 seconds while visible and keeps
 the last validated snapshot if a refresh fails.
 
-Cross-repository dispatch is intentionally not claimed as active: no narrowly
-scoped notifier App is configured, and this repository has no private-source
-credential. The safe activation design is documented in
-`docs/PUBLIC_GALAXY_SYNC.md`; until that authority exists, a publisher must run
-the command above and merge the resulting reviewable patch.
+The living-main publisher in `.github/workflows/sync-living-galaxy.yml` repeats
+that exact source-bound build every five minutes and on manual dispatch. It uses
+only this repository's short-lived `GITHUB_TOKEN`, can change only the public
+snapshot, and leaves the last-good public bytes untouched on any failure. It is
+scheduled convergence—not a real-time guarantee—so each rendered snapshot
+always names the exact Hive-AI commit it represents. The full race, retry, and
+future seconds-level dispatch design is documented in
+`docs/PUBLIC_GALAXY_SYNC.md`.
 
 `HivePoA/` remains generated output. Publish it with the canonical HivePoA
 workflow; do not hand-edit those mirrored bytes. The publisher intentionally
@@ -64,9 +67,11 @@ Run the dependency-free hub contract before publishing:
 
 ```bash
 node script/check-central-hub.mjs
+node script/check-galaxy-core.mjs
 node script/check-http-surface.mjs
 node script/check-signed-release.mjs
 node --check hub-assets/hub.js
+node --check hub-assets/galaxy-core.mjs
 node --check script/sync-galaxy-snapshot.mjs
 ```
 
@@ -76,5 +81,6 @@ After `main` deploys, prove that public bytes equal the landed checkout:
 node script/check-live-parity.mjs --origin https://dhenz14.github.io
 ```
 
-The pull-request workflow runs the dependency-free static checks. It does not
-pretend to verify private Hive-AI freshness without a declassification bridge.
+The pull-request workflow runs the dependency-free static checks. The living
+publisher independently proves current public Hive-AI `main` before changing
+the allowlisted snapshot; neither workflow receives private runtime data.

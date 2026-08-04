@@ -332,7 +332,7 @@ section[id] {
   opacity: 0.82;
 }
 
-.motion-toggle:hover {
+.motion-toggle:hover:not(:disabled) {
   color: var(--text);
   border-color: rgba(104, 228, 255, 0.45);
 }
@@ -1838,9 +1838,21 @@ h3 {
   box-shadow: 0 0 1.8rem rgba(104, 228, 255, 0.2);
 }
 
-.galaxy-controls button:hover {
+.galaxy-controls button:hover:not(:disabled) {
   border-color: rgba(104, 228, 255, 0.48);
   background: rgba(104, 228, 255, 0.08);
+}
+
+.lens-bar button:disabled,
+.galaxy-controls button:disabled,
+.lens-bar button:disabled:hover,
+.galaxy-controls button:disabled:hover {
+  border-color: rgba(151, 170, 196, 0.14);
+  color: var(--dim);
+  background: rgba(255, 255, 255, 0.015);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 .galaxy-workbench {

@@ -10,7 +10,7 @@ import {
   snapshotFreshness,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=stark-galaxy-v4";
+} from "./galaxy-core.mjs?v=stark-galaxy-v5";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -54,6 +54,7 @@ function wireMotionToggle() {
     document.body.classList.toggle("motion-paused", effectivePaused);
     button.setAttribute("aria-pressed", String(effectivePaused));
     button.disabled = systemReduced;
+    button.setAttribute("aria-disabled", String(systemReduced));
     button.textContent = systemReduced ? "System motion reduced" : effectivePaused ? "Resume motion" : "Pause motion";
     button.title = systemReduced ? "Your operating-system reduced-motion preference is active." : "";
     window.dispatchEvent(new CustomEvent("hive:motion", { detail: { paused: effectivePaused } }));
@@ -230,6 +231,7 @@ function selectLens(name, focusNode = false) {
 
 function wireLenses() {
   $$('[data-lens]').forEach((button, index, buttons) => {
+    button.disabled = false;
     button.addEventListener("click", () => selectLens(button.dataset.lens));
     button.addEventListener("keydown", (event) => {
       if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
@@ -1048,10 +1050,11 @@ class GalaxyAtlas {
   setCameraControlsAvailable(available, reason = "") {
     $$('[data-galaxy-engage], [data-galaxy-zoom], [data-galaxy-reset]').forEach((button) => {
       button.disabled = !available;
+      button.setAttribute("aria-disabled", String(!available));
       button.title = available ? "" : reason;
     });
-    if (available) this.canvas.setAttribute("tabindex", "0");
-    else this.canvas.removeAttribute("tabindex");
+    this.canvas.setAttribute("tabindex", available ? "0" : "-1");
+    this.canvas.setAttribute("aria-disabled", String(!available));
   }
 
   applyRenderAvailability(forcedColorsActive) {

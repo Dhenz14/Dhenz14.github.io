@@ -74,8 +74,11 @@ export function snapshotResponseCanCommit({ requestGeneration, currentGeneration
 }
 
 export function snapshotFreshness(capturedAt, now = Date.now()) {
-  const captured = Date.parse(String(capturedAt || ""));
+  const raw = String(capturedAt || "");
+  const captured = Date.parse(raw);
   if (!Number.isFinite(captured) || !Number.isFinite(now)) return { state: "invalid", ageMs: null };
+  const canonical = new Date(captured).toISOString().replace(".000Z", "Z");
+  if (raw !== canonical || captured - now > 5 * 60_000) return { state: "invalid", ageMs: null };
   const ageMs = Math.max(0, now - captured);
   if (ageMs >= 60 * 60_000) return { state: "critical", ageMs };
   if (ageMs >= 15 * 60_000) return { state: "delayed", ageMs };
@@ -235,6 +238,7 @@ export function validGalaxyProjection(galaxy, facts) {
 export async function validSnapshot(snapshot) {
   const facts = snapshot?.hiveAi;
   if (!(snapshot?.schema === "hive.ecosystem.public-source-snapshot.v2"
+    && snapshotFreshness(snapshot?.capturedAt).state !== "invalid"
     && snapshot?.boundaries?.snapshotOnly === true
     && snapshot?.boundaries?.runtimeTelemetry === false
     && snapshot?.boundaries?.grantsAuthority === false

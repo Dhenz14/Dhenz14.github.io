@@ -24,7 +24,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="/hub-assets/hub.css?v=stark-galaxy-v4">
+    <link rel="stylesheet" href="/hub-assets/hub.css?v=stark-galaxy-v5">
     <title>Hive Ecosystem — The living intelligence galaxy</title>
     <script type="application/ld+json">
       {
@@ -57,12 +57,12 @@
         <a href="#tester" aria-label="Tester Network">Tester</a>
       </nav>
       <div class="topbar-tools">
-        <span class="source-badge" title="Exact published view of living Hive-AI main; not runtime telemetry">
+        <span class="source-badge" title="JavaScript verifies the exact published source snapshot before showing freshness.">
           <span class="pulse-dot" aria-hidden="true"></span>
-          Living main snapshot
+          Snapshot verification pending
         </span>
-        <button class="motion-toggle" type="button" data-motion-toggle aria-pressed="false">
-          Pause motion
+        <button class="motion-toggle" type="button" data-motion-toggle aria-pressed="false" aria-disabled="true" disabled>
+          Motion control pending
         </button>
       </div>
     </header>
@@ -246,24 +246,24 @@
 
           <div class="galaxy-commandbar">
             <div class="lens-bar" role="toolbar" aria-label="Living Anatomy lens">
-              <button type="button" data-lens="mastery" aria-pressed="true">Body</button>
-              <button type="button" data-lens="artifact" aria-pressed="false">Artifact</button>
-              <button type="button" data-lens="evidence" aria-pressed="false">Evidence</button>
-              <button type="button" data-lens="runtime" aria-pressed="false">Runtime</button>
-              <button type="button" data-lens="product" aria-pressed="false">Product</button>
+              <button type="button" data-lens="mastery" aria-pressed="true" disabled>Body</button>
+              <button type="button" data-lens="artifact" aria-pressed="false" disabled>Artifact</button>
+              <button type="button" data-lens="evidence" aria-pressed="false" disabled>Evidence</button>
+              <button type="button" data-lens="runtime" aria-pressed="false" disabled>Runtime</button>
+              <button type="button" data-lens="product" aria-pressed="false" disabled>Product</button>
             </div>
             <div class="galaxy-controls" aria-label="Galaxy camera controls">
-              <button type="button" data-galaxy-engage aria-pressed="false">Engage controls</button>
-              <button type="button" data-galaxy-zoom="out" aria-label="Zoom out">−</button>
-              <button type="button" data-galaxy-reset>Reset view</button>
-              <button type="button" data-galaxy-zoom="in" aria-label="Zoom in">+</button>
+              <button type="button" data-galaxy-engage aria-pressed="false" aria-disabled="true" disabled>Engage controls</button>
+              <button type="button" data-galaxy-zoom="out" aria-label="Zoom out" aria-disabled="true" disabled>−</button>
+              <button type="button" data-galaxy-reset aria-disabled="true" disabled>Reset view</button>
+              <button type="button" data-galaxy-zoom="in" aria-label="Zoom in" aria-disabled="true" disabled>+</button>
             </div>
           </div>
 
           <div class="anatomy-workbench galaxy-workbench" data-motion-scene>
             <div class="anatomy-map galaxy-stage" data-anatomy-map data-lens-view="mastery">
               <div class="map-grid" aria-hidden="true"></div>
-              <canvas class="galaxy-canvas" data-galaxy-canvas tabindex="0" role="img" aria-label="Interactive public-safe atlas of 640 Hive-AI neurons arranged in 16 stable divisions. Activate Engage controls before wheel zoom; press Escape to restore page scrolling. Arrow keys orbit and plus or minus zoom."></canvas>
+              <canvas class="galaxy-canvas" data-galaxy-canvas tabindex="-1" aria-disabled="true" role="img" aria-label="Interactive public-safe atlas of 640 Hive-AI neurons arranged in 16 stable divisions. Activate Engage controls before wheel zoom; press Escape to restore page scrolling. Arrow keys orbit and plus or minus zoom."></canvas>
               <div class="galaxy-reticle" aria-hidden="true"><i></i><i></i></div>
               <div class="galaxy-depth" aria-hidden="true"><span>DIVISION</span><i></i><span>FAMILY</span><i></i><span>NEURON</span></div>
               <div class="galaxy-hint"><span data-galaxy-hint-state>Engage</span> <b data-galaxy-hint-copy>controls</b> <i></i><span>Drag</span> orbit <i></i><span>Hover</span> identify</div>
@@ -530,8 +530,8 @@
 
     <div class="toast" data-toast role="status" aria-live="polite" aria-atomic="true"></div>
     <noscript>
-      <div class="noscript-banner">Visual motion and signed-index verification need JavaScript. All navigation remains available; no package is authorized by this fallback.</div>
+      <div class="noscript-banner">Source freshness, motion controls, and signed-index verification need JavaScript. All navigation remains available; no package or live-source claim is authorized by this fallback.</div>
     </noscript>
-    <script type="module" src="/hub-assets/hub.js?v=stark-galaxy-v4"></script>
+    <script type="module" src="/hub-assets/hub.js?v=stark-galaxy-v5"></script>
   </body>
 </html>

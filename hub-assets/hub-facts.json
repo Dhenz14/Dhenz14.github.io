@@ -1,26 +1,1231 @@
 {
-  "schema": "hive.ecosystem.public-source-snapshot.v1",
-  "capturedAt": "2026-08-03T21:16:02Z",
+  "schema": "hive.ecosystem.public-source-snapshot.v2",
   "hiveAi": {
-    "sourceCommit": "edb81711d002b4c05cf98c86692ac853f71727a0",
+    "sourceCommit": "a22aa9f66373d9dce15e94f5b44e9d5b95bafb05",
     "sourceBranch": "main",
-    "graphSource": "docs/generated/living_anatomy_graph.v2.json",
+    "graphSource": "compiled from source manifest; no private graph bytes published",
     "graphSchema": "hiveai.living_anatomy_graph.v2",
-    "graphHash": "89d892c3a554cc3869d6c6cdfd473deb5a941c7f72335894596505708071fc46",
-    "sourceFingerprint": "572f6b6dd8dad4349e9f9b14655fd2f7ba311f3de2d02b4be388890c2d1cfda5",
+    "graphHash": "73fe7182149bcda8ac0396e39691a71c2561d80db8952fd239c794199cf462cc",
+    "sourceFingerprint": "ceea343390ae138a3c6cd6004c414b383f3047e926fbea8debe6d0df8128017e",
     "neurons": 640,
     "trainableNeurons": 448,
-    "nodes": 1183,
-    "edges": 1219,
+    "deterministicNeurons": 192,
+    "purposeMastered": 556,
+    "twitches": 556,
+    "pmOnly": 0,
+    "notPurposeMastered": 84,
+    "nodes": 1329,
+    "edges": 1372,
     "divisions": 16,
+    "families": 64,
     "moons": 9,
     "organs": 84,
-    "components": 433
+    "components": 579,
+    "federationRepositories": 20
+  },
+  "galaxy": {
+    "schema": "hive.ecosystem.public-galaxy.v1",
+    "generatorVersion": "2.0.0",
+    "sourceGraphHash": "73fe7182149bcda8ac0396e39691a71c2561d80db8952fd239c794199cf462cc",
+    "geometry": "deterministic-authored-clusters",
+    "representedNeurons": 640,
+    "divisions": [
+      {
+        "code": "A",
+        "name": "Route, Hold, And Activation Budget",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "A1",
+            "name": "intent and task routing",
+            "neuronIds": [
+              "N001",
+              "N002",
+              "N003",
+              "N004",
+              "N005",
+              "N006",
+              "N007",
+              "N008",
+              "N009",
+              "N010"
+            ]
+          },
+          {
+            "code": "A2",
+            "name": "hold and escalation",
+            "neuronIds": [
+              "N011",
+              "N012",
+              "N013",
+              "N014",
+              "N015",
+              "N016",
+              "N017",
+              "N018",
+              "N019",
+              "N020"
+            ]
+          },
+          {
+            "code": "A3",
+            "name": "sparse activation",
+            "neuronIds": [
+              "N021",
+              "N022",
+              "N023",
+              "N024",
+              "N025",
+              "N026",
+              "N027",
+              "N028",
+              "N029",
+              "N030"
+            ]
+          },
+          {
+            "code": "A4",
+            "name": "compute budget governance",
+            "neuronIds": [
+              "N031",
+              "N032",
+              "N033",
+              "N034",
+              "N035",
+              "N036",
+              "N037",
+              "N038",
+              "N039",
+              "N040"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "B",
+        "name": "Planning And Decomposition",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "B1",
+            "name": "query decomposition",
+            "neuronIds": [
+              "N041",
+              "N042",
+              "N043",
+              "N044",
+              "N045",
+              "N046",
+              "N047",
+              "N048",
+              "N049",
+              "N050"
+            ]
+          },
+          {
+            "code": "B2",
+            "name": "evidence plan",
+            "neuronIds": [
+              "N051",
+              "N052",
+              "N053",
+              "N054",
+              "N055",
+              "N056",
+              "N057",
+              "N058",
+              "N059",
+              "N060"
+            ]
+          },
+          {
+            "code": "B3",
+            "name": "repair plan",
+            "neuronIds": [
+              "N061",
+              "N062",
+              "N063",
+              "N064",
+              "N065",
+              "N066",
+              "N067",
+              "N068",
+              "N069",
+              "N070"
+            ]
+          },
+          {
+            "code": "B4",
+            "name": "operator workflow plan",
+            "neuronIds": [
+              "N071",
+              "N072",
+              "N073",
+              "N074",
+              "N075",
+              "N076",
+              "N077",
+              "N078",
+              "N079",
+              "N080"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "C",
+        "name": "Retrieval Query And Corpus Access",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "C1",
+            "name": "query formulation",
+            "neuronIds": [
+              "N081",
+              "N082",
+              "N083",
+              "N084",
+              "N085",
+              "N086",
+              "N087",
+              "N088",
+              "N089",
+              "N090"
+            ]
+          },
+          {
+            "code": "C2",
+            "name": "retrieval steering",
+            "neuronIds": [
+              "N091",
+              "N092",
+              "N093",
+              "N094",
+              "N095",
+              "N096",
+              "N097",
+              "N098",
+              "N099",
+              "N100"
+            ]
+          },
+          {
+            "code": "C3",
+            "name": "multi-hop retrieval",
+            "neuronIds": [
+              "N101",
+              "N102",
+              "N103",
+              "N104",
+              "N105",
+              "N106",
+              "N107",
+              "N108",
+              "N109",
+              "N110"
+            ]
+          },
+          {
+            "code": "C4",
+            "name": "retrieval diagnostics",
+            "neuronIds": [
+              "N111",
+              "N112",
+              "N113",
+              "N114",
+              "N115",
+              "N116",
+              "N117",
+              "N118",
+              "N119",
+              "N120"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "D",
+        "name": "Evidence Trust And Grounding",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "D1",
+            "name": "evidence capsule scoring",
+            "neuronIds": [
+              "N121",
+              "N122",
+              "N123",
+              "N124",
+              "N125",
+              "N126",
+              "N127",
+              "N128",
+              "N129",
+              "N130"
+            ]
+          },
+          {
+            "code": "D2",
+            "name": "contradiction handling",
+            "neuronIds": [
+              "N131",
+              "N132",
+              "N133",
+              "N134",
+              "N135",
+              "N136",
+              "N137",
+              "N138",
+              "N139",
+              "N140"
+            ]
+          },
+          {
+            "code": "D3",
+            "name": "grounding enforcement",
+            "neuronIds": [
+              "N141",
+              "N142",
+              "N143",
+              "N144",
+              "N145",
+              "N146",
+              "N147",
+              "N148",
+              "N149",
+              "N150"
+            ]
+          },
+          {
+            "code": "D4",
+            "name": "evidence-state protocol",
+            "neuronIds": [
+              "N151",
+              "N152",
+              "N153",
+              "N154",
+              "N155",
+              "N156",
+              "N157",
+              "N158",
+              "N159",
+              "N160"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "E",
+        "name": "Rerank, Context Packing, And Compression",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "E1",
+            "name": "rerank packet scoring",
+            "neuronIds": [
+              "N161",
+              "N162",
+              "N163",
+              "N164",
+              "N165",
+              "N166",
+              "N167",
+              "N168",
+              "N169",
+              "N170"
+            ]
+          },
+          {
+            "code": "E2",
+            "name": "context packing",
+            "neuronIds": [
+              "N171",
+              "N172",
+              "N173",
+              "N174",
+              "N175",
+              "N176",
+              "N177",
+              "N178",
+              "N179",
+              "N180"
+            ]
+          },
+          {
+            "code": "E3",
+            "name": "compression",
+            "neuronIds": [
+              "N181",
+              "N182",
+              "N183",
+              "N184",
+              "N185",
+              "N186",
+              "N187",
+              "N188",
+              "N189",
+              "N190"
+            ]
+          },
+          {
+            "code": "E4",
+            "name": "matryoshka retrieval",
+            "neuronIds": [
+              "N191",
+              "N192",
+              "N193",
+              "N194",
+              "N195",
+              "N196",
+              "N197",
+              "N198",
+              "N199",
+              "N200"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "F",
+        "name": "Claim, Citation, And Answer Verification",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "F1",
+            "name": "claim extraction",
+            "neuronIds": [
+              "N201",
+              "N202",
+              "N203",
+              "N204",
+              "N205",
+              "N206",
+              "N207",
+              "N208",
+              "N209",
+              "N210"
+            ]
+          },
+          {
+            "code": "F2",
+            "name": "claim verification",
+            "neuronIds": [
+              "N211",
+              "N212",
+              "N213",
+              "N214",
+              "N215",
+              "N216",
+              "N217",
+              "N218",
+              "N219",
+              "N220"
+            ]
+          },
+          {
+            "code": "F3",
+            "name": "citation mechanics",
+            "neuronIds": [
+              "N221",
+              "N222",
+              "N223",
+              "N224",
+              "N225",
+              "N226",
+              "N227",
+              "N228",
+              "N229",
+              "N230"
+            ]
+          },
+          {
+            "code": "F4",
+            "name": "final answer audit",
+            "neuronIds": [
+              "N231",
+              "N232",
+              "N233",
+              "N234",
+              "N235",
+              "N236",
+              "N237",
+              "N238",
+              "N239",
+              "N240"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "G",
+        "name": "Code And Truth Verification",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "G1",
+            "name": "executable truth",
+            "neuronIds": [
+              "N241",
+              "N242",
+              "N243",
+              "N244",
+              "N245",
+              "N246",
+              "N247",
+              "N248",
+              "N249",
+              "N250"
+            ]
+          },
+          {
+            "code": "G2",
+            "name": "code correctness",
+            "neuronIds": [
+              "N251",
+              "N252",
+              "N253",
+              "N254",
+              "N255",
+              "N256",
+              "N257",
+              "N258",
+              "N259",
+              "N260"
+            ]
+          },
+          {
+            "code": "G3",
+            "name": "formal and symbolic",
+            "neuronIds": [
+              "N261",
+              "N262",
+              "N263",
+              "N264",
+              "N265",
+              "N266",
+              "N267",
+              "N268",
+              "N269",
+              "N270"
+            ]
+          },
+          {
+            "code": "G4",
+            "name": "independent verification",
+            "neuronIds": [
+              "N271",
+              "N272",
+              "N273",
+              "N274",
+              "N275",
+              "N276",
+              "N277",
+              "N278",
+              "N279",
+              "N280"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "H",
+        "name": "Candidate Market And Repair Loop",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "H1",
+            "name": "task capsule factory",
+            "neuronIds": [
+              "N281",
+              "N282",
+              "N283",
+              "N284",
+              "N285",
+              "N286",
+              "N287",
+              "N288",
+              "N289",
+              "N290"
+            ]
+          },
+          {
+            "code": "H2",
+            "name": "candidate enumeration",
+            "neuronIds": [
+              "N291",
+              "N292",
+              "N293",
+              "N294",
+              "N295",
+              "N296",
+              "N297",
+              "N298",
+              "N299",
+              "N300"
+            ]
+          },
+          {
+            "code": "H3",
+            "name": "repair routing",
+            "neuronIds": [
+              "N301",
+              "N302",
+              "N303",
+              "N304",
+              "N305",
+              "N306",
+              "N307",
+              "N308",
+              "N309",
+              "N310"
+            ]
+          },
+          {
+            "code": "H4",
+            "name": "promote or abstain",
+            "neuronIds": [
+              "N311",
+              "N312",
+              "N313",
+              "N314",
+              "N315",
+              "N316",
+              "N317",
+              "N318",
+              "N319",
+              "N320"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "I",
+        "name": "Memory, GoldenBook, And Promotion",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "I1",
+            "name": "durable memory gate",
+            "neuronIds": [
+              "N321",
+              "N322",
+              "N323",
+              "N324",
+              "N325",
+              "N326",
+              "N327",
+              "N328",
+              "N329",
+              "N330"
+            ]
+          },
+          {
+            "code": "I2",
+            "name": "GoldenBook promotion",
+            "neuronIds": [
+              "N331",
+              "N332",
+              "N333",
+              "N334",
+              "N335",
+              "N336",
+              "N337",
+              "N338",
+              "N339",
+              "N340"
+            ]
+          },
+          {
+            "code": "I3",
+            "name": "memory retrieval",
+            "neuronIds": [
+              "N341",
+              "N342",
+              "N343",
+              "N344",
+              "N345",
+              "N346",
+              "N347",
+              "N348",
+              "N349",
+              "N350"
+            ]
+          },
+          {
+            "code": "I4",
+            "name": "lifecycle memory",
+            "neuronIds": [
+              "N351",
+              "N352",
+              "N353",
+              "N354",
+              "N355",
+              "N356",
+              "N357",
+              "N358",
+              "N359",
+              "N360"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "J",
+        "name": "Safety, Policy, And Counterfactual Armor",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "J1",
+            "name": "input safety",
+            "neuronIds": [
+              "N361",
+              "N362",
+              "N363",
+              "N364",
+              "N365",
+              "N366",
+              "N367",
+              "N368",
+              "N369",
+              "N370"
+            ]
+          },
+          {
+            "code": "J2",
+            "name": "action safety",
+            "neuronIds": [
+              "N371",
+              "N372",
+              "N373",
+              "N374",
+              "N375",
+              "N376",
+              "N377",
+              "N378",
+              "N379",
+              "N380"
+            ]
+          },
+          {
+            "code": "J3",
+            "name": "counterfactual repair",
+            "neuronIds": [
+              "N381",
+              "N382",
+              "N383",
+              "N384",
+              "N385",
+              "N386",
+              "N387",
+              "N388",
+              "N389",
+              "N390"
+            ]
+          },
+          {
+            "code": "J4",
+            "name": "policy moons",
+            "neuronIds": [
+              "N391",
+              "N392",
+              "N393",
+              "N394",
+              "N395",
+              "N396",
+              "N397",
+              "N398",
+              "N399",
+              "N400"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "K",
+        "name": "Tools, Agent Kernel, And Side Effects",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "K1",
+            "name": "tool selection",
+            "neuronIds": [
+              "N401",
+              "N402",
+              "N403",
+              "N404",
+              "N405",
+              "N406",
+              "N407",
+              "N408",
+              "N409",
+              "N410"
+            ]
+          },
+          {
+            "code": "K2",
+            "name": "agent kernel effects",
+            "neuronIds": [
+              "N411",
+              "N412",
+              "N413",
+              "N414",
+              "N415",
+              "N416",
+              "N417",
+              "N418",
+              "N419",
+              "N420"
+            ]
+          },
+          {
+            "code": "K3",
+            "name": "IDE and repo actions",
+            "neuronIds": [
+              "N421",
+              "N422",
+              "N423",
+              "N424",
+              "N425",
+              "N426",
+              "N427",
+              "N428",
+              "N429",
+              "N430"
+            ]
+          },
+          {
+            "code": "K4",
+            "name": "external interaction guards",
+            "neuronIds": [
+              "N431",
+              "N432",
+              "N433",
+              "N434",
+              "N435",
+              "N436",
+              "N437",
+              "N438",
+              "N439",
+              "N440"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "L",
+        "name": "Composer, Style, And User Output",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "L1",
+            "name": "answer synthesis",
+            "neuronIds": [
+              "N441",
+              "N442",
+              "N443",
+              "N444",
+              "N445",
+              "N446",
+              "N447",
+              "N448",
+              "N449",
+              "N450"
+            ]
+          },
+          {
+            "code": "L2",
+            "name": "style and operator fit",
+            "neuronIds": [
+              "N451",
+              "N452",
+              "N453",
+              "N454",
+              "N455",
+              "N456",
+              "N457",
+              "N458",
+              "N459",
+              "N460"
+            ]
+          },
+          {
+            "code": "L3",
+            "name": "proof presentation",
+            "neuronIds": [
+              "N461",
+              "N462",
+              "N463",
+              "N464",
+              "N465",
+              "N466",
+              "N467",
+              "N468",
+              "N469",
+              "N470"
+            ]
+          },
+          {
+            "code": "L4",
+            "name": "final postflight",
+            "neuronIds": [
+              "N471",
+              "N472",
+              "N473",
+              "N474",
+              "N475",
+              "N476",
+              "N477",
+              "N478",
+              "N479",
+              "N480"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "M",
+        "name": "Visual, Multimodal, And Artifact Evidence",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "M1",
+            "name": "visual evidence",
+            "neuronIds": [
+              "N481",
+              "N482",
+              "N483",
+              "N484",
+              "N485",
+              "N486",
+              "N487",
+              "N488",
+              "N489",
+              "N490"
+            ]
+          },
+          {
+            "code": "M2",
+            "name": "multimodal safety",
+            "neuronIds": [
+              "N491",
+              "N492",
+              "N493",
+              "N494",
+              "N495",
+              "N496",
+              "N497",
+              "N498",
+              "N499",
+              "N500"
+            ]
+          },
+          {
+            "code": "M3",
+            "name": "artifact reading",
+            "neuronIds": [
+              "N501",
+              "N502",
+              "N503",
+              "N504",
+              "N505",
+              "N506",
+              "N507",
+              "N508",
+              "N509",
+              "N510"
+            ]
+          },
+          {
+            "code": "M4",
+            "name": "modality routing",
+            "neuronIds": [
+              "N511",
+              "N512",
+              "N513",
+              "N514",
+              "N515",
+              "N516",
+              "N517",
+              "N518",
+              "N519",
+              "N520"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "N",
+        "name": "Synthetic Forge, Training, And Data Value",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "N1",
+            "name": "synthetic row quarantine",
+            "neuronIds": [
+              "N521",
+              "N522",
+              "N523",
+              "N524",
+              "N525",
+              "N526",
+              "N527",
+              "N528",
+              "N529",
+              "N530"
+            ]
+          },
+          {
+            "code": "N2",
+            "name": "data value scoring",
+            "neuronIds": [
+              "N531",
+              "N532",
+              "N533",
+              "N534",
+              "N535",
+              "N536",
+              "N537",
+              "N538",
+              "N539",
+              "N540"
+            ]
+          },
+          {
+            "code": "N3",
+            "name": "training admission",
+            "neuronIds": [
+              "N541",
+              "N542",
+              "N543",
+              "N544",
+              "N545",
+              "N546",
+              "N547",
+              "N548",
+              "N549",
+              "N550"
+            ]
+          },
+          {
+            "code": "N4",
+            "name": "evolution factory",
+            "neuronIds": [
+              "N551",
+              "N552",
+              "N553",
+              "N554",
+              "N555",
+              "N556",
+              "N557",
+              "N558",
+              "N559",
+              "N560"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "O",
+        "name": "Observability, Receipts, And Governance",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "O1",
+            "name": "trace observability",
+            "neuronIds": [
+              "N561",
+              "N562",
+              "N563",
+              "N564",
+              "N565",
+              "N566",
+              "N567",
+              "N568",
+              "N569",
+              "N570"
+            ]
+          },
+          {
+            "code": "O2",
+            "name": "receipt governance",
+            "neuronIds": [
+              "N571",
+              "N572",
+              "N573",
+              "N574",
+              "N575",
+              "N576",
+              "N577",
+              "N578",
+              "N579",
+              "N580"
+            ]
+          },
+          {
+            "code": "O3",
+            "name": "A/B and ablation",
+            "neuronIds": [
+              "N581",
+              "N582",
+              "N583",
+              "N584",
+              "N585",
+              "N586",
+              "N587",
+              "N588",
+              "N589",
+              "N590"
+            ]
+          },
+          {
+            "code": "O4",
+            "name": "product truth",
+            "neuronIds": [
+              "N591",
+              "N592",
+              "N593",
+              "N594",
+              "N595",
+              "N596",
+              "N597",
+              "N598",
+              "N599",
+              "N600"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "P",
+        "name": "Surplus Steward, Colony, And Federation",
+        "neuronCount": 40,
+        "families": [
+          {
+            "code": "P1",
+            "name": "surplus steward jobs",
+            "neuronIds": [
+              "N601",
+              "N602",
+              "N603",
+              "N604",
+              "N605",
+              "N606",
+              "N607",
+              "N608",
+              "N609",
+              "N610"
+            ]
+          },
+          {
+            "code": "P2",
+            "name": "colony candidate market",
+            "neuronIds": [
+              "N611",
+              "N612",
+              "N613",
+              "N614",
+              "N615",
+              "N616",
+              "N617",
+              "N618",
+              "N619",
+              "N620"
+            ]
+          },
+          {
+            "code": "P3",
+            "name": "federation sync",
+            "neuronIds": [
+              "N621",
+              "N622",
+              "N623",
+              "N624",
+              "N625",
+              "N626",
+              "N627",
+              "N628",
+              "N629",
+              "N630"
+            ]
+          },
+          {
+            "code": "P4",
+            "name": "swarm economics",
+            "neuronIds": [
+              "N631",
+              "N632",
+              "N633",
+              "N634",
+              "N635",
+              "N636",
+              "N637",
+              "N638",
+              "N639",
+              "N640"
+            ]
+          }
+        ]
+      }
+    ],
+    "statusProjection": "none",
+    "claimBoundary": "The public atlas shows topology and family purpose only. Gold Twitch, mastery, runtime, work-lane, mission, and urgency states remain on the authenticated local Living Anatomy surface.",
+    "projectionHash": "2309cffba34afaa4d0faf9426726419251ac41e52c650c9316c5733c26e7c0fc"
+  },
+  "ecosystem": {
+    "schema": "hive.ecosystem.public-organ-map.v1",
+    "primaryOrgans": [
+      {
+        "id": "hive-ai",
+        "label": "Hive-AI",
+        "role": "reasoning brain",
+        "exposure": "private-source-local-runtime"
+      },
+      {
+        "id": "hivepoa",
+        "label": "HivePoA",
+        "role": "proof and storage plane",
+        "exposure": "signed-public-distribution"
+      },
+      {
+        "id": "neurachain",
+        "label": "NeuraChain",
+        "role": "durable coordination and settlement",
+        "exposure": "private-source-chain-surface"
+      },
+      {
+        "id": "hive-ide",
+        "label": "Hive IDE",
+        "role": "operator hands",
+        "exposure": "private-tester-surface"
+      },
+      {
+        "id": "second-brain",
+        "label": "Second Brain",
+        "role": "operator-owned knowledge memory",
+        "exposure": "local-private"
+      },
+      {
+        "id": "compute-pool",
+        "label": "Compute Pool",
+        "role": "guarded CPU and GPU capacity",
+        "exposure": "contract-routed"
+      }
+    ],
+    "federationRepositories": 20
+  },
+  "refresh": {
+    "privateSourceMode": "publisher-bound",
+    "automaticBridgeEnabled": false,
+    "reasonCode": "CROSS_REPOSITORY_NOTIFIER_APP_NOT_CONFIGURED",
+    "lastGoodBehavior": "retain_previous_snapshot"
   },
   "boundaries": {
     "snapshotOnly": true,
     "runtimeTelemetry": false,
     "grantsAuthority": false,
-    "localChatUrl": "http://127.0.0.1:5002/chat"
-  }
+    "privateEvidencePublished": false,
+    "localChatUrl": "http://127.0.0.1:5002/chat",
+    "localGalaxyUrl": "http://127.0.0.1:5002/constellation/body?presentation=1"
+  },
+  "capturedAt": "2026-08-04T19:25:04Z"
 }

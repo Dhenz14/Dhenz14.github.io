@@ -7,6 +7,7 @@ import {
   GALAXY_LENS_PROFILES,
   GALAXY_PUBLIC_CONTRACT,
   buildGalaxyGeometry,
+  galaxyDivisionVisualRadius,
   galaxyPointerPolicy,
   galaxyRenderState,
   placeCanvasLabel,
@@ -108,6 +109,28 @@ assert(secondLabel && (secondLabel.x !== firstLabel.x || secondLabel.y !== first
 assert(placeCanvasLabel(80, 18, 20, 20, 320, 180, [{ x: 0, y: 0, width: 320, height: 180 }], true) === null, "exhausted label placement did not fail closed");
 
 const oneDivision = [{ x: 0, y: 0, z: 0, perspective: 1, divisionIndex: 0 }];
+const masteryProfile = GALAXY_LENS_PROFILES.mastery;
+const normalDivisionRadius = galaxyDivisionVisualRadius(oneDivision[0], 1, masteryProfile, false);
+const selectedDivisionRadius = galaxyDivisionVisualRadius(oneDivision[0], 1, masteryProfile, true);
+assert(normalDivisionRadius === 34 && selectedDivisionRadius === 48, "shared division visual radius drifted");
+const normalHaloInside = selectGalaxyHit({
+  pointer: { x: normalDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery",
+  projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [],
+});
+const normalHaloOutside = selectGalaxyHit({
+  pointer: { x: normalDivisionRadius + 0.1, y: 0 }, zoom: 1, lens: "mastery",
+  projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [],
+});
+const selectedHaloInside = selectGalaxyHit({
+  pointer: { x: selectedDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery",
+  projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0,
+});
+const selectedHaloOutside = selectGalaxyHit({
+  pointer: { x: selectedDivisionRadius + 0.1, y: 0 }, zoom: 1, lens: "mastery",
+  projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0,
+});
+assert(normalHaloInside.divisionIndex === 0 && normalHaloOutside.divisionIndex === -1, "normal division hit radius diverged from the rendered halo");
+assert(selectedHaloInside.divisionIndex === 0 && selectedHaloOutside.divisionIndex === -1, "selected division hit radius diverged from the rendered halo");
 const masteryHaloHit = selectGalaxyHit({
   pointer: { x: 35, y: 0 }, zoom: 1, lens: "mastery",
   projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [],

@@ -280,6 +280,14 @@ function nearestProjected(points, pointer, radiusFor) {
   return bestIndex;
 }
 
+export function galaxyDivisionVisualRadius(point, zoom, profile, selected) {
+  return clamp(
+    (selected ? 48 : 34) * point.perspective * zoom * profile.divisions,
+    20,
+    selected ? 98 : 70,
+  );
+}
+
 export function selectGalaxyHit({
   pointer,
   zoom,
@@ -333,11 +341,7 @@ export function selectGalaxyHit({
 
   const divisionIndex = nearestProjected(projectedDivisions, pointer, (point, index) => {
     const selected = index === activeDivision || index === hoverDivision;
-    return clamp(
-      (selected ? 43 : 31) * point.perspective * zoom * profile.divisions,
-      17,
-      selected ? 88 : 62,
-    );
+    return galaxyDivisionVisualRadius(point, zoom, profile, selected);
   });
   return { divisionIndex, familyIndex: -1, neuronIndex: -1 };
 }

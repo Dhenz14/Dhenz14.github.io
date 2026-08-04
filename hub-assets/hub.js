@@ -1,6 +1,7 @@
 import {
   GALAXY_LENS_PROFILES,
   buildGalaxyGeometry,
+  galaxyDivisionVisualRadius,
   galaxyPointerPolicy,
   galaxyRenderState,
   placeCanvasLabel,
@@ -10,7 +11,7 @@ import {
   snapshotFreshness,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=stark-galaxy-v5";
+} from "./galaxy-core.mjs?v=stark-galaxy-v6";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -538,9 +539,9 @@ function wireCopyButtons() {
 }
 
 function wireLocalChatNotice() {
-  $$('[href^="http://127.0.0.1:5002/"]').forEach((link) => {
+  $$('[href^="http://127.0.0.1:"]').forEach((link) => {
     link.addEventListener("click", () => {
-      showToast("Opening the local Hive-AI runtime. If it is offline, the new tab will stay unavailable.");
+      showToast("Opening a local Hive-AI surface. Availability is not checked; if it is offline, the new tab will stay unavailable.");
     });
   });
 }
@@ -737,7 +738,7 @@ class GalaxyAtlas {
     this.rotationY = -0.32;
     this.targetRotationX = this.rotationX;
     this.targetRotationY = this.rotationY;
-    this.zoom = 0.9;
+    this.zoom = 1.08;
     this.targetZoom = this.zoom;
     this.activeDivision = 0;
     this.hoverDivision = -1;
@@ -750,6 +751,17 @@ class GalaxyAtlas {
     this.dragMoved = false;
     this.engaged = false;
     this.pointer = { x: 0, y: 0, startX: 0, startY: 0, rotationX: 0, rotationY: 0 };
+    this.ambientStars = Array.from({ length: 108 }, (_, index) => {
+      const seedX = Math.sin((index + 1) * 12.9898) * 43758.5453;
+      const seedY = Math.sin((index + 1) * 78.233) * 24634.6345;
+      const seedPhase = Math.sin((index + 1) * 41.731) * 15937.721;
+      return {
+        x: seedX - Math.floor(seedX),
+        y: seedY - Math.floor(seedY),
+        phase: (seedPhase - Math.floor(seedPhase)) * Math.PI * 2,
+        tier: index % 3,
+      };
+    });
     this.raf = 0;
     this.lastTime = 0;
     this.intersecting = true;
@@ -1117,7 +1129,7 @@ class GalaxyAtlas {
     this.hoverNeuron = -1;
     this.targetRotationX = -0.08;
     this.targetRotationY = -0.32;
-    this.targetZoom = 0.9;
+    this.targetZoom = 1.08;
     this.showDivision(0);
     this.syncLoop();
   }
@@ -1289,6 +1301,29 @@ class GalaxyAtlas {
     return palette[index % palette.length];
   }
 
+  drawAmbientStars(context, time) {
+    context.save();
+    context.globalCompositeOperation = "lighter";
+    for (let tier = 0; tier < 3; tier += 1) {
+      const driftX = this.rotationY * (5 + tier * 4);
+      const driftY = this.rotationX * (3 + tier * 3);
+      const pulse = this.paused ? 0.82 : 0.76 + Math.sin(time * 0.00038 + tier * 1.7) * 0.1;
+      context.fillStyle = `rgba(${tier === 2 ? "151, 205, 255" : "104, 228, 255"}, ${(0.045 + tier * 0.025) * pulse})`;
+      context.beginPath();
+      this.ambientStars.forEach((star) => {
+        if (star.tier !== tier) return;
+        const x = ((star.x * this.width + driftX + this.width) % this.width);
+        const y = ((star.y * this.height + driftY + this.height) % this.height);
+        const shimmer = this.paused ? 1 : 0.82 + Math.sin(time * 0.0009 + star.phase) * 0.18;
+        const radius = (0.38 + tier * 0.24) * shimmer;
+        context.moveTo(x + radius, y);
+        context.arc(x, y, radius, 0, Math.PI * 2);
+      });
+      context.fill();
+    }
+    context.restore();
+  }
+
   draw(time = 0) {
     if (!this.context || !this.renderAvailable) return;
     const context = this.context;
@@ -1309,11 +1344,13 @@ class GalaxyAtlas {
       this.height * 0.48,
       Math.max(this.width, this.height) * 0.58,
     );
-    background.addColorStop(0, "rgba(28, 70, 112, 0.13)");
-    background.addColorStop(0.45, "rgba(15, 24, 53, 0.08)");
+    background.addColorStop(0, "rgba(31, 112, 150, 0.2)");
+    background.addColorStop(0.38, "rgba(24, 48, 91, 0.12)");
+    background.addColorStop(0.7, "rgba(31, 20, 74, 0.045)");
     background.addColorStop(1, "rgba(2, 5, 11, 0)");
     context.fillStyle = background;
     context.fillRect(0, 0, this.width, this.height);
+    this.drawAmbientStars(context, time);
 
     const profile = GALAXY_LENS_PROFILES[this.lens] || GALAXY_LENS_PROFILES.mastery;
     this.projectedDivisions = this.divisionGeometry.map((point) => this.project(point));
@@ -1326,8 +1363,9 @@ class GalaxyAtlas {
     this.projectedDivisions.forEach((point, index) => {
       const color = this.paletteColor(index);
       const active = index === this.activeDivision || index === this.hoverDivision;
-      context.strokeStyle = `rgba(${color.join(",")}, ${(active ? 0.2 : 0.055) * profile.links})`;
-      context.lineWidth = active ? 1.15 : 0.55;
+      const depth = clamp((point.z + 2.7) / 5.4, 0, 1);
+      context.strokeStyle = `rgba(${color.join(",")}, ${(active ? 0.34 : 0.065 + depth * 0.055) * profile.links})`;
+      context.lineWidth = active ? 1.45 : 0.58 + depth * 0.25;
       context.beginPath();
       context.moveTo(center.x, center.y);
       const controlX = (center.x + point.x) / 2 + (point.y - center.y) * 0.07;
@@ -1336,7 +1374,7 @@ class GalaxyAtlas {
       context.stroke();
 
       const next = this.projectedDivisions[(index + 1) % this.projectedDivisions.length];
-      context.strokeStyle = `rgba(${color.join(",")}, ${(active ? 0.16 : 0.04) * profile.links})`;
+      context.strokeStyle = `rgba(${color.join(",")}, ${(active ? 0.24 : 0.045 + depth * 0.035) * profile.links})`;
       context.beginPath();
       context.moveTo(point.x, point.y);
       context.lineTo(next.x, next.y);
@@ -1346,20 +1384,31 @@ class GalaxyAtlas {
     this.projectedDivisions.forEach((point, index) => {
       const color = this.paletteColor(index);
       const active = index === this.activeDivision || index === this.hoverDivision;
-      const radius = clamp((active ? 43 : 31) * point.perspective * this.zoom * profile.divisions, 17, active ? 88 : 62);
+      const radius = galaxyDivisionVisualRadius(point, this.zoom, profile, active);
       const halo = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
-      halo.addColorStop(0, `rgba(${color.join(",")}, ${(active ? 0.17 : 0.07) * profile.divisions})`);
-      halo.addColorStop(0.72, `rgba(${color.join(",")}, ${(active ? 0.045 : 0.018) * profile.divisions})`);
+      halo.addColorStop(0, `rgba(${color.join(",")}, ${(active ? 0.29 : 0.12) * profile.divisions})`);
+      halo.addColorStop(0.5, `rgba(${color.join(",")}, ${(active ? 0.095 : 0.038) * profile.divisions})`);
+      halo.addColorStop(0.78, `rgba(${color.join(",")}, ${(active ? 0.035 : 0.012) * profile.divisions})`);
       halo.addColorStop(1, `rgba(${color.join(",")}, 0)`);
       context.fillStyle = halo;
       context.beginPath();
       context.arc(point.x, point.y, radius, 0, Math.PI * 2);
       context.fill();
-      context.strokeStyle = `rgba(${color.join(",")}, ${active ? 0.48 : 0.1})`;
-      context.lineWidth = active ? 1 : 0.5;
+      context.strokeStyle = `rgba(${color.join(",")}, ${active ? 0.66 : 0.17})`;
+      context.lineWidth = active ? 1.15 : 0.65;
       context.beginPath();
       context.arc(point.x, point.y, radius * 0.64, 0, Math.PI * 2);
       context.stroke();
+      context.save();
+      context.setLineDash(active ? [5, 9] : [2, 8]);
+      context.lineDashOffset = this.paused ? index * -2 : -(time * (active ? 0.018 : 0.008) + index * 3.5);
+      context.strokeStyle = `rgba(${color.join(",")}, ${active ? 0.52 : 0.12})`;
+      context.lineWidth = active ? 1.1 : 0.55;
+      context.beginPath();
+      const arcStart = index * 0.63 + time * (this.paused ? 0 : 0.00008);
+      context.arc(point.x, point.y, radius * 0.82, arcStart, arcStart + Math.PI * (active ? 1.42 : 0.78));
+      context.stroke();
+      context.restore();
     });
 
     if (this.zoom > profile.familyThreshold) {
@@ -1368,21 +1417,21 @@ class GalaxyAtlas {
         const divisionPoint = this.projectedDivisions[family.divisionIndex];
         const color = this.paletteColor(family.divisionIndex);
         const selected = familyGeometryIndex === this.activeFamily || familyGeometryIndex === this.hoverFamily;
-        context.strokeStyle = `rgba(${color.join(",")}, ${(selected ? 0.4 : 0.2) * profile.families})`;
-        context.lineWidth = selected ? 1.05 : 0.65;
+        context.strokeStyle = `rgba(${color.join(",")}, ${(selected ? 0.58 : 0.28) * profile.families})`;
+        context.lineWidth = selected ? 1.25 : 0.75;
         context.beginPath();
         context.moveTo(divisionPoint.x, divisionPoint.y);
         context.lineTo(family.x, family.y);
         context.stroke();
         const radius = clamp((selected ? 17 : 11) * family.perspective * Math.sqrt(this.zoom) * profile.families, 7, selected ? 34 : 22);
         const familyHalo = context.createRadialGradient(family.x, family.y, 0, family.x, family.y, radius);
-        familyHalo.addColorStop(0, `rgba(${color.join(",")}, ${selected ? 0.22 : 0.1})`);
+        familyHalo.addColorStop(0, `rgba(${color.join(",")}, ${selected ? 0.31 : 0.15})`);
         familyHalo.addColorStop(1, `rgba(${color.join(",")}, 0)`);
         context.fillStyle = familyHalo;
         context.beginPath();
         context.arc(family.x, family.y, radius, 0, Math.PI * 2);
         context.fill();
-        context.strokeStyle = `rgba(${color.join(",")}, ${selected ? 0.55 : 0.22})`;
+        context.strokeStyle = `rgba(${color.join(",")}, ${selected ? 0.7 : 0.3})`;
         context.beginPath();
         context.arc(family.x, family.y, radius * 0.58, 0, Math.PI * 2);
         context.stroke();
@@ -1399,30 +1448,81 @@ class GalaxyAtlas {
         const active = activeDivision && (selectedFamily < 0 || point.familyGeometryIndex === selectedFamily);
         const depth = clamp((point.z + 2.7) / 5.4, 0, 1);
         const shimmer = this.paused ? 0.86 : 0.78 + Math.sin(time * 0.0015 + point.phase) * 0.16;
-        const alpha = clamp((active ? 0.74 : 0.2 + depth * 0.32) * shimmer * profile.neurons, 0.1, 0.98);
-        const radius = clamp((active ? 1.5 : 0.92) * point.perspective * Math.sqrt(this.zoom) * Math.sqrt(profile.neurons), 0.55, 3.4);
+        const alpha = clamp((active ? 0.88 : 0.28 + depth * 0.44) * shimmer * profile.neurons, 0.16, 1);
+        const depthScale = 0.72 + depth * 0.72;
+        const radius = clamp((active ? 2.05 : 1.28) * point.perspective * Math.sqrt(this.zoom) * Math.sqrt(profile.neurons) * depthScale, 0.82, 4.8);
+        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (active ? 0.16 : 0.08)})`;
+        context.beginPath();
+        context.arc(point.x, point.y, radius * (active ? 3.3 : 2.45), 0, Math.PI * 2);
+        context.fill();
         context.fillStyle = `rgba(${color.join(",")}, ${alpha})`;
         context.beginPath();
         context.arc(point.x, point.y, radius, 0, Math.PI * 2);
         context.fill();
         const neuronIndex = this.neuronIndexById.get(point.id);
         if (this.zoom > 1.35 && (neuronIndex === this.activeNeuron || neuronIndex === this.hoverNeuron)) {
-          context.strokeStyle = `rgba(${color.join(",")}, 0.32)`;
-          context.lineWidth = 0.85;
+          const focusRadius = Math.max(7, radius * 3.5);
+          context.strokeStyle = `rgba(${color.join(",")}, 0.68)`;
+          context.lineWidth = 1;
           context.beginPath();
-          context.arc(point.x, point.y, Math.max(5.5, radius * 3.2), 0, Math.PI * 2);
+          context.arc(point.x, point.y, focusRadius, 0, Math.PI * 2);
+          context.stroke();
+          context.strokeStyle = `rgba(225, 251, 255, ${0.35 + depth * 0.28})`;
+          context.lineWidth = 0.65;
+          context.beginPath();
+          context.moveTo(point.x - focusRadius * 1.6, point.y);
+          context.lineTo(point.x + focusRadius * 1.6, point.y);
+          context.moveTo(point.x, point.y - focusRadius * 1.6);
+          context.lineTo(point.x, point.y + focusRadius * 1.6);
           context.stroke();
         }
       });
 
-    context.fillStyle = "rgba(185, 245, 255, 0.78)";
+    const reactorRadius = clamp(28 * this.zoom, 20, 58);
+    const reactorGlow = context.createRadialGradient(center.x, center.y, 0, center.x, center.y, reactorRadius * 1.75);
+    reactorGlow.addColorStop(0, "rgba(220, 253, 255, 0.74)");
+    reactorGlow.addColorStop(0.12, "rgba(104, 228, 255, 0.34)");
+    reactorGlow.addColorStop(0.46, "rgba(66, 144, 219, 0.11)");
+    reactorGlow.addColorStop(1, "rgba(30, 71, 145, 0)");
+    context.fillStyle = reactorGlow;
     context.beginPath();
-    context.arc(center.x, center.y, clamp(3.2 * this.zoom, 2.5, 7), 0, Math.PI * 2);
+    context.arc(center.x, center.y, reactorRadius * 1.75, 0, Math.PI * 2);
     context.fill();
-    context.strokeStyle = "rgba(104, 228, 255, 0.24)";
-    context.lineWidth = 0.8;
+
+    context.save();
+    context.setLineDash([4, 7]);
+    context.lineDashOffset = this.paused ? -3 : -time * 0.018;
+    context.strokeStyle = "rgba(104, 228, 255, 0.48)";
+    context.lineWidth = 0.9;
     context.beginPath();
-    context.arc(center.x, center.y, clamp(18 * this.zoom, 13, 44), 0, Math.PI * 2);
+    context.arc(center.x, center.y, reactorRadius, 0, Math.PI * 2);
+    context.stroke();
+    context.setLineDash([1.5, 9]);
+    context.lineDashOffset = this.paused ? 2 : time * 0.012;
+    context.strokeStyle = "rgba(175, 123, 255, 0.36)";
+    context.beginPath();
+    context.arc(center.x, center.y, reactorRadius * 1.35, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+
+    context.strokeStyle = "rgba(104, 228, 255, 0.2)";
+    context.lineWidth = 0.6;
+    for (let ray = 0; ray < 8; ray += 1) {
+      const angle = ray * Math.PI / 4 + (this.paused ? 0 : time * 0.00004);
+      context.beginPath();
+      context.moveTo(center.x + Math.cos(angle) * reactorRadius * 0.55, center.y + Math.sin(angle) * reactorRadius * 0.55);
+      context.lineTo(center.x + Math.cos(angle) * reactorRadius * 1.55, center.y + Math.sin(angle) * reactorRadius * 1.55);
+      context.stroke();
+    }
+
+    context.fillStyle = "rgba(225, 253, 255, 0.96)";
+    context.beginPath();
+    context.arc(center.x, center.y, clamp(4.2 * this.zoom, 3.4, 8.5), 0, Math.PI * 2);
+    context.fill();
+    context.strokeStyle = "rgba(104, 228, 255, 0.54)";
+    context.lineWidth = 1;
+    context.beginPath();
+    context.arc(center.x, center.y, reactorRadius * 0.62, 0, Math.PI * 2);
     context.stroke();
     context.restore();
 
@@ -1461,20 +1561,40 @@ class GalaxyAtlas {
   drawDivisionLabel(context, point, index, occupied) {
     const division = this.divisions[index];
     const active = index === this.activeDivision || index === this.hoverDivision;
+    const hovered = index === this.hoverDivision;
     const fullName = titleCase(division.name);
     const nameLimit = this.width < 520 ? 23 : 34;
     const compactName = fullName.length > nameLimit ? `${fullName.slice(0, nameLimit - 1).trimEnd()}…` : fullName;
-    const label = active ? `${division.code} · ${compactName}` : division.code;
+    const expansive = hovered && this.width >= 620;
+    const label = expansive ? `${division.code} · ${compactName}` : division.code;
     context.save();
-    context.font = `${active ? 800 : 700} ${active ? 13 : 11}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
-    const width = context.measureText(label).width + (active ? 18 : 12);
-    const height = active ? 29 : 23;
-    const desiredX = point.x - width / 2;
-    const desiredY = point.y - clamp(42 * point.perspective * this.zoom, 27, 76);
+    context.font = `${active ? 800 : 700} ${expansive ? 13 : 11}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
+    const width = context.measureText(label).width + (expansive ? 18 : 12);
+    const height = expansive ? 29 : 23;
+    const calloutGap = clamp(36 * point.perspective * this.zoom, 30, 64);
+    const desiredX = expansive
+      ? (point.x >= this.width / 2 ? point.x - width - calloutGap : point.x + calloutGap)
+      : point.x - width / 2;
+    const desiredY = expansive
+      ? point.y - height / 2 - clamp(18 * point.perspective * this.zoom, 10, 32)
+      : point.y - clamp(52 * point.perspective * this.zoom, 34, 82);
     const box = placeCanvasLabel(width, height, desiredX, desiredY, this.width, this.height, occupied, active);
     if (!box) {
       context.restore();
       return;
+    }
+    if (expansive) {
+      context.strokeStyle = "rgba(104, 228, 255, 0.34)";
+      context.lineWidth = 0.75;
+      context.beginPath();
+      context.moveTo(point.x, point.y - 4);
+      context.lineTo(
+        point.x < box.x ? box.x : point.x > box.x + width ? box.x + width : clamp(point.x, box.x + 7, box.x + width - 7),
+        point.y < box.y ? box.y : point.y > box.y + height ? box.y + height : box.y + height / 2,
+      );
+      context.stroke();
+      context.shadowColor = "rgba(104, 228, 255, 0.24)";
+      context.shadowBlur = 12;
     }
     context.fillStyle = active ? "rgba(5, 11, 20, 0.9)" : "rgba(5, 10, 18, 0.72)";
     context.strokeStyle = active ? "rgba(104, 228, 255, 0.5)" : "rgba(169, 195, 224, 0.16)";
@@ -1509,6 +1629,16 @@ class GalaxyAtlas {
       return;
     }
     const color = this.paletteColor(geometry.divisionIndex);
+    if (selected) {
+      context.strokeStyle = `rgba(${color.join(",")}, 0.34)`;
+      context.lineWidth = 0.65;
+      context.beginPath();
+      context.moveTo(point.x, point.y + 3);
+      context.lineTo(clamp(point.x, box.x + 6, box.x + width - 6), box.y);
+      context.stroke();
+      context.shadowColor = `rgba(${color.join(",")}, 0.2)`;
+      context.shadowBlur = 10;
+    }
     context.fillStyle = "rgba(4, 9, 17, 0.88)";
     context.strokeStyle = `rgba(${color.join(",")}, ${selected ? 0.48 : 0.2})`;
     context.lineWidth = 0.7;

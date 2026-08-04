@@ -60,6 +60,13 @@ rendered snapshot always names the exact Hive-AI commit it represents. The full
 race, retry, credential, and future seconds-level dispatch design is documented
 in `docs/PUBLIC_GALAXY_SYNC.md`.
 
+Cloud runs remain explicitly gated by the `LIVING_GALAXY_CLOUD_SYNC_ENABLED`
+repository variable. Until a dedicated read-only cloud key is authorized, an
+authenticated operator can run the same compiler in local publisher mode with
+`GALAXY_AUTOMATIC_BRIDGE=true GALAXY_BRIDGE_MODE=local`. The public badge turns
+amber after 15 minutes without a validated refresh and escalates after one hour;
+it never converts delayed truth into zeroes.
+
 `HivePoA/` remains generated output. Publish it with the canonical HivePoA
 workflow; do not hand-edit those mirrored bytes. The publisher intentionally
 preserves the root hub, `404.html`, and `hub-assets/`.

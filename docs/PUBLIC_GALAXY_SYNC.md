@@ -29,7 +29,9 @@ truthful convergence rather than waiting for the branch to stop moving. The
 `.github/workflows/sync-living-galaxy.yml` runs every five minutes and on manual
 dispatch. Its source bridge is active only when the Pages repository contains
 the `HIVE_AI_READ_DEPLOY_KEY` Actions secret and the matching public key is a
-read-only deploy key on Hive-AI:
+read-only deploy key on Hive-AI, and the
+`LIVING_GALAXY_CLOUD_SYNC_ENABLED=true` repository variable explicitly enables
+cloud publication:
 
 1. It checks out Pages `main`, checks for the dedicated deploy key without
    printing it, and fails closed to an inactive bridge boundary when absent.
@@ -62,6 +64,14 @@ would additionally require a narrowly scoped GitHub App installed on exactly
 Hive-AI and Pages. The scheduled publisher needs no personal token, broad
 cross-repository token, private runtime proxy, or write access to Hive-AI; its
 single private credential is the repository-specific read-only deploy key.
+
+When cloud credentials are intentionally absent, the same strict compiler may
+run from a clean authenticated operator checkout with
+`GALAXY_AUTOMATIC_BRIDGE=true GALAXY_BRIDGE_MODE=local`. This local fallback
+publishes the identical allowlisted artifact and grants no additional source or
+runtime authority. The page evaluates `capturedAt` on every 60-second poll:
+15 minutes without a validated refresh is delayed, and one hour is critical.
+Both states retain the last-good counts.
 
 ## Local verification
 

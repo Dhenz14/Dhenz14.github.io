@@ -73,6 +73,15 @@ export function snapshotResponseCanCommit({ requestGeneration, currentGeneration
   return !aborted && requestGeneration === currentGeneration;
 }
 
+export function snapshotFreshness(capturedAt, now = Date.now()) {
+  const captured = Date.parse(String(capturedAt || ""));
+  if (!Number.isFinite(captured) || !Number.isFinite(now)) return { state: "invalid", ageMs: null };
+  const ageMs = Math.max(0, now - captured);
+  if (ageMs >= 60 * 60_000) return { state: "critical", ageMs };
+  if (ageMs >= 15 * 60_000) return { state: "delayed", ageMs };
+  return { state: "current", ageMs };
+}
+
 export function buildGalaxyGeometry(divisions) {
   const divisionGeometry = [];
   const familyGeometry = [];

@@ -10,6 +10,9 @@ const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const outputPath = path.join(siteRoot, "hub-assets", "hub-facts.json");
 const GENERATOR_VERSION = "2.0.0";
 const automaticBridgeEnabled = process.env.GALAXY_AUTOMATIC_BRIDGE === "true";
+const bridgeMode = automaticBridgeEnabled && process.env.GALAXY_BRIDGE_MODE === "local"
+  ? "local"
+  : automaticBridgeEnabled ? "cloud" : "inactive";
 
 const PYTHON_BUILD = String.raw`
 import json
@@ -306,11 +309,13 @@ const base = {
     federationRepositories: graph.edges.filter((edge) => edge.relationship_type === "federation_member").length,
   },
   refresh: {
-    privateSourceMode: automaticBridgeEnabled ? "scheduled-living-main-publisher" : "manual-source-bound-snapshot",
+    privateSourceMode: bridgeMode === "local"
+      ? "local-living-main-publisher"
+      : automaticBridgeEnabled ? "scheduled-living-main-publisher" : "manual-source-bound-snapshot",
     automaticBridgeEnabled,
-    reasonCode: automaticBridgeEnabled
-      ? "SCHEDULED_LIVING_MAIN_PUBLISHER"
-      : "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
+    reasonCode: bridgeMode === "local"
+      ? "LOCAL_LIVING_MAIN_PUBLISHER"
+      : automaticBridgeEnabled ? "SCHEDULED_LIVING_MAIN_PUBLISHER" : "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
     lastGoodBehavior: "retain_previous_snapshot",
   },
   boundaries: {

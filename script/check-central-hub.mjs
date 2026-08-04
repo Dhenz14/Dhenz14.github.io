@@ -176,6 +176,7 @@ requireMatch(js, /Last-good snapshot/, "last-good refresh behavior");
 requireMatch(js, /AbortController/, "snapshot request cancellation");
 requireMatch(js, /snapshotRequestGeneration/, "snapshot response generation gate");
 requireMatch(js, /snapshotResponseCanCommit\([\s\S]*aborted:/, "behavioral snapshot response gate integration");
+requireMatch(js, /const freshness = snapshotFreshness\(snapshot\.capturedAt\);[\s\S]*automaticBridgeEnabled[\s\S]*freshness\.state === "critical"[\s\S]*freshness\.state === "delayed"/, "freshness-aware source badge integration");
 requireMatch(forcedColorsWiring, /const onForcedColorsChange = \(event\) => this\.applyRenderAvailability\(Boolean\(event\.matches\)\);/, "live forced-colors transition callback");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addEventListener\("change", onForcedColorsChange\)/, "live forced-colors transition listener");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addListener\(onForcedColorsChange\)/, "legacy forced-colors transition listener");
@@ -277,14 +278,18 @@ for (const forbidden of ["/home/", "C:\\\\"]) {
 const activeRefresh = facts.refresh?.automaticBridgeEnabled === true
   && facts.refresh?.privateSourceMode === "scheduled-living-main-publisher"
   && facts.refresh?.reasonCode === "SCHEDULED_LIVING_MAIN_PUBLISHER";
+const activeLocalRefresh = facts.refresh?.automaticBridgeEnabled === true
+  && facts.refresh?.privateSourceMode === "local-living-main-publisher"
+  && facts.refresh?.reasonCode === "LOCAL_LIVING_MAIN_PUBLISHER";
 const inactiveRefresh = facts.refresh?.automaticBridgeEnabled === false
   && facts.refresh?.privateSourceMode === "manual-source-bound-snapshot"
   && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED"].includes(facts.refresh?.reasonCode);
-if (!activeRefresh && !inactiveRefresh) throw new Error("refresh automation boundary drifted");
+if (!activeRefresh && !activeLocalRefresh && !inactiveRefresh) throw new Error("refresh automation boundary drifted");
 
 const syncWorkflow = read(".github/workflows/sync-living-galaxy.yml");
 requireMatch(syncWorkflow, /cron:\s*["']\*\/5 \* \* \* \*["']/, "five-minute living-main schedule");
 requireMatch(syncWorkflow, /workflow_dispatch:/, "manual living-main refresh");
+requireMatch(syncWorkflow, /vars\.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true'/, "explicit cloud publisher activation gate");
 requireMatch(syncWorkflow, /contents:\s*write/, "same-repository snapshot publish authority");
 requireMatch(syncWorkflow, /pages:\s*write/, "legacy Pages build authority");
 requireMatch(syncWorkflow, /sync-galaxy-snapshot\.mjs/, "living-main snapshot compiler call");
@@ -307,6 +312,7 @@ requireMatch(generator, /process\.argv\.includes\("--check"\)/, "snapshot check 
 requireMatch(generator, /statusProjection:\s*"none"/, "no status projection");
 requireMatch(generator, /git", \["-C", hiveAiRepo, "show"/, "source-manifest byte proof");
 requireMatch(generator, /GALAXY_AUTOMATIC_BRIDGE === "true"/, "explicit bridge activation input");
+requireMatch(generator, /GALAXY_BRIDGE_MODE === "local"/, "local convergence mode");
 requireNoMatch(bridgeFailClosed, /automaticBridgeEnabled:\s*true/, "fail-closed script authority escalation");
 requireMatch(bridgeFailClosed, /CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED/, "missing-credential fail-closed reason");
 requireMatch(bridgeFailClosed, /PRIVATE_SOURCE_CHECKOUT_FAILED/, "failed-checkout fail-closed reason");
@@ -317,6 +323,7 @@ requireMatch(galaxyCore, /export function galaxyPointerPolicy/, "testable pointe
 requireMatch(galaxyCore, /export function galaxyRenderState/, "testable render fallback state");
 requireMatch(galaxyCore, /export function placeCanvasLabel/, "testable collision-aware labels");
 requireMatch(galaxyCore, /export function resolveGalaxySelection/, "testable semantic selection continuity");
+requireMatch(galaxyCore, /export function snapshotFreshness/, "testable snapshot freshness state");
 requireMatch(syncWorkflow, /fetch-depth:\s*128/, "bounded initial source history");
 requireMatch(syncWorkflow, /persist-credentials:\s*true/, "authenticated post-checkout source proof");
 requireMatch(syncWorkflow, /--deepen=896[\s\S]*--unshallow/, "progressive source history proof");

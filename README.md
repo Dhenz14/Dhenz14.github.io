@@ -17,6 +17,14 @@ and PM-only counts are source facts, while gold status, evidence, blockers,
 urgency, work lanes, missions, and runtime state remain on the authenticated
 local map.
 
+The public Mission Control flightdeck presents the full command story—See,
+Understand, Select, Dispatch, Verify, Watch—against an echo of that same atlas.
+It is keyboard-operable, projector-scaled, reduced-motion safe, and explicitly
+zero-effect: it can explain and hand off to the local operator body, but cannot
+dispatch work or manufacture a live pulse. The Watch state turns into an
+absorbed-source event only when the validated snapshot's exact Hive-AI commit
+actually changes.
+
 The root never proxies private chat, accepts credentials, auto-downloads a
 package, or acts as release authority. Hive-AI metrics are identified as a
 source snapshot. HivePoA release facts appear only after the existing pinned

@@ -11,7 +11,7 @@ import {
   snapshotFreshness,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=stark-galaxy-v6";
+} from "./galaxy-core.mjs?v=stark-command-v7";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -138,6 +138,298 @@ function wireSectionNav() {
   sync();
   window.addEventListener("scroll", schedule, { passive: true });
   window.addEventListener("resize", schedule, { passive: true });
+}
+
+const COMMAND_CYCLE_STEPS = Object.freeze([
+  {
+    stage: "SEE · SOURCE BOUND",
+    title: "See the living body.",
+    copy: "The atlas opens on a validated Hive-AI commit. Geometry stays stable while current facts update.",
+    proof: "READ ONLY",
+  },
+  {
+    stage: "UNDERSTAND · GRAPH CONTEXT",
+    title: "Understand why each signal exists.",
+    copy: "Purpose, family, organ, typed reach, blockers, and evidence turn a point of light into an explainable system capability.",
+    proof: "EXPLAINED",
+  },
+  {
+    stage: "SELECT · ADVISORY",
+    title: "Select the next bounded move.",
+    copy: "Self-scan compares proof readiness, leverage, body coverage, risk, and active-work collisions without authorizing execution.",
+    proof: "NO AUTHORITY",
+  },
+  {
+    stage: "DISPATCH · HUMAN GATE",
+    title: "Prepare, review, then confirm exact intent.",
+    copy: "Mission Control freezes the recommendation, owner, destination, proof gate, collision digest, and planned effects before authenticated confirmation.",
+    proof: "EXPLICIT INTENT",
+  },
+  {
+    stage: "VERIFY · MISSION BOUND",
+    title: "Make the outcome earn its glow.",
+    copy: "Immutable receipts, independent verification, landed lineage, and guarded state transitions prevent activity from masquerading as proof.",
+    proof: "RECEIPTS",
+  },
+  {
+    stage: "WATCH · ABSORBED",
+    title: "Watch the organism change truthfully.",
+    copy: "After the work lands, the compiler absorbs current Git truth, the public snapshot converges, and the body re-renders without inventing liveness.",
+    proof: "GIT BOUND",
+  },
+]);
+
+function wireCommandCycle() {
+  const root = $("[data-command-cycle]");
+  if (!root) return;
+  const rows = $$('[data-command-step]', root);
+  const walkthrough = $("[data-command-walkthrough]", root);
+  const walkthroughLabel = $("[data-command-walkthrough-label]", root);
+  const flightdeck = $("[data-command-flightdeck]", root);
+  const flightdeckLabel = $("[data-command-flightdeck-label]", root);
+  const previousButton = $("[data-command-prev]", root);
+  const nextButton = $("[data-command-next]", root);
+  const resetButton = $("[data-command-reset]", root);
+  const sourceCanvas = $("[data-galaxy-canvas]");
+  const echoCanvas = $("[data-command-echo]", root);
+  let echoContext = null;
+  try {
+    echoContext = echoCanvas?.getContext("2d", { alpha: true, desynchronized: true }) || null;
+  } catch {
+    echoCanvas?.closest(".command-cycle-viewport")?.classList.add("is-unavailable");
+  }
+  const progress = $("[data-command-progress]", root);
+  let current = 0;
+  let timer = 0;
+  let absorbedTimer = 0;
+  let echoRaf = 0;
+  let echoBursts = [];
+  let running = false;
+  let flightdeckReturnFocus = null;
+
+  const paintEcho = () => {
+    if (!sourceCanvas || !echoCanvas || !echoContext || !sourceCanvas.width || !sourceCanvas.height) return;
+    const width = Math.max(1, Math.round(echoCanvas.clientWidth * Math.min(window.devicePixelRatio || 1, 2)));
+    const height = Math.max(1, Math.round(echoCanvas.clientHeight * Math.min(window.devicePixelRatio || 1, 2)));
+    if (echoCanvas.width !== width || echoCanvas.height !== height) {
+      echoCanvas.width = width;
+      echoCanvas.height = height;
+    }
+    echoContext.clearRect(0, 0, width, height);
+    echoContext.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, width, height);
+  };
+
+  const scheduleEcho = () => {
+    window.cancelAnimationFrame(echoRaf);
+    echoBursts.forEach((id) => window.clearTimeout(id));
+    echoBursts = [];
+    echoRaf = window.requestAnimationFrame(paintEcho);
+    [90, 260, 620, 1100].forEach((delay) => echoBursts.push(window.setTimeout(paintEcho, delay)));
+  };
+
+  const select = (index, announce = true) => {
+    current = Math.max(0, Math.min(COMMAND_CYCLE_STEPS.length - 1, Number(index) || 0));
+    const step = COMMAND_CYCLE_STEPS[current];
+    rows.forEach((row, rowIndex) => {
+      row.classList.toggle("is-current", rowIndex === current);
+      row.classList.toggle("is-complete", rowIndex < current);
+      $("button", row)?.setAttribute("aria-pressed", String(rowIndex === current));
+    });
+    setText("[data-command-stage-index]", String(current + 1).padStart(2, "0"), root);
+    setText("[data-command-stage]", step.stage, root);
+    setText("[data-command-title]", step.title, root);
+    setText("[data-command-copy]", step.copy, root);
+    setText("[data-command-proof]", step.proof, root);
+    setText("[data-command-position]", String(current + 1), root);
+    setText("[data-command-viewport-stage]", step.stage.split(" · ")[0], root);
+    if (previousButton) previousButton.disabled = current === 0;
+    if (nextButton) nextButton.disabled = current === COMMAND_CYCLE_STEPS.length - 1;
+    if (progress) progress.style.width = `${(current / Math.max(COMMAND_CYCLE_STEPS.length - 1, 1)) * 100}%`;
+    window.hiveCommandStage = current;
+    window.dispatchEvent(new CustomEvent("hive:command-stage", { detail: { index: current, step } }));
+    root.dataset.commandVisual = String(current);
+    scheduleEcho();
+    if (announce) showToast(`${step.stage.split(" · ")[0]} — ${step.title}`);
+  };
+
+  const stop = (announce = false) => {
+    window.clearInterval(timer);
+    timer = 0;
+    running = false;
+    walkthrough?.setAttribute("aria-pressed", "false");
+    if (walkthroughLabel) walkthroughLabel.textContent = current === COMMAND_CYCLE_STEPS.length - 1 ? "Walk command cycle again" : "Run command cycle";
+    if (root.dataset.commandState === "walking") root.dataset.commandState = "idle";
+    if (announce) showToast("Command-cycle walkthrough paused.");
+  };
+
+  const setFlightdeck = (active, announce = true) => {
+    const enabled = Boolean(active);
+    if (enabled && document.activeElement instanceof HTMLElement) flightdeckReturnFocus = document.activeElement;
+    root.classList.toggle("is-flightdeck", enabled);
+    document.body.classList.toggle("command-flightdeck-open", enabled);
+    flightdeck?.setAttribute("aria-pressed", String(enabled));
+    if (enabled) {
+      root.setAttribute("role", "dialog");
+      root.setAttribute("aria-modal", "true");
+      root.setAttribute("aria-label", "Living command cycle flightdeck");
+    } else {
+      root.removeAttribute("role");
+      root.removeAttribute("aria-modal");
+      root.removeAttribute("aria-label");
+    }
+    if (flightdeckLabel) flightdeckLabel.textContent = enabled ? "Exit flightdeck" : "Enter flightdeck";
+    if (enabled) {
+      root.classList.remove("motion-scene-paused");
+      scheduleEcho();
+      flightdeck?.focus({ preventScroll: true });
+    } else if (flightdeckReturnFocus?.isConnected) {
+      flightdeckReturnFocus.focus({ preventScroll: true });
+    }
+    if (announce) showToast(enabled ? "Projector flightdeck online. Arrow keys move between stages; Escape exits." : "Projector flightdeck closed.");
+  };
+
+  const start = () => {
+    window.clearTimeout(absorbedTimer);
+    stop();
+    root.dataset.commandState = "walking";
+    running = true;
+    walkthrough?.setAttribute("aria-pressed", "true");
+    if (walkthroughLabel) walkthroughLabel.textContent = "Pause command cycle";
+    select(0, false);
+    timer = window.setInterval(() => {
+      if (current >= COMMAND_CYCLE_STEPS.length - 1) {
+        stop();
+        showToast("Cycle complete. Open the command body to perform the guarded workflow.");
+        return;
+      }
+      select(current + 1, false);
+    }, 1500);
+  };
+
+  walkthrough?.addEventListener("click", () => {
+    if (reduceMotion.matches || document.body.classList.contains("motion-paused")) {
+      stop();
+      root.dataset.commandState = "manual";
+      select(current >= COMMAND_CYCLE_STEPS.length - 1 ? 0 : current + 1);
+      if (walkthroughLabel) walkthroughLabel.textContent = current === COMMAND_CYCLE_STEPS.length - 1 ? "Restart command cycle" : "Next command stage";
+      return;
+    }
+    if (running) stop(true);
+    else start();
+  });
+
+  rows.forEach((row, rowIndex) => {
+    $("button", row)?.addEventListener("click", () => {
+      stop();
+      root.dataset.commandState = "manual";
+      select(rowIndex);
+    });
+  });
+
+  previousButton?.addEventListener("click", () => {
+    stop();
+    root.dataset.commandState = "manual";
+    select(current - 1);
+  });
+
+  nextButton?.addEventListener("click", () => {
+    stop();
+    root.dataset.commandState = "manual";
+    select(current + 1);
+  });
+
+  resetButton?.addEventListener("click", () => {
+    stop();
+    root.dataset.commandState = "idle";
+    select(0, false);
+    showToast("Command cycle recovered to the source-bound overview.");
+  });
+
+  flightdeck?.addEventListener("click", () => setFlightdeck(!root.classList.contains("is-flightdeck")));
+
+  document.addEventListener("keydown", (event) => {
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || (event.shiftKey && event.key !== "Tab")) return;
+    const target = event.target;
+    const editable = target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+    const interactive = target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(target.tagName));
+    if (event.key === "Tab" && root.classList.contains("is-flightdeck")) {
+      const focusable = $$('button:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])', root)
+        .filter((node) => !node.hasAttribute("hidden") && node.getClientRects().length > 0);
+      if (focusable.length) {
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+      return;
+    }
+    if (event.key === "Escape" && root.classList.contains("is-flightdeck")) {
+      event.preventDefault();
+      setFlightdeck(false);
+      return;
+    }
+    if (!editable && event.key.toLowerCase() === "c") {
+      event.preventDefault();
+      walkthrough?.click();
+      return;
+    }
+    if (!editable && event.key.toLowerCase() === "f") {
+      event.preventDefault();
+      setFlightdeck(!root.classList.contains("is-flightdeck"));
+      return;
+    }
+    if (!editable && root.classList.contains("is-flightdeck") && ["ArrowLeft", "ArrowRight"].includes(event.key)) {
+      event.preventDefault();
+      stop();
+      root.dataset.commandState = "manual";
+      select(current + (event.key === "ArrowRight" ? 1 : -1));
+      return;
+    }
+    if (interactive) return;
+  });
+
+  window.addEventListener("hive:motion", (event) => {
+    if (event.detail?.paused && running) stop();
+  });
+
+  window.addEventListener("hive:snapshot", (event) => {
+    const snapshot = event.detail?.snapshot;
+    const previous = event.detail?.previous;
+    const sourceCommit = snapshot?.hiveAi?.sourceCommit;
+    if (sourceCommit) setText("[data-command-source]", sourceCommit.slice(0, 8), root);
+    scheduleEcho();
+    if (!previous || previous.hiveAi?.sourceCommit === sourceCommit) return;
+    stop();
+    window.clearTimeout(absorbedTimer);
+    root.dataset.commandState = "absorbed";
+    select(COMMAND_CYCLE_STEPS.length - 1, false);
+    setText("[data-command-title]", "New source truth absorbed.", root);
+    setText("[data-command-copy]", `${previous.hiveAi.sourceCommit.slice(0, 8)} → ${sourceCommit.slice(0, 8)}. The validated snapshot changed; no runtime state was inferred.`, root);
+    setText("[data-command-proof]", "SOURCE CHANGED", root);
+    showToast(`Living galaxy absorbed Hive-AI ${sourceCommit.slice(0, 8)}.`);
+    absorbedTimer = window.setTimeout(() => {
+      if (root.dataset.commandState === "absorbed") root.dataset.commandState = "idle";
+    }, 8000);
+  });
+
+  window.addEventListener("hive:snapshot-error", () => {
+    setText("[data-command-source]", "unavailable", root);
+  });
+
+  window.addEventListener("resize", scheduleEcho, { passive: true });
+  window.addEventListener("pagehide", () => {
+    stop();
+    setFlightdeck(false, false);
+    window.cancelAnimationFrame(echoRaf);
+    echoBursts.forEach((id) => window.clearTimeout(id));
+  });
+
+  select(0, false);
 }
 
 const LENSES = Object.freeze({
@@ -336,7 +628,7 @@ async function loadSourceSnapshot() {
     if (!previous
       || previous.hiveAi?.sourceCommit !== snapshot.hiveAi.sourceCommit
       || previous.galaxy?.projectionHash !== snapshot.galaxy.projectionHash) {
-      window.dispatchEvent(new CustomEvent("hive:snapshot", { detail: { snapshot } }));
+      window.dispatchEvent(new CustomEvent("hive:snapshot", { detail: { snapshot, previous } }));
     }
     return true;
   } catch (error) {
@@ -747,6 +1039,7 @@ class GalaxyAtlas {
     this.activeNeuron = -1;
     this.hoverNeuron = -1;
     this.lens = "mastery";
+    this.commandStage = Number.isSafeInteger(window.hiveCommandStage) ? window.hiveCommandStage : 0;
     this.dragging = false;
     this.dragMoved = false;
     this.engaged = false;
@@ -786,6 +1079,7 @@ class GalaxyAtlas {
       this.lens = event.detail.name;
       this.draw(performance.now());
     });
+    window.addEventListener("hive:command-stage", (event) => this.presentCommandStage(event.detail?.index));
     this.setEngaged(false);
     if (!this.baseRenderAvailable) {
       this.applyRenderAvailability(this.forcedColors.matches);
@@ -846,6 +1140,7 @@ class GalaxyAtlas {
     this.activeNeuron = selection.activeNeuron;
     this.buildDivisionIndex();
     this.showDivision(this.activeDivision, false, true);
+    this.presentCommandStage(this.commandStage);
     this.draw(performance.now());
     this.syncLoop();
   }
@@ -1010,6 +1305,27 @@ class GalaxyAtlas {
     this.targetRotationY = Math.atan2(center.x, center.z);
     this.targetRotationX = -Math.atan2(center.y, Math.hypot(center.x, center.z)) * 0.72;
     this.targetZoom = Math.max(this.targetZoom, minimumZoom);
+  }
+
+  presentCommandStage(index) {
+    this.commandStage = Math.max(0, Math.min(COMMAND_CYCLE_STEPS.length - 1, Number(index) || 0));
+    if (this.stage) this.stage.dataset.commandStage = String(this.commandStage);
+    const scenes = [
+      { lens: "mastery", reset: true },
+      { lens: "evidence", division: 3 },
+      { lens: "artifact", neuron: "N121" },
+      { lens: "runtime", neuron: "N401" },
+      { lens: "evidence", neuron: "N561" },
+      { lens: "product", reset: true },
+    ];
+    const scene = scenes[this.commandStage];
+    if (!scene) return;
+    selectLens(scene.lens);
+    if (!this.divisions.length) return;
+    if (scene.reset) this.resetCamera();
+    else if (scene.neuron && this.neuronIndexById?.has(scene.neuron)) this.focusNeuron(this.neuronIndexById.get(scene.neuron));
+    else if (Number.isSafeInteger(scene.division)) this.focusDivision(scene.division);
+    this.draw(performance.now());
   }
 
   focusDivision(index) {
@@ -1731,6 +2047,7 @@ runSafely("Top navigation", wireTopbar);
 runSafely("Section reveals", wireReveal);
 runSafely("Section navigation", wireSectionNav);
 runSafely("Offscreen scene control", wireSceneActivity);
+runSafely("Living command cycle", wireCommandCycle);
 runSafely("Galaxy lenses", wireLenses);
 runSafely("Release copy controls", wireCopyButtons);
 runSafely("Local route notices", wireLocalChatNotice);

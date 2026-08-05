@@ -137,6 +137,21 @@ requireMatch(html, /href="http:\/\/127\.0\.0\.1:8791\/constellation\/body\?prese
 requireMatch(html, /data-body-surface="atlas"[\s\S]*data-body-surface="presentation"[\s\S]*data-body-surface="operator"/, "three-surface Living Anatomy bridge");
 requireMatch(html, /public page never claims or probes local availability/, "truthful local availability boundary");
 requireMatch(html, /GitHub Pages never receives your prompt/, "prompt privacy");
+const commandStepIds = [...html.matchAll(/data-command-step="(\d+)"/g)].map((match) => Number(match[1]));
+if (JSON.stringify(commandStepIds) !== JSON.stringify([0, 1, 2, 3, 4, 5])) {
+  throw new Error(`living command cycle stage order drifted: ${commandStepIds.join(",")}`);
+}
+requireMatch(html, /See[\s\S]*Understand[\s\S]*Select[\s\S]*Dispatch[\s\S]*Verify[\s\S]*Watch/, "living command cycle narrative");
+requireMatch(html, /data-command-cycle data-command-state="idle"/, "inert command cycle startup");
+requireMatch(html, /The walkthrough narrates the lifecycle; it performs zero effects\./, "zero-effect public command boundary");
+requireMatch(html, /data-command-walkthrough aria-pressed="false"/, "explicit walkthrough state");
+requireMatch(html, /Open command body[\s\S]*Real scan · missions · receipts/, "operator command handoff");
+requireMatch(html, /canvas data-command-echo/, "command organism echo");
+requireMatch(html, /data-command-prev[\s\S]*data-command-next[\s\S]*data-command-reset/, "presenter recovery navigation");
+requireMatch(html, /data-command-flightdeck aria-pressed="false"[\s\S]*F · projector mode/, "projector flightdeck control");
+if (html.indexOf("galaxy-commandbar") > html.indexOf("body-bridge-dock")) {
+  throw new Error("galaxy spectacle must precede the expanded local-surface dock");
+}
 requireNoMatch(html, /href=["']#anatomy["']/, "obsolete anatomy anchor");
 const disabledDownload = html.match(/<a\b[^>]*data-release-download[^>]*>/)?.[0] || "";
 if (!disabledDownload || /\shref=/.test(disabledDownload) || !/tabindex="-1"/.test(disabledDownload)) {
@@ -162,7 +177,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "stark-galaxy-v6" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "stark-command-v7" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)) {
@@ -177,8 +192,23 @@ requireMatch(js, /class GalaxyAtlas/, "galaxy renderer");
 requireMatch(js, /function wireLenses\(\)[\s\S]*button\.disabled = false;/, "lens controls enabled only after module boot");
 requireMatch(js, /setCameraControlsAvailable\(available[\s\S]*button\.disabled = !available;[\s\S]*aria-disabled[\s\S]*tabindex[\s\S]*aria-disabled/, "camera controls runtime availability gate");
 requireMatch(js, /runSafely\("Living Anatomy galaxy", startGalaxy\)/, "galaxy call chain");
+requireMatch(js, /const COMMAND_CYCLE_STEPS = Object\.freeze\(\[[\s\S]*SEE · SOURCE BOUND[\s\S]*WATCH · ABSORBED/, "command cycle semantic model");
+requireMatch(js, /function wireCommandCycle\(\)[\s\S]*data-command-cycle[\s\S]*setInterval[\s\S]*1500/, "command cycle controller");
+requireMatch(js, /reduceMotion\.matches \|\| document\.body\.classList\.contains\("motion-paused"\)/, "manual reduced-motion command cycle");
+requireMatch(js, /detail: \{ snapshot, previous \}/, "previous source snapshot propagation");
+requireMatch(js, /previous\.hiveAi\?\.sourceCommit === sourceCommit[\s\S]*New source truth absorbed\.[\s\S]*no runtime state was inferred/, "truth-bound source absorption");
+requireMatch(js, /const paintEcho = \(\) =>[\s\S]*drawImage\(sourceCanvas/, "source-bound organism echo renderer");
+requireMatch(js, /const setFlightdeck = \(active, announce = true\)[\s\S]*command-flightdeck-open[\s\S]*Projector flightdeck online/, "projector flightdeck controller");
+requireMatch(js, /setAttribute\("role", "dialog"\)[\s\S]*setAttribute\("aria-modal", "true"\)[\s\S]*Living command cycle flightdeck/, "flightdeck modal semantics");
+requireMatch(js, /event\.key === "Tab"[\s\S]*button:not\(:disabled\)[\s\S]*document\.activeElement === first[\s\S]*document\.activeElement === last/, "flightdeck focus containment");
+requireMatch(js, /!editable && root\.classList\.contains\("is-flightdeck"\) && \["ArrowLeft", "ArrowRight"\]\.includes\(event\.key\)[\s\S]*select\(current \+ \(event\.key === "ArrowRight" \? 1 : -1\)\)[\s\S]*if \(interactive\) return;/, "flightdeck arrow keys precede interactive-control guard");
+requireMatch(js, /data-command-prev[\s\S]*data-command-next[\s\S]*data-command-reset/, "presenter recovery controls");
+requireMatch(js, /new CustomEvent\("hive:command-stage"[\s\S]*detail: \{ index: current, step \}/, "command-stage choreography event");
+requireMatch(js, /runSafely\("Living command cycle", wireCommandCycle\)/, "command cycle call chain");
 requireMatch(js, /focusFamily\(familyGeometryIndex\)/, "family semantic zoom");
 requireMatch(js, /focusNeuron\(neuronIndex\)/, "neuron semantic zoom");
+requireMatch(js, /presentCommandStage\(index\)[\s\S]*N121[\s\S]*N401[\s\S]*N561/, "truth-safe atlas stage choreography");
+requireMatch(js, /hive:command-stage[\s\S]*this\.presentCommandStage\(event\.detail\?\.index\)/, "atlas command-stage listener");
 requireMatch(js, /drawFamilyLabel\(/, "family canvas labels");
 requireMatch(js, /drawNeuronLabel\(/, "neuron identity label");
 requireMatch(js, /placeCanvasLabel\(/, "collision-aware label placement");
@@ -227,6 +257,13 @@ requireMatch(css, /\.motion-scene-paused[\s\S]*animation-play-state:\s*paused !i
 requireMatch(css, /\.galaxy-stage\s*{[\s\S]*?touch-action:\s*pan-y;/, "touch page-scroll preservation");
 requireMatch(css, /\.galaxy-stage\.is-engaged\s*{[\s\S]*?touch-action:\s*none;/, "engaged touch orbit ownership");
 requireMatch(css, /\.map-readout\s*{[\s\S]*?pointer-events:\s*none;/, "non-blocking graph readout overlay");
+requireMatch(css, /\.mission-grid\s*{[\s\S]*?grid-template-columns:\s*repeat\(6, minmax\(0, 1fr\)\)/, "six-stage command flightdeck");
+requireMatch(css, /\.command-cycle-readout\s*{[\s\S]*?grid-template-columns:\s*auto minmax\(0, 1fr\) auto;/, "command cycle proof readout");
+requireMatch(css, /\.command-cycle-viewport\s*{[\s\S]*?min-height:\s*clamp\(20rem, 42vw, 34rem\)/, "command organism viewport");
+requireMatch(css, /body\.command-flightdeck-open::after[\s\S]*\.mission-machine\.is-flightdeck\s*{[\s\S]*?position:\s*fixed;/, "projector flightdeck isolation");
+requireMatch(css, /@keyframes command-cycle-scan[\s\S]*@keyframes command-cycle-node/, "command cycle motion language");
+requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.command-cycle-readout\s*{[\s\S]*?grid-template-columns:\s*1fr;/, "mobile command readout stack");
+requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.command-cycle-readout[\s\S]*\.command-cycle-orb/, "forced-colors command fallback");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.map-readout\s*{[\s\S]*?inset:\s*1rem 1rem auto auto;/, "separated mobile galaxy overlays");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.body-surface-links\s*{[\s\S]*?grid-template-columns:\s*1fr;/, "mobile Living Anatomy bridge stack");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-controls\s*{\s*display:\s*none;/, "forced-colors camera fallback");

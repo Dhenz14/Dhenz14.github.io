@@ -9,9 +9,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const routes = [
   "/",
   "/hub-assets/hub-facts.json",
-  "/hub-assets/hub.css?v=stark-galaxy-v6",
-  "/hub-assets/hub.js?v=stark-galaxy-v6",
-  "/hub-assets/galaxy-core.mjs?v=stark-galaxy-v6",
+  "/hub-assets/hub.css?v=stark-command-v7",
+  "/hub-assets/hub.js?v=stark-command-v7",
+  "/hub-assets/galaxy-core.mjs?v=stark-command-v7",
   "/robots.txt",
   "/sitemap.xml",
   "/site.webmanifest",

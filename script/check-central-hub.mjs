@@ -417,6 +417,7 @@ requireMatch(ideSmokeWorkflow, /run-ide-public-windows-smoke\.ps1[\s\S]*expected
 requireMatch(ideSmokeWorkflow, /if:\s*always\(\)[\s\S]*actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/, "Windows smoke durable receipt upload");
 requireMatch(ideSmokeScript, /GITHUB_ACTIONS[\s\S]*RUNNER_TEMP[\s\S]*ImageOS[\s\S]*freshHostedRunner/, "fresh hosted runner proof");
 requireMatch(ideSmokeScript, /Existing Hive IDE|Fresh runner unexpectedly contains a Hive IDE install/, "pre-existing install refusal");
+requireMatch(ideSmokeScript, /@\(Get-HiveUninstallEntries\)\.Count -ne 0/, "empty uninstall-registry normalization");
 requireMatch(ideSmokeScript, /Live latest feed differs from the landed central hub document[\s\S]*Release manifest differs from the live feed or landed mirror/, "live-to-landed release binding");
 requireMatch(ideSmokeScript, /Get-Sha256 \$InstallerPath[\s\S]*Downloaded installer bytes differ/, "full installer hash proof");
 requireMatch(ideSmokeScript, /Start-Process -FilePath \$InstallerPath -ArgumentList '\/S'[\s\S]*applicationHashMatchesManifest = \$true/, "exact install and application hash proof");

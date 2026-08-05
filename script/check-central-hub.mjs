@@ -135,6 +135,12 @@ requireMatch(html, /data-galaxy-index-list[^>]+aria-label="Jump to a galaxy divi
 requireMatch(html, /Current authorized beta tester package/, "tester authorization label");
 requireMatch(html, /id="ide-download"[^>]+data-ide-release data-state="checking"/, "inert Hive IDE release section");
 requireMatch(html, /One current-user installer carries the IDE,[\s\S]*internal HivePoA\/IPFS Service Center/, "one-download product boundary");
+requireMatch(html, /START HERE \/ no terminal[\s\S]*One download\. Five calm steps\./, "visible no-terminal tester onboarding");
+requireMatch(html, /More info[\s\S]*Run anyway[\s\S]*Hive is ready[\s\S]*Brain[\s\S]*Get help/, "complete nontechnical tester path");
+requireMatch(html, /No terminal\. No manual services\. No hunting for separate Hive-AI, chat, HivePoA, or IPFS downloads\./, "single-package reassurance");
+const ideStartHere = html.match(/<article class="ide-start-here"[\s\S]*?<\/article>/)?.[0] || "";
+if ((ideStartHere.match(/<li>/g) || []).length !== 5) throw new Error("START HERE must contain exactly five tester steps");
+requireNoMatch(ideStartHere, /<code>|wsl\.exe|powershell\.exe|pip install|npm (?:run|install)|cargo /i, "START HERE command-line dead end");
 requireMatch(html, /Test credits[\s\S]*Valueless · non-transferable/, "valueless IDE tester credits");
 requireMatch(html, /does not claim a public HivePoA reward-network release/, "IDE versus HivePoA release boundary");
 requireMatch(html, /Not verified here/, "local-byte boundary");
@@ -170,9 +176,11 @@ const disabledDownload = html.match(/<a\b[^>]*data-release-download[^>]*>/)?.[0]
 if (!disabledDownload || /\shref=/.test(disabledDownload) || !/tabindex="-1"/.test(disabledDownload)) {
   throw new Error("unverified release download must be inert and unfocusable");
 }
-for (const attribute of ["data-ide-download", "data-ide-manifest", "data-ide-release-page"]) {
-  const inertLink = html.match(new RegExp(`<a\\b[^>]*${attribute}[^>]*>`))?.[0] || "";
-  if (!inertLink || /\shref=/.test(inertLink) || !/tabindex="-1"/.test(inertLink) || !/aria-disabled="true"/.test(inertLink)) {
+for (const [attribute, expectedCount] of [["data-ide-download", 1], ["data-ide-start-here", 2], ["data-ide-manifest", 1], ["data-ide-release-page", 1]]) {
+  const inertLinks = [...html.matchAll(new RegExp(`<a\\b[^>]*${attribute}[^>]*>`, "g"))].map((match) => match[0]);
+  if (inertLinks.length !== expectedCount || inertLinks.some((link) => (
+    /\shref=/.test(link) || !/tabindex="-1"/.test(link) || !/aria-disabled="true"/.test(link)
+  ))) {
     throw new Error(`unverified Hive IDE link must be inert: ${attribute}`);
   }
 }
@@ -196,7 +204,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "stark-command-v8" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "stark-command-v9" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -253,6 +261,7 @@ requireMatch(js, /AbortController[\s\S]*fetch\("\/downloads\/hive-ide\/latest\.j
 requireMatch(js, /validateIdeReleaseLatest\(JSON\.parse\(body\)\)/, "Hive IDE feed validation before render");
 requireMatch(js, /blockIdeRelease\([\s\S]*removeAttribute\("href"\)/, "Hive IDE fail-closed link deauthorization");
 requireMatch(js, /download\.href = latest\.installerUrl;[\s\S]*manifest\.href = latest\.manifestUrl;/, "validated Hive IDE download and manifest handoff");
+requireMatch(js, /new URL\("START-HERE\.txt", latest\.installerUrl\)\.href[\s\S]*\$\$\("\[data-ide-start-here\]"\)/, "immutable START HERE release-asset handoff");
 requireMatch(ideReleaseCore, /release stage or channel is unsupported[\s\S]*an unsigned release cannot be advertised as stable/, "Hive IDE release channel truth gate");
 requireMatch(ideReleaseCore, /manifest and installer do not share one release tag/, "Hive IDE immutable release-tag binding");
 requireMatch(ideReleaseCore, /installer size is outside the bounded Windows package range/, "Hive IDE installer size bound");
@@ -278,7 +287,8 @@ requireMatch(css, /@media \(prefers-reduced-motion: reduce\)/, "reduced motion")
 requireMatch(css, /button:focus-visible,[\s\S]*a:focus-visible/, "visible focus");
 requireMatch(css, /\.motion-toggle:hover:not\(:disabled\)/, "inert motion control hover state");
 requireMatch(css, /\.ide-release-console\s*{[\s\S]*grid-template-columns:[\s\S]*\.ide-stack-grid\s*{[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/, "desktop Hive IDE release composition");
-requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.ide-release-facts,[\s\S]*\.ide-stack-grid,[\s\S]*\.ide-release-digest\s*{[\s\S]*grid-template-columns:\s*1fr;/, "mobile Hive IDE release composition");
+requireMatch(css, /\.ide-start-here\s*{[\s\S]*grid-template-columns:[\s\S]*\.ide-start-steps li\s*{[\s\S]*grid-template-columns:/, "desktop START HERE composition");
+requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.ide-release-facts,[\s\S]*\.ide-start-here,[\s\S]*\.ide-stack-grid,[\s\S]*\.ide-release-digest\s*{[\s\S]*grid-template-columns:\s*1fr;/, "mobile Hive IDE release composition");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.ide-release-console[\s\S]*\.ide-release-glow/, "forced-colors Hive IDE release fallback");
 requireMatch(css, /\[data-reveal\]\s*{\s*opacity:\s*1;/, "progressive no-JS visibility");
 requireMatch(css, /\[data-reveal\]\.reveal-ready/, "enhanced reveal state");

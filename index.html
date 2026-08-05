@@ -24,7 +24,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="/hub-assets/hub.css?v=stark-command-v8">
+    <link rel="stylesheet" href="/hub-assets/hub.css?v=stark-command-v9">
     <title>Hive Ecosystem — The living intelligence galaxy</title>
     <script type="application/ld+json">
       {
@@ -270,6 +270,7 @@
               <p class="ide-release-lede" data-ide-status-detail>The page will enable the installer only after the same-origin feed passes strict source, hash, size, channel, and immutable release-URL checks.</p>
               <div class="ide-release-actions">
                 <a class="button button-primary is-disabled" data-ide-download aria-disabled="true" tabindex="-1">Download for Windows x64</a>
+                <a class="button button-quiet is-disabled" data-ide-start-here aria-disabled="true" tabindex="-1">Read START HERE</a>
                 <a class="button button-quiet is-disabled" data-ide-manifest aria-disabled="true" tabindex="-1">Release manifest</a>
                 <a class="text-link is-disabled" data-ide-release-page aria-disabled="true" tabindex="-1">Release details ↗</a>
               </div>
@@ -281,10 +282,27 @@
               <div><dt>Channel</dt><dd data-ide-channel>Checking</dd></div>
               <div><dt>Installer size</dt><dd data-ide-size>—</dd></div>
               <div><dt>Hive IDE source</dt><dd><code data-ide-source>—</code></dd></div>
-              <div><dt>Setup model</dt><dd>Current user · one click</dd></div>
+              <div><dt>Setup model</dt><dd>Current user · guided</dd></div>
               <div><dt>Test credits</dt><dd>Valueless · non-transferable</dd></div>
             </dl>
           </div>
+
+          <article class="ide-start-here" aria-labelledby="ide-start-here-title" data-reveal>
+            <div class="ide-start-here-intro">
+              <p class="eyebrow">START HERE / no terminal</p>
+              <h3 id="ide-start-here-title">One download. Five calm steps.</h3>
+              <p>You do not need Python, WSL, PowerShell, or developer commands. The installer and Hive IDE own setup, repair, and help.</p>
+              <a class="text-link is-disabled" data-ide-start-here aria-disabled="true" tabindex="-1">Open the printable START HERE guide ↗</a>
+            </div>
+            <ol class="ide-start-steps">
+              <li><span>01</span><div><strong>Download</strong><p>Use the blue Windows button above. The page unlocks it only after the release feed validates.</p></div></li>
+              <li><span>02</span><div><strong>Check</strong><p>Click Copy SHA-256 below and compare it with the downloaded file before you run it.</p></div></li>
+              <li><span>03</span><div><strong>Allow once</strong><p>If Windows says “Windows protected your PC,” choose <b>More info</b>, then <b>Run anyway</b>.</p></div></li>
+              <li><span>04</span><div><strong>Let Hive set itself up</strong><p>Install, open Hive IDE, approve the Windows setup prompt, and restart once only if Hive asks. Wait for <b>Hive is ready</b>.</p></div></li>
+              <li><span>05</span><div><strong>Try the whole stack</strong><p>Open a folder, click <b>Brain</b>, and ask a question. Use <b>Get help</b> inside Hive IDE if anything feels stuck.</p></div></li>
+            </ol>
+            <p class="ide-start-here-reassurance"><span aria-hidden="true">✓</span><span>No terminal. No manual services. No hunting for separate Hive-AI, chat, HivePoA, or IPFS downloads.</span></p>
+          </article>
 
           <div class="ide-stack-grid" aria-label="Services included in Hive IDE">
             <article data-reveal><span>01</span><h3>Editor + agents</h3><p>The custom Hive workspace, native file tools, receipts, task surfaces, and local operator controls.</p></article>
@@ -663,6 +681,6 @@
     <noscript>
       <div class="noscript-banner">Source freshness, motion controls, and signed-index verification need JavaScript. All navigation remains available; no package or live-source claim is authorized by this fallback.</div>
     </noscript>
-    <script type="module" src="/hub-assets/hub.js?v=stark-command-v8"></script>
+    <script type="module" src="/hub-assets/hub.js?v=stark-command-v9"></script>
   </body>
 </html>

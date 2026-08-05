@@ -37,6 +37,9 @@ fields, source commit, artifact hash and size, channel truth, and same-tag
 manifest/installer URLs before enabling links. An unsigned tester release is
 never described as publisher-authenticated or stable, and embedding the
 internal HivePoA sidecar never grants public HivePoA reward-network authority.
+The same validated immutable release also unlocks its bundled `START-HERE.txt`,
+while the page itself presents the five-step no-terminal path from download to
+the first Brain question and an in-app `Get help` recovery route.
 
 ## Refresh the public galaxy
 

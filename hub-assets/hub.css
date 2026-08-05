@@ -2013,6 +2013,130 @@ h3 {
 .ide-release-facts dd { margin: 0.3rem 0 0; color: var(--text); font-size: 0.92rem; font-weight: 700; }
 .ide-release-facts code { color: var(--cyan-bright); }
 
+.ide-start-here {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.62fr) minmax(0, 1.38fr);
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  margin-top: 1rem;
+  padding: clamp(1.5rem, 3.5vw, 2.8rem);
+  overflow: hidden;
+  border: 1px solid rgba(113, 246, 188, 0.22);
+  border-radius: 1.15rem;
+  background:
+    radial-gradient(circle at 6% 18%, rgba(113, 246, 188, 0.12), transparent 22rem),
+    linear-gradient(135deg, rgba(9, 23, 29, 0.94), rgba(5, 10, 19, 0.94));
+  box-shadow: inset 0 0 3.5rem rgba(113, 246, 188, 0.025);
+}
+
+.ide-start-here::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), var(--cyan), transparent);
+  box-shadow: 0 0 1rem rgba(113, 246, 188, 0.28);
+  content: "";
+}
+
+.ide-start-here-intro {
+  align-self: center;
+}
+
+.ide-start-here-intro h3 {
+  max-width: 26rem;
+  margin: 0.75rem 0 1rem;
+  font-size: clamp(2rem, 4vw, 3.8rem);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.ide-start-here-intro > p:not(.eyebrow) {
+  max-width: 31rem;
+  margin: 0 0 1.25rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.ide-start-here-intro .is-disabled {
+  pointer-events: none;
+  opacity: 0.58;
+}
+
+.ide-start-steps {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ide-start-steps li {
+  display: grid;
+  grid-template-columns: 2.65rem minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(169, 195, 224, 0.12);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.ide-start-steps li > span {
+  display: grid;
+  place-items: center;
+  min-height: 2.2rem;
+  border: 1px solid rgba(113, 246, 188, 0.3);
+  border-radius: 0.55rem;
+  color: var(--green);
+  background: rgba(113, 246, 188, 0.055);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.ide-start-steps strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.ide-start-steps p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.ide-start-steps b {
+  color: var(--text);
+}
+
+.ide-start-here-reassurance {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(113, 246, 188, 0.15);
+  color: #cbe9da;
+  font-size: 0.78rem;
+}
+
+.ide-start-here-reassurance > span:first-child {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 1px solid rgba(113, 246, 188, 0.45);
+  border-radius: 50%;
+  color: var(--green);
+}
+
 .ide-stack-grid {
   position: relative;
   display: grid;
@@ -2064,7 +2188,8 @@ h3 {
 
 @media (max-width: 62rem) {
   .ide-release-heading,
-  .ide-release-console { grid-template-columns: 1fr; }
+  .ide-release-console,
+  .ide-start-here { grid-template-columns: 1fr; }
   .ide-release-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid rgba(104, 228, 255, 0.16); border-left: 0; }
   .ide-release-facts > div:nth-last-child(2) { border-bottom: 0; }
   .ide-release-glow { top: 26%; right: -4rem; width: 24rem; }
@@ -2077,10 +2202,12 @@ h3 {
   .ide-release-actions .button,
   .ide-release-actions .text-link { width: 100%; margin-left: 0; }
   .ide-release-facts,
+  .ide-start-here,
   .ide-stack-grid,
   .ide-release-digest { grid-template-columns: 1fr; }
   .ide-release-facts > div:nth-last-child(2) { border-bottom: 1px solid rgba(169, 195, 224, 0.12); }
   .ide-release-digest button { width: 100%; }
+  .ide-start-steps li { grid-template-columns: 2.35rem minmax(0, 1fr); padding-inline: 0.8rem; }
 }
 
 .body-bridge {
@@ -5436,6 +5563,7 @@ body.motion-paused *::after {
   .command-cycle-proof,
   .release-console,
   .ide-release-console,
+  .ide-start-here,
   .ide-release-digest,
   .button {
     forced-color-adjust: auto;

@@ -11,11 +11,11 @@ import {
   snapshotFreshness,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=stark-command-v8";
+} from "./galaxy-core.mjs?v=stark-command-v9";
 import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
-} from "./ide-release-core.mjs?v=stark-command-v8";
+} from "./ide-release-core.mjs?v=stark-command-v9";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -813,13 +813,13 @@ function blockIdeRelease(reason = "release feed unavailable") {
     detail.textContent = "The page did not authorize a download. Try again later or inspect the source repository.";
     detail.title = reason;
   }
-  for (const selector of ["[data-ide-download]", "[data-ide-manifest]", "[data-ide-release-page]"]) {
-    const link = $(selector);
-    if (!link) continue;
-    link.classList.add("is-disabled");
-    link.setAttribute("aria-disabled", "true");
-    link.setAttribute("tabindex", "-1");
-    link.removeAttribute("href");
+  for (const selector of ["[data-ide-download]", "[data-ide-start-here]", "[data-ide-manifest]", "[data-ide-release-page]"]) {
+    for (const link of $$(selector)) {
+      link.classList.add("is-disabled");
+      link.setAttribute("aria-disabled", "true");
+      link.setAttribute("tabindex", "-1");
+      link.removeAttribute("href");
+    }
   }
   const copy = $("[data-copy-ide-sha]");
   if (copy) {
@@ -852,6 +852,13 @@ function renderIdeRelease(latest) {
     download.classList.remove("is-disabled");
     download.removeAttribute("aria-disabled");
     download.removeAttribute("tabindex");
+  }
+  const startHereUrl = new URL("START-HERE.txt", latest.installerUrl).href;
+  for (const startHere of $$("[data-ide-start-here]")) {
+    startHere.href = startHereUrl;
+    startHere.classList.remove("is-disabled");
+    startHere.removeAttribute("aria-disabled");
+    startHere.removeAttribute("tabindex");
   }
   const manifest = $("[data-ide-manifest]");
   if (manifest) {

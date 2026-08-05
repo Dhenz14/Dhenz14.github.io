@@ -1,0 +1,84 @@
+{
+  "schema": "hive.ide.public_release_manifest.v1",
+  "product": {
+    "name": "Hive IDE",
+    "version": "0.3.0",
+    "platform": "windows",
+    "architecture": "x86_64",
+    "installerType": "nsis-current-user",
+    "profile": "tester-complete-internal-option-c"
+  },
+  "release": {
+    "tag": "hive-ide-v0.3.0-tester.1",
+    "stage": "tester",
+    "channel": "unsigned-public-tester",
+    "repository": "Dhenz14/Dhenz14.github.io",
+    "releasedAtUtc": "2026-08-05T08:27:32.063Z",
+    "releasePageUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/tag/hive-ide-v0.3.0-tester.1",
+    "updateFeedUrl": "https://dhenz14.github.io/downloads/hive-ide/latest.json",
+    "manifestUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.1/hive-ide-release-manifest.json",
+    "provenanceUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.1/windows-installer-provenance.json",
+    "installerUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.1/Hive-IDE-OneClick-Windows-x64.exe"
+  },
+  "artifact": {
+    "name": "Hive-IDE-OneClick-Windows-x64.exe",
+    "sizeBytes": 924724031,
+    "sha256": "1119d1d4e627fe29b7e03a639e72f1a1acd0400a449307c5d1ef9735078709d9",
+    "unsignedBuildSha256": "1119d1d4e627fe29b7e03a639e72f1a1acd0400a449307c5d1ef9735078709d9",
+    "publisherAuthenticated": false,
+    "authenticodeReceiptSha256": null,
+    "installedApplication": {
+      "name": "hive-workbench-v2.exe",
+      "sizeBytes": 20032000,
+      "sha256": "da22ede67507d0c6785e9d77f251883e0e0f767e7b671bfe168662e4245393c6"
+    }
+  },
+  "source": {
+    "hiveIde": {
+      "commit": "e812cccc6e6bf7f2cfc6269012dddb1bd6fb946b",
+      "tree": "4eeb684d307437dcc24e1e329a941843b2caa37f"
+    },
+    "hiveAi": {
+      "commit": "a0fe64832edb801c9944c0923e222a64ef14e498",
+      "tree": "c50fc59c1d4467984e279e0382768a82b705eb81"
+    },
+    "hivePoAInternalSidecar": {
+      "commit": "24a3a39d830545d600ac4956a0ea9a92f939fe2c",
+      "tree": "fc264cc28edb485fcc6a786c484961c486e7693e",
+      "ref": "24a3a39d830545d600ac4956a0ea9a92f939fe2c",
+      "version": "2.0.1",
+      "artifactSha256": "fdf630831c83625ff5647e21814c810892f01c9ef567e7f653f18ef3b1e7a840",
+      "checksumReceiptSha256": "fa4f47cfbcdb998db402d2173cf2b6d487de38f25a223dfe692cde114820beb9",
+      "publicHivePoAReleaseClaimed": false
+    }
+  },
+  "runtime": {
+    "runtimeManifest": {
+      "name": "runtime-manifest.json",
+      "sizeBytes": 47542,
+      "sha256": "80e70a1010dc121261ea3f248beec199253a640508cafb9d841aeb2c525bd958"
+    },
+    "payloadReceipt": {
+      "name": "oneclick-payload-receipt.json",
+      "sizeBytes": 3041,
+      "sha256": "f2bffe719419cf56d74da914ee45ce904caefedbb6bdc9f2ff601be39c2bc5bc"
+    },
+    "installerProvenanceReceipt": {
+      "name": "windows-installer-provenance.json",
+      "sizeBytes": 4733,
+      "sha256": "ef528de108ccefbb9ff91165e1e2f5f89f73475f93256d215261939dc43debd7"
+    },
+    "cleanSourceWorktrees": true,
+    "offlineBundledDependencies": true,
+    "wslBootstrapMayRequireWindowsManagedNetwork": true
+  },
+  "testerPolicy": {
+    "readyForPublicFunctionalTesting": true,
+    "signedPublicRelease": false,
+    "smartScreenWarningExpected": true,
+    "testCreditsHaveMonetaryValue": false,
+    "testCreditsTransferable": false,
+    "testCreditsRedeemable": false
+  },
+  "claimBoundary": "PUBLIC_HTTPS_UNSIGNED_WINDOWS_TESTER_RELEASE_NOT_PUBLISHER_AUTHENTICATED_OR_PUBLIC_HIVEPOA_REWARD_NETWORK"
+}

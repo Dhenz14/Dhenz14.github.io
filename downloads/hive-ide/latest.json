@@ -1,0 +1,17 @@
+{
+  "schema": "hive.ide.public_release_latest.v1",
+  "product": "Hive IDE",
+  "version": "0.3.0",
+  "stage": "tester",
+  "channel": "unsigned-public-tester",
+  "releasedAtUtc": "2026-08-05T08:27:32.063Z",
+  "sourceCommit": "e812cccc6e6bf7f2cfc6269012dddb1bd6fb946b",
+  "manifestUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.1/hive-ide-release-manifest.json",
+  "manifestSha256": "113b5c1a2e531c7e72c303d582c7d732dded38805312ecfda0596d44ba19fd6a",
+  "installerUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.1/Hive-IDE-OneClick-Windows-x64.exe",
+  "installerSha256": "1119d1d4e627fe29b7e03a639e72f1a1acd0400a449307c5d1ef9735078709d9",
+  "installerSizeBytes": 924724031,
+  "publisherAuthenticated": false,
+  "smartScreenWarningExpected": true,
+  "readyForPublicFunctionalTesting": true
+}

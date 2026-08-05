@@ -36,6 +36,7 @@ const required = [
   "site.webmanifest",
   ".github/workflows/sync-living-galaxy.yml",
   ".github/workflows/verify-public-hub.yml",
+  ".github/workflows/hive-ide-public-windows-smoke.yml",
   "docs/PUBLIC_GALAXY_SYNC.md",
   "favicon.svg",
   "favicon.ico",
@@ -51,6 +52,7 @@ const required = [
   "script/check-http-surface.mjs",
   "script/check-galaxy-core.mjs",
   "script/check-ide-release.mjs",
+  "script/run-ide-public-windows-smoke.ps1",
   "script/check-signed-release.mjs",
   "script/check-live-parity.mjs",
   "script/check-publisher-races.mjs",
@@ -385,6 +387,8 @@ if (!activeRefresh && !activeLocalRefresh && !inactiveRefresh) throw new Error("
 
 const syncWorkflow = read(".github/workflows/sync-living-galaxy.yml");
 const verifyWorkflow = read(".github/workflows/verify-public-hub.yml");
+const ideSmokeWorkflow = read(".github/workflows/hive-ide-public-windows-smoke.yml");
+const ideSmokeScript = read("script/run-ide-public-windows-smoke.ps1");
 const syncDocs = read("docs/PUBLIC_GALAXY_SYNC.md");
 const requirements = read("script/requirements-galaxy-sync.txt");
 const compileStart = syncWorkflow.indexOf("  compile:\n");
@@ -401,6 +405,22 @@ for (const [workflowName, workflow] of [["sync", syncWorkflow], ["verify", verif
   requireMatch(workflow, /actions\/setup-node@a0853c24544627f65ddf259abe73b1d18a591444/, `${workflowName} Node-24 setup-node pin`);
 }
 requireMatch(verifyWorkflow, /check-ide-release\.mjs --self-test/, "Hive IDE public-feed negative matrix");
+requireMatch(ideSmokeWorkflow, /workflow_dispatch:[\s\S]*expected_source_commit:/, "manual exact-source Windows smoke");
+requireMatch(ideSmokeWorkflow, /permissions:\s*\n\s+contents:\s*read/, "Windows smoke read-only authority");
+requireNoMatch(ideSmokeWorkflow, /contents:\s*write|secrets\./, "Windows smoke publication or secret authority");
+requireMatch(ideSmokeWorkflow, /runs-on:\s*windows-latest[\s\S]*timeout-minutes:\s*45/, "bounded fresh Windows runner");
+requireMatch(ideSmokeWorkflow, /actions\/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09/, "Windows smoke checkout pin");
+requireMatch(ideSmokeWorkflow, /run-ide-public-windows-smoke\.ps1[\s\S]*expected_source_commit/, "Windows smoke exact-source handoff");
+requireMatch(ideSmokeWorkflow, /if:\s*always\(\)[\s\S]*actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/, "Windows smoke durable receipt upload");
+requireMatch(ideSmokeScript, /GITHUB_ACTIONS[\s\S]*RUNNER_TEMP[\s\S]*ImageOS[\s\S]*freshHostedRunner/, "fresh hosted runner proof");
+requireMatch(ideSmokeScript, /Existing Hive IDE|Fresh runner unexpectedly contains a Hive IDE install/, "pre-existing install refusal");
+requireMatch(ideSmokeScript, /Live latest feed differs from the landed central hub document[\s\S]*Release manifest differs from the live feed or landed mirror/, "live-to-landed release binding");
+requireMatch(ideSmokeScript, /Get-Sha256 \$InstallerPath[\s\S]*Downloaded installer bytes differ/, "full installer hash proof");
+requireMatch(ideSmokeScript, /Start-Process -FilePath \$InstallerPath -ArgumentList '\/S'[\s\S]*applicationHashMatchesManifest = \$true/, "exact install and application hash proof");
+requireMatch(ideSmokeScript, /MainWindowHandle -ne 0 -and \$Process\.Responding[\s\S]*CloseMainWindow\(\)[\s\S]*WaitForExit/, "responsive window and graceful close proof");
+requireMatch(ideSmokeScript, /uninstallEntryCountAfter[\s\S]*installedApplicationRemoved[\s\S]*unrelatedProcessesTerminated = \$false/, "bounded uninstall proof");
+requireMatch(ideSmokeScript, /\$installAttemptOwned = \$false[\s\S]*\$installAttemptOwned = \$true[\s\S]*if \(\$installAttemptOwned\)/, "installer-owned failure cleanup gate");
+requireMatch(ideSmokeScript, /expectedTempPrefix[\s\S]*hive-ide-public-smoke-\*[\s\S]*Remove-Item -LiteralPath \$resolvedWorkRoot/, "bounded runner-temp cleanup");
 requireNoMatch(`${syncWorkflow}\n${verifyWorkflow}`, /11d5960a326750d5838078e36cf38b85af677262|49933ea5288caeca8642d1e84afbd3f7d6820020/, "deprecated Node-20 action pin");
 requireMatch(compileJob, /permissions:\s*\n\s+contents:\s*read/, "credential-free compiler authority");
 requireNoMatch(compileJob, /contents:\s*write|pages:\s*write/, "compiler publication authority");

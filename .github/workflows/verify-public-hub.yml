@@ -37,6 +37,20 @@ jobs:
           node --check script/sync-galaxy-snapshot.mjs
           node --check script/mark-galaxy-bridge-inactive.mjs
           node --check script/publisher-candidate-policy.mjs
+      - name: Verify Windows smoke PowerShell syntax
+        shell: pwsh
+        run: |
+          $errors = $null
+          $tokens = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'script/run-ide-public-windows-smoke.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          )
+          if ($errors.Count -ne 0) {
+            $errors | Format-List | Out-String | Write-Error
+            exit 1
+          }
       - name: Verify public hub contract
         run: |
           node script/check-central-hub.mjs

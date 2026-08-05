@@ -186,7 +186,7 @@ try {
     if (-not $freshHostedRunner) { throw 'A fresh GitHub-hosted Windows runner is required' }
     if ($LatestUrl -ne $ExpectedLatestUrl) { throw 'LatestUrl is not the canonical central Hive IDE feed' }
     $ExpectedSourceCommit = $ExpectedSourceCommit.ToLowerInvariant()
-    if ((Get-HiveUninstallEntries).Count -ne 0) { throw 'Fresh runner unexpectedly contains a Hive IDE install' }
+    if (@(Get-HiveUninstallEntries).Count -ne 0) { throw 'Fresh runner unexpectedly contains a Hive IDE install' }
     foreach ($required in @($CheckedLatestPath, $CheckedManifestPath)) {
         if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Checked-in release document is missing: $required" }
     }

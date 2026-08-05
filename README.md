@@ -25,11 +25,18 @@ dispatch work or manufacture a live pulse. The Watch state turns into an
 absorbed-source event only when the validated snapshot's exact Hive-AI commit
 actually changes.
 
-The root never proxies private chat, accepts credentials, auto-downloads a
-package, or acts as release authority. Hive-AI metrics are identified as a
-source snapshot. HivePoA release facts appear only after the existing pinned
-Ed25519 verifier accepts the signed channel index embedded by the canonical
-private `Dhenz14/HivePoA` build.
+The root never proxies private chat, accepts credentials, or auto-downloads a
+package. Hive-AI metrics are identified as a source snapshot. HivePoA release
+facts appear only after the existing pinned Ed25519 verifier accepts the signed
+channel index embedded by the canonical private `Dhenz14/HivePoA` build.
+
+Hive IDE has a separate central download door at `#ide-download`. Its
+same-origin `downloads/hive-ide/latest.json` feed is fail-closed and points to
+one immutable GitHub Release in this repository. The page validates exact
+fields, source commit, artifact hash and size, channel truth, and same-tag
+manifest/installer URLs before enabling links. An unsigned tester release is
+never described as publisher-authenticated or stable, and embedding the
+internal HivePoA sidecar never grants public HivePoA reward-network authority.
 
 ## Refresh the public galaxy
 
@@ -93,11 +100,19 @@ Run the dependency-free hub contract before publishing:
 node script/check-central-hub.mjs
 node script/check-galaxy-bridge.mjs
 node script/check-galaxy-core.mjs
+node script/check-ide-release.mjs --self-test
 node script/check-http-surface.mjs
 node script/check-signed-release.mjs
 node --check hub-assets/hub.js
 node --check hub-assets/galaxy-core.mjs
+node --check hub-assets/ide-release-core.mjs
 node --check script/sync-galaxy-snapshot.mjs
+```
+
+After an IDE release bundle is mirrored into `downloads/hive-ide/`, also run:
+
+```bash
+node script/check-ide-release.mjs
 ```
 
 After `main` deploys, prove that public bytes equal the landed checkout:

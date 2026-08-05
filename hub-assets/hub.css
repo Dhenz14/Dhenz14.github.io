@@ -2030,6 +2030,11 @@ h3 {
   letter-spacing: 0.11em;
 }
 
+.body-bridge-dock {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
 .galaxy-commandbar {
   display: flex;
   align-items: flex-start;
@@ -2769,6 +2774,27 @@ h3 {
   pointer-events: none;
 }
 
+.mission-machine::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  opacity: 0;
+  background: linear-gradient(105deg, transparent 34%, rgba(104, 228, 255, 0.06) 49%, rgba(104, 228, 255, 0.16) 50%, rgba(104, 228, 255, 0.06) 51%, transparent 66%);
+  content: "";
+  pointer-events: none;
+  transform: translateX(-75%);
+}
+
+.mission-machine[data-command-state="walking"]::after {
+  opacity: 1;
+  animation: command-cycle-scan 3s linear infinite;
+}
+
+.mission-machine[data-command-state="absorbed"] {
+  border-color: rgba(255, 210, 122, 0.42);
+  box-shadow: 0 0 0 1px rgba(255, 210, 122, 0.08), 0 1.8rem 5rem rgba(5, 9, 16, 0.72), 0 0 3.5rem rgba(255, 210, 122, 0.09);
+}
+
 .mission-machine-head {
   position: relative;
   z-index: 2;
@@ -2818,6 +2844,14 @@ h3 {
   font-size: 0.68rem;
 }
 
+.machine-telemetry code,
+.machine-telemetry b {
+  color: #d9faff;
+  font-family: var(--mono);
+  font-size: inherit;
+  font-weight: 800;
+}
+
 .machine-telemetry i {
   width: 0.42rem;
   height: 0.42rem;
@@ -2852,10 +2886,10 @@ h3 {
 .mission-grid li {
   position: relative;
   min-height: 14rem;
-  padding: 2rem 1.15rem 1.4rem;
   overflow: hidden;
   border-right: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(0, 0, 0, 0.08));
+  transition: background 260ms ease, box-shadow 260ms ease;
 }
 
 .mission-grid li:last-child {
@@ -2864,9 +2898,40 @@ h3 {
 
 .mission-grid li.is-current {
   background: linear-gradient(180deg, rgba(104, 228, 255, 0.1), rgba(8, 15, 25, 0.12));
+  box-shadow: inset 0 1px rgba(104, 228, 255, 0.24), inset 0 -2px rgba(104, 228, 255, 0.24);
 }
 
-.mission-grid li > span {
+.mission-grid li.is-complete {
+  background: linear-gradient(180deg, rgba(113, 246, 188, 0.045), rgba(5, 12, 18, 0.1));
+}
+
+.mission-step {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  min-height: 14rem;
+  padding: 2rem 1.15rem 1.4rem;
+  overflow: hidden;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mission-step:hover {
+  background: linear-gradient(180deg, rgba(104, 228, 255, 0.055), transparent 65%);
+}
+
+.mission-step:focus-visible {
+  z-index: 4;
+  outline: 2px solid var(--cyan);
+  outline-offset: -3px;
+}
+
+.mission-step > span {
   position: relative;
   z-index: 2;
   display: grid;
@@ -2882,11 +2947,205 @@ h3 {
   font-size: 0.66rem;
 }
 
-.mission-grid li.is-current > span {
+.mission-grid li.is-current .mission-step > span {
   color: #04120d;
   background: var(--green);
   border-color: var(--green);
   box-shadow: 0 0 1.5rem rgba(113, 246, 188, 0.3);
+  animation: command-cycle-node 1.6s ease-in-out infinite;
+}
+
+.mission-grid li.is-complete .mission-step > span {
+  color: #03130d;
+  border-color: rgba(113, 246, 188, 0.7);
+  background: rgba(113, 246, 188, 0.9);
+}
+
+.command-cycle-viewport {
+  position: relative;
+  z-index: 2;
+  min-height: clamp(20rem, 42vw, 34rem);
+  overflow: hidden;
+  border-top: 1px solid rgba(104, 228, 255, 0.18);
+  border-bottom: 1px solid rgba(104, 228, 255, 0.18);
+  background:
+    radial-gradient(circle at 50% 52%, rgba(62, 170, 225, 0.18), transparent 18%),
+    radial-gradient(circle at 50% 50%, rgba(13, 37, 63, 0.68), rgba(2, 6, 11, 0.98) 68%);
+  isolation: isolate;
+}
+
+.command-cycle-viewport canvas {
+  position: absolute;
+  inset: -3%;
+  width: 106%;
+  height: 106%;
+  opacity: 0.94;
+  filter: saturate(1.18) contrast(1.12) brightness(1.08);
+  transform: scale(1.025);
+  transition: filter 680ms ease, transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.command-cycle-viewport.is-unavailable canvas,
+.command-cycle-viewport.is-unavailable .command-cycle-viewport-target {
+  display: none;
+}
+
+.command-cycle-viewport.is-unavailable::after {
+  display: grid;
+  place-items: center;
+  opacity: 1;
+  color: #a9bfce;
+  background: none;
+  content: "Semantic command cycle remains available";
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  transform: none;
+}
+
+.command-cycle-viewport::before,
+.command-cycle-viewport::after,
+.command-cycle-viewport-grid {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.command-cycle-viewport::before {
+  background:
+    linear-gradient(180deg, rgba(4, 8, 14, 0.58), transparent 16%, transparent 78%, rgba(2, 5, 9, 0.86)),
+    radial-gradient(ellipse at center, transparent 42%, rgba(2, 5, 10, 0.78) 100%);
+}
+
+.command-cycle-viewport::after {
+  opacity: 0.32;
+  background: linear-gradient(100deg, transparent 36%, rgba(104, 228, 255, 0.22) 50%, transparent 64%);
+  transform: translateX(-100%);
+}
+
+[data-command-state="walking"] .command-cycle-viewport::after {
+  animation: command-viewport-sweep 3s ease-in-out infinite;
+}
+
+[data-command-visual="5"] .command-cycle-viewport canvas {
+  filter: saturate(1.35) contrast(1.14) brightness(1.2) sepia(0.08);
+  transform: scale(1.055);
+}
+
+.command-cycle-viewport-grid {
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(104, 228, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(104, 228, 255, 0.08) 1px, transparent 1px);
+  background-size: 3rem 3rem;
+  mask-image: radial-gradient(circle at center, #000, transparent 72%);
+}
+
+.command-cycle-viewport-label,
+.command-cycle-viewport-depth {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #91acbf;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.command-cycle-viewport-label {
+  top: 1rem;
+  left: 1.1rem;
+  padding: 0.45rem 0.62rem;
+  border: 1px solid rgba(104, 228, 255, 0.22);
+  border-radius: 0.45rem;
+  background: rgba(3, 9, 16, 0.72);
+  backdrop-filter: blur(0.6rem);
+}
+
+.command-cycle-viewport-label i {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 0.85rem rgba(104, 228, 255, 0.82);
+}
+
+.command-cycle-viewport-label b {
+  color: #d9faff;
+}
+
+.command-cycle-viewport-depth {
+  right: 1.1rem;
+  bottom: 1rem;
+  color: #75a6b5;
+}
+
+.command-cycle-viewport-depth i {
+  width: 1.8rem;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(104, 228, 255, 0.18), rgba(104, 228, 255, 0.72));
+}
+
+.command-cycle-viewport-target {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  width: clamp(5rem, 10vw, 8.5rem);
+  aspect-ratio: 1;
+  border: 1px solid rgba(104, 228, 255, 0.22);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: border-color 520ms ease, box-shadow 520ms ease;
+}
+
+.command-cycle-viewport-target::before,
+.command-cycle-viewport-target::after,
+.command-cycle-viewport-target i,
+.command-cycle-viewport-target b {
+  position: absolute;
+  content: "";
+}
+
+.command-cycle-viewport-target::before {
+  inset: 18%;
+  border: 1px dashed rgba(104, 228, 255, 0.28);
+  border-radius: 50%;
+  animation: galaxy-reticle-spin 18s linear infinite;
+}
+
+.command-cycle-viewport-target::after {
+  top: 50%;
+  right: -28%;
+  left: -28%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(104, 228, 255, 0.32), transparent);
+}
+
+.command-cycle-viewport-target i {
+  top: -28%;
+  bottom: -28%;
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(104, 228, 255, 0.3), transparent);
+}
+
+.command-cycle-viewport-target b {
+  inset: 44%;
+  border-radius: 50%;
+  background: #dcfbff;
+  box-shadow: 0 0 1rem rgba(104, 228, 255, 0.96);
+}
+
+[data-command-visual="5"] .command-cycle-viewport-target {
+  border-color: rgba(255, 210, 122, 0.72);
+  box-shadow: 0 0 4rem rgba(255, 210, 122, 0.24), inset 0 0 2rem rgba(255, 210, 122, 0.12);
 }
 
 .mission-grid em {
@@ -2931,6 +3190,284 @@ h3 {
   border-radius: 1rem;
   box-shadow: inset 0 0 2rem rgba(104, 228, 255, 0.03);
   transform: rotate(45deg);
+}
+
+.command-cycle-readout {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.15rem;
+  min-height: 8.4rem;
+  padding: 1rem 1.35rem;
+  overflow: hidden;
+  border-top: 1px solid rgba(104, 228, 255, 0.18);
+  border-bottom: 1px solid rgba(104, 228, 255, 0.12);
+  background: linear-gradient(90deg, rgba(3, 12, 21, 0.92), rgba(10, 20, 34, 0.78), rgba(4, 10, 18, 0.93));
+}
+
+.command-cycle-readout::before {
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  background-image: linear-gradient(rgba(104, 228, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(104, 228, 255, 0.04) 1px, transparent 1px);
+  background-size: 2rem 2rem;
+  content: "";
+  pointer-events: none;
+}
+
+.command-cycle-readout > * {
+  position: relative;
+  z-index: 1;
+}
+
+.command-cycle-readout > div {
+  min-width: 0;
+}
+
+.command-cycle-readout .eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--cyan);
+  font-size: 0.62rem;
+}
+
+.command-cycle-readout strong,
+.command-cycle-readout p {
+  display: block;
+}
+
+.command-cycle-readout strong {
+  color: #eefbff;
+  font-size: clamp(1.08rem, 1.7vw, 1.45rem);
+  letter-spacing: -0.02em;
+}
+
+.command-cycle-readout p {
+  max-width: 64rem;
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.command-cycle-orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 4.4rem;
+  aspect-ratio: 1;
+  border: 1px solid rgba(104, 228, 255, 0.42);
+  border-radius: 50%;
+  color: #d9fbff;
+  background: radial-gradient(circle, rgba(104, 228, 255, 0.2), rgba(5, 16, 26, 0.95) 62%);
+  box-shadow: inset 0 0 1.5rem rgba(104, 228, 255, 0.12), 0 0 1.7rem rgba(104, 228, 255, 0.12);
+  font-family: var(--mono);
+}
+
+.command-cycle-orb i {
+  position: absolute;
+  inset: 0.38rem;
+  border: 1px dashed rgba(104, 228, 255, 0.34);
+  border-radius: 50%;
+  animation: galaxy-reticle-spin 14s linear infinite;
+}
+
+.command-cycle-orb b {
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+}
+
+.command-cycle-progress {
+  display: block;
+  width: min(100%, 38rem);
+  height: 2px;
+  margin-top: 0.8rem;
+  overflow: hidden;
+  background: rgba(104, 228, 255, 0.1);
+}
+
+.command-cycle-progress i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--blue), var(--violet), var(--amber));
+  box-shadow: 0 0 0.8rem rgba(104, 228, 255, 0.62);
+  transition: width 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.command-cycle-proof {
+  justify-self: end;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid rgba(104, 228, 255, 0.26);
+  border-radius: 999px;
+  color: #bceff8;
+  background: rgba(104, 228, 255, 0.055);
+  font-family: var(--mono);
+  font-size: 0.63rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-align: center;
+}
+
+.command-cycle-navigation {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  padding: 0.7rem 1.35rem;
+  border-bottom: 1px solid rgba(104, 228, 255, 0.12);
+  background: rgba(2, 7, 12, 0.74);
+}
+
+.command-cycle-navigation button,
+.command-cycle-navigation > span {
+  min-height: 2.15rem;
+  padding: 0.38rem 0.68rem;
+  border: 1px solid rgba(104, 228, 255, 0.2);
+  border-radius: 0.45rem;
+  color: #a8c3d7;
+  background: rgba(104, 228, 255, 0.035);
+  font-family: var(--mono);
+  font-size: 0.63rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.command-cycle-navigation button {
+  cursor: pointer;
+}
+
+.command-cycle-navigation button:hover:not(:disabled),
+.command-cycle-navigation button:focus-visible {
+  border-color: rgba(104, 228, 255, 0.58);
+  color: #e4faff;
+  background: rgba(104, 228, 255, 0.09);
+}
+
+.command-cycle-navigation button:disabled {
+  opacity: 0.34;
+  cursor: not-allowed;
+}
+
+.command-cycle-navigation > span {
+  display: inline-flex;
+  align-items: center;
+  border-color: transparent;
+  color: #718b9e;
+  background: transparent;
+}
+
+.command-cycle-navigation > span b {
+  color: #d9fbff;
+}
+
+[data-command-state="absorbed"] .command-cycle-orb {
+  border-color: rgba(255, 210, 122, 0.76);
+  color: #fff0c7;
+  background: radial-gradient(circle, rgba(255, 210, 122, 0.26), rgba(23, 16, 8, 0.96) 66%);
+  box-shadow: inset 0 0 1.8rem rgba(255, 210, 122, 0.16), 0 0 2.4rem rgba(255, 210, 122, 0.25);
+}
+
+[data-command-state="absorbed"] .command-cycle-proof {
+  border-color: rgba(255, 210, 122, 0.46);
+  color: #fff0c7;
+  background: rgba(255, 210, 122, 0.09);
+}
+
+.command-cycle-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.35rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.command-cycle-actions .button {
+  margin: 0;
+}
+
+.command-cycle-actions .button small {
+  padding-left: 0.65rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+  color: inherit;
+  opacity: 0.68;
+  font-family: var(--mono);
+  font-size: 0.61rem;
+  letter-spacing: 0.04em;
+}
+
+.command-cycle-actions .text-link {
+  margin-left: auto;
+}
+
+.command-cycle-boundary {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  padding: 0.8rem 1.35rem;
+  color: #6f8392;
+  background: rgba(2, 6, 11, 0.46);
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  line-height: 1.55;
+}
+
+body.command-flightdeck-open {
+  overflow: hidden;
+}
+
+body.command-flightdeck-open::after {
+  position: fixed;
+  z-index: 110;
+  inset: 0;
+  background: rgba(1, 4, 8, 0.86);
+  backdrop-filter: blur(1rem) saturate(0.72);
+  content: "";
+}
+
+.mission-machine.is-flightdeck {
+  position: fixed;
+  z-index: 120;
+  inset: clamp(0.45rem, 1.3vw, 1.15rem);
+  max-height: calc(100dvh - clamp(0.9rem, 2.6vw, 2.3rem));
+  overflow: auto;
+  border-color: rgba(104, 228, 255, 0.42);
+  border-radius: 0.8rem;
+  box-shadow: 0 0 0 1px rgba(104, 228, 255, 0.08), 0 0 8rem rgba(46, 156, 255, 0.2), 0 2rem 8rem #000;
+  overscroll-behavior: contain;
+}
+
+.mission-machine.is-flightdeck .mission-machine-head {
+  position: sticky;
+  z-index: 8;
+  top: 0;
+  background: rgba(5, 11, 20, 0.94);
+  backdrop-filter: blur(1rem);
+}
+
+.mission-machine.is-flightdeck .mission-grid li,
+.mission-machine.is-flightdeck .mission-step {
+  min-height: 9.4rem;
+}
+
+.mission-machine.is-flightdeck .command-cycle-viewport {
+  min-height: clamp(22rem, 43dvh, 38rem);
+}
+
+.mission-machine.is-flightdeck .command-cycle-readout strong {
+  font-size: clamp(1.35rem, 2vw, 2rem);
+}
+
+.mission-machine.is-flightdeck .command-cycle-readout p {
+  color: #9fb4c4;
+  font-size: clamp(0.82rem, 1vw, 1rem);
 }
 
 .authority-wall {
@@ -2995,6 +3532,21 @@ h3 {
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+@keyframes command-cycle-scan {
+  from { transform: translateX(-75%); }
+  to { transform: translateX(75%); }
+}
+
+@keyframes command-cycle-node {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 1.2rem rgba(113, 246, 188, 0.24); }
+  50% { transform: scale(1.06); box-shadow: 0 0 2rem rgba(113, 246, 188, 0.48); }
+}
+
+@keyframes command-viewport-sweep {
+  0% { transform: translateX(-100%); }
+  52%, 100% { transform: translateX(100%); }
 }
 
 .tester-heading {
@@ -3947,6 +4499,19 @@ h3 {
     justify-content: flex-start;
   }
 
+  .command-cycle-readout {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .command-cycle-proof {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .command-cycle-actions .text-link {
+    margin-left: 0;
+  }
+
   .release-path {
     grid-template-columns: 1fr;
   }
@@ -4228,12 +4793,90 @@ h3 {
     border-bottom: 1px solid var(--line);
   }
 
+  .mission-step {
+    min-height: 8.5rem;
+    padding: 1.25rem 1rem;
+  }
+
+  .command-cycle-viewport {
+    min-height: 18rem;
+  }
+
+  .command-cycle-viewport-label {
+    top: 0.7rem;
+    left: 0.7rem;
+  }
+
+  .command-cycle-viewport-depth {
+    right: 0.7rem;
+    bottom: 0.7rem;
+  }
+
   .mission-grid li:last-child {
     border-bottom: 0;
   }
 
   .mission-grid strong {
     margin-top: 1.6rem;
+  }
+
+  .command-cycle-readout {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+    padding: 1rem;
+  }
+
+  .command-cycle-orb {
+    width: 3.5rem;
+  }
+
+  .command-cycle-proof {
+    grid-column: auto;
+  }
+
+  .command-cycle-actions {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .command-cycle-navigation {
+    justify-content: stretch;
+    padding: 0.7rem 1rem;
+  }
+
+  .command-cycle-navigation button {
+    flex: 1;
+  }
+
+  .command-cycle-navigation button:last-child {
+    flex-basis: 100%;
+  }
+
+  .command-cycle-actions .button {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .command-cycle-actions .button small {
+    width: 100%;
+    padding-top: 0.45rem;
+    padding-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    border-left: 0;
+  }
+
+  .command-cycle-boundary {
+    padding-inline: 1rem;
+  }
+
+  .mission-machine.is-flightdeck .mission-grid li,
+  .mission-machine.is-flightdeck .mission-step {
+    min-height: 7.5rem;
+  }
+
+  .mission-machine.is-flightdeck .command-cycle-viewport {
+    min-height: 19rem;
   }
 
   .pipeline-note {
@@ -4492,6 +5135,10 @@ body.motion-paused *::after {
   .system-core,
   .anatomy-node,
   .map-core,
+  .mission-machine,
+  .command-cycle-readout,
+  .command-cycle-orb,
+  .command-cycle-proof,
   .release-console,
   .button {
     forced-color-adjust: auto;
@@ -4506,7 +5153,11 @@ body.motion-paused *::after {
   .galaxy-scanline,
   .ambient,
   .stage-grid,
-  .map-grid {
+  .map-grid,
+  .mission-machine::after,
+  .command-cycle-viewport,
+  .command-cycle-readout::before,
+  .command-cycle-orb i {
     display: none;
   }
 
@@ -4530,5 +5181,10 @@ body.motion-paused *::after {
   .galaxy-index button:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;
+  }
+
+  .mission-step:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: -3px;
   }
 }

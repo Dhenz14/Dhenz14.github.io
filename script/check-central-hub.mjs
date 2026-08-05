@@ -34,6 +34,7 @@ const required = [
   "robots.txt",
   "sitemap.xml",
   "site.webmanifest",
+  ".gitattributes",
   ".github/workflows/sync-living-galaxy.yml",
   ".github/workflows/verify-public-hub.yml",
   ".github/workflows/hive-ide-public-windows-smoke.yml",
@@ -71,6 +72,7 @@ for (const relative of required) {
 }
 
 const html = read("index.html");
+const gitAttributes = read(".gitattributes");
 const notFound = read("404.html");
 const css = read("hub-assets/hub.css");
 const js = read("hub-assets/hub.js");
@@ -85,6 +87,7 @@ const pointerDownBlock = boundedBlock(
   'this.canvas.addEventListener("pointermove"',
   "pointerdown handler",
 );
+requireMatch(gitAttributes, /^\/downloads\/hive-ide\/\*\.json -text$/m, "immutable Hive IDE release-byte checkout custody");
 const pointerMoveBlock = boundedBlock(
   js,
   'this.canvas.addEventListener("pointermove"',

@@ -11,7 +11,11 @@ import {
   snapshotFreshness,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=stark-command-v7";
+} from "./galaxy-core.mjs?v=stark-command-v8";
+import {
+  humanInstallerBytes,
+  validateIdeReleaseLatest,
+} from "./ide-release-core.mjs?v=stark-command-v8";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -794,6 +798,109 @@ async function loadAuthorizedRelease() {
   }
 }
 
+function blockIdeRelease(reason = "release feed unavailable") {
+  const root = $("[data-ide-release]");
+  if (!root) return;
+  root.dataset.state = "blocked";
+  setText("[data-ide-status]", "Download not published");
+  setText("[data-ide-version]", "Hive IDE public tester");
+  setText("[data-ide-channel]", "Fail-closed");
+  setText("[data-ide-size]", "Unavailable");
+  setText("[data-ide-source]", "Unavailable");
+  setText("[data-ide-sha]", "Unavailable until the release feed validates");
+  const detail = $("[data-ide-status-detail]");
+  if (detail) {
+    detail.textContent = "The page did not authorize a download. Try again later or inspect the source repository.";
+    detail.title = reason;
+  }
+  for (const selector of ["[data-ide-download]", "[data-ide-manifest]", "[data-ide-release-page]"]) {
+    const link = $(selector);
+    if (!link) continue;
+    link.classList.add("is-disabled");
+    link.setAttribute("aria-disabled", "true");
+    link.setAttribute("tabindex", "-1");
+    link.removeAttribute("href");
+  }
+  const copy = $("[data-copy-ide-sha]");
+  if (copy) {
+    copy.disabled = true;
+    copy.dataset.copyValue = "";
+  }
+}
+
+function renderIdeRelease(latest) {
+  const root = $("[data-ide-release]");
+  if (!root) return;
+  root.dataset.state = "ready";
+  const signed = latest.publisherAuthenticated;
+  setText("[data-ide-status]", signed ? "Publisher-authenticated tester ready" : "Unsigned public tester ready");
+  setText("[data-ide-status-detail]", signed
+    ? "The exact Windows installer is published with a verified publisher signature."
+    : "The exact Windows installer is published over HTTPS and bound to the SHA-256 below. Windows may show a warning.");
+  setText("[data-ide-version]", `Hive IDE ${latest.version}`);
+  setText("[data-ide-channel]", signed ? "Publisher authenticated" : "Unsigned tester");
+  setText("[data-ide-size]", humanInstallerBytes(latest.installerSizeBytes));
+  setText("[data-ide-source]", latest.sourceCommit.slice(0, 12));
+  setText("[data-ide-sha]", latest.installerSha256);
+  setText("[data-ide-warning]", signed
+    ? "Publisher signature verified by the release contract. SmartScreen reputation can still take time."
+    : "Windows may say “Windows protected your PC.” Choose More info → Run anyway only after matching this SHA-256.");
+
+  const download = $("[data-ide-download]");
+  if (download) {
+    download.href = latest.installerUrl;
+    download.classList.remove("is-disabled");
+    download.removeAttribute("aria-disabled");
+    download.removeAttribute("tabindex");
+  }
+  const manifest = $("[data-ide-manifest]");
+  if (manifest) {
+    manifest.href = latest.manifestUrl;
+    manifest.classList.remove("is-disabled");
+    manifest.removeAttribute("aria-disabled");
+    manifest.removeAttribute("tabindex");
+  }
+  const releasePage = $("[data-ide-release-page]");
+  if (releasePage) {
+    releasePage.href = `https://github.com/Dhenz14/Dhenz14.github.io/releases/tag/${latest.releaseTag}`;
+    releasePage.classList.remove("is-disabled");
+    releasePage.removeAttribute("aria-disabled");
+    releasePage.removeAttribute("tabindex");
+  }
+  const copy = $("[data-copy-ide-sha]");
+  if (copy) {
+    copy.disabled = false;
+    copy.dataset.copyValue = latest.installerSha256;
+  }
+}
+
+async function loadIdeRelease() {
+  if (!$("[data-ide-release]")) return;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 8_000);
+  try {
+    const response = await fetch("/downloads/hive-ide/latest.json", {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`Hive IDE feed HTTP ${response.status}`);
+    const declaredBytes = Number(response.headers.get("content-length"));
+    if (Number.isFinite(declaredBytes) && declaredBytes > 64 * 1024) {
+      throw new Error("Hive IDE feed exceeded its declared size bound");
+    }
+    const body = await response.text();
+    if (new TextEncoder().encode(body).byteLength > 64 * 1024) {
+      throw new Error("Hive IDE feed exceeded its body size bound");
+    }
+    renderIdeRelease(validateIdeReleaseLatest(JSON.parse(body)));
+  } catch (error) {
+    blockIdeRelease(error instanceof Error ? error.message : "release feed unavailable");
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 async function copyText(value) {
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(value);
@@ -827,6 +934,25 @@ function wireCopyButtons() {
       }
       window.setTimeout(() => { button.textContent = original; }, 2200);
     });
+  });
+}
+
+function wireIdeReleaseCopy() {
+  const button = $("[data-copy-ide-sha]");
+  if (!button) return;
+  button.addEventListener("click", async () => {
+    const value = button.dataset.copyValue;
+    if (!value) return;
+    const original = button.textContent;
+    try {
+      await copyText(value);
+      button.textContent = "Copied";
+      showToast("Hive IDE SHA-256 copied.");
+    } catch {
+      button.textContent = "Copy failed";
+      showToast("Clipboard access was refused. Select the digest manually.");
+    }
+    window.setTimeout(() => { button.textContent = original; }, 2200);
   });
 }
 
@@ -2050,6 +2176,7 @@ runSafely("Offscreen scene control", wireSceneActivity);
 runSafely("Living command cycle", wireCommandCycle);
 runSafely("Galaxy lenses", wireLenses);
 runSafely("Release copy controls", wireCopyButtons);
+runSafely("Hive IDE release copy", wireIdeReleaseCopy);
 runSafely("Local route notices", wireLocalChatNotice);
 runSafely("Ambient field", startField);
 runSafely("Living Anatomy galaxy", startGalaxy);
@@ -2057,3 +2184,4 @@ if ($("[data-source-stamp], [data-galaxy-canvas]")) {
   void loadSourceSnapshot().finally(startSnapshotRefresh);
 }
 void loadAuthorizedRelease();
+void loadIdeRelease();

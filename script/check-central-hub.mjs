@@ -42,6 +42,7 @@ const required = [
   "hub-assets/hub.css",
   "hub-assets/hub.js",
   "hub-assets/galaxy-core.mjs",
+  "hub-assets/ide-release-core.mjs",
   "hub-assets/hub-facts.json",
   "hub-assets/og.png",
   "script/sync-galaxy-snapshot.mjs",
@@ -49,6 +50,7 @@ const required = [
   "script/check-galaxy-bridge.mjs",
   "script/check-http-surface.mjs",
   "script/check-galaxy-core.mjs",
+  "script/check-ide-release.mjs",
   "script/check-signed-release.mjs",
   "script/check-live-parity.mjs",
   "script/check-publisher-races.mjs",
@@ -71,6 +73,7 @@ const notFound = read("404.html");
 const css = read("hub-assets/hub.css");
 const js = read("hub-assets/hub.js");
 const galaxyCore = read("hub-assets/galaxy-core.mjs");
+const ideReleaseCore = read("hub-assets/ide-release-core.mjs");
 const generator = read("script/sync-galaxy-snapshot.mjs");
 const bridgeFailClosed = read("script/mark-galaxy-bridge-inactive.mjs");
 const facts = JSON.parse(read("hub-assets/hub-facts.json"));
@@ -125,12 +128,17 @@ requireMatch(html, /data-galaxy-engage[^>]+aria-pressed="false"/, "explicit gala
 requireMatch(html, /data-galaxy-canvas[^>]+tabindex="-1"[^>]+aria-disabled="true"[^>]+role="img"/, "inert startup galaxy canvas");
 requireMatch(html, /data-galaxy-index-list[^>]+aria-label="Jump to a galaxy division"/, "semantic division navigation");
 requireMatch(html, /Current authorized beta tester package/, "tester authorization label");
+requireMatch(html, /id="ide-download"[^>]+data-ide-release data-state="checking"/, "inert Hive IDE release section");
+requireMatch(html, /One current-user installer carries the IDE,[\s\S]*internal HivePoA\/IPFS Service Center/, "one-download product boundary");
+requireMatch(html, /Test credits[\s\S]*Valueless · non-transferable/, "valueless IDE tester credits");
+requireMatch(html, /does not claim a public HivePoA reward-network release/, "IDE versus HivePoA release boundary");
 requireMatch(html, /Not verified here/, "local-byte boundary");
 requireMatch(html, /A same-origin compromise is outside the signature guarantee/, "same-origin boundary");
 requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/chat/, "local chat route");
 requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1/, "local presentation body route");
 requireMatch(html, /http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0/, "local operator body route");
-requireMatch(html, /class="button button-primary" data-hero-body-cta href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1" target="_blank" rel="noreferrer"/, "direct hero Living Anatomy entry");
+requireMatch(html, /class="button button-quiet" data-hero-body-cta href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1" target="_blank" rel="noreferrer"/, "direct hero Living Anatomy entry");
+requireMatch(html, /class="button button-primary" href="#ide-download"/, "primary Hive IDE download handoff");
 requireMatch(html, /data-hero-atlas-cta href="#galaxy"/, "separate public atlas entry");
 requireMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1"[^>]*target="_blank"[^>]*rel="noreferrer"/, "safe presentation body navigation");
 requireMatch(html, /href="http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0"[^>]*target="_blank"[^>]*rel="noreferrer"/, "safe operator body navigation");
@@ -157,6 +165,12 @@ const disabledDownload = html.match(/<a\b[^>]*data-release-download[^>]*>/)?.[0]
 if (!disabledDownload || /\shref=/.test(disabledDownload) || !/tabindex="-1"/.test(disabledDownload)) {
   throw new Error("unverified release download must be inert and unfocusable");
 }
+for (const attribute of ["data-ide-download", "data-ide-manifest", "data-ide-release-page"]) {
+  const inertLink = html.match(new RegExp(`<a\\b[^>]*${attribute}[^>]*>`))?.[0] || "";
+  if (!inertLink || /\shref=/.test(inertLink) || !/tabindex="-1"/.test(inertLink) || !/aria-disabled="true"/.test(inertLink)) {
+    throw new Error(`unverified Hive IDE link must be inert: ${attribute}`);
+  }
+}
 requireNoMatch(html, /galaxy-inspector["'][^>]*aria-live/, "hover-driven live-region noise");
 const csp = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i;
 for (const [name, source] of [["index.html", html], ["404.html", notFound]]) {
@@ -177,10 +191,11 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "stark-command-v7" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "stark-command-v8" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
-  || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)) {
+  || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
+  || !js.includes(`./ide-release-core.mjs?v=${rootJsVersion}`)) {
   throw new Error("root and 404 asset versions must remain identical");
 }
 
@@ -229,6 +244,14 @@ requireMatch(js, /event\.key !== "Escape" \|\| !this\.engaged[\s\S]*this\.setEng
 requireMatch(js, /this\.intersecting = true;[\s\S]*this\.documentVisible = !document\.hidden;/, "visibility state separation");
 requireMatch(js, /if \(!this\.context\) return;/, "canvas fail-soft guard");
 requireMatch(js, /download\.removeAttribute\("href"\)/, "blocked download deauthorization");
+requireMatch(js, /AbortController[\s\S]*fetch\("\/downloads\/hive-ide\/latest\.json"[\s\S]*cache: "no-store"/, "bounded Hive IDE release-feed fetch");
+requireMatch(js, /validateIdeReleaseLatest\(JSON\.parse\(body\)\)/, "Hive IDE feed validation before render");
+requireMatch(js, /blockIdeRelease\([\s\S]*removeAttribute\("href"\)/, "Hive IDE fail-closed link deauthorization");
+requireMatch(js, /download\.href = latest\.installerUrl;[\s\S]*manifest\.href = latest\.manifestUrl;/, "validated Hive IDE download and manifest handoff");
+requireMatch(ideReleaseCore, /release stage or channel is unsupported[\s\S]*an unsigned release cannot be advertised as stable/, "Hive IDE release channel truth gate");
+requireMatch(ideReleaseCore, /manifest and installer do not share one release tag/, "Hive IDE immutable release-tag binding");
+requireMatch(ideReleaseCore, /installer size is outside the bounded Windows package range/, "Hive IDE installer size bound");
+requireNoMatch(ideReleaseCore, /eval\(|new Function\(/, "Hive IDE release validator dynamic code");
 requireMatch(galaxyCore, /facts\.pmOnly === facts\.purposeMastered - facts\.twitches/, "PM Twitch invariant");
 requireMatch(galaxyCore, /captured - now > 5 \* 60_000[\s\S]*snapshotFreshness\(snapshot\?\.capturedAt\)\.state !== "invalid"/, "capture timestamp validity and future-skew gate");
 requireMatch(js, /SNAPSHOT_REFRESH_MS = 60_000/, "visibility-aware snapshot refresh interval");
@@ -249,6 +272,9 @@ requireNoMatch(js, /Math\.random\(/, "non-deterministic visual geometry");
 requireMatch(css, /@media \(prefers-reduced-motion: reduce\)/, "reduced motion");
 requireMatch(css, /button:focus-visible,[\s\S]*a:focus-visible/, "visible focus");
 requireMatch(css, /\.motion-toggle:hover:not\(:disabled\)/, "inert motion control hover state");
+requireMatch(css, /\.ide-release-console\s*{[\s\S]*grid-template-columns:[\s\S]*\.ide-stack-grid\s*{[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/, "desktop Hive IDE release composition");
+requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.ide-release-facts,[\s\S]*\.ide-stack-grid,[\s\S]*\.ide-release-digest\s*{[\s\S]*grid-template-columns:\s*1fr;/, "mobile Hive IDE release composition");
+requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.ide-release-console[\s\S]*\.ide-release-glow/, "forced-colors Hive IDE release fallback");
 requireMatch(css, /\[data-reveal\]\s*{\s*opacity:\s*1;/, "progressive no-JS visibility");
 requireMatch(css, /\[data-reveal\]\.reveal-ready/, "enhanced reveal state");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-canvas/, "forced-colors galaxy fallback");
@@ -374,6 +400,7 @@ for (const [workflowName, workflow] of [["sync", syncWorkflow], ["verify", verif
   requireMatch(workflow, /actions\/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09/, `${workflowName} Node-24 checkout pin`);
   requireMatch(workflow, /actions\/setup-node@a0853c24544627f65ddf259abe73b1d18a591444/, `${workflowName} Node-24 setup-node pin`);
 }
+requireMatch(verifyWorkflow, /check-ide-release\.mjs --self-test/, "Hive IDE public-feed negative matrix");
 requireNoMatch(`${syncWorkflow}\n${verifyWorkflow}`, /11d5960a326750d5838078e36cf38b85af677262|49933ea5288caeca8642d1e84afbd3f7d6820020/, "deprecated Node-20 action pin");
 requireMatch(compileJob, /permissions:\s*\n\s+contents:\s*read/, "credential-free compiler authority");
 requireNoMatch(compileJob, /contents:\s*write|pages:\s*write/, "compiler publication authority");

@@ -24,7 +24,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="/hub-assets/hub.css?v=stark-command-v7">
+    <link rel="stylesheet" href="/hub-assets/hub.css?v=stark-command-v8">
     <title>Hive Ecosystem — The living intelligence galaxy</title>
     <script type="application/ld+json">
       {
@@ -53,6 +53,7 @@
       <nav class="primary-nav" aria-label="Main navigation">
         <a href="#galaxy">Galaxy</a>
         <a href="#ecosystem">Organs</a>
+        <a href="#ide-download" aria-label="Download Hive IDE">IDE</a>
         <a href="#mission" aria-label="Mission Control">Control</a>
         <a href="#tester" aria-label="Tester Network">Tester</a>
       </nav>
@@ -74,10 +75,14 @@
           <h1 id="hero-title">One organism.<br><span>Every system in orbit.</span></h1>
           <p class="hero-lede">
             Hive-AI is the reasoning brain. HivePoA is the proof and storage plane. NeuraChain carries durable coordination;
-            Hive IDE gives the system an operator surface. Enter the cinematic Living Anatomy running on this machine, or explore the public-safe galaxy that connects the whole body without pretending a static page is the runtime.
+            Hive IDE puts the local system under one roof: editor, chat, Hive-AI, and the internal HivePoA/IPFS Service Center. Download the tester build, enter Living Anatomy on a running machine, or explore the public-safe galaxy without pretending a static page is the runtime.
           </p>
           <div class="hero-actions" aria-label="Primary actions">
-            <a class="button button-primary" data-hero-body-cta href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">
+            <a class="button button-primary" href="#ide-download">
+              <span>Download Hive IDE</span>
+              <span aria-hidden="true">↓</span>
+            </a>
+            <a class="button button-quiet" data-hero-body-cta href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">
               <span>Enter Living Anatomy</span>
               <span aria-hidden="true">↗</span>
             </a>
@@ -90,7 +95,7 @@
               <small>Signed release path</small>
             </a>
           </div>
-          <p class="microcopy">Living Anatomy and <a href="http://127.0.0.1:5002/chat" target="_blank" rel="noreferrer">local operator chat ↗</a> open on your machine. GitHub Pages never receives your prompt.</p>
+          <p class="microcopy">Downloads require a click and an exact release feed. Living Anatomy and <a href="http://127.0.0.1:5002/chat" target="_blank" rel="noreferrer">local operator chat ↗</a> open on your machine. GitHub Pages never receives your prompt.</p>
         </div>
 
         <div class="hero-system" data-motion-scene aria-label="Hive-AI and HivePoA system relationship">
@@ -223,7 +228,7 @@
               <span class="organ-code">03 / CHAIN</span><h3>NeuraChain</h3><p>Durable coordination, AI compute settlement, recovery checkpoints, and governed proof braids.</p><small>Private source · chain surface</small>
             </article>
             <article class="organ-card organ-hands" data-reveal>
-              <span class="organ-code">04 / HANDS</span><h3>Hive IDE</h3><p>The operator workspace joining code, agents, services, receipts, and complete tester bundles.</p><small>Private tester surface</small>
+              <span class="organ-code">04 / HANDS</span><h3>Hive IDE</h3><p>The operator workspace joining code, agents, chat, services, receipts, and the complete local tester stack.</p><a href="#ide-download">Open the download door ↓</a>
             </article>
             <article class="organ-card organ-memory" data-reveal>
               <span class="organ-code">05 / MEMORY</span><h3>Second Brain</h3><p>Local-first research, Golden Books, verified retrieval, knowledge graphs, and durable decisions.</p><small>Operator-owned knowledge</small>
@@ -236,6 +241,62 @@
             <span><i></i> Snapshot-bound private systems</span>
             <span><i></i> Live public release routes</span>
             <span><i></i> Local authenticated control</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="ide-release section-pad" id="ide-download" aria-labelledby="ide-release-title" data-ide-release data-state="checking">
+        <div class="section-shell">
+          <header class="section-heading ide-release-heading" data-reveal>
+            <div>
+              <p class="eyebrow">Hive IDE / one Windows download</p>
+              <h2 id="ide-release-title">Your local Hive stack, assembled.</h2>
+            </div>
+            <p>One current-user installer carries the IDE, its installer-owned Hive-AI runtime, local chat, and an internal HivePoA/IPFS Service Center. Public reward-network distribution remains a separate HivePoA door.</p>
+          </header>
+
+          <div class="ide-release-console" data-motion-scene data-reveal>
+            <div class="ide-release-glow" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="ide-release-main">
+              <div class="ide-release-status">
+                <span class="status-light" aria-hidden="true"></span>
+                <div>
+                  <small>Public channel</small>
+                  <strong data-ide-status role="status" aria-live="polite">Checking the exact release feed…</strong>
+                </div>
+              </div>
+              <p class="eyebrow">Complete functional tester profile</p>
+              <h3 data-ide-version>Hive IDE public tester</h3>
+              <p class="ide-release-lede" data-ide-status-detail>The page will enable the installer only after the same-origin feed passes strict source, hash, size, channel, and immutable release-URL checks.</p>
+              <div class="ide-release-actions">
+                <a class="button button-primary is-disabled" data-ide-download aria-disabled="true" tabindex="-1">Download for Windows x64</a>
+                <a class="button button-quiet is-disabled" data-ide-manifest aria-disabled="true" tabindex="-1">Release manifest</a>
+                <a class="text-link is-disabled" data-ide-release-page aria-disabled="true" tabindex="-1">Release details ↗</a>
+              </div>
+              <p class="ide-release-warning"><span aria-hidden="true">!</span><span data-ide-warning>Unsigned tester builds can trigger a Windows warning. The exact SHA-256 will appear only after feed validation.</span></p>
+            </div>
+
+            <dl class="ide-release-facts" aria-label="Hive IDE release facts">
+              <div><dt>Platform</dt><dd>Windows 10/11 · x64</dd></div>
+              <div><dt>Channel</dt><dd data-ide-channel>Checking</dd></div>
+              <div><dt>Installer size</dt><dd data-ide-size>—</dd></div>
+              <div><dt>Hive IDE source</dt><dd><code data-ide-source>—</code></dd></div>
+              <div><dt>Setup model</dt><dd>Current user · one click</dd></div>
+              <div><dt>Test credits</dt><dd>Valueless · non-transferable</dd></div>
+            </dl>
+          </div>
+
+          <div class="ide-stack-grid" aria-label="Services included in Hive IDE">
+            <article data-reveal><span>01</span><h3>Editor + agents</h3><p>The custom Hive workspace, native file tools, receipts, task surfaces, and local operator controls.</p></article>
+            <article data-reveal><span>02</span><h3>Hive-AI + chat</h3><p>An installer-owned local runtime with guided setup, health, repair, logs, and no public prompt relay.</p></article>
+            <article data-reveal><span>03</span><h3>PoA + IPFS services</h3><p>The internal Option C sidecar, Kubo health, storage controls, and authenticated tester-credit ledger.</p></article>
+            <article data-reveal><span>04</span><h3>Safe lifecycle</h3><p>Collision-free ports, owned-process shutdown, cold restart recovery, support ZIP, and bounded uninstall.</p></article>
+          </div>
+
+          <div class="ide-release-digest" data-reveal>
+            <div><span>Installer SHA-256</span><code data-ide-sha>Unavailable until the release feed validates</code></div>
+            <button type="button" data-copy-ide-sha disabled>Copy SHA-256</button>
+            <p>Tester credits have no monetary value. This IDE package embeds an internal HivePoA component; it does not claim a public HivePoA reward-network release, enrollment, or payout.</p>
           </div>
         </div>
       </section>
@@ -588,6 +649,7 @@
       </div>
       <nav aria-label="Footer navigation">
         <a href="/">Hub</a>
+        <a href="#ide-download">Hive IDE download</a>
         <a href="/HivePoA/">HivePoA</a>
         <a href="/HivePoA/download/">Download</a>
         <a href="/HivePoA/verify/">Verify</a>
@@ -601,6 +663,6 @@
     <noscript>
       <div class="noscript-banner">Source freshness, motion controls, and signed-index verification need JavaScript. All navigation remains available; no package or live-source claim is authorized by this fallback.</div>
     </noscript>
-    <script type="module" src="/hub-assets/hub.js?v=stark-command-v7"></script>
+    <script type="module" src="/hub-assets/hub.js?v=stark-command-v8"></script>
   </body>
 </html>

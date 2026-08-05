@@ -61,6 +61,7 @@ jobs:
             /hiveai/__init__.py
             /hiveai/_optional_scripts.py
             /hiveai/living_anatomy/
+            /hiveai/static/living-anatomy/src/galaxy-contract.json
             /hiveai/moons/universal_manifest.py
             /hiveai/neuron_swarm/
             /hiveai/one_turn/

@@ -14,12 +14,21 @@ never a mixed-era artifact. A shallow clone is accepted only when the newest
 truth-input commit is proven before the shallow boundary. The write is atomic
 and `--check` is idempotent.
 
-The output schema is an explicit public allowlist: aggregate source facts,
-six public organ descriptions, and stable division/family/neuron topology. It
-does not contain paths, evidence, blockers, owners, missions, urgency, prompts,
-credentials, or per-neuron status. The public renderer therefore cannot color
-Twitches gold or imply runtime health; those facts belong to the authenticated
-local Living Anatomy surface.
+The v3 output schema is an explicit public allowlist: aggregate source facts,
+six public organ descriptions, stable topology, and exact authored geometry.
+The source-graph-bound `hive.galaxy.renderer-contract.v1` projection closes,
+orders, cardinality-checks, and hashes 16 division, 64 family, and 640 neuron
+tuples. It does not contain paths, evidence, blockers, owners, missions,
+urgency, prompts, credentials, or per-neuron status. The public renderer
+therefore cannot color Twitches gold or imply runtime health; those facts belong
+to the authenticated local Living Anatomy surface.
+
+The public adapter consumes that projection through the one existing Canvas2D
+atlas; the authenticated local adapter retains its Three.js machinery. They
+converge on geometry, camera, event, status-language, and fallback semantics,
+not private data or copied renderer bundles. After an explicit click, a local
+handoff may carry only its version, source commit, graph hash, lens, node, and
+level. Pages never probes, starts, or claims availability of a local surface.
 
 `script/mark-galaxy-bridge-inactive.mjs` has one narrow fail-closed authority:
 it can retain all source facts while changing only the refresh boundary from
@@ -85,15 +94,17 @@ When cloud credentials are intentionally absent, the same strict compiler may
 run from a clean authenticated operator checkout with
 `GALAXY_AUTOMATIC_BRIDGE=true GALAXY_BRIDGE_MODE=local`. This local fallback
 publishes the identical allowlisted artifact and grants no additional source or
-runtime authority. The page evaluates `capturedAt` on every 60-second poll:
-15 minutes without a validated refresh is delayed, and one hour is critical.
-Both states retain the last-good counts.
+runtime authority. The page evaluates `capturedAt` on every 60-second poll: a
+capture older than 15 minutes is aged, and one older than one hour is
+historical. Both states retain the last-good counts and describe source age
+only—not publisher delay or runtime health.
 
 `capturedAt` records the time of a validated observation, not the source commit
-timestamp. Rechecking an already-published observation is byte-idempotent; a
-new observation of the same quiet source may legitimately receive a later
-timestamp. Within one publication attempt, the admitted candidate hash is
-immutable across all Pages-main retries.
+timestamp. Rechecking the same source-bound observation is byte-idempotent and
+retains its original capture time; a quiet source does not become artificially
+newer merely because a browser or publisher checked it again. Browser
+validation time is visit-local and reported separately. Within one publication
+attempt, the admitted candidate hash is immutable across all Pages-main retries.
 
 ## Local verification
 

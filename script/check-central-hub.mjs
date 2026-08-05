@@ -1,7 +1,18 @@
-import crypto from "node:crypto";
+import crypto, { webcrypto } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import {
+  GALAXY_CANONICAL_GEOMETRY_HASH,
+  GALAXY_GENERATOR_VERSION,
+  GALAXY_RENDERER_CONTRACT_HASH,
+  GALAXY_SNAPSHOT_VERSION,
+  canonicalJson,
+  validSnapshot,
+} from "../hub-assets/galaxy-core.mjs";
+
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
@@ -113,11 +124,14 @@ for (const [name, source] of [["index.html", html], ["404.html", notFound]]) {
 }
 
 requireMatch(html, /One organism\.[\s\S]*Every system in orbit\./, "hero identity");
-requireMatch(html, /Hive-AI is the reasoning brain\.[\s\S]*HivePoA is the proof and storage plane\./, "system boundary");
+requireMatch(html, /Reasoning layer[\s\S]*Hive-AI[\s\S]*Proof layer[\s\S]*HivePoA/, "system boundary");
 requireMatch(html, /source-badge[^>]+title="JavaScript verifies[^>]*>[\s\S]*Snapshot verification pending/, "truthful no-JS source state");
 requireMatch(html, /data-motion-toggle[^>]+aria-disabled="true"[^>]+disabled[^>]*>[\s\S]*Motion control pending/, "inert no-JS motion control");
 requireMatch(html, /<noscript>[\s\S]*no package or live-source claim is authorized/, "explicit no-JS truth boundary");
 requireMatch(html, /id="galaxy"/, "public galaxy section");
+requireMatch(html, /Evidence enters[\s\S]*Hive-AI reasons[\s\S]*HivePoA verifies[\s\S]*Organism changes/, "immediate causal hero story");
+requireMatch(html, /data-hero-atlas-cta[^>]+data-galaxy-open[^>]+href="#galaxy"/, "dominant full-atlas hero entry");
+requireMatch(html, /data-hero-source[\s\S]*data-hero-freshness[\s\S]*data-fact="twitches"[\s\S]*data-fact="pmOnly"[\s\S]*Runtime/, "compact public truth rail");
 const rootButtonTags = [...html.matchAll(/<button\b[^>]*>/g)].map((match) => match[0]);
 const startupLensButtons = rootButtonTags.filter((tag) => /\sdata-lens=/.test(tag));
 if (startupLensButtons.length !== 5 || startupLensButtons.some((tag) => !/\sdisabled(?:\s|>)/.test(tag))) {
@@ -132,6 +146,8 @@ if (startupCameraButtons.length !== 4 || startupCameraButtons.some((tag) => (
 requireMatch(html, /data-galaxy-engage[^>]+aria-pressed="false"/, "explicit galaxy engagement state");
 requireMatch(html, /data-galaxy-canvas[^>]+tabindex="-1"[^>]+aria-disabled="true"[^>]+role="img"/, "inert startup galaxy canvas");
 requireMatch(html, /data-galaxy-index-list[^>]+aria-label="Jump to a galaxy division"/, "semantic division navigation");
+requireMatch(html, /data-galaxy-context-summary>Context unavailable · source not yet bound<[\s\S]*data-galaxy-context-copy>Context parameters remain unavailable until this browser validates/, "unbound local-context truth");
+requireMatch(html, /galaxy-inspector[\s\S]*data-galaxy-director-modal[^>]+aria-pressed="false"/, "Director stop control inside full-atlas modal");
 requireMatch(html, /Current authorized beta tester package/, "tester authorization label");
 requireMatch(html, /id="ide-download"[^>]+data-ide-release data-state="checking"/, "inert Hive IDE release section");
 requireMatch(html, /One current-user installer carries the IDE,[\s\S]*internal HivePoA\/IPFS Service Center/, "one-download product boundary");
@@ -149,8 +165,7 @@ requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/chat/, "local chat route");
 requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1/, "local presentation body route");
 requireMatch(html, /http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0/, "local operator body route");
 requireMatch(html, /class="button button-quiet" data-hero-body-cta href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1" target="_blank" rel="noreferrer"/, "direct hero Living Anatomy entry");
-requireMatch(html, /class="button button-primary" href="#ide-download"/, "primary Hive IDE download handoff");
-requireMatch(html, /data-hero-atlas-cta href="#galaxy"/, "separate public atlas entry");
+requireMatch(html, /class="button button-quiet" href="#ide-download"/, "subordinate Hive IDE download handoff");
 requireMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1"[^>]*target="_blank"[^>]*rel="noreferrer"/, "safe presentation body navigation");
 requireMatch(html, /href="http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0"[^>]*target="_blank"[^>]*rel="noreferrer"/, "safe operator body navigation");
 requireMatch(html, /data-body-surface="atlas"[\s\S]*data-body-surface="presentation"[\s\S]*data-body-surface="operator"/, "three-surface Living Anatomy bridge");
@@ -204,7 +219,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "stark-command-v9" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v10" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -217,6 +232,17 @@ requireMatch(js, /button\.disabled = systemReduced;[\s\S]*button\.setAttribute\(
 requireMatch(js, /PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256/, "pinned verifier fingerprint");
 requireMatch(js, /data-release-evidence-index/, "separate evidence states");
 requireMatch(js, /class GalaxyAtlas/, "galaxy renderer");
+requireMatch(js, /wireFullAtlas\(\)[\s\S]*setAttribute\("role", "dialog"\)[\s\S]*setAttribute\("aria-modal", "true"\)/, "full-viewport atlas dialog and focus contract");
+requireMatch(js, /startDirector\(\)[\s\S]*setTimeout\(\(\) => this\.cancelDirector\(true\), 4000\)[\s\S]*cancelDirector\(completed = false\)/, "interruptible 24-second director");
+requireMatch(js, /syncContextHandoff\(\)[\s\S]*Context unavailable · source not yet bound[\s\S]*buildPublicHandoffUrl\([\s\S]*presentation,[\s\S]*sourceCommit:[\s\S]*graphHash:[\s\S]*lens:[\s\S]*node,[\s\S]*level,/, "validated no-probe public-to-local context handoff");
+requireMatch(galaxyCore, /artifact: "build"[\s\S]*division: "district"[\s\S]*rawNode\.slice\("neuron:"\.length\)/, "canonical local context taxonomy");
+requireMatch(galaxyCore, /searchParams\.set\("presentation"[\s\S]*publicContextVersion[\s\S]*sourceCommit[\s\S]*graphHash[\s\S]*lens[\s\S]*node[\s\S]*level/, "closed handoff URL query");
+requireMatch(js, /focusInsideFullAtlas\(\)[\s\S]*data-galaxy-director-modal[\s\S]*this\.canvas[\s\S]*data-galaxy-exit/, "modal-internal focus recovery");
+requireMatch(js, /!root\?\.contains\(document\.activeElement\)[\s\S]*event\.shiftKey \? last : first/, "full-atlas focus containment from outside focus");
+requireMatch(js, /event\.key !== "Escape" \|\| !this\.engaged[\s\S]*this\.cancelDirector\(false\);[\s\S]*this\.setEngaged\(false, true\);[\s\S]*this\.focusInsideFullAtlas\(\)/, "first Escape preserves modal focus and restores Director state");
+requireMatch(js, /closeFullAtlas\(restoreFocus = true\)[\s\S]*this\.cancelDirector\(false\)/, "full-atlas close restores Director state");
+requireMatch(js, /this\.paused = Boolean\(event\.detail\?\.paused\)[\s\S]*if \(this\.paused\) this\.cancelDirector\(false\)/, "motion pause restores Director state");
+requireMatch(js, /exactGalaxyDirectorState\(\{[\s\S]*targetPanY:[\s\S]*if \(returnContext\)[\s\S]*this\.rotationX = returnContext\.rotationX[\s\S]*this\.targetPanY = returnContext\.targetPanY/, "exact Director state restoration");
 requireMatch(js, /function wireLenses\(\)[\s\S]*button\.disabled = false;/, "lens controls enabled only after module boot");
 requireMatch(js, /setCameraControlsAvailable\(available[\s\S]*button\.disabled = !available;[\s\S]*aria-disabled[\s\S]*tabindex[\s\S]*aria-disabled/, "camera controls runtime availability gate");
 requireMatch(js, /runSafely\("Living Anatomy galaxy", startGalaxy\)/, "galaxy call chain");
@@ -244,15 +270,17 @@ requireMatch(js, /GALAXY_LENS_PROFILES/, "lens-specific topology weighting");
 requireMatch(js, /selectGalaxyHit\(/, "child-first global hit resolver call");
 requireNoMatch(js, /point\.divisionIndex !== focusDivision/, "parent-first hit restriction");
 requireMatch(pointerDownBlock, /this\.updatePointer\(event\);\s*this\.hitTest\(\);/, "touch tap coordinate capture");
-requireMatch(pointerDownBlock, /const pointerPolicy = galaxyPointerPolicy\(event\.pointerType, this\.engaged\);\s*this\.pointer\.orbitAllowed = pointerPolicy\.orbitAllowed;/, "behavioral pointer policy integration");
-requireMatch(pointerMoveBlock, /this\.dragMoved \|\|= Math\.hypot\(dx, dy\) > 4;\s*if \(!this\.pointer\.orbitAllowed\) return;/, "unengaged touch drag cannot orbit");
+requireMatch(pointerDownBlock, /const pointerPolicy = galaxyPointerPolicy\(event\.pointerType, this\.engaged\);[\s\S]*pointerPolicy\.engage[\s\S]*this\.pointer\.orbitAllowed = pointerPolicy\.orbitAllowed;/, "behavioral pointer policy integration");
+requireMatch(pointerMoveBlock, /tracked && !this\.engaged[\s\S]*this\.dragMoved \|\|= Math\.hypot\(dx, dy\) > 6;[\s\S]*galaxyGestureCamera\(/, "unengaged touch scroll and engaged pinch ownership");
 requireMatch(js, /pointercancel[^\n]+release\(event, true\)/, "non-activating pointer cancellation");
 requireMatch(js, /focusedFamilyIndex[\s\S]*data-family-geometry-index[\s\S]*focus\(\{ preventScroll: true \}\)/, "family focus continuity");
 requireMatch(js, /focusedNeuronId[\s\S]*data-neuron-id[\s\S]*focus\(\{ preventScroll: true \}\)/, "neuron focus continuity");
 requireMatch(js, /resolveGalaxySelection\([\s\S]*previousNeuronId/, "semantic snapshot selection continuity integration");
 requireMatch(js, /galaxy-fallback-active/, "semantic no-canvas fallback activation");
 requireMatch(js, /1 - Math\.exp\(-elapsed \/ 145\)/, "time-based camera damping");
-requireMatch(js, /if \(!this\.engaged \|\| atMinimum \|\| atMaximum\) return;/, "non-trapping wheel gate");
+requireMatch(js, /if \(!this\.engaged\) return;\s*event\.preventDefault\(\);[\s\S]*this\.zoomAt\(factor, this\.pointer\.x, this\.pointer\.y\)/, "explicit wheel ownership and pointer-centered zoom");
+requireMatch(js, /event\.shiftKey[\s\S]*this\.targetPanX[\s\S]*PageUp[\s\S]*PageDown/, "keyboard pan and semantic selection path");
+requireMatch(js, /adaptiveGalaxyDpr\([\s\S]*depthSortGalaxyPoints\(this\.projectedNeurons\)/, "adaptive high-DPI and stable depth rendering");
 requireMatch(js, /event\.key !== "Escape" \|\| !this\.engaged[\s\S]*this\.setEngaged\(false, true\);[\s\S]*data-galaxy-engage[\s\S]*focus\(\{ preventScroll: true \}\)/, "keyboard scroll release and focus return");
 requireMatch(js, /this\.intersecting = true;[\s\S]*this\.documentVisible = !document\.hidden;/, "visibility state separation");
 requireMatch(js, /if \(!this\.context\) return;/, "canvas fail-soft guard");
@@ -266,14 +294,14 @@ requireMatch(ideReleaseCore, /release stage or channel is unsupported[\s\S]*an u
 requireMatch(ideReleaseCore, /manifest and installer do not share one release tag/, "Hive IDE immutable release-tag binding");
 requireMatch(ideReleaseCore, /installer size is outside the bounded Windows package range/, "Hive IDE installer size bound");
 requireNoMatch(ideReleaseCore, /eval\(|new Function\(/, "Hive IDE release validator dynamic code");
-requireMatch(galaxyCore, /facts\.pmOnly === facts\.purposeMastered - facts\.twitches/, "PM Twitch invariant");
-requireMatch(galaxyCore, /captured - now > 5 \* 60_000[\s\S]*snapshotFreshness\(snapshot\?\.capturedAt\)\.state !== "invalid"/, "capture timestamp validity and future-skew gate");
+requireMatch(galaxyCore, /facts\.pmOnly !== facts\.purposeMastered - facts\.twitches/, "PM Twitch invariant");
+requireMatch(galaxyCore, /captured - now > 5 \* 60_000[\s\S]*snapshotFreshness\(snapshot\.capturedAt\)\.state === "invalid"/, "capture timestamp validity and future-skew gate");
 requireMatch(js, /SNAPSHOT_REFRESH_MS = 60_000/, "visibility-aware snapshot refresh interval");
 requireMatch(js, /Last-good snapshot/, "last-good refresh behavior");
 requireMatch(js, /AbortController/, "snapshot request cancellation");
 requireMatch(js, /snapshotRequestGeneration/, "snapshot response generation gate");
 requireMatch(js, /snapshotResponseCanCommit\([\s\S]*aborted:/, "behavioral snapshot response gate integration");
-requireMatch(js, /const freshness = snapshotFreshness\(snapshot\.capturedAt\);[\s\S]*automaticBridgeEnabled[\s\S]*freshness\.state === "critical"[\s\S]*freshness\.state === "delayed"/, "freshness-aware source badge integration");
+requireMatch(js, /sourceSnapshotPresentation\([\s\S]*automaticBridgeEnabled === true[\s\S]*presentation\.freshness === "historical"[\s\S]*presentation\.freshness === "aged"[\s\S]*presentation\.bridge === "active"/, "source-age and bridge-state separation");
 requireMatch(forcedColorsWiring, /const onForcedColorsChange = \(event\) => this\.applyRenderAvailability\(Boolean\(event\.matches\)\);/, "live forced-colors transition callback");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addEventListener\("change", onForcedColorsChange\)/, "live forced-colors transition listener");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addListener\(onForcedColorsChange\)/, "legacy forced-colors transition listener");
@@ -282,6 +310,12 @@ requireMatch(js, /if \(\$\("\[data-source-stamp\], \[data-galaxy-canvas\]"\)\)[\
 requireMatch(js, /runSafely\("Offscreen scene control", wireSceneActivity\)/, "offscreen CSS animation control");
 requireNoMatch(js, /time\s*-\s*this\.lastFrame\s*<\s*32/, "30fps frame throttle");
 requireNoMatch(js, /Math\.random\(/, "non-deterministic visual geometry");
+requireNoMatch(galaxyCore, /GOLDEN_ANGLE|syntheticGeometry|fallbackGeometry/i, "synthetic public galaxy geometry");
+requireMatch(generator, /build_public_geometry_projection[\s\S]*load_renderer_contract[\s\S]*RENDERER_CONTRACT_HASH/, "canonical authored-geometry bridge");
+requireMatch(galaxyCore, /GALAXY_CANONICAL_GEOMETRY_HASH = "29948f2c[0-9a-f]+c314"[\s\S]*computedHash === GALAXY_CANONICAL_GEOMETRY_HASH/, "runtime tuple-content geometry digest");
+requireMatch(galaxyCore, /semanticAnatomicalDepthMilli[\s\S]*row\[5\] !== 10_500[\s\S]*row\[6\] !== 7_000[\s\S]*row\[6\] !== 3_100/, "authored taxonomy, depth, and size invariants");
+requireMatch(galaxyCore, /GALAXY_PUBLIC_PALETTES[\s\S]*runtime:[\s\S]*product:/, "neutral public neuron palette contract");
+requireNoMatch(galaxyCore, /\[255,\s*209,\s*102\]|\[52,\s*255,\s*136\]|\[113,\s*246,\s*188\]/, "reserved physiology color in public neuron palettes");
 
 requireMatch(css, /@media \(prefers-reduced-motion: reduce\)/, "reduced motion");
 requireMatch(css, /button:focus-visible,[\s\S]*a:focus-visible/, "visible focus");
@@ -297,6 +331,12 @@ requireMatch(css, /@keyframes centered-orbit-spin[\s\S]*translate\(-50%, -50%\) 
 requireMatch(css, /\.motion-scene-paused[\s\S]*animation-play-state:\s*paused !important/, "offscreen CSS animation pause");
 requireMatch(css, /\.galaxy-stage\s*{[\s\S]*?touch-action:\s*pan-y;/, "touch page-scroll preservation");
 requireMatch(css, /\.galaxy-stage\.is-engaged\s*{[\s\S]*?touch-action:\s*none;/, "engaged touch orbit ownership");
+requireMatch(css, /\.hero-system \.satellite-ide\s*{\s*grid-column:[\s\S]*\.hero-system \.stage-readout\s*{[\s\S]*grid-column:/, "collision-proof hero stage ownership");
+requireMatch(css, /\.galaxy-workbench\.is-full-atlas\s*{[\s\S]*position:\s*fixed;[\s\S]*height:\s*100dvh;/, "full-viewport atlas layout");
+requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.galaxy-workbench\.is-full-atlas[\s\S]*grid-template-rows:/, "mobile same-viewport atlas and inspector");
+requireMatch(css, /\.galaxy-demo-proof\s*{[\s\S]*left:\s*1rem;[\s\S]*\.galaxy-director-caption\s*{[\s\S]*bottom:\s*5\.5rem;[\s\S]*\.galaxy-workbench \.map-readout\s*{[\s\S]*bottom:\s*0\.75rem;/, "eight-pixel full-atlas overlay separation");
+requireMatch(css, /@media \(max-width: 20rem\)[\s\S]*\.galaxy-demo-proof\s*{[\s\S]*top:\s*4rem;/, "200-percent mobile overlay stack");
+requireMatch(css, /\.galaxy-workbench\.is-full-atlas \.galaxy-modal-director\s*{[\s\S]*display:\s*block;/, "modal Director control visibility");
 requireMatch(css, /\.map-readout\s*{[\s\S]*?pointer-events:\s*none;/, "non-blocking graph readout overlay");
 requireMatch(css, /\.mission-grid\s*{[\s\S]*?grid-template-columns:\s*repeat\(6, minmax\(0, 1fr\)\)/, "six-stage command flightdeck");
 requireMatch(css, /\.command-cycle-readout\s*{[\s\S]*?grid-template-columns:\s*auto minmax\(0, 1fr\) auto;/, "command cycle proof readout");
@@ -305,7 +345,7 @@ requireMatch(css, /body\.command-flightdeck-open::after[\s\S]*\.mission-machine\
 requireMatch(css, /@keyframes command-cycle-scan[\s\S]*@keyframes command-cycle-node/, "command cycle motion language");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.command-cycle-readout\s*{[\s\S]*?grid-template-columns:\s*1fr;/, "mobile command readout stack");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.command-cycle-readout[\s\S]*\.command-cycle-orb/, "forced-colors command fallback");
-requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.map-readout\s*{[\s\S]*?inset:\s*1rem 1rem auto auto;/, "separated mobile galaxy overlays");
+requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.galaxy-workbench \.map-readout\s*{[\s\S]*?bottom:\s*0\.7rem;[\s\S]*?left:\s*0\.7rem;/, "separated mobile galaxy overlays");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.body-surface-links\s*{[\s\S]*?grid-template-columns:\s*1fr;/, "mobile Living Anatomy bridge stack");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-controls\s*{\s*display:\s*none;/, "forced-colors camera fallback");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-atmosphere,[\s\S]*\.galaxy-scanline,[\s\S]*display:\s*none;/, "forced-colors decorative overlay removal");
@@ -322,8 +362,8 @@ for (const forbidden of [
   if (html.includes(forbidden) || js.includes(forbidden)) throw new Error(`forbidden overclaim remains: ${forbidden}`);
 }
 
-if (facts.schema !== "hive.ecosystem.public-source-snapshot.v2") throw new Error("source snapshot schema mismatch");
-exactKeys(facts, ["schema", "hiveAi", "galaxy", "ecosystem", "refresh", "boundaries", "capturedAt"], "source snapshot");
+if (facts.schema !== "hive.ecosystem.public-source-snapshot.v3" || facts.snapshotVersion !== GALAXY_SNAPSHOT_VERSION) throw new Error("source snapshot schema mismatch");
+exactKeys(facts, ["schema", "snapshotVersion", "hiveAi", "galaxy", "ecosystem", "refresh", "boundaries", "capturedAt", "snapshotHash"], "source snapshot");
 exactKeys(facts.hiveAi, [
   "sourceCommit", "sourceBranch", "graphSource", "graphSchema", "graphHash", "sourceFingerprint",
   "neurons", "trainableNeurons", "deterministicNeurons", "purposeMastered", "twitches", "pmOnly",
@@ -341,7 +381,7 @@ if (!facts.boundaries?.snapshotOnly || facts.boundaries?.runtimeTelemetry || fac
 if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(facts.capturedAt || "")) throw new Error("snapshot capture time is not canonical UTC");
 if (!/^[a-f0-9]{40}$/.test(facts.hiveAi?.sourceCommit || "")) throw new Error("Hive-AI source commit is not exact");
 if (!/^[a-f0-9]{64}$/.test(facts.hiveAi?.graphHash || "")) throw new Error("Living Anatomy graph hash is not exact");
-if (!/^[a-f0-9]{64}$/.test(facts.hiveAi?.sourceFingerprint || "")) throw new Error("Living Anatomy source fingerprint is not exact");
+if (!/^(?!0{64}$)[a-f0-9]{64}$/.test(facts.hiveAi?.sourceFingerprint || "")) throw new Error("Living Anatomy source fingerprint is not exact");
 
 for (const field of ["neurons", "trainableNeurons", "deterministicNeurons", "nodes", "edges", "divisions", "families", "moons", "organs", "components", "federationRepositories"]) {
   if (!Number.isSafeInteger(facts.hiveAi?.[field]) || facts.hiveAi[field] < 1) throw new Error(`invalid positive source fact: ${field}`);
@@ -355,7 +395,7 @@ if (facts.hiveAi.pmOnly !== facts.hiveAi.purposeMastered - facts.hiveAi.twitches
 if (facts.hiveAi.notPurposeMastered !== facts.hiveAi.neurons - facts.hiveAi.purposeMastered) throw new Error("not-mastered count does not reconcile");
 
 const galaxy = facts.galaxy;
-if (galaxy?.schema !== "hive.ecosystem.public-galaxy.v1" || galaxy?.statusProjection !== "none") throw new Error("public galaxy schema or status boundary drifted");
+if (galaxy?.schema !== "hive.ecosystem.public-galaxy.v2" || galaxy?.generatorVersion !== GALAXY_GENERATOR_VERSION || galaxy?.statusProjection !== "none") throw new Error("public galaxy schema or status boundary drifted");
 if (galaxy.representedNeurons !== facts.hiveAi.neurons || galaxy.sourceGraphHash !== facts.hiveAi.graphHash) throw new Error("public galaxy source binding drifted");
 if (!Array.isArray(galaxy.divisions) || galaxy.divisions.length !== facts.hiveAi.divisions) throw new Error("public galaxy division count drifted");
 exactKeys(galaxy, ["schema", "generatorVersion", "sourceGraphHash", "geometry", "representedNeurons", "divisions", "statusProjection", "claimBoundary", "projectionHash"], "public galaxy");
@@ -381,7 +421,29 @@ for (let index = 1; index <= facts.hiveAi.neurons; index += 1) {
   if (!neuronIds.has(`N${String(index).padStart(3, "0")}`)) throw new Error(`public galaxy neuron roster gap: N${String(index).padStart(3, "0")}`);
 }
 const { projectionHash, ...galaxyWithoutHash } = galaxy;
-if (projectionHash !== sha256(JSON.stringify(galaxyWithoutHash))) throw new Error("public galaxy projection hash mismatch");
+if (projectionHash !== sha256(canonicalJson(galaxyWithoutHash))) throw new Error("public galaxy projection hash mismatch");
+const geometry = galaxy.geometry;
+exactKeys(geometry, ["schema", "projection", "sourceGraphHash", "contractVersion", "contractHash", "coordinateSpace", "divisions", "families", "neurons", "geometryHash"], "public authored geometry");
+if (geometry.schema !== "hive.galaxy.public-geometry.v1"
+  || geometry.projection !== "living-anatomy-body"
+  || geometry.sourceGraphHash !== facts.hiveAi.graphHash
+  || geometry.contractVersion !== "1.0.0"
+  || geometry.contractHash !== GALAXY_RENDERER_CONTRACT_HASH
+  || geometry.coordinateSpace !== "hiveai.living_anatomy_layout.v1"
+  || geometry.divisions?.length !== 16
+  || geometry.families?.length !== 64
+  || geometry.neurons?.length !== 640) throw new Error("public authored geometry contract drifted");
+const geometryBody = {
+  coordinateSpace: geometry.coordinateSpace,
+  divisions: geometry.divisions,
+  families: geometry.families,
+  neurons: geometry.neurons,
+};
+if (geometry.geometryHash !== GALAXY_CANONICAL_GEOMETRY_HASH
+  || geometry.geometryHash !== sha256(canonicalJson(geometryBody))) throw new Error("public authored geometry hash mismatch");
+const { snapshotHash, ...snapshotWithoutHash } = facts;
+if (snapshotHash !== sha256(canonicalJson(snapshotWithoutHash))) throw new Error("public snapshot hash mismatch");
+if (!await validSnapshot(facts)) throw new Error("runtime rejected the checked-in strict public snapshot");
 
 const serializedFacts = JSON.stringify(facts);
 for (const forbidden of ["/home/", "C:\\\\"]) {
@@ -507,7 +569,7 @@ requireMatch(generator, /GALAXY_BRIDGE_MODE === "local"/, "local convergence mod
 requireNoMatch(bridgeFailClosed, /automaticBridgeEnabled:\s*true/, "fail-closed script authority escalation");
 requireMatch(bridgeFailClosed, /CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED/, "missing-credential fail-closed reason");
 requireMatch(bridgeFailClosed, /PRIVATE_SOURCE_CHECKOUT_FAILED/, "failed-checkout fail-closed reason");
-requireMatch(galaxyCore, /galaxy\?\.sourceGraphHash !== facts\?\.graphHash/, "runtime graph binding");
+requireMatch(galaxyCore, /galaxy\.sourceGraphHash !== facts\?\.graphHash/, "runtime graph binding");
 requireMatch(galaxyCore, /projectionHash === await sha256Hex/, "runtime projection hash binding");
 requireMatch(galaxyCore, /export function selectGalaxyHit/, "testable global hit selection");
 requireMatch(galaxyCore, /export function galaxyPointerPolicy/, "testable pointer policy");

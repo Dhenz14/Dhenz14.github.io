@@ -1,21 +1,29 @@
 import {
   GALAXY_LENS_PROFILES,
+  GALAXY_PUBLIC_PALETTES,
+  adaptiveGalaxyDpr,
+  buildPublicHandoffUrl,
   buildGalaxyGeometry,
+  depthSortGalaxyPoints,
+  exactGalaxyDirectorState,
   galaxyDivisionVisualRadius,
+  galaxyGestureCamera,
+  galaxyGestureMetrics,
   galaxyPointerPolicy,
   galaxyRenderState,
+  galaxyZoomAtPointer,
   placeCanvasLabel,
   projectGalaxyPoint,
   resolveGalaxySelection,
   selectGalaxyHit,
-  snapshotFreshness,
+  sourceSnapshotPresentation,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=stark-command-v9";
+} from "./galaxy-core.mjs?v=galaxy-stark-v10";
 import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
-} from "./ide-release-core.mjs?v=stark-command-v9";
+} from "./ide-release-core.mjs?v=galaxy-stark-v10";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -400,6 +408,11 @@ function wireCommandCycle() {
   window.addEventListener("hive:motion", (event) => {
     if (event.detail?.paused && running) stop();
   });
+  window.addEventListener("hive:manual-galaxy", () => {
+    if (!running) return;
+    stop();
+    root.dataset.commandState = "manual";
+  });
 
   window.addEventListener("hive:snapshot", (event) => {
     const snapshot = event.detail?.snapshot;
@@ -481,8 +494,8 @@ const LENSES = Object.freeze({
     copy: "Chat, queues, health, models, and credentials remain on the local Hive-AI surface. This static page deliberately shows no invented live counters.",
     statA: "LOCAL",
     labelA: "chat boundary",
-    statB: "0",
-    labelB: "public prompts",
+    statB: "NONE",
+    labelB: "prompt relay",
     boundary: "Start and authenticate Hive-AI locally before treating any runtime surface as available.",
   },
   product: {
@@ -529,7 +542,10 @@ function selectLens(name, focusNode = false) {
 function wireLenses() {
   $$('[data-lens]').forEach((button, index, buttons) => {
     button.disabled = false;
-    button.addEventListener("click", () => selectLens(button.dataset.lens));
+    button.addEventListener("click", () => {
+      window.dispatchEvent(new CustomEvent("hive:manual-galaxy"));
+      selectLens(button.dataset.lens);
+    });
     button.addEventListener("keydown", (event) => {
       if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
       event.preventDefault();
@@ -538,6 +554,7 @@ function wireLenses() {
       if (event.key === 'ArrowLeft') next = (index - 1 + buttons.length) % buttons.length;
       if (event.key === 'Home') next = 0;
       if (event.key === 'End') next = buttons.length - 1;
+      window.dispatchEvent(new CustomEvent("hive:manual-galaxy"));
       selectLens(buttons[next].dataset.lens, true);
     });
   });
@@ -615,20 +632,29 @@ async function loadSourceSnapshot() {
         day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC", hour12: false,
       }).format(captured).replace(",", "") + " UTC";
     setText("[data-source-stamp]", `Hive-AI main @ ${facts.sourceCommit.slice(0, 7)} · ${captureLabel}`);
+    setText("[data-hero-source]", `main @ ${facts.sourceCommit.slice(0, 7)}`);
+    setText("[data-hero-freshness]", `checked now · captured ${captureLabel}`);
     setText("[data-graph-hash]", facts.graphHash.slice(0, 8));
     const previous = window.hivePublicSnapshot;
     window.hivePublicSnapshot = snapshot;
     document.body.classList.remove("snapshot-unavailable");
-    const freshness = snapshotFreshness(snapshot.capturedAt);
-    if (!snapshot.refresh?.automaticBridgeEnabled) {
-      setSourceBadge("stale", "Source-bound snapshot", `Exact Hive-AI ${facts.sourceCommit.slice(0, 12)} snapshot; automatic convergence is not currently active.`);
-    } else if (freshness.state === "critical") {
-      setSourceBadge("stale", "Sync delayed · last good", `The last validated snapshot is more than one hour old (${snapshot.capturedAt}); no counters were reset.`);
-    } else if (freshness.state === "delayed") {
-      setSourceBadge("stale", "Last-good snapshot", `Automatic convergence is delayed; retaining the validated snapshot captured ${snapshot.capturedAt}.`);
-    } else {
-      setSourceBadge("", "Living main snapshot", `Exact published view of Hive-AI main captured ${snapshot.capturedAt}; not runtime telemetry.`);
-    }
+    const presentation = sourceSnapshotPresentation(
+      snapshot.capturedAt,
+      snapshot.refresh?.automaticBridgeEnabled === true,
+    );
+    const ageTruth = presentation.freshness === "historical"
+      ? `The represented source capture is more than one hour old (${snapshot.capturedAt}).`
+      : presentation.freshness === "aged"
+        ? `The represented source capture is more than fifteen minutes old (${snapshot.capturedAt}).`
+        : `The represented source capture is recent (${snapshot.capturedAt}).`;
+    const bridgeTruth = presentation.bridge === "active"
+      ? "The scheduled/local publication bridge declares itself active."
+      : "The publication bridge declares itself inactive; the last validated source facts remain visible.";
+    setSourceBadge(
+      presentation.badgeState,
+      presentation.label,
+      `${ageTruth} ${bridgeTruth} Browser validation succeeded now; source age is not runtime health.`,
+    );
     if (!previous
       || previous.hiveAi?.sourceCommit !== snapshot.hiveAi.sourceCommit
       || previous.galaxy?.projectionHash !== snapshot.galaxy.projectionHash) {
@@ -643,6 +669,8 @@ async function loadSourceSnapshot() {
       document.body.classList.add("snapshot-unavailable");
       setSourceBadge("blocked", "Snapshot unavailable", "No validated source snapshot is available.");
       setText("[data-source-stamp]", "Snapshot unavailable — embedded fallback only");
+      setText("[data-hero-source]", "unavailable");
+      setText("[data-hero-freshness]", "not available");
       window.dispatchEvent(new CustomEvent("hive:snapshot-error"));
     }
     console.warn("Hive source snapshot could not be refreshed:", error);
@@ -1110,14 +1138,6 @@ class FieldRenderer {
   }
 }
 
-const GALAXY_PALETTES = Object.freeze({
-  mastery: [[104, 228, 255], [175, 123, 255], [109, 159, 255], [116, 229, 207]],
-  artifact: [[109, 141, 255], [175, 123, 255], [101, 202, 213], [157, 174, 255]],
-  evidence: [[185, 245, 255], [104, 228, 255], [122, 172, 255], [200, 169, 255]],
-  runtime: [[113, 246, 188], [104, 228, 255], [80, 197, 190], [111, 158, 255]],
-  product: [[240, 121, 207], [175, 123, 255], [104, 228, 255], [111, 158, 255]],
-});
-
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
 const titleCase = (value) => String(value || "").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
@@ -1165,6 +1185,10 @@ class GalaxyAtlas {
     this.targetRotationY = this.rotationY;
     this.zoom = 1.08;
     this.targetZoom = this.zoom;
+    this.panX = 0;
+    this.panY = 0;
+    this.targetPanX = 0;
+    this.targetPanY = 0;
     this.activeDivision = 0;
     this.hoverDivision = -1;
     this.activeFamily = -1;
@@ -1176,7 +1200,25 @@ class GalaxyAtlas {
     this.dragging = false;
     this.dragMoved = false;
     this.engaged = false;
-    this.pointer = { x: 0, y: 0, startX: 0, startY: 0, rotationX: 0, rotationY: 0 };
+    this.pointer = {
+      x: 0, y: 0, startX: 0, startY: 0,
+      rotationX: 0, rotationY: 0, panX: 0, panY: 0,
+      orbitAllowed: false, mode: "orbit",
+    };
+    this.activePointers = new Map();
+    this.gestureMetrics = null;
+    this.galaxy = null;
+    this.sourceCommit = "";
+    this.graphHash = "";
+    this.contextLost = false;
+    this.fullAtlas = false;
+    this.fullAtlasReturnFocus = null;
+    this.fullAtlasScrollY = 0;
+    this.directorTimer = 0;
+    this.directorStep = -1;
+    this.directorRunning = false;
+    this.directorReturn = null;
+    this.validatedSourcePulseUntil = 0;
     this.ambientStars = Array.from({ length: 108 }, (_, index) => {
       const seedX = Math.sin((index + 1) * 12.9898) * 43758.5453;
       const seedY = Math.sin((index + 1) * 78.233) * 24634.6345;
@@ -1208,12 +1250,15 @@ class GalaxyAtlas {
       this.draw(performance.now());
     });
     window.addEventListener("hive:lens", (event) => {
-      if (!GALAXY_PALETTES[event.detail?.name]) return;
+      if (!GALAXY_PUBLIC_PALETTES[event.detail?.name]) return;
       this.lens = event.detail.name;
+      this.syncContextHandoff();
       this.draw(performance.now());
     });
     window.addEventListener("hive:command-stage", (event) => this.presentCommandStage(event.detail?.index));
+    window.addEventListener("hive:manual-galaxy", () => this.cancelDirector(false));
     this.setEngaged(false);
+    this.wireFullAtlas();
     if (!this.baseRenderAvailable) {
       this.applyRenderAvailability(this.forcedColors.matches);
       return;
@@ -1238,6 +1283,7 @@ class GalaxyAtlas {
     });
     window.addEventListener("hive:motion", (event) => {
       this.paused = Boolean(event.detail?.paused) || reduceMotion.matches;
+      if (this.paused) this.cancelDirector(false);
       this.syncLoop();
     });
     const onForcedColorsChange = (event) => this.applyRenderAvailability(Boolean(event.matches));
@@ -1246,18 +1292,43 @@ class GalaxyAtlas {
     } else if (typeof this.forcedColors.addListener === "function") {
       this.forcedColors.addListener(onForcedColorsChange);
     }
+    this.canvas.addEventListener("contextlost", (event) => {
+      event.preventDefault?.();
+      this.contextLost = true;
+      this.applyRenderAvailability(this.forcedColors.matches);
+    });
+    this.canvas.addEventListener("contextrestored", () => {
+      try {
+        this.context = this.canvas.getContext("2d", { alpha: true, desynchronized: true });
+      } catch {
+        this.context = null;
+      }
+      this.contextLost = false;
+      this.applyRenderAvailability(this.forcedColors.matches);
+    });
+    window.addEventListener("pagehide", () => {
+      this.cancelDirector(false);
+      if (this.fullAtlas) this.closeFullAtlas(false);
+    });
     this.applyRenderAvailability(this.forcedColors.matches);
   }
 
   setSnapshot(snapshot) {
     if (!Array.isArray(snapshot?.galaxy?.divisions)) return;
+    const priorSourceCommit = this.sourceCommit;
     const previousDivisionCode = this.divisions[this.activeDivision]?.code;
     const previousFamilyCode = this.activeFamily >= 0
       ? this.divisions[this.familyGeometry[this.activeFamily]?.divisionIndex]?.families?.[this.familyGeometry[this.activeFamily]?.familyIndex]?.code
       : null;
     const previousNeuronId = this.activeNeuron >= 0 ? this.neurons[this.activeNeuron]?.id : null;
+    this.galaxy = snapshot.galaxy;
     this.divisions = snapshot.galaxy.divisions;
+    this.sourceCommit = snapshot.hiveAi?.sourceCommit || "";
+    this.graphHash = snapshot.hiveAi?.graphHash || "";
     this.buildGeometry();
+    if (priorSourceCommit && priorSourceCommit !== this.sourceCommit) {
+      this.validatedSourcePulseUntil = performance.now() + 1800;
+    }
 
     const selection = resolveGalaxySelection({
       divisions: this.divisions,
@@ -1273,17 +1344,268 @@ class GalaxyAtlas {
     this.activeNeuron = selection.activeNeuron;
     this.buildDivisionIndex();
     this.showDivision(this.activeDivision, false, true);
+    this.syncContextHandoff();
     this.presentCommandStage(this.commandStage);
     this.draw(performance.now());
     this.syncLoop();
   }
 
   buildGeometry() {
-    const geometry = buildGalaxyGeometry(this.divisions);
+    const geometry = buildGalaxyGeometry(this.galaxy);
     this.divisionGeometry = geometry.divisionGeometry;
     this.familyGeometry = geometry.familyGeometry;
     this.neurons = geometry.neurons;
     this.neuronIndexById = geometry.neuronIndexById;
+  }
+
+  takeManualControl() {
+    this.cancelDirector(false);
+    window.dispatchEvent(new CustomEvent("hive:manual-galaxy"));
+  }
+
+  syncContextHandoff() {
+    let level = "division";
+    let node = `division:${this.divisions[this.activeDivision]?.code || "A"}`;
+    if (this.activeFamily >= 0) {
+      const geometry = this.familyGeometry[this.activeFamily];
+      const code = this.divisions[geometry?.divisionIndex]?.families?.[geometry?.familyIndex]?.code;
+      if (code) {
+        level = "family";
+        node = `family:${code}`;
+      }
+    }
+    if (this.activeNeuron >= 0 && this.neurons[this.activeNeuron]?.id) {
+      level = "neuron";
+      node = `neuron:${this.neurons[this.activeNeuron].id}`;
+    }
+    if (!/^[a-f0-9]{40}$/.test(this.sourceCommit) || !/^[a-f0-9]{64}$/.test(this.graphHash)) {
+      setText("[data-galaxy-context-summary]", "Context unavailable · source not yet bound");
+      setText("[data-galaxy-context-copy]", "Context parameters remain unavailable until this browser validates the source snapshot. The plain local routes remain explicit and availability is never assumed.");
+      $$('[data-local-context-link]').forEach((link) => { link.dataset.contextBound = "false"; });
+      return;
+    }
+    const summaryNode = node.replace(/^(division|family|neuron):/, "");
+    const localLens = this.lens === "artifact" ? "build" : this.lens;
+    const localLevel = level === "division" ? "district" : level;
+    setText("[data-galaxy-context-summary]", `${localLevel[0].toUpperCase()}${localLevel.slice(1)} ${summaryNode} · ${localLens} lens`);
+    setText("[data-galaxy-context-copy]", "Context bound after strict snapshot validation: version, source commit, graph hash, lens, node, and level. Opening remains an explicit user gesture.");
+    $$('[data-local-context-link]').forEach((link) => {
+      const presentation = link.dataset.localPresentation === "0" ? "0" : "1";
+      const href = buildPublicHandoffUrl({
+        presentation,
+        sourceCommit: this.sourceCommit,
+        graphHash: this.graphHash,
+        lens: this.lens,
+        node,
+        level,
+      });
+      if (!href) return;
+      link.href = href;
+      link.dataset.contextBound = "true";
+    });
+  }
+
+  wireFullAtlas() {
+    const openers = $$('[data-galaxy-open], [data-galaxy-fullscreen]');
+    $$('[data-galaxy-fullscreen]').forEach((button) => {
+      button.disabled = false;
+      button.setAttribute("aria-disabled", "false");
+    });
+    openers.forEach((opener) => opener.addEventListener("click", (event) => {
+      event.preventDefault();
+      this.openFullAtlas(opener);
+    }));
+    $("[data-galaxy-exit]")?.addEventListener("click", () => this.closeFullAtlas(true));
+    document.addEventListener("keydown", (event) => {
+      if (!this.fullAtlas || event.defaultPrevented) return;
+      if (event.key === "Escape" && this.engaged) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        this.closeFullAtlas(true);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const root = $("[data-galaxy-dialog]");
+      const focusable = root ? $$('button:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])', root)
+        .filter((node) => !node.hasAttribute("hidden") && node.getClientRects().length > 0) : [];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!root?.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus({ preventScroll: true });
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus({ preventScroll: true });
+      }
+    });
+  }
+
+  focusInsideFullAtlas() {
+    if (!this.fullAtlas) return false;
+    const target = this.directorRunning
+      ? $("[data-galaxy-director-modal]")
+      : this.renderAvailable
+        ? this.canvas
+        : $("[data-galaxy-exit]");
+    target?.focus({ preventScroll: true });
+    return Boolean(target);
+  }
+
+  openFullAtlas(trigger = null) {
+    if (this.fullAtlas) return;
+    this.fullAtlas = true;
+    this.fullAtlasReturnFocus = trigger || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    this.fullAtlasScrollY = window.scrollY;
+    const root = $("[data-galaxy-dialog]");
+    root?.classList.add("is-full-atlas");
+    root?.setAttribute("role", "dialog");
+    root?.setAttribute("aria-modal", "true");
+    root?.setAttribute("aria-label", "Full viewport public Living Anatomy atlas");
+    document.body.classList.add("galaxy-fullscreen-open");
+    window.requestAnimationFrame(() => {
+      this.resize();
+      this.focusInsideFullAtlas();
+    });
+    showToast("Full atlas open. Escape releases engaged controls first, then returns to the page.");
+  }
+
+  closeFullAtlas(restoreFocus = true) {
+    if (!this.fullAtlas) return;
+    this.cancelDirector(false);
+    this.setEngaged(false);
+    this.fullAtlas = false;
+    const root = $("[data-galaxy-dialog]");
+    root?.classList.remove("is-full-atlas");
+    root?.removeAttribute("role");
+    root?.removeAttribute("aria-modal");
+    root?.removeAttribute("aria-label");
+    document.body.classList.remove("galaxy-fullscreen-open");
+    window.scrollTo({ top: this.fullAtlasScrollY, behavior: "auto" });
+    window.requestAnimationFrame(() => this.resize());
+    if (restoreFocus && this.fullAtlasReturnFocus?.isConnected) this.fullAtlasReturnFocus.focus({ preventScroll: true });
+  }
+
+  applyDirectorScene(index) {
+    const scenes = [
+      { lens: "mastery", division: 0, zoom: 1.08, title: "Evidence enters", copy: "A source-bound input reaches the public body. This demonstration dispatches nothing." },
+      { lens: "evidence", division: 3, zoom: 1.32, title: "Hive-AI reasons", copy: "Purpose, dependencies, and proof routes become visible without publishing private evidence." },
+      { lens: "artifact", neuron: "N121", zoom: 2.2, title: "A candidate resolves", copy: "The camera keeps its district and family context while one stable neuron identity comes forward." },
+      { lens: "runtime", neuron: "N401", zoom: 2.35, title: "HivePoA verifies", copy: "The proof plane is explained here; real challenges and receipts stay on authenticated surfaces." },
+      { lens: "evidence", neuron: "N561", zoom: 2.25, title: "The proof gate holds", copy: "No visual packet grants authority. A real change still requires accepted, mission-bound evidence." },
+      { lens: "product", division: 15, zoom: 1.24, title: "The organism changes", copy: "Only a newly validated source snapshot may produce the separate green absorption pulse." },
+    ];
+    const scene = scenes[index];
+    if (!scene) return;
+    this.directorStep = index;
+    selectLens(scene.lens);
+    if (scene.neuron && this.neuronIndexById?.has(scene.neuron)) this.focusNeuron(this.neuronIndexById.get(scene.neuron), false);
+    else this.focusDivision(scene.division, false);
+    this.targetZoom = scene.zoom;
+    if (this.stage) this.stage.dataset.directorStep = String(index);
+    setText("[data-galaxy-director-step]", `${String(index + 1).padStart(2, "0")} / 06 · ${scene.title}`);
+    setText("[data-galaxy-director-copy]", scene.copy);
+    this.syncLoop();
+  }
+
+  startDirector() {
+    if (reduceMotion.matches || document.body.classList.contains("motion-paused")) {
+      showToast("Director automation is off while reduced motion is active. Manual atlas controls remain available.");
+      return;
+    }
+    this.takeManualControl();
+    if (!this.fullAtlas) this.openFullAtlas($("[data-galaxy-director]"));
+    this.directorReturn = exactGalaxyDirectorState({
+      lens: this.lens,
+      activeDivision: this.activeDivision,
+      activeFamily: this.activeFamily,
+      activeNeuron: this.activeNeuron,
+      rotationX: this.rotationX,
+      rotationY: this.rotationY,
+      zoom: this.zoom,
+      panX: this.panX,
+      panY: this.panY,
+      targetRotationX: this.targetRotationX,
+      targetRotationY: this.targetRotationY,
+      targetZoom: this.targetZoom,
+      targetPanX: this.targetPanX,
+      targetPanY: this.targetPanY,
+    });
+    this.directorRunning = true;
+    $$('[data-galaxy-director], [data-galaxy-director-modal]').forEach((button) => {
+      button.setAttribute("aria-pressed", "true");
+      button.textContent = "Stop director";
+    });
+    const proof = $("[data-galaxy-demo-proof]");
+    if (proof) proof.hidden = false;
+    const caption = $("[data-galaxy-director-caption]");
+    if (caption) caption.hidden = false;
+    this.applyDirectorScene(0);
+    const advance = () => {
+      if (!this.directorRunning) return;
+      if (this.directorStep >= 5) {
+        this.directorTimer = window.setTimeout(() => this.cancelDirector(true), 4000);
+        return;
+      }
+      this.directorTimer = window.setTimeout(() => {
+        if (!this.directorRunning) return;
+        this.applyDirectorScene(this.directorStep + 1);
+        advance();
+      }, 4000);
+    };
+    advance();
+  }
+
+  cancelDirector(completed = false) {
+    window.clearTimeout(this.directorTimer);
+    this.directorTimer = 0;
+    if (!this.directorRunning && this.directorStep < 0) return;
+    this.directorRunning = false;
+    this.directorStep = -1;
+    if (this.stage) delete this.stage.dataset.directorStep;
+    $$('[data-galaxy-director], [data-galaxy-director-modal]').forEach((button) => {
+      button.setAttribute("aria-pressed", "false");
+      button.textContent = "Run 24s director";
+    });
+    const proof = $("[data-galaxy-demo-proof]");
+    if (proof) proof.hidden = true;
+    const caption = $("[data-galaxy-director-caption]");
+    if (caption) caption.hidden = true;
+    const returnContext = this.directorReturn;
+    this.directorReturn = null;
+    if (returnContext) {
+      selectLens(returnContext.lens);
+      this.activeDivision = returnContext.activeDivision;
+      this.activeFamily = returnContext.activeFamily;
+      this.activeNeuron = returnContext.activeNeuron;
+      this.hoverDivision = -1;
+      this.hoverFamily = -1;
+      this.hoverNeuron = -1;
+      this.rotationX = returnContext.rotationX;
+      this.rotationY = returnContext.rotationY;
+      this.zoom = returnContext.zoom;
+      this.panX = returnContext.panX;
+      this.panY = returnContext.panY;
+      this.targetRotationX = returnContext.targetRotationX;
+      this.targetRotationY = returnContext.targetRotationY;
+      this.targetZoom = returnContext.targetZoom;
+      this.targetPanX = returnContext.targetPanX;
+      this.targetPanY = returnContext.targetPanY;
+      this.showDivision(this.activeDivision, true, false);
+      if (this.activeNeuron >= 0) this.showNeuronFocus(this.activeNeuron);
+      else if (this.activeFamily >= 0) {
+        this.renderNeuronRoster(this.activeFamily);
+        this.showFamilyFocus(this.activeFamily);
+      }
+      this.syncContextHandoff();
+      this.syncLoop();
+      showToast(completed
+        ? "Director complete. No work was dispatched; your prior lens, selection, and camera are restored."
+        : "Director cancelled. Your prior lens, selection, and camera are restored.");
+    }
   }
 
   buildDivisionIndex() {
@@ -1438,6 +1760,8 @@ class GalaxyAtlas {
     this.targetRotationY = Math.atan2(center.x, center.z);
     this.targetRotationX = -Math.atan2(center.y, Math.hypot(center.x, center.z)) * 0.72;
     this.targetZoom = Math.max(this.targetZoom, minimumZoom);
+    this.targetPanX = 0;
+    this.targetPanY = 0;
   }
 
   presentCommandStage(index) {
@@ -1455,15 +1779,16 @@ class GalaxyAtlas {
     if (!scene) return;
     selectLens(scene.lens);
     if (!this.divisions.length) return;
-    if (scene.reset) this.resetCamera();
-    else if (scene.neuron && this.neuronIndexById?.has(scene.neuron)) this.focusNeuron(this.neuronIndexById.get(scene.neuron));
-    else if (Number.isSafeInteger(scene.division)) this.focusDivision(scene.division);
+    if (scene.reset) this.resetCamera(false);
+    else if (scene.neuron && this.neuronIndexById?.has(scene.neuron)) this.focusNeuron(this.neuronIndexById.get(scene.neuron), false);
+    else if (Number.isSafeInteger(scene.division)) this.focusDivision(scene.division, false);
     this.draw(performance.now());
   }
 
-  focusDivision(index) {
+  focusDivision(index, manual = true) {
     const center = this.divisionGeometry[index];
     if (!center) return;
+    if (manual) this.takeManualControl();
     this.activeDivision = index;
     this.hoverDivision = -1;
     this.activeFamily = -1;
@@ -1472,12 +1797,14 @@ class GalaxyAtlas {
     this.hoverNeuron = -1;
     this.focusPoint(center, 1.18);
     this.showDivision(index);
+    this.syncContextHandoff();
     this.syncLoop();
   }
 
-  focusFamily(familyGeometryIndex) {
+  focusFamily(familyGeometryIndex, manual = true) {
     const center = this.familyGeometry[familyGeometryIndex];
     if (!center) return;
+    if (manual) this.takeManualControl();
     this.activeDivision = center.divisionIndex;
     this.activeFamily = familyGeometryIndex;
     this.activeNeuron = -1;
@@ -1489,12 +1816,14 @@ class GalaxyAtlas {
     this.showFamilyFocus(familyGeometryIndex);
     const family = this.divisions[center.divisionIndex].families[center.familyIndex];
     this.canvas.setAttribute("aria-label", `Interactive Hive-AI atlas. Family ${family.code}, ${family.name}, is selected with ${family.neuronIds.length} neurons. Press Escape to release controls.`);
+    this.syncContextHandoff();
     this.syncLoop();
   }
 
-  focusNeuron(neuronIndex) {
+  focusNeuron(neuronIndex, manual = true) {
     const neuron = this.neurons[neuronIndex];
     if (!neuron) return;
+    if (manual) this.takeManualControl();
     this.activeDivision = neuron.divisionIndex;
     this.activeFamily = neuron.familyGeometryIndex;
     this.activeNeuron = neuronIndex;
@@ -1505,11 +1834,12 @@ class GalaxyAtlas {
     this.showDivision(this.activeDivision, true, false);
     this.showNeuronFocus(neuronIndex);
     this.canvas.setAttribute("aria-label", `Interactive Hive-AI atlas. Neuron ${neuron.id} is selected. Public topology only; press Escape to release controls.`);
+    this.syncContextHandoff();
     this.syncLoop();
   }
 
   setCameraControlsAvailable(available, reason = "") {
-    $$('[data-galaxy-engage], [data-galaxy-zoom], [data-galaxy-reset]').forEach((button) => {
+    $$('[data-galaxy-engage], [data-galaxy-zoom], [data-galaxy-reset], [data-galaxy-director], [data-galaxy-director-modal]').forEach((button) => {
       button.disabled = !available;
       button.setAttribute("aria-disabled", String(!available));
       button.title = available ? "" : reason;
@@ -1523,11 +1853,14 @@ class GalaxyAtlas {
       hasContext: Boolean(this.context),
       hasResizeObserver: "ResizeObserver" in window,
       forcedColorsActive,
+      contextLost: this.contextLost,
     });
     this.renderAvailable = state.renderAvailable;
     const fallback = !state.renderAvailable;
     this.stage?.classList.toggle("galaxy-static-fallback", fallback);
     this.canvas.closest("#galaxy")?.classList.toggle("galaxy-fallback-active", fallback);
+    const semanticFallback = $("[data-galaxy-semantic-fallback]");
+    if (semanticFallback) semanticFallback.hidden = !fallback;
     if (fallback) this.setEngaged(false);
     const reason = state.reasonCode === "FORCED_COLORS"
       ? "Camera controls are hidden in forced-colors mode; use the semantic division and family controls."
@@ -1544,13 +1877,21 @@ class GalaxyAtlas {
   wireControls() {
     $$('[data-galaxy-zoom]').forEach((button) => {
       button.addEventListener("click", () => {
+        this.takeManualControl();
         const factor = button.dataset.galaxyZoom === "in" ? 1.22 : 1 / 1.22;
-        this.targetZoom = clamp(this.targetZoom * factor, 0.68, 2.65);
+        this.zoomAt(factor, this.width / 2, this.height / 2);
         this.syncLoop();
       });
     });
-    $("[data-galaxy-reset]")?.addEventListener("click", () => this.resetCamera());
+    $("[data-galaxy-reset]")?.addEventListener("click", () => this.resetCamera(true));
+    $$('[data-galaxy-director], [data-galaxy-director-modal]').forEach((button) => button.addEventListener("click", () => {
+      if (this.directorRunning) {
+        this.cancelDirector(false);
+        this.focusInsideFullAtlas();
+      } else this.startDirector();
+    }));
     $("[data-galaxy-engage]")?.addEventListener("click", () => {
+      this.takeManualControl();
       this.setEngaged(!this.engaged, true);
       if (this.engaged) this.canvas.focus({ preventScroll: true });
     });
@@ -1569,7 +1910,24 @@ class GalaxyAtlas {
     if (announce) showToast(this.engaged ? "Galaxy controls engaged. Press Escape to release page scroll." : "Galaxy controls released. Page scroll restored.");
   }
 
-  resetCamera() {
+  zoomAt(factor, pointerX, pointerY) {
+    const next = galaxyZoomAtPointer({
+      zoom: this.targetZoom,
+      panX: this.targetPanX,
+      panY: this.targetPanY,
+      pointerX,
+      pointerY,
+      width: this.width,
+      height: this.height,
+      factor,
+    });
+    this.targetZoom = next.zoom;
+    this.targetPanX = next.panX;
+    this.targetPanY = next.panY;
+  }
+
+  resetCamera(manual = true) {
+    if (manual) this.takeManualControl();
     this.activeDivision = 0;
     this.hoverDivision = -1;
     this.activeFamily = -1;
@@ -1579,7 +1937,10 @@ class GalaxyAtlas {
     this.targetRotationX = -0.08;
     this.targetRotationY = -0.32;
     this.targetZoom = 1.08;
+    this.targetPanX = 0;
+    this.targetPanY = 0;
     this.showDivision(0);
+    this.syncContextHandoff();
     this.syncLoop();
   }
 
@@ -1591,43 +1952,107 @@ class GalaxyAtlas {
 
   wireInteraction() {
     this.canvas.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0) return;
+      if (![0, 1].includes(event.button)) return;
+      this.takeManualControl();
       this.updatePointer(event);
       this.hitTest();
       const pointerPolicy = galaxyPointerPolicy(event.pointerType, this.engaged);
-      this.pointer.orbitAllowed = pointerPolicy.orbitAllowed;
       if (pointerPolicy.engage) this.setEngaged(true);
       if (pointerPolicy.focusCanvas) this.canvas.focus({ preventScroll: true });
+      this.pointer.orbitAllowed = pointerPolicy.orbitAllowed;
+      this.pointer.mode = event.shiftKey || event.button === 1 ? "pan" : "orbit";
+      this.activePointers.set(event.pointerId, {
+        x: this.pointer.x,
+        y: this.pointer.y,
+        pointerType: event.pointerType,
+      });
       this.dragging = true;
       this.dragMoved = false;
       this.pointer.startX = event.clientX;
       this.pointer.startY = event.clientY;
       this.pointer.rotationX = this.targetRotationX;
       this.pointer.rotationY = this.targetRotationY;
-      this.canvas.setPointerCapture(event.pointerId);
-      this.stage?.classList.add("is-dragging");
+      this.pointer.panX = this.targetPanX;
+      this.pointer.panY = this.targetPanY;
+      this.gestureMetrics = galaxyGestureMetrics(this.activePointers.values());
+      if (this.engaged) {
+        event.preventDefault();
+        this.canvas.setPointerCapture(event.pointerId);
+        this.stage?.classList.add("is-dragging");
+      }
     });
     this.canvas.addEventListener("pointermove", (event) => {
       this.updatePointer(event);
-      if (this.dragging) {
+      const tracked = this.activePointers.get(event.pointerId);
+      if (tracked) {
+        tracked.x = this.pointer.x;
+        tracked.y = this.pointer.y;
+      }
+      if (tracked && !this.engaged) {
+        const dx = event.clientX - this.pointer.startX;
+        const dy = event.clientY - this.pointer.startY;
+        this.dragMoved ||= Math.hypot(dx, dy) > 6;
+        return;
+      }
+      if (this.engaged && this.activePointers.size >= 2) {
+        event.preventDefault();
+        const currentMetrics = galaxyGestureMetrics(this.activePointers.values());
+        const camera = galaxyGestureCamera({
+          previous: this.gestureMetrics,
+          current: currentMetrics,
+          zoom: this.targetZoom,
+          panX: this.targetPanX,
+          panY: this.targetPanY,
+          width: this.width,
+          height: this.height,
+        });
+        this.targetZoom = camera.zoom;
+        this.targetPanX = camera.panX;
+        this.targetPanY = camera.panY;
+        this.gestureMetrics = currentMetrics;
+        this.dragMoved = true;
+        this.syncLoop();
+        return;
+      }
+      if (this.dragging && tracked) {
+        event.preventDefault();
         const dx = event.clientX - this.pointer.startX;
         const dy = event.clientY - this.pointer.startY;
         this.dragMoved ||= Math.hypot(dx, dy) > 4;
         if (!this.pointer.orbitAllowed) return;
-        this.targetRotationY = this.pointer.rotationY + dx * 0.006;
-        this.targetRotationX = clamp(this.pointer.rotationX + dy * 0.0048, -1.15, 1.15);
+        if (this.pointer.mode === "pan") {
+          this.targetPanX = clamp(this.pointer.panX + dx, -this.width * 0.42, this.width * 0.42);
+          this.targetPanY = clamp(this.pointer.panY + dy, -this.height * 0.42, this.height * 0.42);
+        } else {
+          this.targetRotationY = this.pointer.rotationY + dx * 0.006;
+          this.targetRotationX = clamp(this.pointer.rotationX + dy * 0.0048, -1.15, 1.15);
+        }
         this.syncLoop();
         return;
       }
-      this.hitTest();
-    }, { passive: true });
+      if (event.pointerType !== "touch") this.hitTest();
+    }, { passive: false });
     const release = (event, cancelled = false) => {
-      if (!this.dragging) return;
-      this.dragging = false;
-      this.stage?.classList.remove("is-dragging");
+      if (!this.activePointers.has(event.pointerId)) return;
+      this.activePointers.delete(event.pointerId);
       if (this.canvas.hasPointerCapture(event.pointerId)) this.canvas.releasePointerCapture(event.pointerId);
+      if (this.activePointers.size) {
+        const [remaining] = this.activePointers.values();
+        this.pointer.startX = remaining.x + this.canvas.getBoundingClientRect().left;
+        this.pointer.startY = remaining.y + this.canvas.getBoundingClientRect().top;
+        this.pointer.rotationX = this.targetRotationX;
+        this.pointer.rotationY = this.targetRotationY;
+        this.pointer.panX = this.targetPanX;
+        this.pointer.panY = this.targetPanY;
+        this.pointer.mode = "orbit";
+        this.gestureMetrics = galaxyGestureMetrics(this.activePointers.values());
+        this.dragMoved = true;
+        return;
+      }
+      this.dragging = false;
+      this.gestureMetrics = null;
+      this.stage?.classList.remove("is-dragging");
       if (cancelled) {
-        this.setEngaged(false);
         this.hoverDivision = -1;
         this.hoverFamily = -1;
         this.hoverNeuron = -1;
@@ -1653,38 +2078,60 @@ class GalaxyAtlas {
       this.draw(performance.now());
     });
     this.canvas.addEventListener("wheel", (event) => {
-      const atMinimum = this.targetZoom <= 0.681 && event.deltaY > 0;
-      const atMaximum = this.targetZoom >= 2.649 && event.deltaY < 0;
-      if (!this.engaged || atMinimum || atMaximum) return;
+      if (!this.engaged) return;
       event.preventDefault();
+      this.takeManualControl();
+      this.updatePointer(event);
       const factor = Math.exp(-event.deltaY * 0.00105);
-      this.targetZoom = clamp(this.targetZoom * factor, 0.68, 2.65);
+      this.zoomAt(factor, this.pointer.x, this.pointer.y);
       this.syncLoop();
     }, { passive: false });
     this.canvas.addEventListener("keydown", (event) => {
       if (!this.engaged) {
         if (!["Enter", " "].includes(event.key)) return;
         event.preventDefault();
+        this.takeManualControl();
         this.setEngaged(true, true);
         return;
       }
-      const handled = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "+", "=", "-", "_", "Home", "0"];
+      const handled = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "+", "=", "-", "_", "Home", "0", "PageUp", "PageDown", "Enter", " "];
       if (!handled.includes(event.key)) return;
       event.preventDefault();
-      if (event.key === "ArrowLeft") this.targetRotationY -= 0.16;
-      if (event.key === "ArrowRight") this.targetRotationY += 0.16;
-      if (event.key === "ArrowUp") this.targetRotationX = clamp(this.targetRotationX - 0.12, -1.15, 1.15);
-      if (event.key === "ArrowDown") this.targetRotationX = clamp(this.targetRotationX + 0.12, -1.15, 1.15);
-      if (["+", "="].includes(event.key)) this.targetZoom = clamp(this.targetZoom * 1.18, 0.68, 2.65);
-      if (["-", "_"].includes(event.key)) this.targetZoom = clamp(this.targetZoom / 1.18, 0.68, 2.65);
-      if (["Home", "0"].includes(event.key)) this.resetCamera();
+      this.takeManualControl();
+      const panStep = Math.max(24, Math.min(this.width, this.height) * 0.055);
+      if (event.shiftKey && event.key === "ArrowLeft") this.targetPanX -= panStep;
+      else if (event.shiftKey && event.key === "ArrowRight") this.targetPanX += panStep;
+      else if (event.shiftKey && event.key === "ArrowUp") this.targetPanY -= panStep;
+      else if (event.shiftKey && event.key === "ArrowDown") this.targetPanY += panStep;
+      else if (event.key === "ArrowLeft") this.targetRotationY -= 0.16;
+      else if (event.key === "ArrowRight") this.targetRotationY += 0.16;
+      else if (event.key === "ArrowUp") this.targetRotationX = clamp(this.targetRotationX - 0.12, -1.15, 1.15);
+      else if (event.key === "ArrowDown") this.targetRotationX = clamp(this.targetRotationX + 0.12, -1.15, 1.15);
+      if (["+", "="].includes(event.key)) this.zoomAt(1.18, this.width / 2, this.height / 2);
+      if (["-", "_"].includes(event.key)) this.zoomAt(1 / 1.18, this.width / 2, this.height / 2);
+      if (["Home", "0"].includes(event.key)) {
+        this.resetCamera(false);
+        return;
+      }
+      if (["PageUp", "PageDown"].includes(event.key)) {
+        const direction = event.key === "PageDown" ? 1 : -1;
+        this.focusDivision((this.activeDivision + direction + this.divisions.length) % this.divisions.length, false);
+        return;
+      }
+      if (["Enter", " "].includes(event.key)) {
+        if (this.hoverNeuron >= 0) this.focusNeuron(this.hoverNeuron, false);
+        else if (this.hoverFamily >= 0) this.focusFamily(this.hoverFamily, false);
+        else this.focusDivision(this.hoverDivision >= 0 ? this.hoverDivision : this.activeDivision, false);
+        return;
+      }
       this.syncLoop();
     });
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape" || !this.engaged) return;
       event.preventDefault();
+      this.cancelDirector(false);
       this.setEngaged(false, true);
-      $("[data-galaxy-engage]")?.focus({ preventScroll: true });
+      if (!this.focusInsideFullAtlas()) $("[data-galaxy-engage]")?.focus({ preventScroll: true });
     });
   }
 
@@ -1726,7 +2173,11 @@ class GalaxyAtlas {
     const rect = (this.stage || this.canvas).getBoundingClientRect();
     this.width = Math.max(1, rect.width);
     this.height = Math.max(1, rect.height);
-    this.dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+    this.dpr = adaptiveGalaxyDpr({
+      devicePixelRatio: window.devicePixelRatio || 1,
+      width: this.width,
+      height: this.height,
+    });
     this.canvas.width = Math.max(1, Math.round(this.width * this.dpr));
     this.canvas.height = Math.max(1, Math.round(this.height * this.dpr));
     this.canvas.style.width = `${this.width}px`;
@@ -1742,11 +2193,13 @@ class GalaxyAtlas {
       zoom: this.zoom,
       width: this.width,
       height: this.height,
+      panX: this.panX,
+      panY: this.panY,
     });
   }
 
   paletteColor(index) {
-    const palette = GALAXY_PALETTES[this.lens] || GALAXY_PALETTES.mastery;
+    const palette = GALAXY_PUBLIC_PALETTES[this.lens] || GALAXY_PUBLIC_PALETTES.mastery;
     return palette[index % palette.length];
   }
 
@@ -1770,6 +2223,81 @@ class GalaxyAtlas {
       });
       context.fill();
     }
+    context.restore();
+  }
+
+  drawValidatedSourcePulse(context, center, time) {
+    const remaining = this.validatedSourcePulseUntil - time;
+    if (remaining <= 0) return;
+    const progress = clamp(1 - remaining / 1800, 0, 1);
+    const radius = clamp(34 * this.zoom, 24, 64) + progress * Math.min(this.width, this.height) * 0.17;
+    context.save();
+    context.globalCompositeOperation = "lighter";
+    context.globalAlpha = 1 - progress;
+    context.strokeStyle = "rgba(113, 246, 188, 0.9)";
+    context.lineWidth = 1.8;
+    context.shadowColor = "rgba(113, 246, 188, 0.75)";
+    context.shadowBlur = 18;
+    context.beginPath();
+    context.arc(center.x, center.y, radius, 0, Math.PI * 2);
+    context.stroke();
+    context.globalAlpha *= 0.58;
+    context.lineWidth = 0.8;
+    context.beginPath();
+    context.arc(center.x, center.y, radius * 0.72, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+  }
+
+  drawDirectorPacket(context, center, time) {
+    if (!this.directorRunning || this.paused) return;
+    const focus = this.activeNeuron >= 0
+      ? this.projectedNeurons[this.activeNeuron]
+      : this.activeFamily >= 0
+        ? this.projectedFamilies[this.activeFamily]
+        : this.projectedDivisions[this.activeDivision];
+    if (!focus) return;
+    const start = this.directorStep === 0
+      ? { x: this.width * 0.06, y: this.height * 0.72 }
+      : center;
+    const end = this.directorStep === 0 ? center : focus;
+    const progress = (time % 4000) / 4000;
+    const eased = 0.5 - Math.cos(progress * Math.PI) * 0.5;
+    const controlX = (start.x + end.x) / 2 + (end.y - start.y) * 0.12;
+    const controlY = (start.y + end.y) / 2 - (end.x - start.x) * 0.12;
+    const pointAt = (value) => {
+      const inverse = 1 - value;
+      return {
+        x: inverse * inverse * start.x + 2 * inverse * value * controlX + value * value * end.x,
+        y: inverse * inverse * start.y + 2 * inverse * value * controlY + value * value * end.y,
+      };
+    };
+    context.save();
+    context.globalCompositeOperation = "lighter";
+    const route = context.createLinearGradient(start.x, start.y, end.x, end.y);
+    route.addColorStop(0, "rgba(104, 228, 255, 0.08)");
+    route.addColorStop(0.55, "rgba(104, 228, 255, 0.38)");
+    route.addColorStop(1, "rgba(113, 246, 188, 0.12)");
+    context.strokeStyle = route;
+    context.lineWidth = 1;
+    context.setLineDash([3, 8]);
+    context.lineDashOffset = -time * 0.018;
+    context.beginPath();
+    context.moveTo(start.x, start.y);
+    context.quadraticCurveTo(controlX, controlY, end.x, end.y);
+    context.stroke();
+    context.setLineDash([]);
+    [0, 0.055, 0.11].forEach((lag, index) => {
+      const packetProgress = clamp(eased - lag, 0, 1);
+      const packet = pointAt(packetProgress);
+      context.globalAlpha = 1 - index * 0.25;
+      context.fillStyle = index === 0 ? "rgba(225, 253, 255, 0.98)" : "rgba(104, 228, 255, 0.72)";
+      context.shadowColor = "rgba(104, 228, 255, 0.9)";
+      context.shadowBlur = 12;
+      context.beginPath();
+      context.arc(packet.x, packet.y, index === 0 ? 2.8 : 1.8, 0, Math.PI * 2);
+      context.fill();
+    });
     context.restore();
   }
 
@@ -1809,7 +2337,9 @@ class GalaxyAtlas {
 
     context.save();
     context.globalCompositeOperation = "lighter";
-    this.projectedDivisions.forEach((point, index) => {
+    const depthDivisions = depthSortGalaxyPoints(this.projectedDivisions.map((point, index) => ({ ...point, geometryIndex: index })));
+    depthDivisions.forEach((point) => {
+      const index = point.geometryIndex;
       const color = this.paletteColor(index);
       const active = index === this.activeDivision || index === this.hoverDivision;
       const depth = clamp((point.z + 2.7) / 5.4, 0, 1);
@@ -1830,10 +2360,16 @@ class GalaxyAtlas {
       context.stroke();
     });
 
-    this.projectedDivisions.forEach((point, index) => {
+    depthDivisions.forEach((point) => {
+      const index = point.geometryIndex;
       const color = this.paletteColor(index);
       const active = index === this.activeDivision || index === this.hoverDivision;
       const radius = galaxyDivisionVisualRadius(point, this.zoom, profile, active);
+      context.save();
+      if (active) {
+        context.shadowColor = `rgba(${color.join(",")}, 0.62)`;
+        context.shadowBlur = 22;
+      }
       const halo = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
       halo.addColorStop(0, `rgba(${color.join(",")}, ${(active ? 0.29 : 0.12) * profile.divisions})`);
       halo.addColorStop(0.5, `rgba(${color.join(",")}, ${(active ? 0.095 : 0.038) * profile.divisions})`);
@@ -1857,6 +2393,14 @@ class GalaxyAtlas {
       const arcStart = index * 0.63 + time * (this.paused ? 0 : 0.00008);
       context.arc(point.x, point.y, radius * 0.82, arcStart, arcStart + Math.PI * (active ? 1.42 : 0.78));
       context.stroke();
+      context.restore();
+      if (active) {
+        context.strokeStyle = "rgba(229, 253, 255, 0.76)";
+        context.lineWidth = 1.05;
+        context.beginPath();
+        context.arc(point.x, point.y, radius * 0.64, -2.55, -0.48);
+        context.stroke();
+      }
       context.restore();
     });
 
@@ -1887,9 +2431,7 @@ class GalaxyAtlas {
       });
     }
 
-    this.projectedNeurons
-      .slice()
-      .sort((left, right) => left.z - right.z)
+    depthSortGalaxyPoints(this.projectedNeurons)
       .forEach((point) => {
         const color = this.paletteColor(point.divisionIndex);
         const selectedFamily = this.hoverFamily >= 0 ? this.hoverFamily : this.activeFamily;
@@ -1973,6 +2515,8 @@ class GalaxyAtlas {
     context.beginPath();
     context.arc(center.x, center.y, reactorRadius * 0.62, 0, Math.PI * 2);
     context.stroke();
+    this.drawValidatedSourcePulse(context, center, time);
+    this.drawDirectorPacket(context, center, time);
     context.restore();
 
     const occupiedLabels = [];
@@ -2017,9 +2561,9 @@ class GalaxyAtlas {
     const expansive = hovered && this.width >= 620;
     const label = expansive ? `${division.code} · ${compactName}` : division.code;
     context.save();
-    context.font = `${active ? 800 : 700} ${expansive ? 13 : 11}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
+    context.font = `${active ? 800 : 700} ${expansive ? 16 : 14}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
     const width = context.measureText(label).width + (expansive ? 18 : 12);
-    const height = expansive ? 29 : 23;
+    const height = expansive ? 32 : 27;
     const calloutGap = clamp(36 * point.perspective * this.zoom, 30, 64);
     const desiredX = expansive
       ? (point.x >= this.width / 2 ? point.x - width - calloutGap : point.x + calloutGap)
@@ -2069,9 +2613,9 @@ class GalaxyAtlas {
     const compactName = familyName.length > nameLimit ? `${familyName.slice(0, nameLimit - 1).trimEnd()}…` : familyName;
     const label = selected ? `${family.code} · ${compactName}` : family.code;
     context.save();
-    context.font = `${selected ? 800 : 700} ${selected ? 11 : 10}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
+    context.font = `${selected ? 800 : 700} ${selected ? 15 : 14}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
     const width = context.measureText(label).width + (selected ? 16 : 10);
-    const height = selected ? 24 : 20;
+    const height = selected ? 29 : 26;
     const box = placeCanvasLabel(width, height, point.x - width / 2, point.y + 10, this.width, this.height, occupied, selected);
     if (!box) {
       context.restore();
@@ -2105,10 +2649,10 @@ class GalaxyAtlas {
     const neuron = this.neurons[neuronIndex];
     if (!point || !neuron) return;
     context.save();
-    context.font = '800 11px "SFMono-Regular", "Cascadia Code", Consolas, monospace';
+    context.font = '800 14px "SFMono-Regular", "Cascadia Code", Consolas, monospace';
     const width = context.measureText(neuron.id).width + 14;
-    const height = 22;
-    const box = placeCanvasLabel(width, height, point.x + 8, point.y - 28, this.width, this.height, occupied, true);
+    const height = 27;
+    const box = placeCanvasLabel(width, height, point.x + 8, point.y - 33, this.width, this.height, occupied, true);
     if (!box) {
       context.restore();
       return;
@@ -2134,6 +2678,8 @@ class GalaxyAtlas {
       this.rotationX = this.targetRotationX;
       this.rotationY = this.targetRotationY;
       this.zoom = this.targetZoom;
+      this.panX = this.targetPanX;
+      this.panY = this.targetPanY;
       this.draw(performance.now());
       return;
     }
@@ -2149,6 +2695,8 @@ class GalaxyAtlas {
     this.rotationX += (this.targetRotationX - this.rotationX) * rotationDamping;
     this.rotationY += (this.targetRotationY - this.rotationY) * rotationDamping;
     this.zoom += (this.targetZoom - this.zoom) * zoomDamping;
+    this.panX += (this.targetPanX - this.panX) * zoomDamping;
+    this.panY += (this.targetPanY - this.panY) * zoomDamping;
     this.draw(time);
     this.raf = window.requestAnimationFrame((next) => this.frame(next));
   }

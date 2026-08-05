@@ -9,10 +9,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const routes = [
   "/",
   "/hub-assets/hub-facts.json",
-  "/hub-assets/hub.css?v=stark-command-v9",
-  "/hub-assets/hub.js?v=stark-command-v9",
-  "/hub-assets/galaxy-core.mjs?v=stark-command-v9",
-  "/hub-assets/ide-release-core.mjs?v=stark-command-v9",
+  "/hub-assets/hub.css?v=galaxy-stark-v10",
+  "/hub-assets/hub.js?v=galaxy-stark-v10",
+  "/hub-assets/galaxy-core.mjs?v=galaxy-stark-v10",
+  "/hub-assets/ide-release-core.mjs?v=galaxy-stark-v10",
   "/downloads/hive-ide/latest.json",
   "/downloads/hive-ide/hive-ide-release-manifest.json",
   "/robots.txt",
@@ -77,7 +77,12 @@ try {
     throw new Error("root HTTP surface omitted the galaxy or signed release console");
   }
   const snapshot = await (await fetch(`${origin}/hub-assets/hub-facts.json`)).json();
-  if (snapshot?.schema !== "hive.ecosystem.public-source-snapshot.v2") throw new Error("HTTP snapshot schema drifted");
+  if (snapshot?.schema !== "hive.ecosystem.public-source-snapshot.v3"
+    || snapshot?.snapshotVersion !== "3.0.0"
+    || !/^[a-f0-9]{64}$/.test(snapshot?.snapshotHash || "")
+    || snapshot?.galaxy?.geometry?.schema !== "hive.galaxy.public-geometry.v1") {
+    throw new Error("HTTP snapshot or authored-geometry schema drifted");
+  }
   const missing = await fetch(`${origin}/definitely-not-a-real-hive-route`);
   if (missing.status !== 404) throw new Error(`unknown HTTP route did not fail closed: ${missing.status}`);
   console.log(`HTTP_SURFACE_OK routes=${routes.length} source=${snapshot.hiveAi.sourceCommit.slice(0, 12)}`);

@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
+import { webcrypto } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+
+import { validSnapshot } from "../hub-assets/galaxy-core.mjs";
+
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const marker = path.join(root, "script", "mark-galaxy-bridge-inactive.mjs");
@@ -20,6 +25,7 @@ const factsPath = path.join(temporaryRoot, "hub-facts.json");
 const run = (...args) => spawnSync(process.execPath, [marker, ...args, "--facts-path", factsPath], {
   encoding: "utf8",
 });
+const sourceBound = ({ refresh: _refresh, snapshotHash: _snapshotHash, ...value }) => value;
 
 try {
   fs.writeFileSync(factsPath, `${JSON.stringify(fixture, null, 2)}\n`, "utf8");
@@ -35,13 +41,14 @@ try {
   const disabled = run("--credential-missing");
   assert.equal(disabled.status, 0, disabled.stderr);
   const after = JSON.parse(fs.readFileSync(factsPath, "utf8"));
-  assert.deepEqual({ ...after, refresh: before.refresh }, before, "marker changed source-bound fields");
+  assert.deepEqual(sourceBound(after), sourceBound(before), "marker changed source-bound fields");
   assert.deepEqual(after.refresh, {
     privateSourceMode: "manual-source-bound-snapshot",
     automaticBridgeEnabled: false,
     reasonCode: "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
     lastGoodBehavior: "retain_previous_snapshot",
   });
+  assert.equal(await validSnapshot(after), true, "inactive bridge marker left an invalid snapshot hash");
 
   const stableBytes = fs.readFileSync(factsPath, "utf8");
   const idempotent = run("--credential-missing");
@@ -54,7 +61,8 @@ try {
   const failedCheckoutFacts = JSON.parse(fs.readFileSync(factsPath, "utf8"));
   assert.equal(failedCheckoutFacts.refresh.automaticBridgeEnabled, false);
   assert.equal(failedCheckoutFacts.refresh.reasonCode, "PRIVATE_SOURCE_CHECKOUT_FAILED");
-  assert.deepEqual({ ...failedCheckoutFacts, refresh: fixture.refresh }, fixture, "checkout failure marker changed source-bound fields");
+  assert.deepEqual(sourceBound(failedCheckoutFacts), sourceBound(fixture), "checkout failure marker changed source-bound fields");
+  assert.equal(await validSnapshot(failedCheckoutFacts), true, "checkout failure marker left an invalid snapshot hash");
 
   console.log("GALAXY_BRIDGE_OK unauthorized=refused ambiguous=refused inactive_reasons=2 source_fields=preserved idempotent=true");
 } finally {

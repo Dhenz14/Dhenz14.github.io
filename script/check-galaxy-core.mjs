@@ -4,18 +4,36 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  GALAXY_CANONICAL_GEOMETRY_HASH,
+  GALAXY_GENERATOR_VERSION,
   GALAXY_LENS_PROFILES,
+  GALAXY_OVERLAY_GAP,
   GALAXY_PUBLIC_CONTRACT,
+  GALAXY_PUBLIC_PALETTES,
+  GALAXY_RENDERER_CONTRACT,
+  GALAXY_RENDERER_CONTRACT_HASH,
+  adaptiveGalaxyDpr,
+  buildPublicHandoffUrl,
   buildGalaxyGeometry,
+  canonicalJson,
+  depthSortGalaxyPoints,
+  exactGalaxyDirectorState,
   galaxyDivisionVisualRadius,
+  galaxyGestureCamera,
+  galaxyGestureMetrics,
+  galaxyOverlayBoxes,
   galaxyPointerPolicy,
   galaxyRenderState,
+  galaxyZoomAtPointer,
   placeCanvasLabel,
   projectGalaxyPoint,
+  rectanglesIntersect,
   resolveGalaxySelection,
   selectGalaxyHit,
   snapshotFreshness,
   snapshotResponseCanCommit,
+  sourceSnapshotPresentation,
+  validPublicGeometryProjection,
   validSnapshot,
 } from "../hub-assets/galaxy-core.mjs";
 
@@ -24,57 +42,86 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const facts = JSON.parse(fs.readFileSync(path.join(root, "hub-assets", "hub-facts.json"), "utf8"));
 const clone = (value) => structuredClone(value);
-const projectionHash = (galaxy) => {
-  const { projectionHash: _ignored, ...projection } = galaxy;
-  return crypto.createHash("sha256").update(JSON.stringify(projection)).digest("hex");
-};
+const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
+const rehashGeometry = (snapshot) => {
+  const geometry = snapshot.galaxy.geometry;
+  geometry.geometryHash = sha256(canonicalJson({
+    coordinateSpace: geometry.coordinateSpace,
+    divisions: geometry.divisions,
+    families: geometry.families,
+    neurons: geometry.neurons,
+  }));
+};
+const rehashGalaxy = (snapshot) => {
+  const { projectionHash: _ignored, ...body } = snapshot.galaxy;
+  snapshot.galaxy.projectionHash = sha256(canonicalJson(body));
+};
+const rehashSnapshot = (snapshot) => {
+  const { snapshotHash: _ignored, ...body } = snapshot;
+  snapshot.snapshotHash = sha256(canonicalJson(body));
+};
+const seal = (snapshot, geometry = false) => {
+  if (geometry) rehashGeometry(snapshot);
+  rehashGalaxy(snapshot);
+  rehashSnapshot(snapshot);
+  return snapshot;
+};
+const rejects = async (label, mutate, geometry = false) => {
+  const candidate = clone(facts);
+  mutate(candidate);
+  seal(candidate, geometry);
+  assert(!await validSnapshot(candidate), `runtime validator accepted ${label}`);
+};
 
+assert(sha256(canonicalJson(GALAXY_RENDERER_CONTRACT)) === GALAXY_RENDERER_CONTRACT_HASH, "renderer contract canonical hash drifted");
 assert(await validSnapshot(facts), "checked-in public snapshot rejected by runtime validator");
 assert(
   JSON.stringify(Object.keys(GALAXY_LENS_PROFILES)) === JSON.stringify(GALAXY_PUBLIC_CONTRACT.lensNames),
   "galaxy lens roster drifted",
 );
+assert(await validPublicGeometryProjection(facts.galaxy.geometry, facts.hiveAi.graphHash), "checked-in authored geometry rejected");
+assert(facts.galaxy.geometry.geometryHash === GALAXY_CANONICAL_GEOMETRY_HASH, "checked-in geometry does not match the reviewed canonical digest");
 
-const badHash = clone(facts);
-badHash.galaxy.projectionHash = "0".repeat(64);
-assert(!await validSnapshot(badHash), "runtime validator accepted a bad projection hash");
+const reservedStatusColors = new Set(["255,209,102", "52,255,136", "113,246,188"]);
+for (const [lens, palette] of Object.entries(GALAXY_PUBLIC_PALETTES)) {
+  assert(palette.length === 4, `${lens} public palette cardinality drifted`);
+  for (const color of palette) {
+    assert(!reservedStatusColors.has(color.join(",")), `${lens} palette reused a reserved Twitch or PM-only status color`);
+    assert(color.every((channel) => Number.isSafeInteger(channel) && channel >= 0 && channel <= 255), `${lens} palette channel invalid`);
+  }
+}
 
-const badGraphBinding = clone(facts);
-badGraphBinding.galaxy.sourceGraphHash = "1".repeat(64);
-badGraphBinding.galaxy.projectionHash = projectionHash(badGraphBinding.galaxy);
-assert(!await validSnapshot(badGraphBinding), "runtime validator accepted a mismatched source graph hash");
-
-const badDivisionOrder = clone(facts);
-badDivisionOrder.galaxy.divisions.reverse();
-badDivisionOrder.galaxy.projectionHash = projectionHash(badDivisionOrder.galaxy);
-assert(!await validSnapshot(badDivisionOrder), "runtime validator accepted reversed division identity");
-
-const badFamilyOrder = clone(facts);
-badFamilyOrder.galaxy.divisions[0].families.reverse();
-badFamilyOrder.galaxy.projectionHash = projectionHash(badFamilyOrder.galaxy);
-assert(!await validSnapshot(badFamilyOrder), "runtime validator accepted reversed family identity");
-
-const badCardinality = clone(facts);
-badCardinality.hiveAi.neurons = 600;
-badCardinality.hiveAi.trainableNeurons = 408;
-badCardinality.hiveAi.divisions = 15;
-badCardinality.hiveAi.families = 60;
-badCardinality.hiveAi.notPurposeMastered = 44;
-badCardinality.galaxy.representedNeurons = 600;
-badCardinality.galaxy.divisions.pop();
-badCardinality.galaxy.projectionHash = projectionHash(badCardinality.galaxy);
-assert(!await validSnapshot(badCardinality), "runtime validator accepted a self-consistent non-640 projection");
-
-const badCapturedAt = clone(facts);
-badCapturedAt.capturedAt = "not-a-time";
-assert(!await validSnapshot(badCapturedAt), "runtime validator accepted a malformed capture timestamp");
-
-const futureCapturedAt = clone(facts);
-futureCapturedAt.capturedAt = "2999-01-01T00:00:00Z";
-assert(!await validSnapshot(futureCapturedAt), "runtime validator accepted a far-future capture timestamp");
+await rejects("a downgraded snapshot schema", (candidate) => { candidate.schema = "hive.ecosystem.public-source-snapshot.v2"; });
+await rejects("a mismatched generator version", (candidate) => { candidate.galaxy.generatorVersion = "999"; });
+await rejects("a mismatched graph schema", (candidate) => { candidate.hiveAi.graphSchema = "hiveai.living_anatomy_graph.v999"; });
+await rejects("a zero source fingerprint", (candidate) => { candidate.hiveAi.sourceFingerprint = "0".repeat(64); });
+await rejects("a private-evidence boundary escalation", (candidate) => { candidate.boundaries.privateEvidencePublished = true; });
+await rejects("an extra top-level private status object", (candidate) => { candidate.perNeuronPrivateStatus = { N001: "live" }; });
+await rejects("an extra Hive-AI field", (candidate) => { candidate.hiveAi.privateEvidence = ["secret"]; });
+await rejects("a mismatched renderer contract hash", (candidate) => { candidate.galaxy.geometry.contractHash = "1".repeat(64); });
+await rejects("a mismatched source graph binding", (candidate) => { candidate.galaxy.sourceGraphHash = "1".repeat(64); });
+await rejects("reversed authored division identity", (candidate) => { candidate.galaxy.geometry.divisions.reverse(); }, true);
+await rejects("reordered authored family identity", (candidate) => { candidate.galaxy.geometry.families.reverse(); }, true);
+await rejects("a forged authored x coordinate with every advertised hash recomputed", (candidate) => { candidate.galaxy.geometry.neurons[0][3] += 1; }, true);
+await rejects("a forged semantic depth with every advertised hash recomputed", (candidate) => { candidate.galaxy.geometry.families[0][5] += 1; }, true);
+await rejects("a zero-size authored neuron with every advertised hash recomputed", (candidate) => { candidate.galaxy.geometry.neurons[0][6] = 0; }, true);
+await rejects("an out-of-range authored coordinate with every advertised hash recomputed", (candidate) => { candidate.galaxy.geometry.divisions[0][2] = 1_000_001; }, true);
+await rejects("a wrong neuron taxonomy with every advertised hash recomputed", (candidate) => { candidate.galaxy.geometry.neurons[0][1] = "B"; }, true);
+await rejects("a duplicated authored tuple body with every advertised hash recomputed", (candidate) => { candidate.galaxy.geometry.neurons[1].splice(3, 4, ...candidate.galaxy.geometry.neurons[0].slice(3)); }, true);
+await rejects("an extended private neuron tuple", (candidate) => { candidate.galaxy.geometry.neurons[0].push("runtime-live"); }, true);
+await rejects("a duplicate topology neuron", (candidate) => { candidate.galaxy.divisions[0].families[0].neuronIds[0] = "N002"; });
+await rejects("a malformed capture timestamp", (candidate) => { candidate.capturedAt = "not-a-time"; });
+await rejects("a far-future capture timestamp", (candidate) => { candidate.capturedAt = "2999-01-01T00:00:00Z"; });
+const badProjectionHash = clone(facts);
+badProjectionHash.galaxy.projectionHash = "0".repeat(64);
+rehashSnapshot(badProjectionHash);
+assert(!await validSnapshot(badProjectionHash), "runtime validator accepted a bad galaxy projection hash");
+const badSnapshotHash = clone(facts);
+badSnapshotHash.snapshotHash = "0".repeat(64);
+assert(!await validSnapshot(badSnapshotHash), "runtime validator accepted a bad snapshot hash");
 
 const touchIdle = galaxyPointerPolicy("touch", false);
 const touchEngaged = galaxyPointerPolicy("touch", true);
@@ -86,62 +133,266 @@ assert(mouseIdle.engage && mouseIdle.focusCanvas && mouseIdle.orbitAllowed, "mou
 const normalRender = galaxyRenderState({ hasContext: true, hasResizeObserver: true, forcedColorsActive: false });
 const contrastRender = galaxyRenderState({ hasContext: true, hasResizeObserver: true, forcedColorsActive: true });
 const missingCanvas = galaxyRenderState({ hasContext: false, hasResizeObserver: true, forcedColorsActive: false });
+const lostContext = galaxyRenderState({ hasContext: true, hasResizeObserver: true, forcedColorsActive: false, contextLost: true });
 assert(normalRender.renderAvailable && normalRender.reasonCode === "READY", "normal render state rejected");
 assert(!contrastRender.renderAvailable && contrastRender.reasonCode === "FORCED_COLORS", "forced-colors fallback state rejected");
 assert(!missingCanvas.baseAvailable && missingCanvas.reasonCode === "CANVAS_UNAVAILABLE", "missing-canvas fallback state rejected");
+assert(!lostContext.baseAvailable && lostContext.reasonCode === "CONTEXT_LOST", "lost context fallback state rejected");
 
 assert(snapshotResponseCanCommit({ requestGeneration: 7, currentGeneration: 7 }), "current snapshot response rejected");
 assert(!snapshotResponseCanCommit({ requestGeneration: 6, currentGeneration: 7 }), "stale snapshot response accepted");
 assert(!snapshotResponseCanCommit({ requestGeneration: 7, currentGeneration: 7, aborted: true }), "aborted snapshot response accepted");
 const freshnessNow = Date.parse("2026-08-04T21:00:00Z");
-assert(snapshotFreshness("2026-08-04T20:50:00Z", freshnessNow).state === "current", "current snapshot marked delayed");
-assert(snapshotFreshness("2026-08-04T20:30:00Z", freshnessNow).state === "delayed", "delayed snapshot marked current");
-assert(snapshotFreshness("2026-08-04T19:00:00Z", freshnessNow).state === "critical", "critical snapshot age hidden");
-assert(snapshotFreshness("not-a-date", freshnessNow).state === "invalid", "invalid snapshot time accepted");
-assert(snapshotFreshness("2999-01-01T00:00:00Z", freshnessNow).state === "invalid", "far-future snapshot marked current");
-assert(snapshotFreshness("2026-08-04T21:04:00Z", freshnessNow).state === "current", "bounded clock skew rejected");
+assert(snapshotFreshness("2026-08-04T20:50:00Z", freshnessNow).state === "recent", "recent source capture marked aged");
+assert(snapshotFreshness("2026-08-04T20:30:00Z", freshnessNow).state === "aged", "aged source capture marked recent");
+assert(snapshotFreshness("2026-08-04T19:00:00Z", freshnessNow).state === "historical", "historical source capture hidden");
+assert(snapshotFreshness("not-a-date", freshnessNow).state === "invalid", "invalid source capture accepted");
+assert(snapshotFreshness("2999-01-01T00:00:00Z", freshnessNow).state === "invalid", "far-future source capture marked recent");
+assert(snapshotFreshness("2026-08-04T21:04:00Z", freshnessNow).state === "recent", "bounded clock skew rejected");
+for (const automaticBridgeEnabled of [true, false]) {
+  const recent = sourceSnapshotPresentation("2026-08-04T20:50:00Z", automaticBridgeEnabled, freshnessNow);
+  const aged = sourceSnapshotPresentation("2026-08-04T20:40:00Z", automaticBridgeEnabled, freshnessNow);
+  const historical = sourceSnapshotPresentation("2026-08-04T19:00:00Z", automaticBridgeEnabled, freshnessNow);
+  assert(recent.freshness === "recent" && aged.freshness === "aged" && historical.freshness === "historical", `source age was coupled to bridge=${automaticBridgeEnabled}`);
+  const expectedBridge = automaticBridgeEnabled ? "active" : "inactive";
+  assert([recent, aged, historical].every((value) => value.bridge === expectedBridge && value.label.endsWith(`bridge ${expectedBridge}`)), `bridge=${automaticBridgeEnabled} was not reported separately`);
+}
+
+const handoffCommit = "a".repeat(40);
+const handoffGraph = "b".repeat(64);
+const handoffMatrix = [
+  {
+    input: { presentation: "1", lens: "mastery", node: "division:A", level: "division" },
+    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=mastery&node=division%3AA&level=district`,
+  },
+  {
+    input: { presentation: "0", lens: "artifact", node: "neuron:N640", level: "neuron" },
+    expected: `http://127.0.0.1:8791/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=build&node=N640&level=neuron`,
+  },
+  {
+    input: { presentation: "1", lens: "evidence", node: "family:P4", level: "family" },
+    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=evidence&node=family%3AP4&level=family`,
+  },
+  {
+    input: { presentation: "0", lens: "runtime", node: "N001", level: "interior" },
+    expected: `http://127.0.0.1:8791/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=runtime&node=N001&level=interior`,
+  },
+  {
+    input: { presentation: "1", lens: "product", node: "", level: "body" },
+    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=product&node=&level=body`,
+  },
+];
+for (const row of handoffMatrix) {
+  const actual = buildPublicHandoffUrl({ ...row.input, sourceCommit: handoffCommit, graphHash: handoffGraph });
+  assert(actual === row.expected, `canonical handoff URL drifted: ${actual}`);
+  const keys = [...new URL(actual).searchParams.keys()];
+  assert(keys.join(",") === "presentation,publicContextVersion,sourceCommit,graphHash,lens,node,level", "handoff query allowlist/order drifted");
+}
+assert(buildPublicHandoffUrl({ ...handoffMatrix[0].input, sourceCommit: "main", graphHash: handoffGraph }) === null, "unbound source handoff was emitted");
+
+const directorState = {
+  lens: "evidence", activeDivision: 7, activeFamily: 29, activeNeuron: 298,
+  rotationX: -0.22, rotationY: 1.7, zoom: 2.1, panX: 24, panY: -18,
+  targetRotationX: -0.18, targetRotationY: 1.8, targetZoom: 2.2, targetPanX: 26, targetPanY: -16,
+};
+for (const route of ["stop", "pointer-interrupt", "close", "motion-pause", "escape"]) {
+  assert(JSON.stringify(exactGalaxyDirectorState(structuredClone(directorState))) === JSON.stringify(directorState), `${route} could not restore exact Director state`);
+}
+
+const overlayViewports = [
+  [1920, 1080], [1440, 900], [1366, 768], [1024, 768], [390, 844],
+];
+let overlayCases = 0;
+for (const [physicalWidth, physicalHeight] of overlayViewports) {
+  for (const browserZoom of [1, 1.25, 2]) {
+    const boxes = Object.entries(galaxyOverlayBoxes(physicalWidth / browserZoom, physicalHeight / browserZoom));
+    for (let left = 0; left < boxes.length; left += 1) {
+      for (let right = left + 1; right < boxes.length; right += 1) {
+        assert(!rectanglesIntersect(boxes[left][1], boxes[right][1], GALAXY_OVERLAY_GAP), `${physicalWidth}x${physicalHeight}@${browserZoom}: ${boxes[left][0]} collided with ${boxes[right][0]}`);
+      }
+    }
+    overlayCases += 1;
+  }
+}
 
 const occupied = [];
 const firstLabel = placeCanvasLabel(80, 18, -100, -100, 320, 180, occupied, true);
 const secondLabel = placeCanvasLabel(80, 18, -100, -100, 320, 180, occupied, true);
 assert(firstLabel?.x >= 5 && firstLabel?.y >= 5, "label placement escaped canvas bounds");
-assert(secondLabel && (secondLabel.x !== firstLabel.x || secondLabel.y !== firstLabel.y), "priority labels overlap instead of searching alternatives");
+assert(secondLabel && !rectanglesIntersect(firstLabel, secondLabel, 4), "priority labels overlap instead of searching alternatives");
 assert(placeCanvasLabel(80, 18, 20, 20, 320, 180, [{ x: 0, y: 0, width: 320, height: 180 }], true) === null, "exhausted label placement did not fail closed");
 
-const oneDivision = [{ x: 0, y: 0, z: 0, perspective: 1, divisionIndex: 0 }];
-const masteryProfile = GALAXY_LENS_PROFILES.mastery;
-const normalDivisionRadius = galaxyDivisionVisualRadius(oneDivision[0], 1, masteryProfile, false);
-const selectedDivisionRadius = galaxyDivisionVisualRadius(oneDivision[0], 1, masteryProfile, true);
-assert(normalDivisionRadius === 34 && selectedDivisionRadius === 48, "shared division visual radius drifted");
-const normalHaloInside = selectGalaxyHit({
-  pointer: { x: normalDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery",
-  projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [],
-});
-const normalHaloOutside = selectGalaxyHit({
-  pointer: { x: normalDivisionRadius + 0.1, y: 0 }, zoom: 1, lens: "mastery",
-  projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [],
-});
-const selectedHaloInside = selectGalaxyHit({
-  pointer: { x: selectedDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery",
-  projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0,
-});
-const selectedHaloOutside = selectGalaxyHit({
-  pointer: { x: selectedDivisionRadius + 0.1, y: 0 }, zoom: 1, lens: "mastery",
-  projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0,
-});
-assert(normalHaloInside.divisionIndex === 0 && normalHaloOutside.divisionIndex === -1, "normal division hit radius diverged from the rendered halo");
-assert(selectedHaloInside.divisionIndex === 0 && selectedHaloOutside.divisionIndex === -1, "selected division hit radius diverged from the rendered halo");
-const masteryHaloHit = selectGalaxyHit({
-  pointer: { x: 35, y: 0 }, zoom: 1, lens: "mastery",
-  projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [],
-});
-const productHaloHit = selectGalaxyHit({
-  pointer: { x: 35, y: 0 }, zoom: 1, lens: "product",
-  projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [],
-});
-assert(masteryHaloHit.divisionIndex === -1 && productHaloHit.divisionIndex === 0, "lens-scaled division hit radius is not aligned with its rendered halo");
+assert(adaptiveGalaxyDpr({ devicePixelRatio: 3, width: 390, height: 600 }) === 3, "small high-DPI atlas was needlessly blurred");
+assert(adaptiveGalaxyDpr({ devicePixelRatio: 2, width: 1000, height: 800 }) === 2, "2x desktop atlas was needlessly blurred");
+assert(adaptiveGalaxyDpr({ devicePixelRatio: 3, width: 3840, height: 2160 }) === 1, "4K atlas exceeded the bounded pixel budget");
 
-const geometry = buildGalaxyGeometry(facts.galaxy.divisions);
+const zoomInput = { zoom: 1, panX: 24, panY: -12, pointerX: 740, pointerY: 420, width: 1000, height: 700, factor: 1.6 };
+const zoomed = galaxyZoomAtPointer(zoomInput);
+const beforeX = zoomInput.pointerX - zoomInput.width / 2 - zoomInput.panX;
+const beforeY = zoomInput.pointerY - zoomInput.height / 2 - zoomInput.panY;
+assert(Math.abs(zoomed.panX + beforeX * (zoomed.zoom / zoomInput.zoom) - (zoomInput.pointerX - zoomInput.width / 2)) < 1e-9, "pointer-centered zoom drifted horizontally");
+assert(Math.abs(zoomed.panY + beforeY * (zoomed.zoom / zoomInput.zoom) - (zoomInput.pointerY - zoomInput.height / 2)) < 1e-9, "pointer-centered zoom drifted vertically");
+const gestureBefore = galaxyGestureMetrics([{ x: 100, y: 100 }, { x: 200, y: 100 }]);
+const gestureAfter = galaxyGestureMetrics([{ x: 90, y: 110 }, { x: 230, y: 110 }]);
+const gestureCamera = galaxyGestureCamera({ previous: gestureBefore, current: gestureAfter, zoom: 1, width: 400, height: 300 });
+assert(Math.abs(gestureCamera.zoom - 1.4) < 1e-9 && Number.isFinite(gestureCamera.panX) && Number.isFinite(gestureCamera.panY), "pinch centroid/span camera update drifted");
+
+const depthRows = depthSortGalaxyPoints([{ id: "b", z: 1 }, { id: "a", z: -1 }, { id: "c", z: 1 }]);
+assert(depthRows.map((row) => row.id).join("") === "abc", "stable authored depth sort drifted");
+
+const geometry = buildGalaxyGeometry(facts.galaxy);
+assert(geometry.divisionGeometry.length === 16 && geometry.familyGeometry.length === 64 && geometry.neurons.length === 640, "authored renderer cardinality drifted");
+for (const [index, point] of geometry.divisionGeometry.entries()) {
+  assert(JSON.stringify(point.authored) === JSON.stringify(facts.galaxy.geometry.divisions[index].slice(-4)), `division ${index} lost its authored tuple`);
+}
+for (const [index, point] of geometry.familyGeometry.entries()) {
+  assert(JSON.stringify(point.authored) === JSON.stringify(facts.galaxy.geometry.families[index].slice(-4)), `family ${index} lost its authored tuple`);
+}
+for (const [index, point] of geometry.neurons.entries()) {
+  assert(point.id === `N${String(index + 1).padStart(3, "0")}`, `neuron ${index} identity drifted`);
+  assert(JSON.stringify(point.authored) === JSON.stringify(facts.galaxy.geometry.neurons[index].slice(-4)), `neuron ${index} lost its authored tuple`);
+}
+
+const projectCanonicalScene = ({ lens = "mastery", ...camera }) => ({
+  lens,
+  zoom: camera.zoom,
+  projectedDivisions: geometry.divisionGeometry.map((point) => projectGalaxyPoint(point, camera)),
+  projectedFamilies: geometry.familyGeometry.map((point) => projectGalaxyPoint(point, camera)),
+  projectedNeurons: geometry.neurons.map((point) => projectGalaxyPoint(point, camera)),
+});
+
+const assertCanonicalCenterHit = (tier, index, scene, label) => {
+  const projected = tier === "division"
+    ? scene.projectedDivisions[index]
+    : tier === "family"
+      ? scene.projectedFamilies[index]
+      : scene.projectedNeurons[index];
+  const hit = selectGalaxyHit({
+    pointer: { x: projected.x, y: projected.y },
+    zoom: scene.zoom,
+    lens: scene.lens,
+    projectedDivisions: scene.projectedDivisions,
+    projectedFamilies: scene.projectedFamilies,
+    projectedNeurons: scene.projectedNeurons,
+  });
+  if (tier === "division") {
+    const expectedCode = facts.galaxy.geometry.divisions[index][1];
+    assert(
+      hit.divisionIndex === index
+        && hit.familyIndex === -1
+        && hit.neuronIndex === -1
+        && geometry.divisionGeometry[hit.divisionIndex]?.code === expectedCode,
+      `${label}: division ${expectedCode} center resolved to the wrong canonical identity`,
+    );
+    return;
+  }
+  if (tier === "family") {
+    const tuple = facts.galaxy.geometry.families[index];
+    const selectedFamily = geometry.familyGeometry[hit.familyIndex];
+    const selectedDivisionCode = facts.galaxy.divisions[hit.divisionIndex]?.code;
+    assert(
+      hit.familyIndex === index
+        && hit.neuronIndex === -1
+        && hit.divisionIndex === projected.divisionIndex
+        && selectedFamily?.code === tuple[1]
+        && selectedDivisionCode === tuple[2],
+      `${label}: family ${tuple[1]} center resolved to the wrong canonical identity or parent`,
+    );
+    return;
+  }
+  const tuple = facts.galaxy.geometry.neurons[index];
+  const selectedNeuron = geometry.neurons[hit.neuronIndex];
+  const selectedFamilyCode = geometry.familyGeometry[hit.familyIndex]?.code;
+  const selectedDivisionCode = facts.galaxy.divisions[hit.divisionIndex]?.code;
+  assert(
+    hit.neuronIndex === index
+      && hit.familyIndex === projected.familyGeometryIndex
+      && hit.divisionIndex === projected.divisionIndex
+      && selectedNeuron?.id === tuple[0]
+      && selectedFamilyCode === tuple[2]
+      && selectedDivisionCode === tuple[1],
+    `${label}: neuron ${tuple[0]} center resolved to the wrong canonical identity or parents`,
+  );
+};
+
+const exhaustiveCamera = {
+  rotationX: -0.11,
+  rotationY: -0.37,
+  width: 1440,
+  height: 900,
+  panX: 13,
+  panY: -9,
+};
+const exhaustiveTiers = [
+  { tier: "division", zoom: 0.82, count: geometry.divisionGeometry.length },
+  { tier: "family", zoom: 1.28, count: geometry.familyGeometry.length },
+  { tier: "neuron", zoom: 2.15, count: geometry.neurons.length },
+];
+let exhaustiveCenterHits = 0;
+for (const { tier, zoom, count } of exhaustiveTiers) {
+  const scene = projectCanonicalScene({ ...exhaustiveCamera, zoom });
+  assert(
+    scene.projectedDivisions.length === 16
+      && scene.projectedFamilies.length === 64
+      && scene.projectedNeurons.length === 640,
+    `${tier}: complete canonical projection was not retained for hit testing`,
+  );
+  for (let index = 0; index < count; index += 1) {
+    assertCanonicalCenterHit(tier, index, scene, `exhaustive ${tier}`);
+    exhaustiveCenterHits += 1;
+  }
+}
+assert(exhaustiveCenterHits === 720, "integrated exhaustive 16/64/640 center-hit coverage drifted");
+
+const representativeCameras = [
+  { name: "desktop", width: 1920, height: 1080, rotationX: -0.08, rotationY: -0.32, panX: 8, panY: -5, targets: [0, 0, 0] },
+  { name: "tablet", width: 1024, height: 768, rotationX: 0.17, rotationY: 0.61, panX: -21, panY: 14, targets: [8, 32, 320] },
+  { name: "mobile", width: 390, height: 844, rotationX: -0.24, rotationY: 1.07, panX: 19, panY: -27, targets: [15, 63, 639] },
+];
+let representativeCenterHits = 0;
+for (const { name, targets, ...camera } of representativeCameras) {
+  for (const [{ tier, zoom }, index] of exhaustiveTiers.map((value, tierIndex) => [value, targets[tierIndex]])) {
+    const scene = projectCanonicalScene({ ...camera, zoom });
+    assertCanonicalCenterHit(tier, index, scene, `${name}/${zoom}`);
+    representativeCenterHits += 1;
+  }
+}
+assert(representativeCenterHits === 9, "representative viewport and camera center-hit coverage drifted");
+
+const overlapBackIndex = 1;
+const overlapFrontIndex = 638;
+const overlapScene = projectCanonicalScene({
+  rotationX: 0.19,
+  rotationY: -0.71,
+  zoom: 2.2,
+  width: 1366,
+  height: 768,
+  panX: -12,
+  panY: 17,
+});
+const overlapAnchor = overlapScene.projectedNeurons[overlapBackIndex];
+overlapScene.projectedNeurons = overlapScene.projectedNeurons.map((point, index) => {
+  if (index === overlapBackIndex) return { ...point, x: overlapAnchor.x, y: overlapAnchor.y, z: -2 };
+  if (index === overlapFrontIndex) return { ...point, x: overlapAnchor.x, y: overlapAnchor.y, z: 2 };
+  return point;
+});
+const depthHit = selectGalaxyHit({
+  pointer: { x: overlapAnchor.x, y: overlapAnchor.y },
+  zoom: overlapScene.zoom,
+  lens: overlapScene.lens,
+  projectedDivisions: overlapScene.projectedDivisions,
+  projectedFamilies: overlapScene.projectedFamilies,
+  projectedNeurons: overlapScene.projectedNeurons,
+});
+const depthNeuron = geometry.neurons[overlapFrontIndex];
+assert(
+  depthHit.neuronIndex === overlapFrontIndex
+    && depthHit.divisionIndex === depthNeuron.divisionIndex
+    && depthHit.familyIndex === depthNeuron.familyGeometryIndex
+    && geometry.neurons[depthHit.neuronIndex]?.id === depthNeuron.id,
+  "complete-scene depth overlap did not select the front-most canonical neuron and parents",
+);
+
 const preservedNeuron = resolveGalaxySelection({
   divisions: facts.galaxy.divisions,
   familyGeometry: geometry.familyGeometry,
@@ -153,74 +404,38 @@ const preservedNeuron = resolveGalaxySelection({
 });
 assert(geometry.neurons[preservedNeuron.activeNeuron]?.id === "N640", "neuron selection identity was not preserved");
 assert(preservedNeuron.activeDivision === 15 && preservedNeuron.activeFamily === 63, "preserved neuron did not restore its parent focus");
-const preservedFamily = resolveGalaxySelection({
-  divisions: facts.galaxy.divisions,
-  familyGeometry: geometry.familyGeometry,
-  neurons: geometry.neurons,
-  neuronIndexById: geometry.neuronIndexById,
-  previousDivisionCode: "D",
-  previousFamilyCode: "D2",
-  previousNeuronId: null,
-});
-assert(preservedFamily.activeDivision === 3 && preservedFamily.activeFamily === 13, "family selection identity was not preserved");
+
 const viewports = [
   { name: "desktop", width: 1000, height: 800 },
+  { name: "tablet", width: 768, height: 720 },
   { name: "mobile", width: 390, height: 544 },
 ];
-let checkedCenters = 0;
-
+let finiteProjections = 0;
 for (const viewport of viewports) {
-  for (const lens of Object.keys(GALAXY_LENS_PROFILES)) {
-    const project = (points, zoom) => points.map((point) => projectGalaxyPoint(point, {
-      rotationX: -0.08,
-      rotationY: -0.32,
-      zoom,
-      width: viewport.width,
-      height: viewport.height,
-    }));
-
-    const projectedDivisions = project(geometry.divisionGeometry, 0.9);
-    for (const [index, point] of projectedDivisions.entries()) {
-      const hit = selectGalaxyHit({
-        pointer: point,
-        zoom: 0.9,
-        lens,
-        projectedDivisions,
-        projectedFamilies: [],
-        projectedNeurons: [],
+  for (const zoom of [0.68, 1.08, 2.15, 3.4]) {
+    for (const point of [...geometry.divisionGeometry, ...geometry.familyGeometry, ...geometry.neurons]) {
+      const projected = projectGalaxyPoint(point, {
+        rotationX: -0.08,
+        rotationY: -0.32,
+        zoom,
+        width: viewport.width,
+        height: viewport.height,
+        panX: 8,
+        panY: -5,
       });
-      assert(hit.divisionIndex === index, `${viewport.name}/${lens}: division center ${index} resolved ${hit.divisionIndex}`);
-      checkedCenters += 1;
-    }
-
-    const projectedFamilies = project(geometry.familyGeometry, 1.5);
-    for (const [index, point] of projectedFamilies.entries()) {
-      const hit = selectGalaxyHit({
-        pointer: point,
-        zoom: 1.5,
-        lens,
-        projectedDivisions: project(geometry.divisionGeometry, 1.5),
-        projectedFamilies,
-        projectedNeurons: [],
-      });
-      assert(hit.familyIndex === index, `${viewport.name}/${lens}: family center ${index} resolved ${hit.familyIndex}`);
-      checkedCenters += 1;
-    }
-
-    const projectedNeurons = project(geometry.neurons, 2.15);
-    for (const [index, point] of projectedNeurons.entries()) {
-      const hit = selectGalaxyHit({
-        pointer: point,
-        zoom: 2.15,
-        lens,
-        projectedDivisions: project(geometry.divisionGeometry, 2.15),
-        projectedFamilies: project(geometry.familyGeometry, 2.15),
-        projectedNeurons,
-      });
-      assert(hit.neuronIndex === index, `${viewport.name}/${lens}: neuron ${point.id} resolved ${hit.neuronIndex}`);
-      checkedCenters += 1;
+      assert([projected.x, projected.y, projected.z, projected.perspective].every(Number.isFinite), `${viewport.name}/${zoom}: non-finite authored projection`);
+      finiteProjections += 1;
     }
   }
 }
 
-console.log(`GALAXY_CORE_OK negative_snapshots=7 exact_centers=${checkedCenters} viewports=${viewports.length} lenses=${Object.keys(GALAXY_LENS_PROFILES).length} pointer_policies=3 render_states=3 label_cases=3 refresh_gates=3 freshness_states=6 selection_cases=2`);
+const oneDivision = [{ x: 0, y: 0, z: 0, perspective: 1, divisionIndex: 0 }];
+const masteryProfile = GALAXY_LENS_PROFILES.mastery;
+const normalDivisionRadius = galaxyDivisionVisualRadius(oneDivision[0], 1, masteryProfile, false);
+const selectedDivisionRadius = galaxyDivisionVisualRadius(oneDivision[0], 1, masteryProfile, true);
+const normalHaloInside = selectGalaxyHit({ pointer: { x: normalDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery", projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [] });
+const normalHaloOutside = selectGalaxyHit({ pointer: { x: normalDivisionRadius + 0.1, y: 0 }, zoom: 1, lens: "mastery", projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [] });
+const selectedHaloInside = selectGalaxyHit({ pointer: { x: selectedDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery", projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0 });
+assert(normalHaloInside.divisionIndex === 0 && normalHaloOutside.divisionIndex === -1 && selectedHaloInside.divisionIndex === 0, "division hit radius diverged from its rendered halo");
+
+console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} overlay_cases=${overlayCases} pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6`);

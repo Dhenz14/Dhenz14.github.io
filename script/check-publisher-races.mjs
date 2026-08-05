@@ -4,10 +4,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  GALAXY_CANONICAL_GEOMETRY_HASH,
+  GALAXY_RENDERER_CONTRACT_HASH,
+  GALAXY_SNAPSHOT_VERSION,
+  validSnapshot,
+} from "../hub-assets/galaxy-core.mjs";
 import { publisherCandidateDecision } from "./publisher-candidate-policy.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const workflow = fs.readFileSync(path.join(root, ".github/workflows/sync-living-galaxy.yml"), "utf8");
+const facts = JSON.parse(fs.readFileSync(path.join(root, "hub-assets/hub-facts.json"), "utf8"));
 const hash = (character) => character.repeat(64);
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -37,5 +44,13 @@ assert(!workflow.includes("git rebase"), "publisher may mutate an admitted candi
 assert(/committed_candidate_sha[\s\S]*candidate_sha/.test(workflow), "committed candidate bytes are not reverified");
 assert(/changed_paths[\s\S]*hub-assets\/hub-facts\.json/.test(workflow), "rebuilt commit lacks an exact path proof");
 assert(/pages\/builds\/latest[\s\S]*pages\/builds/.test(workflow), "failed Pages deployment cannot recover independently");
+assert(workflow.includes("/hiveai/static/living-anatomy/src/galaxy-contract.json"), "sparse source checkout omits the canonical renderer contract");
+assert(workflow.includes("node script/check-galaxy-core.mjs"), "publisher does not revalidate authored geometry on current Pages main");
+assert(facts.schema === "hive.ecosystem.public-source-snapshot.v3"
+  && facts.snapshotVersion === GALAXY_SNAPSHOT_VERSION
+  && /^[a-f0-9]{64}$/.test(facts.snapshotHash || ""), "publisher candidate is not a sealed v3 snapshot");
+assert(facts.galaxy?.geometry?.contractHash === GALAXY_RENDERER_CONTRACT_HASH, "publisher candidate is not bound to the canonical renderer contract");
+assert(facts.galaxy?.geometry?.geometryHash === GALAXY_CANONICAL_GEOMETRY_HASH, "publisher candidate is not bound to the reviewed authored geometry digest");
+assert(await validSnapshot(facts), "publisher candidate fails the strict runtime validator");
 
-console.log("PUBLISHER_RACES_OK disjoint=rebuild_exact identical=already_landed conflict=winner_preserved deployment=retryable");
+console.log("PUBLISHER_RACES_OK disjoint=rebuild_exact identical=already_landed conflict=winner_preserved sealed_v3=true geometry_contract=true deployment=retryable");

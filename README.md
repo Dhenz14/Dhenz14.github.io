@@ -10,12 +10,19 @@ connecting:
 - **NeuraChain, Hive IDE, Second Brain, and Compute Pool** — distinct organs in
   the shared system, with their public/private boundaries stated in the UI.
 
-The public Living Anatomy galaxy renders all 640 neuron identities in stable
-16-division / 64-family geometry. Its structure comes only from
-`hub-assets/hub-facts.json`; animation never invents liveness. Aggregate Twitch
-and PM-only counts are source facts, while gold status, evidence, blockers,
-urgency, work lanes, missions, and runtime state remain on the authenticated
-local map.
+The public Living Anatomy galaxy renders all 640 neuron identities in the exact
+authored 16-division / 64-family coordinates projected by Hive-AI. The shared
+`hive.galaxy.renderer-contract.v1` contract binds those coordinates to the graph
+hash and source commit inside `hub-assets/hub-facts.json`; there is no synthetic
+geometry fallback. Aggregate Twitch and PM-only counts are source facts, while
+gold status, evidence, blockers, urgency, work lanes, missions, and runtime
+state remain on the authenticated local map.
+
+Pages retains one progressively enhanced Canvas2D renderer. It shares geometry,
+camera, event, status-language, and fallback semantics with the local renderer
+without copying the local Three.js bundle. Full-atlas and Director interactions
+are zero-effect. Local links are explicit navigation and never probe or start a
+loopback service.
 
 The public Mission Control flightdeck presents the full command story—See,
 Understand, Select, Dispatch, Verify, Watch—against an echo of that same atlas.
@@ -86,9 +93,10 @@ future seconds-level dispatch design is documented in
 Cloud runs remain explicitly gated by the `LIVING_GALAXY_CLOUD_SYNC_ENABLED`
 repository variable. Until a dedicated read-only cloud key is authorized, an
 authenticated operator can run the same compiler in local publisher mode with
-`GALAXY_AUTOMATIC_BRIDGE=true GALAXY_BRIDGE_MODE=local`. The public badge turns
-amber after 15 minutes without a validated refresh and escalates after one hour;
-it never converts delayed truth into zeroes.
+`GALAXY_AUTOMATIC_BRIDGE=true GALAXY_BRIDGE_MODE=local`. The public badge labels
+the represented capture aged after 15 minutes and historical after one hour;
+that is source age, not publisher delay or local-runtime health. It never
+converts unavailable or older truth into zeroes.
 
 `HivePoA/` remains generated output. Publish it with the canonical HivePoA
 workflow; do not hand-edit those mirrored bytes. The publisher intentionally

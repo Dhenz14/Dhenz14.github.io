@@ -24,7 +24,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="/hub-assets/hub.css?v=stark-command-v9">
+    <link rel="stylesheet" href="/hub-assets/hub.css?v=galaxy-stark-v10">
     <title>Hive Ecosystem — The living intelligence galaxy</title>
     <script type="application/ld+json">
       {
@@ -74,28 +74,41 @@
           <p class="eyebrow"><span>Living intelligence ecosystem</span><span>Source-bound atlas</span></p>
           <h1 id="hero-title">One organism.<br><span>Every system in orbit.</span></h1>
           <p class="hero-lede">
-            Hive-AI is the reasoning brain. HivePoA is the proof and storage plane. NeuraChain carries durable coordination;
-            Hive IDE puts the local system under one roof: editor, chat, Hive-AI, and the internal HivePoA/IPFS Service Center. Download the tester build, enter Living Anatomy on a running machine, or explore the public-safe galaxy without pretending a static page is the runtime.
+            Evidence enters. Hive-AI reasons. HivePoA verifies. The organism changes only after proof lands.
+            Explore the public-safe authored body here, then carry the exact source context into your authenticated local runtime.
           </p>
+          <ol class="hero-causal-story" aria-label="How the organism changes">
+            <li><span>01</span><strong>Evidence enters</strong><small>Source-bound inputs</small></li>
+            <li><span>02</span><strong>Hive-AI reasons</strong><small>Purpose + routes</small></li>
+            <li><span>03</span><strong>HivePoA verifies</strong><small>Receipts + proof</small></li>
+            <li><span>04</span><strong>Organism changes</strong><small>Only after landing</small></li>
+          </ol>
           <div class="hero-actions" aria-label="Primary actions">
-            <a class="button button-primary" href="#ide-download">
-              <span>Download Hive IDE</span>
-              <span aria-hidden="true">↓</span>
+            <a class="button button-primary hero-enter" data-hero-atlas-cta data-galaxy-open href="#galaxy">
+              <span>Enter the living galaxy</span>
+              <small>Full 640-neuron atlas</small>
             </a>
             <a class="button button-quiet" data-hero-body-cta href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">
-              <span>Enter Living Anatomy</span>
-              <span aria-hidden="true">↗</span>
+              <span>Open local body</span>
+              <small>Runtime not checked ↗</small>
             </a>
-            <a class="button button-quiet" data-hero-atlas-cta href="#galaxy">
-              <span>Explore public galaxy</span>
-              <small>640-neuron topology</small>
+            <a class="button button-quiet" href="#ide-download">
+              <span>Get Hive IDE</span>
+              <small>Tester installer ↓</small>
             </a>
             <a class="button button-quiet" href="/HivePoA/tester-network/">
-              <span>Enter tester network</span>
+              <span>Tester network</span>
               <small>Signed release path</small>
             </a>
           </div>
-          <p class="microcopy">Downloads require a click and an exact release feed. Living Anatomy and <a href="http://127.0.0.1:5002/chat" target="_blank" rel="noreferrer">local operator chat ↗</a> open on your machine. GitHub Pages never receives your prompt.</p>
+          <dl class="hero-truth-rail" aria-label="Public truth boundary">
+            <div><dt>Source</dt><dd data-hero-source>verification pending</dd></div>
+            <div><dt>Capture</dt><dd data-hero-freshness>not checked</dd></div>
+            <div><dt>Twitch</dt><dd data-fact="twitches">—</dd></div>
+            <div><dt>PM-only</dt><dd data-fact="pmOnly">—</dd></div>
+            <div><dt>Runtime</dt><dd>not checked</dd></div>
+          </dl>
+          <p class="microcopy">The public page validates aggregate source truth only. Local links never probe or start your machine, and GitHub Pages never receives your prompt.</p>
         </div>
 
         <div class="hero-system" data-motion-scene aria-label="Hive-AI and HivePoA system relationship">
@@ -119,14 +132,14 @@
           <div class="satellite-core satellite-pool"><span>Compute</span><strong>Pool</strong></div>
           <div class="bridge bridge-a" aria-hidden="true"><span></span></div>
           <div class="bridge bridge-b" aria-hidden="true"><span></span></div>
-          <div class="stage-label stage-label-a"><span></span>Evidence in</div>
-          <div class="stage-label stage-label-b"><span></span>Receipts out</div>
+          <div class="stage-label stage-label-a"><span></span>Evidence enters</div>
+          <div class="stage-label stage-label-b"><span></span>Organism changes</div>
           <div class="stage-readout">
-            <span>Discovery</span>
-            <strong>Pages</strong>
+            <span>Reason</span>
+            <strong>Hive-AI</strong>
             <i aria-hidden="true"></i>
-            <span>Transport</span>
-            <strong>GitHub + IPFS</strong>
+            <span>Verify</span>
+            <strong>HivePoA</strong>
           </div>
         </div>
       </section>
@@ -324,7 +337,7 @@
           <header class="section-heading compact" data-reveal>
             <p class="eyebrow">Living Anatomy / public galaxy</p>
             <h2 id="anatomy-title">Fall into the 640-neuron body.</h2>
-            <p>Drag to orbit. Scroll or use the controls to cross from division to family to neuron. Hover a constellation and its purpose resolves in the holographic sidecar—without moving the authored geometry.</p>
+            <p>Open the full atlas, then orbit, pan, pinch, or pointer-zoom through exact authored division, family, and neuron coordinates. Every public point remains neutral; the authenticated local body owns lifecycle truth.</p>
           </header>
 
           <div class="galaxy-commandbar">
@@ -340,22 +353,35 @@
               <button type="button" data-galaxy-zoom="out" aria-label="Zoom out" aria-disabled="true" disabled>−</button>
               <button type="button" data-galaxy-reset aria-disabled="true" disabled>Reset view</button>
               <button type="button" data-galaxy-zoom="in" aria-label="Zoom in" aria-disabled="true" disabled>+</button>
+              <button type="button" data-galaxy-director aria-pressed="false" aria-disabled="true" disabled>Run 24s director</button>
+              <button type="button" data-galaxy-fullscreen aria-haspopup="dialog" aria-disabled="true" disabled>Full atlas</button>
             </div>
           </div>
 
-          <div class="anatomy-workbench galaxy-workbench" data-motion-scene>
+          <div class="anatomy-workbench galaxy-workbench" data-motion-scene data-galaxy-dialog>
             <div class="anatomy-map galaxy-stage" data-anatomy-map data-lens-view="mastery">
               <div class="galaxy-atmosphere" aria-hidden="true"><i></i><i></i><i></i></div>
               <div class="galaxy-scanline" aria-hidden="true"></div>
               <div class="map-grid" aria-hidden="true"></div>
-              <canvas class="galaxy-canvas" data-galaxy-canvas tabindex="-1" aria-disabled="true" role="img" aria-label="Interactive public-safe atlas of 640 Hive-AI neurons arranged in 16 stable divisions. Activate Engage controls before wheel zoom; press Escape to restore page scrolling. Arrow keys orbit and plus or minus zoom."></canvas>
+              <canvas class="galaxy-canvas" data-galaxy-canvas tabindex="-1" aria-disabled="true" role="img" aria-label="Interactive public-safe atlas of 640 Hive-AI neurons in exact authored coordinates. Engage controls before wheel zoom; drag to orbit, Shift-drag to pan, pinch around its centroid, Home to reset, and Escape to release controls or exit the full atlas."></canvas>
               <div class="galaxy-reticle" aria-hidden="true"><i></i><i></i></div>
               <div class="galaxy-depth" aria-hidden="true"><span>DIVISION</span><i></i><span>FAMILY</span><i></i><span>NEURON</span></div>
-              <div class="galaxy-hint"><span data-galaxy-hint-state>Engage</span> <b data-galaxy-hint-copy>controls</b> <i></i><span>Drag</span> orbit <i></i><span>Hover</span> identify</div>
+              <div class="galaxy-hint"><span data-galaxy-hint-state>Engage</span> <b data-galaxy-hint-copy>controls</b> <i></i><span>Drag</span> orbit <i></i><span>Shift-drag</span> pan</div>
               <div class="map-readout"><span>Source graph</span><strong data-graph-hash>pending</strong></div>
+              <div class="galaxy-demo-proof" data-galaxy-demo-proof hidden><span>DEMO</span><strong>ZERO EFFECTS</strong></div>
+              <div class="galaxy-director-caption" data-galaxy-director-caption hidden aria-live="polite">
+                <strong data-galaxy-director-step>01 / 06 · Evidence enters</strong>
+                <span data-galaxy-director-copy>A source-bound input reaches the public body. This demonstration dispatches nothing.</span>
+              </div>
+              <div class="galaxy-semantic-fallback" data-galaxy-semantic-fallback hidden role="status">
+                <strong>Semantic atlas active</strong>
+                <span>The canvas is unavailable. Use the division index, family controls, and local handoff panel; no source truth was discarded.</span>
+              </div>
+              <button class="galaxy-exit" type="button" data-galaxy-exit aria-label="Exit full atlas">Exit atlas <span aria-hidden="true">×</span></button>
             </div>
 
             <aside class="lens-inspector galaxy-inspector">
+              <button class="galaxy-modal-director" type="button" data-galaxy-director-modal aria-pressed="false" aria-disabled="true" disabled>Run 24s director</button>
               <div class="inspector-topline"><span data-galaxy-index>Division A / 16</span><span data-lens-code>BODY</span></div>
               <p class="eyebrow" data-galaxy-code>A · ROUTE</p>
               <h3 data-galaxy-title>Route, hold, and activation budget</h3>
@@ -385,9 +411,15 @@
                 <p data-lens-copy>Stable authored geometry reveals the organism by division and family.</p>
               </div>
               <p class="boundary-note"><span aria-hidden="true">!</span><span data-lens-boundary>The public atlas shows topology—not Twitch, runtime, work-lane, mission, training, or promotion truth.</span></p>
-              <div class="galaxy-body-actions" aria-label="Open the local Living Anatomy body">
-                <a class="button button-primary galaxy-local-cta" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer"><span>Enter presentation body</span><small>Gold Twitches · stage mode</small></a>
-                <a class="button button-quiet galaxy-local-cta" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="_blank" rel="noreferrer"><span>Open operator body</span><small>Missions · runtime truth</small></a>
+              <div class="galaxy-handoff" aria-label="Explicit local context handoff">
+                <span>LOCAL HANDOFF · NO PROBE</span>
+                <strong data-galaxy-context-summary>Context unavailable · source not yet bound</strong>
+                <p data-galaxy-context-copy>Context parameters remain unavailable until this browser validates the source snapshot. The plain local routes remain explicit and availability is never assumed.</p>
+                <div class="galaxy-body-actions">
+                  <a class="button button-primary galaxy-local-cta" data-local-context-link data-local-presentation="1" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer"><span>Open in local body</span><small>Runtime not checked ↗</small></a>
+                  <a class="button button-quiet galaxy-local-cta" data-local-context-link data-local-presentation="0" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="_blank" rel="noreferrer"><span>Retry operator handoff</span><small>Runtime not checked ↗</small></a>
+                </div>
+                <small class="galaxy-start-guidance">If unavailable: start Hive IDE, open Hive-AI, then choose Living Anatomy and retry. This page cannot start it for you.</small>
               </div>
             </aside>
           </div>
@@ -404,12 +436,12 @@
                 <strong>Explore the body</strong>
                 <small>640-neuron topology</small>
               </a>
-              <a class="body-surface body-surface-presentation" data-body-surface="presentation" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">
+              <a class="body-surface body-surface-presentation" data-body-surface="presentation" data-local-context-link data-local-presentation="1" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">
                 <span><b>02</b> Presentation</span>
                 <strong>Enter Living Anatomy <i aria-hidden="true">↗</i></strong>
                 <small>Gold Twitches · cinematic body</small>
               </a>
-              <a class="body-surface body-surface-operator" data-body-surface="operator" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="_blank" rel="noreferrer">
+              <a class="body-surface body-surface-operator" data-body-surface="operator" data-local-context-link data-local-presentation="0" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="_blank" rel="noreferrer">
                 <span><b>03</b> Operator</span>
                 <strong>Open command body <i aria-hidden="true">↗</i></strong>
                 <small>Truth · urgency · missions</small>
@@ -681,6 +713,6 @@
     <noscript>
       <div class="noscript-banner">Source freshness, motion controls, and signed-index verification need JavaScript. All navigation remains available; no package or live-source claim is authorized by this fallback.</div>
     </noscript>
-    <script type="module" src="/hub-assets/hub.js?v=stark-command-v9"></script>
+    <script type="module" src="/hub-assets/hub.js?v=galaxy-stark-v10"></script>
   </body>
 </html>

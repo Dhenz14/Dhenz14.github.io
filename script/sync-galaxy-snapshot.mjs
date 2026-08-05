@@ -8,7 +8,11 @@ import { fileURLToPath } from "node:url";
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputPath = path.join(siteRoot, "hub-assets", "hub-facts.json");
-const GENERATOR_VERSION = "2.1.0";
+const GENERATOR_VERSION = "3.0.0";
+const SNAPSHOT_VERSION = "3.0.0";
+const RENDERER_CONTRACT_PATH = "hiveai/static/living-anatomy/src/galaxy-contract.json";
+const RENDERER_CONTRACT_HASH = "698d9c371ebe98b47cffbf10643080cb06ccb2c06267d580349063fb992230ad";
+const CANONICAL_GEOMETRY_HASH = "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314";
 const REQUIRED_PUBLISHER_EVIDENCE_PATHS = Object.freeze([
   "data/neuron_swarm/portable_green_evidence_membership_20260722.json",
   "tests/fixtures/physiology/formal_l3_e01_v2/RATIFY_L3_E01_V2.json",
@@ -34,12 +38,22 @@ from hiveai.living_anatomy.compiler_v2 import (
     strip_pr1_meta,
     validate_bundle,
 )
+from hiveai.living_anatomy.compose import (
+    build_composed_living_anatomy,
+    validate_composed_payload,
+)
+from hiveai.living_anatomy.galaxy_contract import (
+    build_public_geometry_projection,
+    load_renderer_contract,
+)
 
 v1, v2, layout = build_living_anatomy_bundle(root)
+composed = build_composed_living_anatomy(root, include_work=False)
 errors = [
     *validate_living_anatomy_graph(v1),
     *validate_bundle(v1, v2, layout),
     *compatibility_errors(v1, v2),
+    *validate_composed_payload(composed),
 ]
 if errors:
     raise SystemExit("living anatomy validation failed: " + "; ".join(errors[:8]))
@@ -48,6 +62,8 @@ physiology = v1.get("physiology") or {}
 summary = v1.get("summary") or {}
 payload = {
     "graph": strip_pr1_meta(v2),
+    "public_geometry": build_public_geometry_projection(root, composed),
+    "renderer_contract": load_renderer_contract(root),
     "truth_input_commit": (v2.get("_pr1_meta") or {}).get("source_commit"),
     "summary": summary,
     "physiology": {
@@ -89,6 +105,14 @@ function runBytes(command, args) {
 
 function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
 }
 
 function gitBlobSha1(value) {
@@ -224,6 +248,7 @@ function verifyMaterializedSource(repositoryPath, expected = null) {
 for (const repositoryPath of REQUIRED_PUBLISHER_EVIDENCE_PATHS) {
   verifyMaterializedSource(repositoryPath);
 }
+verifyMaterializedSource(RENDERER_CONTRACT_PATH);
 
 const compiled = JSON.parse(run("env", [
   "PYTHONDONTWRITEBYTECODE=1",
@@ -234,6 +259,8 @@ const compiled = JSON.parse(run("env", [
   hiveAiRepo,
 ]));
 const graph = compiled.graph;
+const publicGeometry = compiled.public_geometry;
+const rendererContract = compiled.renderer_contract;
 if (graph?.schema_version !== "hiveai.living_anatomy_graph.v2") {
   fail(`unexpected graph schema: ${graph?.schema_version || "missing"}`);
 }
@@ -245,6 +272,28 @@ if (!Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) {
 }
 if (!Array.isArray(graph.source_manifest) || graph.source_manifest.length < 1) {
   fail("compiled graph has no source manifest");
+}
+if (canonicalJson(rendererContract) !== canonicalJson({
+  schema: "hive.galaxy.renderer-contract.v1",
+  version: "1.0.0",
+  geometrySchema: "hive.galaxy.public-geometry.v1",
+  statusSchema: "hive.galaxy.status-language.v1",
+  cameraSchema: "hive.galaxy.camera.v1",
+  eventSchema: "hive.galaxy.event-semantics.v1",
+  fallbackSchema: "hive.galaxy.progressive-fallback.v1",
+}) || sha256(canonicalJson(rendererContract)) !== RENDERER_CONTRACT_HASH) {
+  fail("renderer contract is not the exact canonical v1 contract");
+}
+if (publicGeometry?.schema !== rendererContract.geometrySchema
+  || publicGeometry?.contractVersion !== rendererContract.version
+  || publicGeometry?.contractHash !== RENDERER_CONTRACT_HASH
+  || publicGeometry?.sourceGraphHash !== graph.graph_content_hash
+  || publicGeometry?.geometryHash !== CANONICAL_GEOMETRY_HASH
+  || publicGeometry?.coordinateSpace !== "hiveai.living_anatomy_layout.v1"
+  || publicGeometry?.divisions?.length !== 16
+  || publicGeometry?.families?.length !== 64
+  || publicGeometry?.neurons?.length !== 640) {
+  fail("canonical public geometry projection is unavailable or source-unbound");
 }
 const truthInputCommit = String(compiled.truth_input_commit || "").toLowerCase();
 if (!/^[a-f0-9]{40}$/.test(truthInputCommit)) {
@@ -377,27 +426,28 @@ if (physiology.pm_only !== physiology.purpose_mastered - physiology.twitches) {
 }
 
 const galaxyWithoutHash = {
-  schema: "hive.ecosystem.public-galaxy.v1",
+  schema: "hive.ecosystem.public-galaxy.v2",
   generatorVersion: GENERATOR_VERSION,
   sourceGraphHash: graph.graph_content_hash,
-  geometry: "deterministic-authored-clusters",
   representedNeurons,
   divisions,
+  geometry: publicGeometry,
   statusProjection: "none",
   claimBoundary:
     "The public atlas shows topology and family purpose only. Gold Twitch, mastery, runtime, work-lane, mission, and urgency states remain on the authenticated local Living Anatomy surface.",
 };
 const galaxy = {
   ...galaxyWithoutHash,
-  projectionHash: sha256(JSON.stringify(galaxyWithoutHash)),
+  projectionHash: sha256(canonicalJson(galaxyWithoutHash)),
 };
 
 const base = {
-  schema: "hive.ecosystem.public-source-snapshot.v2",
+  schema: "hive.ecosystem.public-source-snapshot.v3",
+  snapshotVersion: SNAPSHOT_VERSION,
   hiveAi: {
     sourceCommit,
     sourceBranch: "main",
-    graphSource: "compiled from source manifest; no private graph bytes published",
+    graphSource: "compiled from the source manifest and authored layout; no private graph bytes published",
     graphSchema: graph.schema_version,
     graphHash: graph.graph_content_hash,
     sourceFingerprint: graph.source_fingerprint,
@@ -452,13 +502,20 @@ const base = {
 
 const previous = fs.existsSync(outputPath) ? JSON.parse(fs.readFileSync(outputPath, "utf8")) : null;
 const previousBase = previous ? { ...previous } : null;
-if (previousBase) delete previousBase.capturedAt;
-const unchanged = previousBase && JSON.stringify(previousBase) === JSON.stringify(base);
-const next = {
+if (previousBase) {
+  delete previousBase.capturedAt;
+  delete previousBase.snapshotHash;
+}
+const unchanged = previousBase && canonicalJson(previousBase) === canonicalJson(base);
+const nextBody = {
   ...base,
   capturedAt: unchanged && typeof previous.capturedAt === "string"
     ? previous.capturedAt
     : new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+};
+const next = {
+  ...nextBody,
+  snapshotHash: sha256(canonicalJson(nextBody)),
 };
 const rendered = `${JSON.stringify(next, null, 2)}\n`;
 const current = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : "";

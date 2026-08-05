@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { canonicalJson } from "../hub-assets/galaxy-core.mjs";
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const factsPathIndex = process.argv.indexOf("--facts-path");
@@ -37,7 +40,12 @@ if (JSON.stringify(current.refresh) === JSON.stringify(nextRefresh)) {
   process.exit(0);
 }
 
-const next = { ...current, refresh: nextRefresh };
+const { snapshotHash: _ignored, ...currentBody } = current;
+const nextBody = { ...currentBody, refresh: nextRefresh };
+const next = {
+  ...nextBody,
+  snapshotHash: crypto.createHash("sha256").update(canonicalJson(nextBody)).digest("hex"),
+};
 const temporary = path.join(
   path.dirname(outputPath),
   `.${path.basename(outputPath)}.${process.pid}.${Date.now()}.tmp`,

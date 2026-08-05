@@ -422,6 +422,7 @@ requireMatch(ideSmokeScript, /Live latest feed differs from the landed central h
 requireMatch(ideSmokeScript, /Get-Sha256 \$InstallerPath[\s\S]*Downloaded installer bytes differ/, "full installer hash proof");
 requireMatch(ideSmokeScript, /Start-Process -FilePath \$InstallerPath -ArgumentList '\/S'[\s\S]*applicationHashMatchesManifest = \$true/, "exact install and application hash proof");
 requireMatch(ideSmokeScript, /MainWindowHandle -ne 0 -and \$Process\.Responding[\s\S]*CloseMainWindow\(\)[\s\S]*WaitForExit/, "responsive window and graceful close proof");
+requireMatch(ideSmokeScript, /\[ValidateRange\(15, 120\)\][\s\S]*\$CloseTimeoutSeconds = 60[\s\S]*WaitForExit\(\$CloseTimeoutSeconds \* 1000\)/, "bounded runtime-aware close timeout");
 requireMatch(ideSmokeScript, /uninstallEntryCountAfter[\s\S]*installedApplicationRemoved[\s\S]*unrelatedProcessesTerminated = \$false/, "bounded uninstall proof");
 requireMatch(ideSmokeScript, /\$installAttemptOwned = \$false[\s\S]*\$installAttemptOwned = \$true[\s\S]*if \(\$installAttemptOwned\)/, "installer-owned failure cleanup gate");
 requireMatch(ideSmokeScript, /expectedTempPrefix[\s\S]*hive-ide-public-smoke-\*[\s\S]*Remove-Item -LiteralPath \$resolvedWorkRoot/, "bounded runner-temp cleanup");

@@ -24,7 +24,10 @@ param(
     [string]$OutPath,
 
     [ValidateRange(10, 180)]
-    [int]$WindowTimeoutSeconds = 90
+    [int]$WindowTimeoutSeconds = 90,
+
+    [ValidateRange(15, 120)]
+    [int]$CloseTimeoutSeconds = 60
 )
 
 $ErrorActionPreference = 'Stop'
@@ -299,8 +302,11 @@ try {
     if (-not $window) { throw 'Responsive Hive IDE main window was not observed before timeout' }
     $receipt.launch = $window
     [void]$startedProcess.CloseMainWindow()
-    if (-not $startedProcess.WaitForExit(15000)) { throw 'Hive IDE did not close gracefully' }
+    if (-not $startedProcess.WaitForExit($CloseTimeoutSeconds * 1000)) {
+        throw "Hive IDE did not close within the bounded $CloseTimeoutSeconds-second runtime shutdown window"
+    }
     $receipt.launch['gracefulMainWindowClose'] = $true
+    $receipt.launch['gracefulExitTimeoutSeconds'] = $CloseTimeoutSeconds
     $receipt.launch['exitCode'] = $startedProcess.ExitCode
 
     $uninstall = Start-Process -FilePath $uninstallExe -ArgumentList '/S' -PassThru -Wait

@@ -377,7 +377,7 @@ requireMatch(css, /\.motion-scene-paused[\s\S]*animation-play-state:\s*paused !i
 requireMatch(css, /body\.motion-paused \*[\s\S]*animation-play-state:\s*paused !important;[\s\S]*transition-duration:\s*0s !important;/, "manual motion pause suppresses animations and transitions");
 requireMatch(css, /\.galaxy-stage\s*{[\s\S]*?touch-action:\s*pan-y;/, "touch page-scroll preservation");
 requireMatch(css, /\.galaxy-stage\.is-engaged\s*{[\s\S]*?touch-action:\s*none;/, "engaged touch orbit ownership");
-requireMatch(css, /\.hero-system \.satellite-ide\s*{\s*grid-column:[\s\S]*\.hero-system \.stage-readout\s*{[\s\S]*grid-column:/, "collision-proof hero stage ownership");
+requireMatch(css, /\.hero-system \.satellite-ide\s*{\s*grid-column:\s*6;[\s\S]*\.hero-system \.stage-readout\s*{[\s\S]*grid-column:\s*2 \/ 5;/, "collision-proof hero stage ownership");
 requireMatch(css, /\.galaxy-workbench\.is-full-atlas\s*{[\s\S]*position:\s*fixed;[\s\S]*height:\s*100dvh;/, "full-viewport atlas layout");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.galaxy-workbench\.is-full-atlas[\s\S]*grid-template-rows:/, "mobile same-viewport atlas and inspector");
 requireMatch(css, /\.galaxy-stage-bottom\s*{[\s\S]*right:\s*1rem;[\s\S]*bottom:\s*1rem;[\s\S]*left:\s*1rem;[\s\S]*\.galaxy-stage-rail\s*{[\s\S]*grid-template-columns:/, "collision-proof shared atlas bottom rail");
@@ -385,6 +385,8 @@ requireMatch(css, /@media \(max-width: 20rem\)[\s\S]*\.galaxy-demo-proof\s*{[\s\
 requireMatch(css, /\.galaxy-atlas-toolbar\s*{[\s\S]*position:\s*sticky;[\s\S]*\.galaxy-atlas-toolbar \[data-galaxy-director\]\s*{[\s\S]*grid-column:\s*1 \/ -1;/, "persistent single Director, Reset, and Fit toolbar");
 requireMatch(css, /\.hero\s*{[\s\S]*grid-template-rows:\s*auto auto;[\s\S]*min-height:\s*calc\(100svh - 5\.25rem\)[\s\S]*\.hero-support\s*{[\s\S]*grid-column:\s*1 \/ -1;/, "first-fold hero layout contract");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.hero-system\s*{[\s\S]*grid-template-columns:\s*repeat\(2,[\s\S]*min-height:\s*11\.5rem;[\s\S]*\.hero-system \.satellite-core,[\s\S]*display:\s*none;/, "recognizable compact mobile organism");
+requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.hero-primary-action \.hero-enter\s*{[\s\S]*flex:\s*none;[\s\S]*width:\s*100%;/, "mobile primary CTA uses intrinsic height");
+requireMatch(css, /@media \(max-width: 24rem\) and \(max-height: 36rem\)[\s\S]*\.primary-nav,[\s\S]*\.hero-copy > \.eyebrow[\s\S]*display:\s*none;[\s\S]*\.hero-system\s*{[\s\S]*min-height:\s*5\.75rem;/, "short mobile first-frame hierarchy");
 requireMatch(css, /\.hero-lede\s*{[\s\S]*font-size:\s*clamp\(1rem,[\s\S]*\.primary-nav a,[\s\S]*font-size:\s*0\.875rem;[\s\S]*\.hero-causal-story strong,[\s\S]*font-size:\s*1rem;/, "zero-squint 16px essential and 14px secondary typography");
 requireMatch(css, /\.mission-machine-head > div:first-child strong,[\s\S]*\.authority-wall p:last-child\s*{[\s\S]*font-size:\s*1rem;/, "16px command narrative typography floor");
 requireMatch(css, /\.inspector-stats dd,[\s\S]*\.mission-machine-head > div:first-child span,[\s\S]*\.mission-step > span,[\s\S]*\.command-cycle-orb b,[\s\S]*\.command-cycle-navigation > span,[\s\S]*\.command-cycle-actions \.button small,[\s\S]*\.command-cycle-boundary,[\s\S]*\.wall-state\s*{[\s\S]*font-size:\s*0\.875rem;/, "14px projector truth and navigation typography floor");

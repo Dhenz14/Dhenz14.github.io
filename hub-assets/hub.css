@@ -5659,7 +5659,7 @@ body.command-flightdeck-open::after {
 .hero-system .stage-label-b { grid-column: 3 / 6; grid-row: 2; justify-self: end; }
 
 .hero-system .stage-readout {
-  grid-column: 2 / 6;
+  grid-column: 2 / 5;
   grid-row: 5;
   justify-self: stretch;
   width: min(100%, 22rem);
@@ -6634,6 +6634,8 @@ body.galaxy-fullscreen-open {
   }
 
   .hero-primary-action .hero-enter {
+    flex: none;
+    width: 100%;
     max-width: none;
   }
 
@@ -6747,6 +6749,53 @@ body.galaxy-fullscreen-open {
   .galaxy-hint i,
   .galaxy-hint i + span {
     display: none;
+  }
+}
+
+@media (max-width: 24rem) and (max-height: 36rem) {
+  .primary-nav,
+  .hero-copy > .eyebrow {
+    display: none;
+  }
+
+  .hero {
+    gap: 0.5rem;
+    padding-block: 0.75rem;
+  }
+
+  .hero-copy h1 {
+    margin-bottom: 0.6rem;
+    font-size: 2.15rem;
+    line-height: 0.98;
+  }
+
+  .hero-lede {
+    line-height: 1.35;
+  }
+
+  .hero-primary-action {
+    margin-top: 0.6rem;
+  }
+
+  .hero-primary-action .hero-enter {
+    min-height: 3.5rem;
+    padding: 0.55rem 0.75rem;
+  }
+
+  .hero-system {
+    min-height: 5.75rem;
+    gap: 0.4rem;
+    padding: 0.3rem;
+  }
+
+  .hero-system .core-ai,
+  .hero-system .core-poa {
+    min-height: 5rem;
+    padding: 0.45rem;
+  }
+
+  .hero-system .system-core strong {
+    font-size: 1.15rem;
   }
 }
 

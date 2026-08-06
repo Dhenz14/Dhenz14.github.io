@@ -43,6 +43,7 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const facts = JSON.parse(fs.readFileSync(path.join(root, "hub-assets", "hub-facts.json"), "utf8"));
 const clone = (value) => structuredClone(value);
+const titleCase = (value) => String(value || "").replace(/\b\w/g, (letter) => letter.toUpperCase());
 const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -311,6 +312,13 @@ const depthRows = depthSortGalaxyPoints([{ id: "b", z: 1 }, { id: "a", z: -1 }, 
 assert(depthRows.map((row) => row.id).join("") === "abc", "stable authored depth sort drifted");
 
 const geometry = buildGalaxyGeometry(facts.galaxy);
+const divisionNavigatorLabels = facts.galaxy.divisions.map((division) => `${division.code} · ${titleCase(division.name)}`);
+assert(divisionNavigatorLabels.length === 16, "division navigator did not receive the exact authored division count");
+divisionNavigatorLabels.forEach((label, index) => {
+  const division = facts.galaxy.divisions[index];
+  assert(division.code === String.fromCharCode(65 + index), `division navigator option ${index} left canonical A–P order`);
+  assert(label === `${division.code} · ${titleCase(division.name)}` && label.length > division.code.length + 3 && !label.includes("…"), `division navigator option ${division.code} lost its exact full name`);
+});
 assert(geometry.neurons[0]?.id === "N001" && geometry.neurons[0]?.divisionIndex === 0 && geometry.neurons[0]?.familyGeometryIndex === 0, "exact safe-frame fixture drifted from canonical N001 / Division A / A1 identity");
 assert(geometry.divisionGeometry.length === 16 && geometry.familyGeometry.length === 64 && geometry.neurons.length === 640, "authored renderer cardinality drifted");
 for (const [index, point] of geometry.divisionGeometry.entries()) {
@@ -475,6 +483,20 @@ const preservedNeuron = resolveGalaxySelection({
 });
 assert(geometry.neurons[preservedNeuron.activeNeuron]?.id === "N640", "neuron selection identity was not preserved");
 assert(preservedNeuron.activeDivision === 15 && preservedNeuron.activeFamily === 63, "preserved neuron did not restore its parent focus");
+let divisionNavigatorSelectionCases = 0;
+for (const [index, division] of facts.galaxy.divisions.entries()) {
+  const selection = resolveGalaxySelection({
+    divisions: facts.galaxy.divisions,
+    familyGeometry: geometry.familyGeometry,
+    neurons: geometry.neurons,
+    neuronIndexById: geometry.neuronIndexById,
+    previousDivisionCode: division.code,
+    previousFamilyCode: null,
+    previousNeuronId: null,
+  });
+  assert(selection.activeDivision === index && selection.activeFamily === -1 && selection.activeNeuron === -1, `division navigator selection ${division.code} did not resolve to its exact division`);
+  divisionNavigatorSelectionCases += 1;
+}
 
 const viewports = [
   { name: "desktop", width: 1000, height: 800 },
@@ -524,4 +546,4 @@ const normalHaloOutside = selectGalaxyHit({ pointer: { x: normalDivisionRadius +
 const selectedHaloInside = selectGalaxyHit({ pointer: { x: selectedDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery", projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0 });
 assert(normalHaloInside.divisionIndex === 0 && normalHaloOutside.divisionIndex === -1 && selectedHaloInside.divisionIndex === 0, "division hit radius diverged from its rendered halo");
 
-console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} safe_frame_label_cases=${safeFrameLabelCases} exact_exit_fixture=1 pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6`);
+console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 division_nav_options=${divisionNavigatorLabels.length} division_nav_selections=${divisionNavigatorSelectionCases} integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} safe_frame_label_cases=${safeFrameLabelCases} exact_exit_fixture=1 pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6`);

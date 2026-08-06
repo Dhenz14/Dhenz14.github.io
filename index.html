@@ -395,6 +395,16 @@
                 <button class="galaxy-director-control" type="button" data-galaxy-director aria-pressed="false" aria-disabled="true" disabled>Run 24s director</button>
                 <button type="button" data-galaxy-reset-modal aria-disabled="true" disabled>Reset view</button>
                 <button type="button" data-galaxy-fit-selected aria-disabled="true" disabled>Fit selected</button>
+                <div class="galaxy-division-nav" data-galaxy-division-nav aria-label="Atlas division navigator">
+                  <div class="galaxy-division-nav-current">
+                    <span>Current division</span>
+                    <strong data-galaxy-division-nav-current aria-live="polite" aria-atomic="true">A · Route, Hold, And Activation Budget</strong>
+                  </div>
+                  <label class="galaxy-division-nav-field" for="galaxy-division-nav-select">
+                    <span>Jump to division</span>
+                    <select id="galaxy-division-nav-select" data-galaxy-division-nav-select disabled aria-disabled="true"></select>
+                  </label>
+                </div>
               </div>
               <p class="galaxy-director-motion-note" id="galaxy-director-motion-note" data-galaxy-director-motion-note hidden>Director is disabled because reduced motion is active. Manual atlas controls remain available.</p>
               <div class="galaxy-gold-legend" data-galaxy-gold-legend>

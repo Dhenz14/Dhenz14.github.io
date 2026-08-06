@@ -16,6 +16,7 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
+const titleCase = (value) => String(value || "").replace(/\b\w/g, (letter) => letter.toUpperCase());
 const requireMatch = (value, pattern, label) => {
   if (!pattern.test(value)) throw new Error(`${label} contract missing`);
 };
@@ -92,6 +93,14 @@ const ideReleaseCore = read("hub-assets/ide-release-core.mjs");
 const generator = read("script/sync-galaxy-snapshot.mjs");
 const bridgeFailClosed = read("script/mark-galaxy-bridge-inactive.mjs");
 const facts = JSON.parse(read("hub-assets/hub-facts.json"));
+const divisionNavigatorLabels = facts.galaxy.divisions.map((division) => `${division.code} · ${titleCase(division.name)}`);
+if (divisionNavigatorLabels.length !== 16 || divisionNavigatorLabels.some((label, index) => (
+  !label.startsWith(`${String.fromCharCode(65 + index)} · `)
+  || label !== `${facts.galaxy.divisions[index].code} · ${titleCase(facts.galaxy.divisions[index].name)}`
+  || label.includes("…")
+))) {
+  throw new Error("division navigator must map the exact facts-backed A–P full-name catalog");
+}
 const pointerDownBlock = boundedBlock(
   js,
   'this.canvas.addEventListener("pointerdown"',
@@ -164,6 +173,26 @@ if (startupCameraButtons.length !== 4 || startupCameraButtons.some((tag) => (
 requireMatch(html, /data-galaxy-engage[^>]+aria-pressed="false"/, "explicit galaxy engagement state");
 requireMatch(html, /data-galaxy-canvas[^>]+tabindex="-1"[^>]+aria-disabled="true"[^>]+role="img"/, "inert startup galaxy canvas");
 requireMatch(html, /data-galaxy-index-list[^>]+aria-label="Jump to a galaxy division"/, "semantic division navigation");
+const divisionNavCount = [...html.matchAll(/\sdata-galaxy-division-nav(?=[\s>])/g)].length;
+const divisionNavCurrentCount = [...html.matchAll(/\sdata-galaxy-division-nav-current(?=[\s>])/g)].length;
+const divisionNavSelectCount = [...html.matchAll(/\sdata-galaxy-division-nav-select(?=[\s>])/g)].length;
+if (divisionNavCount !== 1 || divisionNavCurrentCount !== 1 || divisionNavSelectCount !== 1) {
+  throw new Error(`compact division navigator must be unique, found nav/current/select ${divisionNavCount}/${divisionNavCurrentCount}/${divisionNavSelectCount}`);
+}
+const divisionDialogIndex = html.indexOf("data-galaxy-dialog");
+const divisionInspectorIndex = html.indexOf('class="lens-inspector galaxy-inspector"', divisionDialogIndex);
+const divisionToolbarIndex = html.indexOf('class="galaxy-atlas-toolbar"', divisionInspectorIndex);
+const divisionNavIndex = html.indexOf("data-galaxy-division-nav ", divisionToolbarIndex);
+const divisionToolbarEndIndex = html.indexOf('class="galaxy-director-motion-note"', divisionToolbarIndex);
+if (!(divisionDialogIndex >= 0
+  && divisionInspectorIndex > divisionDialogIndex
+  && divisionToolbarIndex > divisionInspectorIndex
+  && divisionNavIndex > divisionToolbarIndex
+  && divisionToolbarEndIndex > divisionNavIndex)) {
+  throw new Error("compact division navigator must remain inside the dialog inspector sticky toolbar");
+}
+requireMatch(html, /data-galaxy-division-nav-current[^>]*>A · Route, Hold, And Activation Budget<\//, "full initial compact division name");
+requireMatch(html, /<select[^>]+data-galaxy-division-nav-select[^>]+disabled[^>]+aria-disabled="true"[^>]*><\/select>/, "fail-closed native division select");
 requireMatch(html, /data-galaxy-context-summary>Context unavailable · source not yet bound<[\s\S]*data-galaxy-context-copy>Context parameters remain unavailable until this browser validates/, "unbound local-context truth");
 const directorButtons = rootButtonTags.filter((tag) => /\sdata-galaxy-director(?:\s|>)/.test(tag));
 if (directorButtons.length !== 1 || !directorButtons[0].includes('aria-pressed="false"')) {
@@ -270,6 +299,7 @@ requireMatch(js, /setModalIsolation\(root, active\)[\s\S]*node\.inert = inert;[\
 requireMatch(js, /openFullAtlas\(trigger = null\)[\s\S]*this\.setModalIsolation\(root, true\)[\s\S]*closeFullAtlas\(restoreFocus = true\)[\s\S]*this\.setModalIsolation\(root, false\)/, "full-atlas modal isolation lifecycle");
 requireMatch(js, /openFullAtlas\(trigger = null\)[\s\S]*this\.focusInsideFullAtlas\(\);[\s\S]*this\.setModalIsolation\(root, true\)/, "focus enters the atlas before background isolation");
 requireMatch(js, /!root\?\.contains\(document\.activeElement\)[\s\S]*event\.shiftKey \? last : first/, "full-atlas focus containment from outside focus");
+requireMatch(js, /button:not\(:disabled\), select:not\(:disabled\), a\[href\]/, "native division select participates in the full-atlas focus trap");
 requireMatch(js, /event\.key !== "Escape" \|\| !this\.engaged[\s\S]*this\.cancelDirector\(false\);[\s\S]*this\.setEngaged\(false, true\);[\s\S]*this\.focusInsideFullAtlas\(\)/, "first Escape preserves modal focus and restores Director state");
 requireMatch(js, /closeFullAtlas\(restoreFocus = true\)[\s\S]*this\.cancelDirector\(false\)/, "full-atlas close restores Director state");
 requireMatch(js, /this\.paused = Boolean\(event\.detail\?\.paused\)[\s\S]*if \(this\.paused\) this\.cancelDirector\(false\)/, "motion pause restores Director state");
@@ -282,6 +312,16 @@ requireMatch(js, /focusPoint\(center, minimumZoom, exactFit = false\)[\s\S]*gala
 requireMatch(js, /fitSelected\(\)[\s\S]*focusNeuron\(this\.activeNeuron, false, true\)[\s\S]*focusFamily\(this\.activeFamily, false, true\)[\s\S]*focusDivision\(Math\.max\(this\.activeDivision, 0\), false, true\)/, "fit-selected exact zoom recovery");
 requireMatch(js, /buildDivisionIndex\(\)[\s\S]*addEventListener\("focus"[\s\S]*showDivision\(index, false, false\)[\s\S]*addEventListener\("blur"/, "division full-name keyboard discovery");
 requireMatch(js, /showDivision\(index[\s\S]*data-galaxy-division-name[\s\S]*titleCase\(division\.name\)/, "persistent selected division full name");
+requireMatch(js, /const formatGalaxyDivisionChoice = \(division\) => `\$\{division\.code\} · \$\{titleCase\(division\.name\)\}`;/, "exact division navigator formatter");
+requireMatch(js, /wireDivisionNavigator\(\)[\s\S]*data-galaxy-division-nav-select[\s\S]*addEventListener\("change"[\s\S]*findIndex\([\s\S]*this\.focusDivision\(index\)/, "native division navigator selection path");
+requireMatch(js, /buildDivisionNavigator\(\)[\s\S]*this\.divisions\.length === 16[\s\S]*String\.fromCharCode\(65 \+ index\)[\s\S]*option\.textContent = formatGalaxyDivisionChoice\(division\)[\s\S]*select\.replaceChildren\(\.\.\.options\)[\s\S]*aria-disabled/, "facts-gated sixteen-option division navigator");
+requireMatch(js, /syncDivisionNavigator\(index\)[\s\S]*data-galaxy-division-nav-current[\s\S]*select\.value = division\.code[\s\S]*option\.selected = option\.value === division\.code/, "division navigator current and selected-option sync");
+requireMatch(js, /showDivision\(index, updateButtons = true[\s\S]*if \(updateButtons\)[\s\S]*this\.syncDivisionNavigator\(index\)/, "canvas index and Director division sync path");
+requireMatch(css, /\.galaxy-division-nav-current strong\s*\{[^}]*overflow: visible;[^}]*font: 800 1rem\/1\.4[^}]*overflow-wrap: break-word;[^}]*text-overflow: clip;[^}]*white-space: normal;/, "unclipped wrapping current division label");
+requireMatch(css, /\.galaxy-division-nav-field select\s*\{[^}]*min-height: 2\.75rem;[^}]*font: 750 0\.875rem\/1\.35/, "44px native division target and 14px type floor");
+requireMatch(css, /\.galaxy-atlas-toolbar\s*\{[^}]*position: sticky;[^}]*top: 0;[\s\S]*\.galaxy-atlas-toolbar \.galaxy-division-nav\s*\{[^}]*grid-column: 1 \/ -1;[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/, "contained sticky compact division navigator");
+requireMatch(css, /@media \(max-width: 24rem\), \(max-height: 36rem\)[\s\S]*\.galaxy-atlas-toolbar\s*\{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)[\s\S]*data-galaxy-director[\s\S]*grid-column: auto/, "short mobile toolbar compaction");
+requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-division-nav-field select[\s\S]*background: Canvas;/, "forced-colors native division navigator");
 requireMatch(js, /runSafely\("Living Anatomy galaxy", startGalaxy\)/, "galaxy call chain");
 requireMatch(js, /const COMMAND_CYCLE_STEPS = Object\.freeze\(\[[\s\S]*SEE · SOURCE BOUND[\s\S]*WATCH · ABSORBED/, "command cycle semantic model");
 requireMatch(js, /function wireCommandCycle\(\)[\s\S]*data-command-cycle[\s\S]*setInterval[\s\S]*1500/, "command cycle controller");
@@ -669,5 +709,5 @@ for (const match of html.matchAll(/(?:href|src)=["'](\/[^"'#?]*)["']/g)) {
 }
 
 console.log(
-  `CENTRAL_HUB_CONTRACT_OK source=${facts.hiveAi.sourceCommit.slice(0, 12)} nodes=${facts.hiveAi.nodes} edges=${facts.hiveAi.edges} twitches=${facts.hiveAi.twitches} pm_only=${facts.hiveAi.pmOnly}`,
+  `CENTRAL_HUB_CONTRACT_OK source=${facts.hiveAi.sourceCommit.slice(0, 12)} nodes=${facts.hiveAi.nodes} edges=${facts.hiveAi.edges} twitches=${facts.hiveAi.twitches} pm_only=${facts.hiveAi.pmOnly} division_nav_options=${divisionNavigatorLabels.length}`,
 );

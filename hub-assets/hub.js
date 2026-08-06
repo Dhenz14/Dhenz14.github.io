@@ -1190,6 +1190,7 @@ class FieldRenderer {
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
 const titleCase = (value) => String(value || "").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const formatGalaxyDivisionChoice = (division) => `${division.code} · ${titleCase(division.name)}`;
 
 function roundedRectPath(context, x, y, width, height, radius) {
   context.beginPath();
@@ -1315,6 +1316,7 @@ class GalaxyAtlas {
     });
     this.setEngaged(false);
     this.wireFullAtlas();
+    this.wireDivisionNavigator();
     if (!this.baseRenderAvailable) {
       this.applyRenderAvailability(this.forcedColors.matches);
       return;
@@ -1486,7 +1488,7 @@ class GalaxyAtlas {
       }
       if (event.key !== "Tab") return;
       const root = $("[data-galaxy-dialog]");
-      const focusable = root ? $$('button:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])', root)
+      const focusable = root ? $$('button:not(:disabled), select:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])', root)
         .filter((node) => !node.hasAttribute("hidden") && node.getClientRects().length > 0) : [];
       if (!focusable.length) return;
       const first = focusable[0];
@@ -1761,7 +1763,47 @@ class GalaxyAtlas {
     }
   }
 
+  wireDivisionNavigator() {
+    const select = $("[data-galaxy-division-nav-select]");
+    if (!select) return;
+    select.addEventListener("change", () => {
+      const index = this.divisions.findIndex((division) => division.code === select.value);
+      if (index >= 0) this.focusDivision(index);
+    });
+  }
+
+  buildDivisionNavigator() {
+    const select = $("[data-galaxy-division-nav-select]");
+    if (!select) return;
+    const exactCatalog = this.divisions.length === 16
+      && this.divisions.every((division, index) => division.code === String.fromCharCode(65 + index));
+    const options = (exactCatalog ? this.divisions : []).map((division) => {
+      const option = document.createElement("option");
+      option.value = division.code;
+      option.textContent = formatGalaxyDivisionChoice(division);
+      return option;
+    });
+    select.replaceChildren(...options);
+    select.disabled = !exactCatalog;
+    select.setAttribute("aria-disabled", String(!exactCatalog));
+    if (exactCatalog) this.syncDivisionNavigator(this.activeDivision);
+  }
+
+  syncDivisionNavigator(index) {
+    const division = this.divisions[index];
+    if (!division) return;
+    const label = formatGalaxyDivisionChoice(division);
+    setText("[data-galaxy-division-nav-current]", label);
+    const select = $("[data-galaxy-division-nav-select]");
+    if (!select) return;
+    select.value = division.code;
+    Array.from(select.options).forEach((option) => {
+      option.selected = option.value === division.code;
+    });
+  }
+
   buildDivisionIndex() {
+    this.buildDivisionNavigator();
     const root = $("[data-galaxy-index-list]");
     if (!root) return;
     const focusedDivisionCode = document.activeElement?.dataset?.divisionCode;
@@ -1903,6 +1945,7 @@ class GalaxyAtlas {
       $$('[data-galaxy-index-list] button').forEach((button, buttonIndex) => {
         button.setAttribute("aria-pressed", String(buttonIndex === index));
       });
+      this.syncDivisionNavigator(index);
     }
     if (updateAccessibleName) {
       this.canvas.setAttribute(

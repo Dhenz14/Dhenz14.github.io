@@ -193,6 +193,7 @@ if (!(divisionDialogIndex >= 0
 }
 requireMatch(html, /data-galaxy-division-nav-current[^>]*>A · Route, Hold, And Activation Budget<\//, "full initial compact division name");
 requireMatch(html, /<select[^>]+data-galaxy-division-nav-select[^>]+disabled[^>]+aria-disabled="true"[^>]*><\/select>/, "fail-closed native division select");
+requireMatch(html, /<select[^>]+data-galaxy-division-nav-select[^>]+aria-label="Jump to division"/, "explicit short-mode native division label");
 requireMatch(html, /data-galaxy-context-summary>Context unavailable · source not yet bound<[\s\S]*data-galaxy-context-copy>Context parameters remain unavailable until this browser validates/, "unbound local-context truth");
 const directorButtons = rootButtonTags.filter((tag) => /\sdata-galaxy-director(?:\s|>)/.test(tag));
 if (directorButtons.length !== 1 || !directorButtons[0].includes('aria-pressed="false"')) {
@@ -319,8 +320,12 @@ requireMatch(js, /syncDivisionNavigator\(index\)[\s\S]*data-galaxy-division-nav-
 requireMatch(js, /showDivision\(index, updateButtons = true[\s\S]*if \(updateButtons\)[\s\S]*this\.syncDivisionNavigator\(index\)/, "canvas index and Director division sync path");
 requireMatch(css, /\.galaxy-division-nav-current strong\s*\{[^}]*overflow: visible;[^}]*font: 800 1rem\/1\.4[^}]*overflow-wrap: break-word;[^}]*text-overflow: clip;[^}]*white-space: normal;/, "unclipped wrapping current division label");
 requireMatch(css, /\.galaxy-division-nav-field select\s*\{[^}]*min-height: 2\.75rem;[^}]*font: 750 0\.875rem\/1\.35/, "44px native division target and 14px type floor");
+requireMatch(css, /\.galaxy-division-nav-current > span,[\s\S]*\.galaxy-division-nav-field > span\s*\{[^}]*margin-bottom: 0\.35rem;[^}]*font: 800 0\.875rem\/1\.3/, "division navigator eyebrow height budget");
 requireMatch(css, /\.galaxy-atlas-toolbar\s*\{[^}]*position: sticky;[^}]*top: 0;[\s\S]*\.galaxy-atlas-toolbar \.galaxy-division-nav\s*\{[^}]*grid-column: 1 \/ -1;[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/, "contained sticky compact division navigator");
 requireMatch(css, /@media \(max-width: 24rem\), \(max-height: 36rem\)[\s\S]*\.galaxy-atlas-toolbar\s*\{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)[\s\S]*data-galaxy-director[\s\S]*grid-column: auto/, "short mobile toolbar compaction");
+requireMatch(css, /@media \(max-width: 24rem\), \(max-height: 36rem\)[\s\S]*\.galaxy-atlas-toolbar \.galaxy-division-nav-current > span,[\s\S]*\.galaxy-atlas-toolbar \.galaxy-division-nav-field > span\s*\{\s*display: none;/, "short-height redundant eyebrow removal");
+const shortDivisionNavReclaimPx = Math.round(16 * ((0.875 * 1.3) + 0.35) * 10) / 10;
+if (shortDivisionNavReclaimPx < 20) throw new Error(`short division navigator reclaims only ${shortDivisionNavReclaimPx}px`);
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-division-nav-field select[\s\S]*background: Canvas;/, "forced-colors native division navigator");
 requireMatch(js, /runSafely\("Living Anatomy galaxy", startGalaxy\)/, "galaxy call chain");
 requireMatch(js, /const COMMAND_CYCLE_STEPS = Object\.freeze\(\[[\s\S]*SEE · SOURCE BOUND[\s\S]*WATCH · ABSORBED/, "command cycle semantic model");
@@ -709,5 +714,5 @@ for (const match of html.matchAll(/(?:href|src)=["'](\/[^"'#?]*)["']/g)) {
 }
 
 console.log(
-  `CENTRAL_HUB_CONTRACT_OK source=${facts.hiveAi.sourceCommit.slice(0, 12)} nodes=${facts.hiveAi.nodes} edges=${facts.hiveAi.edges} twitches=${facts.hiveAi.twitches} pm_only=${facts.hiveAi.pmOnly} division_nav_options=${divisionNavigatorLabels.length}`,
+  `CENTRAL_HUB_CONTRACT_OK source=${facts.hiveAi.sourceCommit.slice(0, 12)} nodes=${facts.hiveAi.nodes} edges=${facts.hiveAi.edges} twitches=${facts.hiveAi.twitches} pm_only=${facts.hiveAi.pmOnly} division_nav_options=${divisionNavigatorLabels.length} short_nav_reclaim_px=${shortDivisionNavReclaimPx}`,
 );

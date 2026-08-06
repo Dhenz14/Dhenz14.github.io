@@ -212,6 +212,59 @@ if (zeroSquintSelectorOverlap.length) {
   throw new Error("zero-squint selector classes overlap: " + zeroSquintSelectorOverlap.join(","));
 }
 const js = read("hub-assets/hub.js");
+const toastContractStart = js.indexOf("let toastTimer = 0;");
+const toastContractEnd = js.indexOf("function safeStorageGet", toastContractStart);
+if (toastContractStart < 0 || toastContractEnd <= toastContractStart) {
+  throw new Error("toast routing implementation block missing");
+}
+const toastContract = js.slice(toastContractStart, toastContractEnd);
+const globalToastFixture = {
+  textContent: "",
+  visible: new Set(),
+  classList: {
+    add(value) { globalToastFixture.visible.add(value); },
+    remove(value) { globalToastFixture.visible.delete(value); },
+  },
+};
+const atlasStatusFixture = { textContent: "" };
+let atlasFixtureOpen = false;
+let toastTimerDelay = 0;
+const toastWindowFixture = {
+  clearTimeout() {},
+  setTimeout(callback, delay) {
+    if (typeof callback !== "function") throw new Error("toast timer callback must be callable");
+    toastTimerDelay = delay;
+    return 1;
+  },
+};
+const toastSelectorFixture = (selector) => {
+  if (selector === "[data-toast]") return globalToastFixture;
+  if (selector === "[data-galaxy-atlas-status]") return atlasStatusFixture;
+  if (selector === "[data-galaxy-dialog].is-full-atlas [data-galaxy-atlas-status]") {
+    return atlasFixtureOpen ? atlasStatusFixture : null;
+  }
+  throw new Error(`unexpected toast selector ${selector}`);
+};
+const toastContractFactory = new Function("window", "$", `${toastContract}\nreturn { clearToast, showToast };`);
+const toastContractApi = toastContractFactory(toastWindowFixture, toastSelectorFixture);
+toastContractApi.showToast("Global recovery");
+if (globalToastFixture.textContent !== "Global recovery"
+  || !globalToastFixture.visible.has("is-visible")
+  || atlasStatusFixture.textContent !== ""
+  || toastTimerDelay !== 2600) {
+  throw new Error("global toast fixture no longer preserves normal outside-atlas guidance");
+}
+atlasFixtureOpen = true;
+toastContractApi.showToast("Atlas recovery");
+if (atlasStatusFixture.textContent !== "Atlas recovery"
+  || globalToastFixture.textContent !== ""
+  || globalToastFixture.visible.has("is-visible")) {
+  throw new Error("full-atlas guidance did not move exclusively into the dialog-local live status");
+}
+toastContractApi.clearToast();
+if (atlasStatusFixture.textContent !== "" || globalToastFixture.textContent !== "") {
+  throw new Error("shared toast clear left transient guidance behind");
+}
 const galaxyCore = read("hub-assets/galaxy-core.mjs");
 const ideReleaseCore = read("hub-assets/ide-release-core.mjs");
 const generator = read("script/sync-galaxy-snapshot.mjs");
@@ -307,14 +360,19 @@ const divisionDialogIndex = html.indexOf("data-galaxy-dialog");
 const divisionInspectorIndex = html.indexOf('class="lens-inspector galaxy-inspector"', divisionDialogIndex);
 const divisionToolbarIndex = html.indexOf('class="galaxy-atlas-toolbar"', divisionInspectorIndex);
 const divisionNavIndex = html.indexOf("data-galaxy-division-nav ", divisionToolbarIndex);
+const atlasStatusIndex = html.indexOf("data-galaxy-atlas-status", divisionToolbarIndex);
 const divisionToolbarEndIndex = html.indexOf('class="galaxy-director-motion-note"', divisionToolbarIndex);
 if (!(divisionDialogIndex >= 0
   && divisionInspectorIndex > divisionDialogIndex
   && divisionToolbarIndex > divisionInspectorIndex
   && divisionNavIndex > divisionToolbarIndex
-  && divisionToolbarEndIndex > divisionNavIndex)) {
-  throw new Error("compact division navigator must remain inside the dialog inspector sticky toolbar");
+  && atlasStatusIndex > divisionNavIndex
+  && divisionToolbarEndIndex > atlasStatusIndex)) {
+  throw new Error("compact division navigator and local atlas status must remain ordered inside the dialog inspector");
 }
+const atlasStatusCount = [...html.matchAll(/\sdata-galaxy-atlas-status(?=[\s>])/g)].length;
+if (atlasStatusCount !== 1) throw new Error(`dialog-local atlas status must be unique, found ${atlasStatusCount}`);
+requireMatch(html, /<\/label>\s*<\/div>\s*<\/div>\s*<p class="galaxy-atlas-status"[^>]*data-galaxy-atlas-status[^>]*role="status"[^>]*aria-live="polite"[^>]*aria-atomic="true"><\/p>/, "polite normal-flow atlas status immediately follows the toolbar");
 requireMatch(html, /data-galaxy-division-nav-current[^>]*>A · Route, Hold, And Activation Budget<\//, "full initial compact division name");
 requireMatch(html, /<select[^>]+data-galaxy-division-nav-select[^>]+disabled[^>]+aria-disabled="true"[^>]*><\/select>/, "fail-closed native division select");
 requireMatch(html, /<select[^>]+data-galaxy-division-nav-select[^>]+aria-label="Jump to division"/, "explicit short-mode native division label");
@@ -556,6 +614,7 @@ requireMatch(css, /\.galaxy-stage\.is-engaged\s*{[\s\S]*?touch-action:\s*none;/,
 requireMatch(css, /\.hero-system \.satellite-ide\s*{\s*grid-column:\s*6;[\s\S]*\.hero-system \.stage-readout\s*{[\s\S]*grid-column:\s*2 \/ 5;/, "collision-proof hero stage ownership");
 requireMatch(css, /\.galaxy-workbench\.is-full-atlas\s*{[\s\S]*position:\s*fixed;[\s\S]*height:\s*100dvh;/, "full-viewport atlas layout");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.galaxy-workbench\.is-full-atlas[\s\S]*grid-template-rows:/, "mobile same-viewport atlas and inspector");
+requireMatch(css, /@media \(min-width: 42\.01rem\) and \(max-width: 62rem\) and \(max-height: 40rem\)\s*{[\s\S]*\.galaxy-workbench\.is-full-atlas\s*{[^}]*grid-template-rows:\s*max\(100dvh, 24rem\) auto;[^}]*overflow-y:\s*auto;[\s\S]*\.galaxy-workbench\.is-full-atlas \.galaxy-stage\s*{[^}]*height:\s*max\(100dvh, 24rem\);[^}]*min-height:\s*24rem;[\s\S]*\.galaxy-workbench\.is-full-atlas \.galaxy-inspector\s*{[^}]*min-height:\s*100dvh;[^}]*overflow-y:\s*visible;/, "medium-width short-height atlas preserves a full-height stage and scrolls the inspector below");
 requireMatch(css, /\.galaxy-stage-bottom\s*{[\s\S]*right:\s*1rem;[\s\S]*bottom:\s*1rem;[\s\S]*left:\s*1rem;[\s\S]*\.galaxy-stage-rail\s*{[\s\S]*grid-template-columns:/, "collision-proof shared atlas bottom rail");
 requireMatch(css, /@media \(max-width: 20rem\)[\s\S]*\.galaxy-demo-proof\s*{[\s\S]*top:\s*4rem;/, "200-percent mobile overlay stack");
 requireMatch(css, /\.galaxy-atlas-toolbar\s*{[\s\S]*position:\s*sticky;[\s\S]*\.galaxy-atlas-toolbar \[data-galaxy-director\]\s*{[\s\S]*grid-column:\s*auto;/, "compact persistent Director, Reset, and Fit toolbar");
@@ -574,7 +633,13 @@ requireMatch(css, /\.primary-nav a,[\s\S]*\.galaxy-atlas-toolbar button,[\s\S]*\
 requireMatch(css, /\.ide-release-digest button\s*\{[^}]*min-height:\s*44px;/, "44px IDE release digest targets");
 requireMatch(css, /\.release-bindings button\s*\{[^}]*min-height:\s*44px;/, "44px signed-release copy targets");
 requireMatch(css, /\.toast\s*\{[^}]*font-size:\s*1rem;[^}]*line-height:\s*1\.45;/, "16px recovery guidance toast");
-requireMatch(css, /body\.galaxy-fullscreen-open > \.toast\s*\{[^}]*z-index:\s*1100;[^}]*top:\s*50dvh;[^}]*left:\s*calc\(\(100vw - max\(20rem, 26vw\)\) \/ 2\);/, "atlas-stage-safe recovery toast");
+requireMatch(css, /\.galaxy-atlas-status\s*\{[^}]*position:\s*static;[^}]*font-size:\s*1rem;[^}]*line-height:\s*1\.45;/, "16px normal-flow local atlas status");
+requireMatch(css, /\.galaxy-atlas-status:empty\s*\{[^}]*margin:\s*0;[^}]*padding:\s*0;[^}]*border:\s*0;/, "zero-box empty atlas status remains in the accessibility tree");
+requireNoMatch(css, /\.galaxy-atlas-status:empty\s*\{[^}]*(?:display\s*:\s*none|visibility\s*:\s*hidden)/, "hidden empty atlas live status");
+requireNoMatch(css, /body\.galaxy-fullscreen-open > \.toast/, "full-atlas global toast overlay");
+requireMatch(js, /function clearToast\(\)[\s\S]*data-toast[\s\S]*data-galaxy-atlas-status[\s\S]*globalToast\.textContent = ""[\s\S]*atlasStatus\.textContent = ""/, "shared global and atlas status clearing");
+requireMatch(js, /function showToast\(message\)[\s\S]*clearToast\(\);[\s\S]*data-galaxy-dialog\]\.is-full-atlas \[data-galaxy-atlas-status\][\s\S]*const toast = atlasStatus \|\| globalToast;/, "toast guidance routes inside the isolated atlas");
+requireMatch(js, /closeFullAtlas\(restoreFocus = true\)[\s\S]*if \(!this\.fullAtlas\) return;[\s\S]*this\.cancelDirector\(false\);[\s\S]*this\.setEngaged\(false\);[\s\S]*clearToast\(\);[\s\S]*this\.fullAtlas = false;/, "atlas close clears teardown guidance before restoring the hero");
 requireMatch(js, /showToast\("Atlas open\. Escape releases controls, then exits\."\);/, "concise atlas Escape recovery guidance");
 requireMatch(css, /\.primary-nav,[\s\S]*\.galaxy-controls,[\s\S]*\.lens-bar,[\s\S]*\.command-cycle-navigation\s*{[\s\S]*gap:\s*0\.5rem;/, "eight-pixel presentation control spacing");
 requireMatch(css, /\.command-cycle-climax\s*{[\s\S]*opacity:\s*0;[\s\S]*\.mission-machine\.is-climax \.command-cycle-climax\s*{[\s\S]*opacity:\s*1;/, "WATCH visual climax state");

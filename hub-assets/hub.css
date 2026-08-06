@@ -4676,35 +4676,6 @@ body.command-flightdeck-open::after {
   transform: translateY(0);
 }
 
-body.galaxy-fullscreen-open > .toast {
-  z-index: 1100;
-  top: 50dvh;
-  right: auto;
-  bottom: auto;
-  left: calc((100vw - max(20rem, 26vw)) / 2);
-  width: min(32rem, calc(100vw - max(20rem, 26vw) - 2rem));
-  max-width: none;
-  transform: translate(-50%, calc(-50% + 1rem));
-}
-
-body.galaxy-fullscreen-open > .toast.is-visible {
-  transform: translate(-50%, -50%);
-}
-
-@media (max-width: 62rem) {
-  body.galaxy-fullscreen-open > .toast {
-    top: 30dvh;
-    left: 50vw;
-    width: min(32rem, calc(100vw - 1.5rem));
-  }
-}
-
-@media (max-width: 42rem) {
-  body.galaxy-fullscreen-open > .toast {
-    top: 28dvh;
-  }
-}
-
 .noscript-banner {
   position: fixed;
   z-index: 90;
@@ -6027,6 +5998,27 @@ body.galaxy-fullscreen-open {
   }
 }
 
+@media (min-width: 42.01rem) and (max-width: 62rem) and (max-height: 40rem) {
+  .galaxy-workbench.is-full-atlas {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: max(100dvh, 24rem) auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .galaxy-workbench.is-full-atlas .galaxy-stage {
+    height: max(100dvh, 24rem);
+    min-height: 24rem;
+  }
+
+  .galaxy-workbench.is-full-atlas .galaxy-inspector {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: visible;
+  }
+}
+
 @media (max-width: 42rem) {
   .hero-causal-story {
     grid-template-columns: 1fr;
@@ -6460,6 +6452,24 @@ body.galaxy-fullscreen-open {
   color: var(--dim);
   cursor: not-allowed;
   opacity: 0.75;
+}
+
+.galaxy-atlas-status {
+  position: static;
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(104, 228, 255, 0.26);
+  border-radius: 0.55rem;
+  color: var(--text);
+  background: rgba(104, 228, 255, 0.07);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.galaxy-atlas-status:empty {
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .galaxy-director-motion-note {

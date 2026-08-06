@@ -43,13 +43,25 @@ const GALAXY_LABEL_OVERLAYS = Object.freeze([
 ]);
 let toastTimer = 0;
 
-function showToast(message) {
-  const toast = $("[data-toast]");
-  if (!toast) return;
+function clearToast() {
   window.clearTimeout(toastTimer);
+  toastTimer = 0;
+  const globalToast = $("[data-toast]");
+  const atlasStatus = $("[data-galaxy-atlas-status]");
+  globalToast?.classList.remove("is-visible");
+  if (globalToast) globalToast.textContent = "";
+  if (atlasStatus) atlasStatus.textContent = "";
+}
+
+function showToast(message) {
+  clearToast();
+  const globalToast = $("[data-toast]");
+  const atlasStatus = $("[data-galaxy-dialog].is-full-atlas [data-galaxy-atlas-status]");
+  const toast = atlasStatus || globalToast;
+  if (!toast) return;
   toast.textContent = message;
-  toast.classList.add("is-visible");
-  toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2600);
+  if (toast === globalToast) toast.classList.add("is-visible");
+  toastTimer = window.setTimeout(clearToast, 2600);
 }
 
 function safeStorageGet(key) {
@@ -1626,6 +1638,7 @@ class GalaxyAtlas {
     if (!this.fullAtlas) return;
     this.cancelDirector(false);
     this.setEngaged(false);
+    clearToast();
     this.fullAtlas = false;
     const root = $("[data-galaxy-dialog]");
     root?.classList.remove("is-full-atlas");

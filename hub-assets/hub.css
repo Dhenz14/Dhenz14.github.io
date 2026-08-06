@@ -7125,3 +7125,121 @@ body.motion-paused *::after {
     outline-offset: -3px;
   }
 }
+
+/* Zero-squint page contract: narrative copy stays at 16px and secondary
+   evidence/controls stay at 14px without flattening larger display type. */
+:root {
+  --type-copy-min: 1rem;
+  --type-meta-min: 0.875rem;
+}
+
+/* ZERO_SQUINT_COPY_START */
+:is(
+  .truth-intro strong,
+  .truth-boundary,
+  .truth-stats dd,
+  .trust-chain small,
+  .organ-card p,
+  .organ-card.organ-hands a,
+  .organ-card.organ-memory small,
+  .ide-release-status strong,
+  .ide-release-warning,
+  .ide-release-actions a.button.button-primary,
+  .ide-start-steps p,
+  .ide-start-here-reassurance,
+  .ide-start-here-intro .text-link,
+  .ide-stack-grid p,
+  .ide-release-digest p,
+  .ide-release-digest code,
+  .body-bridge-copy small,
+  .body-bridge-boundary,
+  .body-surface.body-surface-presentation > small,
+  .body-surface.body-surface-operator > small,
+  .galaxy-public-boundary,
+  .galaxy-start-guidance,
+  .stage-label,
+  .pipeline-note p,
+  .pipeline-note p strong,
+  .microcopy,
+  .command-cycle-boundary,
+  .release-path small,
+  .release-bindings code,
+  .trust-audit p,
+  .trust-audit code,
+  .tester-cards p,
+  .site-footer > p
+) {
+  font-size: var(--type-copy-min);
+}
+/* ZERO_SQUINT_COPY_END */
+
+/* ZERO_SQUINT_META_START */
+:is(
+  .truth-intro span:last-child,
+  .panel-state,
+  .capability-list span,
+  .capability-list b,
+  .system-junction span,
+  .trust-chain > div > span,
+  .trust-chain strong,
+  .system-panels .text-link,
+  .system-panels .text-link span,
+  .organ-code,
+  .organ-card small,
+  .organ-card a,
+  .ide-release-status small,
+  .ide-release-actions .button,
+  .ide-release-actions .text-link,
+  .ide-release-actions .text-link span,
+  .ide-release-warning > span:first-child,
+  .ide-release-facts dt,
+  .ide-release-facts code,
+  .ide-start-steps li > span,
+  .ide-stack-grid article > span,
+  .ide-release-digest span,
+  .body-bridge-signal,
+  .body-surface > span,
+  .body-surface > span b,
+  .body-surface > strong,
+  .body-surface > strong i,
+  .body-surface > small,
+  .organ-footer span,
+  .body-bridge-boundary > span,
+  .boundary-note > span:first-child,
+  .pipeline-rail li > span,
+  .pipeline-rail strong,
+  .pipeline-rail small,
+  .pipeline-note > a,
+  .pipeline-note > a span,
+  .release-status-line small,
+  .release-status-line strong,
+  .release-sequence,
+  .release-evidence-bar span,
+  .release-evidence-bar strong,
+  .release-facts dt,
+  .release-facts dd,
+  .release-path li > span,
+  .release-path strong,
+  .release-bindings span,
+  .release-bindings button,
+  .transport-map span,
+  .transport-map strong,
+  .transport-map small,
+  .trust-audit span,
+  .trust-audit a,
+  .release-actions .button,
+  .release-actions .button span,
+  .tester-cta .button,
+  .tester-cta .button span,
+  .access-actions .button,
+  .access-actions .button span,
+  .access-actions .button small,
+  .access-actions .text-link,
+  .access-actions .text-link span,
+  .access-visual > span,
+  .footer-brand small,
+  .site-footer nav a
+) {
+  font-size: var(--type-meta-min);
+}
+/* ZERO_SQUINT_META_END */

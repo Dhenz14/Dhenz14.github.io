@@ -38,6 +38,19 @@ const boundedBlock = (value, start, end, label) => {
   if (endIndex === -1) throw new Error(`${label} end marker missing`);
   return value.slice(startIndex, endIndex + end.length);
 };
+const selectorInventory = (value, label) => {
+  const match = value.match(/:is\(\s*([\s\S]*?)\s*\)\s*\{/);
+  if (!match) throw new Error(label + " selector inventory missing");
+  return match[1]
+    .split(",")
+    .map((selector) => selector.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+};
+const exactSequence = (actual, expected, label) => {
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(label + " drifted:\nactual=" + JSON.stringify(actual) + "\nexpected=" + JSON.stringify(expected));
+  }
+};
 
 const required = [
   "index.html",
@@ -87,6 +100,117 @@ const html = read("index.html");
 const gitAttributes = read(".gitattributes");
 const notFound = read("404.html");
 const css = read("hub-assets/hub.css");
+const zeroSquintCopyBlock = boundedBlock(css, "/* ZERO_SQUINT_COPY_START */", "/* ZERO_SQUINT_COPY_END */", "zero-squint copy");
+const zeroSquintMetaBlock = boundedBlock(css, "/* ZERO_SQUINT_META_START */", "/* ZERO_SQUINT_META_END */", "zero-squint metadata");
+const expectedZeroSquintCopySelectors = [
+  ".truth-intro strong",
+  ".truth-boundary",
+  ".truth-stats dd",
+  ".trust-chain small",
+  ".organ-card p",
+  ".organ-card.organ-hands a",
+  ".organ-card.organ-memory small",
+  ".ide-release-status strong",
+  ".ide-release-warning",
+  ".ide-release-actions a.button.button-primary",
+  ".ide-start-steps p",
+  ".ide-start-here-reassurance",
+  ".ide-start-here-intro .text-link",
+  ".ide-stack-grid p",
+  ".ide-release-digest p",
+  ".ide-release-digest code",
+  ".body-bridge-copy small",
+  ".body-bridge-boundary",
+  ".body-surface.body-surface-presentation > small",
+  ".body-surface.body-surface-operator > small",
+  ".galaxy-public-boundary",
+  ".galaxy-start-guidance",
+  ".stage-label",
+  ".pipeline-note p",
+  ".pipeline-note p strong",
+  ".microcopy",
+  ".command-cycle-boundary",
+  ".release-path small",
+  ".release-bindings code",
+  ".trust-audit p",
+  ".trust-audit code",
+  ".tester-cards p",
+  ".site-footer > p",
+];
+const expectedZeroSquintMetaSelectors = [
+  ".truth-intro span:last-child",
+  ".panel-state",
+  ".capability-list span",
+  ".capability-list b",
+  ".system-junction span",
+  ".trust-chain > div > span",
+  ".trust-chain strong",
+  ".system-panels .text-link",
+  ".system-panels .text-link span",
+  ".organ-code",
+  ".organ-card small",
+  ".organ-card a",
+  ".ide-release-status small",
+  ".ide-release-actions .button",
+  ".ide-release-actions .text-link",
+  ".ide-release-actions .text-link span",
+  ".ide-release-warning > span:first-child",
+  ".ide-release-facts dt",
+  ".ide-release-facts code",
+  ".ide-start-steps li > span",
+  ".ide-stack-grid article > span",
+  ".ide-release-digest span",
+  ".body-bridge-signal",
+  ".body-surface > span",
+  ".body-surface > span b",
+  ".body-surface > strong",
+  ".body-surface > strong i",
+  ".body-surface > small",
+  ".organ-footer span",
+  ".body-bridge-boundary > span",
+  ".boundary-note > span:first-child",
+  ".pipeline-rail li > span",
+  ".pipeline-rail strong",
+  ".pipeline-rail small",
+  ".pipeline-note > a",
+  ".pipeline-note > a span",
+  ".release-status-line small",
+  ".release-status-line strong",
+  ".release-sequence",
+  ".release-evidence-bar span",
+  ".release-evidence-bar strong",
+  ".release-facts dt",
+  ".release-facts dd",
+  ".release-path li > span",
+  ".release-path strong",
+  ".release-bindings span",
+  ".release-bindings button",
+  ".transport-map span",
+  ".transport-map strong",
+  ".transport-map small",
+  ".trust-audit span",
+  ".trust-audit a",
+  ".release-actions .button",
+  ".release-actions .button span",
+  ".tester-cta .button",
+  ".tester-cta .button span",
+  ".access-actions .button",
+  ".access-actions .button span",
+  ".access-actions .button small",
+  ".access-actions .text-link",
+  ".access-actions .text-link span",
+  ".access-visual > span",
+  ".footer-brand small",
+  ".site-footer nav a",
+];
+const zeroSquintCopySelectors = selectorInventory(zeroSquintCopyBlock, "zero-squint copy");
+const zeroSquintMetaSelectors = selectorInventory(zeroSquintMetaBlock, "zero-squint metadata");
+exactSequence(zeroSquintCopySelectors, expectedZeroSquintCopySelectors, "zero-squint copy selectors");
+exactSequence(zeroSquintMetaSelectors, expectedZeroSquintMetaSelectors, "zero-squint metadata selectors");
+const zeroSquintSelectorOverlap = zeroSquintCopySelectors.filter((selector) => zeroSquintMetaSelectors.includes(selector));
+if (zeroSquintSelectorOverlap.length) {
+  throw new Error("zero-squint selector classes overlap: " + zeroSquintSelectorOverlap.join(","));
+}
 const js = read("hub-assets/hub.js");
 const galaxyCore = read("hub-assets/galaxy-core.mjs");
 const ideReleaseCore = read("hub-assets/ide-release-core.mjs");
@@ -436,6 +560,9 @@ requireMatch(css, /@media \(max-width: 24rem\) and \(max-height: 36rem\)[\s\S]*\
 requireMatch(css, /\.hero-lede\s*{[\s\S]*font-size:\s*clamp\(1rem,[\s\S]*\.primary-nav a,[\s\S]*font-size:\s*0\.875rem;[\s\S]*\.hero-causal-story strong,[\s\S]*font-size:\s*1rem;/, "zero-squint 16px essential and 14px secondary typography");
 requireMatch(css, /\.mission-machine-head > div:first-child strong,[\s\S]*\.authority-wall p:last-child\s*{[\s\S]*font-size:\s*1rem;/, "16px command narrative typography floor");
 requireMatch(css, /\.inspector-stats dd,[\s\S]*\.mission-machine-head > div:first-child span,[\s\S]*\.mission-step > span,[\s\S]*\.command-cycle-orb b,[\s\S]*\.command-cycle-navigation > span,[\s\S]*\.command-cycle-actions \.button small,[\s\S]*\.command-cycle-boundary,[\s\S]*\.wall-state\s*{[\s\S]*font-size:\s*0\.875rem;/, "14px projector truth and navigation typography floor");
+requireMatch(css, /--type-copy-min:\s*1rem;[\s\S]*--type-meta-min:\s*0\.875rem;/, "page-wide zero-squint typography tokens");
+requireMatch(zeroSquintCopyBlock, /\)\s*\{\s*font-size:\s*var\(--type-copy-min\);\s*\}/, "16px evidence-classified copy floor");
+requireMatch(zeroSquintMetaBlock, /\)\s*\{\s*font-size:\s*var\(--type-meta-min\);\s*\}/, "14px metadata and control typography floor");
 requireMatch(css, /\.primary-nav a,[\s\S]*\.galaxy-atlas-toolbar button,[\s\S]*\.mission-step,[\s\S]*min-height:\s*2\.75rem;/, "44px presentation control targets");
 requireMatch(css, /\.primary-nav,[\s\S]*\.galaxy-controls,[\s\S]*\.lens-bar,[\s\S]*\.command-cycle-navigation\s*{[\s\S]*gap:\s*0\.5rem;/, "eight-pixel presentation control spacing");
 requireMatch(css, /\.command-cycle-climax\s*{[\s\S]*opacity:\s*0;[\s\S]*\.mission-machine\.is-climax \.command-cycle-climax\s*{[\s\S]*opacity:\s*1;/, "WATCH visual climax state");

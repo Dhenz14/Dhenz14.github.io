@@ -75,43 +75,17 @@
           <h1 id="hero-title">One organism.<br><span>Every system in orbit.</span></h1>
           <p class="hero-lede">
             Evidence enters. Hive-AI reasons. HivePoA verifies. The organism changes only after proof lands.
-            Explore the public-safe authored body here, then carry the exact source context into your authenticated local runtime.
+            Explore the public-safe authored body, then carry exact source context into your authenticated local runtime.
           </p>
-          <ol class="hero-causal-story" aria-label="How the organism changes">
-            <li><span>01</span><strong>Evidence enters</strong><small>Source-bound inputs</small></li>
-            <li><span>02</span><strong>Hive-AI reasons</strong><small>Purpose + routes</small></li>
-            <li><span>03</span><strong>HivePoA verifies</strong><small>Receipts + proof</small></li>
-            <li><span>04</span><strong>Organism changes</strong><small>Only after landing</small></li>
-          </ol>
-          <div class="hero-actions" aria-label="Primary actions">
+          <div class="hero-actions hero-primary-action" aria-label="Primary action">
             <a class="button button-primary hero-enter" data-hero-atlas-cta data-galaxy-open href="#galaxy">
               <span>Enter the living galaxy</span>
               <small>Full 640-neuron atlas</small>
             </a>
-            <a class="button button-quiet" data-hero-body-cta href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">
-              <span>Open local body</span>
-              <small>Runtime not checked ↗</small>
-            </a>
-            <a class="button button-quiet" href="#ide-download">
-              <span>Get Hive IDE</span>
-              <small>Tester installer ↓</small>
-            </a>
-            <a class="button button-quiet" href="/HivePoA/tester-network/">
-              <span>Tester network</span>
-              <small>Signed release path</small>
-            </a>
           </div>
-          <dl class="hero-truth-rail" aria-label="Public truth boundary">
-            <div><dt>Source</dt><dd data-hero-source>verification pending</dd></div>
-            <div><dt>Capture</dt><dd data-hero-freshness>not checked</dd></div>
-            <div><dt>Twitch</dt><dd data-fact="twitches">—</dd></div>
-            <div><dt>PM-only</dt><dd data-fact="pmOnly">—</dd></div>
-            <div><dt>Runtime</dt><dd>not checked</dd></div>
-          </dl>
-          <p class="microcopy">The public page validates aggregate source truth only. Local links never probe or start your machine, and GitHub Pages never receives your prompt.</p>
         </div>
 
-        <div class="hero-system" data-motion-scene aria-label="Hive-AI and HivePoA system relationship">
+        <div class="hero-system" data-motion-scene data-hero-organism-preview aria-label="Recognizable organism: Hive-AI reasons and HivePoA verifies">
           <div class="stage-grid" aria-hidden="true"></div>
           <div class="stage-lattice" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
           <div class="orbit orbit-one" aria-hidden="true"></div>
@@ -141,6 +115,37 @@
             <span>Verify</span>
             <strong>HivePoA</strong>
           </div>
+        </div>
+
+        <div class="hero-support" data-reveal>
+          <ol class="hero-causal-story" aria-label="How the organism changes">
+            <li><span>01</span><strong>Evidence enters</strong><small>Source-bound inputs</small></li>
+            <li><span>02</span><strong>Hive-AI reasons</strong><small>Purpose + routes</small></li>
+            <li><span>03</span><strong>HivePoA verifies</strong><small>Receipts + proof</small></li>
+            <li><span>04</span><strong>Organism changes</strong><small>Only after landing</small></li>
+          </ol>
+          <div class="hero-actions hero-secondary-actions" aria-label="Supporting actions">
+            <a class="button button-quiet" data-hero-body-cta href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">
+              <span>Open local body</span>
+              <small>Runtime not checked ↗</small>
+            </a>
+            <a class="button button-quiet" href="#ide-download">
+              <span>Get Hive IDE</span>
+              <small>Tester installer ↓</small>
+            </a>
+            <a class="button button-quiet" href="/HivePoA/tester-network/">
+              <span>Tester network</span>
+              <small>Signed release path</small>
+            </a>
+          </div>
+          <dl class="hero-truth-rail" aria-label="Public truth boundary">
+            <div><dt>Source</dt><dd data-hero-source>verification pending</dd></div>
+            <div><dt>Capture</dt><dd data-hero-freshness>not checked</dd></div>
+            <div><dt>Twitch</dt><dd data-fact="twitches">—</dd></div>
+            <div><dt>PM-only</dt><dd data-fact="pmOnly">—</dd></div>
+            <div><dt>Runtime</dt><dd>not checked</dd></div>
+          </dl>
+          <p class="microcopy">The public page validates aggregate source truth only. Local links never probe or start your machine, and GitHub Pages never receives your prompt.</p>
         </div>
       </section>
 
@@ -353,7 +358,6 @@
               <button type="button" data-galaxy-zoom="out" aria-label="Zoom out" aria-disabled="true" disabled>−</button>
               <button type="button" data-galaxy-reset aria-disabled="true" disabled>Reset view</button>
               <button type="button" data-galaxy-zoom="in" aria-label="Zoom in" aria-disabled="true" disabled>+</button>
-              <button type="button" data-galaxy-director aria-pressed="false" aria-disabled="true" disabled>Run 24s director</button>
               <button type="button" data-galaxy-fullscreen aria-haspopup="dialog" aria-disabled="true" disabled>Full atlas</button>
             </div>
           </div>
@@ -366,12 +370,18 @@
               <canvas class="galaxy-canvas" data-galaxy-canvas tabindex="-1" aria-disabled="true" role="img" aria-label="Interactive public-safe atlas of 640 Hive-AI neurons in exact authored coordinates. Engage controls before wheel zoom; drag to orbit, Shift-drag to pan, pinch around its centroid, Home to reset, and Escape to release controls or exit the full atlas."></canvas>
               <div class="galaxy-reticle" aria-hidden="true"><i></i><i></i></div>
               <div class="galaxy-depth" aria-hidden="true"><span>DIVISION</span><i></i><span>FAMILY</span><i></i><span>NEURON</span></div>
-              <div class="galaxy-hint"><span data-galaxy-hint-state>Engage</span> <b data-galaxy-hint-copy>controls</b> <i></i><span>Drag</span> orbit <i></i><span>Shift-drag</span> pan</div>
-              <div class="map-readout"><span>Source graph</span><strong data-graph-hash>pending</strong></div>
               <div class="galaxy-demo-proof" data-galaxy-demo-proof hidden><span>DEMO</span><strong>ZERO EFFECTS</strong></div>
-              <div class="galaxy-director-caption" data-galaxy-director-caption hidden aria-live="polite">
-                <strong data-galaxy-director-step>01 / 06 · Evidence enters</strong>
-                <span data-galaxy-director-copy>A source-bound input reaches the public body. This demonstration dispatches nothing.</span>
+              <div class="galaxy-stage-bottom">
+                <div class="galaxy-division-name" data-galaxy-division-name>Division A · Route, Hold, And Activation Budget</div>
+                <div class="galaxy-director-caption" data-galaxy-director-caption hidden aria-live="polite">
+                  <span class="galaxy-director-inline-proof">DEMO · ZERO EFFECTS</span>
+                  <strong><span class="galaxy-director-step-count" data-galaxy-director-step-count>01 / 06 ·</span> <span data-galaxy-director-step>Evidence enters</span></strong>
+                  <span data-galaxy-director-copy>A source-bound input reaches the public body. This demonstration dispatches nothing.</span>
+                </div>
+                <div class="galaxy-stage-rail">
+                  <div class="map-readout" aria-label="Source graph digest"><span>Source graph</span><strong data-graph-hash>pending</strong></div>
+                  <div class="galaxy-hint"><span data-galaxy-hint-state>Engage</span> <b data-galaxy-hint-copy>controls</b> <i></i><span>Drag</span> orbit <i></i><span>Shift-drag</span> pan</div>
+                </div>
               </div>
               <div class="galaxy-semantic-fallback" data-galaxy-semantic-fallback hidden role="status">
                 <strong>Semantic atlas active</strong>
@@ -381,7 +391,19 @@
             </div>
 
             <aside class="lens-inspector galaxy-inspector">
-              <button class="galaxy-modal-director" type="button" data-galaxy-director-modal aria-pressed="false" aria-disabled="true" disabled>Run 24s director</button>
+              <div class="galaxy-atlas-toolbar" aria-label="Atlas presentation and recovery tools">
+                <button class="galaxy-director-control" type="button" data-galaxy-director aria-pressed="false" aria-disabled="true" disabled>Run 24s director</button>
+                <button type="button" data-galaxy-reset-modal aria-disabled="true" disabled>Reset view</button>
+                <button type="button" data-galaxy-fit-selected aria-disabled="true" disabled>Fit selected</button>
+              </div>
+              <p class="galaxy-director-motion-note" id="galaxy-director-motion-note" data-galaxy-director-motion-note hidden>Director is disabled because reduced motion is active. Manual atlas controls remain available.</p>
+              <div class="galaxy-gold-legend" data-galaxy-gold-legend>
+                <span class="galaxy-gold-swatch" aria-hidden="true"></span>
+                <div>
+                  <strong>Gold means verified mastered Twitch.</strong>
+                  <p>A gold neuron is purpose-mastered and alive/working in authenticated Living Anatomy. Public atlas points stay neutral because private per-neuron status remains local.</p>
+                </div>
+              </div>
               <div class="inspector-topline"><span data-galaxy-index>Division A / 16</span><span data-lens-code>BODY</span></div>
               <p class="eyebrow" data-galaxy-code>A · ROUTE</p>
               <h3 data-galaxy-title>Route, hold, and activation budget</h3>
@@ -509,6 +531,11 @@
               <div class="command-cycle-viewport-label"><i></i><span>PUBLIC ORGANISM ECHO</span><b data-command-viewport-stage>SEE</b></div>
               <div class="command-cycle-viewport-depth"><span>DIVISION</span><i></i><span>FAMILY</span><i></i><span>NEURON</span></div>
               <div class="command-cycle-viewport-target"><i></i><b></b></div>
+              <div class="command-cycle-climax" data-command-climax aria-hidden="true">
+                <span>DEMONSTRATION · ZERO EFFECTS</span>
+                <strong>Evidence <i>→</i> verified <i>→</i> body absorbs source</strong>
+                <small>The organism changes only after proof lands.</small>
+              </div>
             </div>
             <div class="command-cycle-readout" role="status" aria-live="polite" aria-atomic="true">
               <span class="command-cycle-orb" aria-hidden="true"><i></i><b data-command-stage-index>01</b></span>
@@ -708,6 +735,29 @@
       </nav>
       <p>Public discovery surface · no credentials · no auto-download · no runtime authority</p>
     </footer>
+
+    <dialog class="local-handoff-dialog" data-local-handoff-dialog aria-labelledby="local-handoff-title">
+      <button class="local-handoff-close" type="button" data-local-handoff-close aria-label="Close local runtime guidance">×</button>
+      <p class="eyebrow">Local runtime handoff · no probe</p>
+      <h2 id="local-handoff-title">Keep the public atlas open while you try the local body.</h2>
+      <p data-local-handoff-copy>Availability is not checked or claimed. The public page will remain open, and the local route opens only after your explicit confirmation.</p>
+      <div class="local-handoff-recovery" data-local-handoff-recovery>
+        <strong>If the route is unavailable or reports DRIFTED:</strong>
+        <ol>
+          <li>Start Hive IDE on this computer.</li>
+          <li>Open Hive-AI, then choose Living Anatomy.</li>
+          <li>Return here and retry the exact source-bound route.</li>
+        </ol>
+        <p>DRIFTED is a truth gate. Do not weaken it, hide it, or treat an unavailable runtime as zero.</p>
+      </div>
+      <code class="local-handoff-url" data-local-handoff-url>Local route selected after confirmation</code>
+      <div class="local-handoff-actions">
+        <a class="button button-primary" data-local-handoff-confirm href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">Try local runtime ↗</a>
+        <button class="button button-quiet" type="button" data-local-handoff-copy-url>Copy local URL</button>
+        <button class="button button-quiet" type="button" data-local-handoff-stay>Stay in public atlas</button>
+      </div>
+      <p class="local-handoff-status" data-local-handoff-status aria-live="polite">No request has been sent to the local runtime.</p>
+    </dialog>
 
     <div class="toast" data-toast role="status" aria-live="polite" aria-atomic="true"></div>
     <noscript>

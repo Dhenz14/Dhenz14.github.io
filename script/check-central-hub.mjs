@@ -111,6 +111,18 @@ const forcedColorsWiring = boundedBlock(
   "this.applyRenderAvailability(this.forcedColors.matches);",
   "forced-colors wiring",
 );
+const localHandoffWiring = boundedBlock(
+  js,
+  "function wireLocalHandoffGate()",
+  "class FieldRenderer",
+  "local-runtime handoff wiring",
+);
+const wheelWiring = boundedBlock(
+  js,
+  'this.canvas.addEventListener("wheel"',
+  'this.canvas.addEventListener("keydown"',
+  "wheel handler",
+);
 
 for (const [name, source] of [["index.html", html], ["404.html", notFound]]) {
   if (/<meta[^>]+http-equiv=["']refresh/i.test(source) || /window\.location\.(?:replace|assign)/.test(source)) {
@@ -132,6 +144,12 @@ requireMatch(html, /id="galaxy"/, "public galaxy section");
 requireMatch(html, /Evidence enters[\s\S]*Hive-AI reasons[\s\S]*HivePoA verifies[\s\S]*Organism changes/, "immediate causal hero story");
 requireMatch(html, /data-hero-atlas-cta[^>]+data-galaxy-open[^>]+href="#galaxy"/, "dominant full-atlas hero entry");
 requireMatch(html, /data-hero-source[\s\S]*data-hero-freshness[\s\S]*data-fact="twitches"[\s\S]*data-fact="pmOnly"[\s\S]*Runtime/, "compact public truth rail");
+const heroCtaIndex = html.indexOf("data-hero-atlas-cta");
+const heroOrganismIndex = html.indexOf("data-hero-organism-preview");
+const heroSupportIndex = html.indexOf('class="hero-support"');
+if (heroCtaIndex === -1 || heroOrganismIndex <= heroCtaIndex || heroSupportIndex <= heroOrganismIndex) {
+  throw new Error("first-frame hero ordering must remain CTA, recognizable organism, then support detail");
+}
 const rootButtonTags = [...html.matchAll(/<button\b[^>]*>/g)].map((match) => match[0]);
 const startupLensButtons = rootButtonTags.filter((tag) => /\sdata-lens=/.test(tag));
 if (startupLensButtons.length !== 5 || startupLensButtons.some((tag) => !/\sdisabled(?:\s|>)/.test(tag))) {
@@ -147,7 +165,13 @@ requireMatch(html, /data-galaxy-engage[^>]+aria-pressed="false"/, "explicit gala
 requireMatch(html, /data-galaxy-canvas[^>]+tabindex="-1"[^>]+aria-disabled="true"[^>]+role="img"/, "inert startup galaxy canvas");
 requireMatch(html, /data-galaxy-index-list[^>]+aria-label="Jump to a galaxy division"/, "semantic division navigation");
 requireMatch(html, /data-galaxy-context-summary>Context unavailable · source not yet bound<[\s\S]*data-galaxy-context-copy>Context parameters remain unavailable until this browser validates/, "unbound local-context truth");
-requireMatch(html, /galaxy-inspector[\s\S]*data-galaxy-director-modal[^>]+aria-pressed="false"/, "Director stop control inside full-atlas modal");
+const directorButtons = rootButtonTags.filter((tag) => /\sdata-galaxy-director(?:\s|>)/.test(tag));
+if (directorButtons.length !== 1 || !directorButtons[0].includes('aria-pressed="false"')) {
+  throw new Error(`exactly one startup Director control is required, found ${directorButtons.length}`);
+}
+requireMatch(html, /galaxy-inspector[\s\S]*galaxy-atlas-toolbar[\s\S]*data-galaxy-director[\s\S]*data-galaxy-reset-modal[\s\S]*data-galaxy-fit-selected/, "single modal Director and persistent recovery tools");
+requireMatch(html, /id="galaxy-director-motion-note"[^>]+data-galaxy-director-motion-note[^>]+hidden/, "adjacent reduced-motion Director explanation");
+requireMatch(html, /Gold means verified mastered Twitch\.[\s\S]*Public atlas points stay neutral because private per-neuron status remains local\./, "plain gold Twitch legend and public privacy boundary");
 requireMatch(html, /Current authorized beta tester package/, "tester authorization label");
 requireMatch(html, /id="ide-download"[^>]+data-ide-release data-state="checking"/, "inert Hive IDE release section");
 requireMatch(html, /One current-user installer carries the IDE,[\s\S]*internal HivePoA\/IPFS Service Center/, "one-download product boundary");
@@ -168,6 +192,8 @@ requireMatch(html, /class="button button-quiet" data-hero-body-cta href="http:\/
 requireMatch(html, /class="button button-quiet" href="#ide-download"/, "subordinate Hive IDE download handoff");
 requireMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1"[^>]*target="_blank"[^>]*rel="noreferrer"/, "safe presentation body navigation");
 requireMatch(html, /href="http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0"[^>]*target="_blank"[^>]*rel="noreferrer"/, "safe operator body navigation");
+requireMatch(html, /data-local-handoff-dialog[\s\S]*Availability is not checked or claimed\.[\s\S]*Start Hive IDE[\s\S]*Open Hive-AI, then choose Living Anatomy[\s\S]*DRIFTED is a truth gate/, "persistent no-probe local recovery guidance");
+requireMatch(html, /data-local-handoff-confirm[^>]+target="_blank"[^>]+rel="noreferrer"/, "explicit local handoff opens a separate tab");
 requireMatch(html, /data-body-surface="atlas"[\s\S]*data-body-surface="presentation"[\s\S]*data-body-surface="operator"/, "three-surface Living Anatomy bridge");
 requireMatch(html, /public page never claims or probes local availability/, "truthful local availability boundary");
 requireMatch(html, /GitHub Pages never receives your prompt/, "prompt privacy");
@@ -181,6 +207,7 @@ requireMatch(html, /The walkthrough narrates the lifecycle; it performs zero eff
 requireMatch(html, /data-command-walkthrough aria-pressed="false"/, "explicit walkthrough state");
 requireMatch(html, /Open command body[\s\S]*Real scan · missions · receipts/, "operator command handoff");
 requireMatch(html, /canvas data-command-echo/, "command organism echo");
+requireMatch(html, /data-command-climax[\s\S]*DEMONSTRATION · ZERO EFFECTS[\s\S]*body absorbs source[\s\S]*only after proof lands/, "truth-bound WATCH climax");
 requireMatch(html, /data-command-prev[\s\S]*data-command-next[\s\S]*data-command-reset/, "presenter recovery navigation");
 requireMatch(html, /data-command-flightdeck aria-pressed="false"[\s\S]*F · projector mode/, "projector flightdeck control");
 if (html.indexOf("galaxy-commandbar") > html.indexOf("body-bridge-dock")) {
@@ -237,7 +264,10 @@ requireMatch(js, /startDirector\(\)[\s\S]*setTimeout\(\(\) => this\.cancelDirect
 requireMatch(js, /syncContextHandoff\(\)[\s\S]*Context unavailable · source not yet bound[\s\S]*buildPublicHandoffUrl\([\s\S]*presentation,[\s\S]*sourceCommit:[\s\S]*graphHash:[\s\S]*lens:[\s\S]*node,[\s\S]*level,/, "validated no-probe public-to-local context handoff");
 requireMatch(galaxyCore, /artifact: "build"[\s\S]*division: "district"[\s\S]*rawNode\.slice\("neuron:"\.length\)/, "canonical local context taxonomy");
 requireMatch(galaxyCore, /searchParams\.set\("presentation"[\s\S]*publicContextVersion[\s\S]*sourceCommit[\s\S]*graphHash[\s\S]*lens[\s\S]*node[\s\S]*level/, "closed handoff URL query");
-requireMatch(js, /focusInsideFullAtlas\(\)[\s\S]*data-galaxy-director-modal[\s\S]*this\.canvas[\s\S]*data-galaxy-exit/, "modal-internal focus recovery");
+requireMatch(js, /focusInsideFullAtlas\(\)[\s\S]*data-galaxy-director[\s\S]*this\.canvas[\s\S]*data-galaxy-exit/, "modal-internal focus recovery");
+requireNoMatch(js, /data-galaxy-director-modal/, "duplicate Director control");
+requireMatch(js, /setModalIsolation\(root, active\)[\s\S]*node\.inert = inert;[\s\S]*ariaHidden === null[\s\S]*sibling\.inert = true;[\s\S]*sibling\.setAttribute\("aria-hidden", "true"\)/, "exact modal background isolation restoration");
+requireMatch(js, /openFullAtlas\(trigger = null\)[\s\S]*this\.setModalIsolation\(root, true\)[\s\S]*closeFullAtlas\(restoreFocus = true\)[\s\S]*this\.setModalIsolation\(root, false\)/, "full-atlas modal isolation lifecycle");
 requireMatch(js, /!root\?\.contains\(document\.activeElement\)[\s\S]*event\.shiftKey \? last : first/, "full-atlas focus containment from outside focus");
 requireMatch(js, /event\.key !== "Escape" \|\| !this\.engaged[\s\S]*this\.cancelDirector\(false\);[\s\S]*this\.setEngaged\(false, true\);[\s\S]*this\.focusInsideFullAtlas\(\)/, "first Escape preserves modal focus and restores Director state");
 requireMatch(js, /closeFullAtlas\(restoreFocus = true\)[\s\S]*this\.cancelDirector\(false\)/, "full-atlas close restores Director state");
@@ -245,6 +275,11 @@ requireMatch(js, /this\.paused = Boolean\(event\.detail\?\.paused\)[\s\S]*if \(t
 requireMatch(js, /exactGalaxyDirectorState\(\{[\s\S]*targetPanY:[\s\S]*if \(returnContext\)[\s\S]*this\.rotationX = returnContext\.rotationX[\s\S]*this\.targetPanY = returnContext\.targetPanY/, "exact Director state restoration");
 requireMatch(js, /function wireLenses\(\)[\s\S]*button\.disabled = false;/, "lens controls enabled only after module boot");
 requireMatch(js, /setCameraControlsAvailable\(available[\s\S]*button\.disabled = !available;[\s\S]*aria-disabled[\s\S]*tabindex[\s\S]*aria-disabled/, "camera controls runtime availability gate");
+requireMatch(js, /syncDirectorMotionPolicy\(renderAvailable[\s\S]*data-galaxy-director-motion-note[\s\S]*Director unavailable — reduced motion/, "reduced-motion Director disable and relabel policy");
+requireMatch(js, /root\.dataset\.commandState = "discrete";[\s\S]*select\(COMMAND_CYCLE_STEPS\.length - 1, false\)[\s\S]*Replay verified-change reveal/, "reduced-motion discrete WATCH reveal");
+requireMatch(js, /fitSelected\(\)[\s\S]*activeNeuron[\s\S]*activeFamily[\s\S]*focusDivision/, "fit-selected camera recovery");
+requireMatch(js, /buildDivisionIndex\(\)[\s\S]*addEventListener\("focus"[\s\S]*showDivision\(index, false, false\)[\s\S]*addEventListener\("blur"/, "division full-name keyboard discovery");
+requireMatch(js, /showDivision\(index[\s\S]*data-galaxy-division-name[\s\S]*titleCase\(division\.name\)/, "persistent selected division full name");
 requireMatch(js, /runSafely\("Living Anatomy galaxy", startGalaxy\)/, "galaxy call chain");
 requireMatch(js, /const COMMAND_CYCLE_STEPS = Object\.freeze\(\[[\s\S]*SEE · SOURCE BOUND[\s\S]*WATCH · ABSORBED/, "command cycle semantic model");
 requireMatch(js, /function wireCommandCycle\(\)[\s\S]*data-command-cycle[\s\S]*setInterval[\s\S]*1500/, "command cycle controller");
@@ -270,6 +305,7 @@ requireMatch(js, /GALAXY_LENS_PROFILES/, "lens-specific topology weighting");
 requireMatch(js, /selectGalaxyHit\(/, "child-first global hit resolver call");
 requireNoMatch(js, /point\.divisionIndex !== focusDivision/, "parent-first hit restriction");
 requireMatch(pointerDownBlock, /this\.updatePointer\(event\);\s*this\.hitTest\(\);/, "touch tap coordinate capture");
+requireMatch(pointerDownBlock, /this\.takeManualControl\(\);/, "pointer interrupts Director");
 requireMatch(pointerDownBlock, /const pointerPolicy = galaxyPointerPolicy\(event\.pointerType, this\.engaged\);[\s\S]*pointerPolicy\.engage[\s\S]*this\.pointer\.orbitAllowed = pointerPolicy\.orbitAllowed;/, "behavioral pointer policy integration");
 requireMatch(pointerMoveBlock, /tracked && !this\.engaged[\s\S]*this\.dragMoved \|\|= Math\.hypot\(dx, dy\) > 6;[\s\S]*galaxyGestureCamera\(/, "unengaged touch scroll and engaged pinch ownership");
 requireMatch(js, /pointercancel[^\n]+release\(event, true\)/, "non-activating pointer cancellation");
@@ -279,7 +315,10 @@ requireMatch(js, /resolveGalaxySelection\([\s\S]*previousNeuronId/, "semantic sn
 requireMatch(js, /galaxy-fallback-active/, "semantic no-canvas fallback activation");
 requireMatch(js, /1 - Math\.exp\(-elapsed \/ 145\)/, "time-based camera damping");
 requireMatch(js, /if \(!this\.engaged\) return;\s*event\.preventDefault\(\);[\s\S]*this\.zoomAt\(factor, this\.pointer\.x, this\.pointer\.y\)/, "explicit wheel ownership and pointer-centered zoom");
+requireMatch(wheelWiring, /this\.takeManualControl\(\);/, "wheel interrupts Director");
+requireMatch(wheelWiring, /this\.directorRunning[\s\S]*this\.takeManualControl\(\);[\s\S]*if \(!this\.engaged\) return;/, "unengaged wheel still interrupts Director without stealing scroll");
 requireMatch(js, /event\.shiftKey[\s\S]*this\.targetPanX[\s\S]*PageUp[\s\S]*PageDown/, "keyboard pan and semantic selection path");
+requireMatch(js, /const handled = \["ArrowLeft"[\s\S]*if \(!this\.engaged\)[\s\S]*if \(!handled\.includes\(event\.key\)\) return;[\s\S]*this\.takeManualControl\(\);[\s\S]*this\.setEngaged\(true, true\);/, "unengaged keyboard camera input interrupts Director and takes explicit control");
 requireMatch(js, /adaptiveGalaxyDpr\([\s\S]*depthSortGalaxyPoints\(this\.projectedNeurons\)/, "adaptive high-DPI and stable depth rendering");
 requireMatch(js, /event\.key !== "Escape" \|\| !this\.engaged[\s\S]*this\.setEngaged\(false, true\);[\s\S]*data-galaxy-engage[\s\S]*focus\(\{ preventScroll: true \}\)/, "keyboard scroll release and focus return");
 requireMatch(js, /this\.intersecting = true;[\s\S]*this\.documentVisible = !document\.hidden;/, "visibility state separation");
@@ -308,6 +347,10 @@ requireMatch(forcedColorsWiring, /this\.forcedColors\.addListener\(onForcedColor
 requireMatch(js, /applyRenderAvailability\(forcedColorsActive\)/, "live render fallback transition");
 requireMatch(js, /if \(\$\("\[data-source-stamp\], \[data-galaxy-canvas\]"\)\)[\s\S]*loadSourceSnapshot\(\)\.finally\(startSnapshotRefresh\)/, "snapshot refresh surface gate");
 requireMatch(js, /runSafely\("Offscreen scene control", wireSceneActivity\)/, "offscreen CSS animation control");
+requireMatch(js, /runSafely\("Local runtime handoff guidance", wireLocalHandoffGate\)/, "local handoff guidance call chain");
+requireMatch(localHandoffWiring, /data-local-handoff-confirm[\s\S]*event\.preventDefault\(\)[\s\S]*dialog\.showModal\(\)/, "guidance precedes explicit local navigation");
+requireNoMatch(localHandoffWiring, /\bfetch\s*\(|new\s+(?:Image|WebSocket)\b|XMLHttpRequest/, "local availability probe");
+requireMatch(js, /hive:request-local-handoff[\s\S]*if \(this\.fullAtlas\) this\.closeFullAtlas\(false\)/, "local guidance exits isolated atlas before opening its dialog");
 requireNoMatch(js, /time\s*-\s*this\.lastFrame\s*<\s*32/, "30fps frame throttle");
 requireNoMatch(js, /Math\.random\(/, "non-deterministic visual geometry");
 requireNoMatch(galaxyCore, /GOLDEN_ANGLE|syntheticGeometry|fallbackGeometry/i, "synthetic public galaxy geometry");
@@ -334,9 +377,18 @@ requireMatch(css, /\.galaxy-stage\.is-engaged\s*{[\s\S]*?touch-action:\s*none;/,
 requireMatch(css, /\.hero-system \.satellite-ide\s*{\s*grid-column:[\s\S]*\.hero-system \.stage-readout\s*{[\s\S]*grid-column:/, "collision-proof hero stage ownership");
 requireMatch(css, /\.galaxy-workbench\.is-full-atlas\s*{[\s\S]*position:\s*fixed;[\s\S]*height:\s*100dvh;/, "full-viewport atlas layout");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.galaxy-workbench\.is-full-atlas[\s\S]*grid-template-rows:/, "mobile same-viewport atlas and inspector");
-requireMatch(css, /\.galaxy-demo-proof\s*{[\s\S]*left:\s*1rem;[\s\S]*\.galaxy-director-caption\s*{[\s\S]*bottom:\s*5\.5rem;[\s\S]*\.galaxy-workbench \.map-readout\s*{[\s\S]*bottom:\s*0\.75rem;/, "eight-pixel full-atlas overlay separation");
+requireMatch(css, /\.galaxy-stage-bottom\s*{[\s\S]*right:\s*1rem;[\s\S]*bottom:\s*1rem;[\s\S]*left:\s*1rem;[\s\S]*\.galaxy-stage-rail\s*{[\s\S]*grid-template-columns:/, "collision-proof shared atlas bottom rail");
 requireMatch(css, /@media \(max-width: 20rem\)[\s\S]*\.galaxy-demo-proof\s*{[\s\S]*top:\s*4rem;/, "200-percent mobile overlay stack");
-requireMatch(css, /\.galaxy-workbench\.is-full-atlas \.galaxy-modal-director\s*{[\s\S]*display:\s*block;/, "modal Director control visibility");
+requireMatch(css, /\.galaxy-atlas-toolbar\s*{[\s\S]*position:\s*sticky;[\s\S]*\.galaxy-atlas-toolbar \[data-galaxy-director\]\s*{[\s\S]*grid-column:\s*1 \/ -1;/, "persistent single Director, Reset, and Fit toolbar");
+requireMatch(css, /\.hero\s*{[\s\S]*grid-template-rows:\s*auto auto;[\s\S]*min-height:\s*calc\(100svh - 5\.25rem\)[\s\S]*\.hero-support\s*{[\s\S]*grid-column:\s*1 \/ -1;/, "first-fold hero layout contract");
+requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.hero-system\s*{[\s\S]*grid-template-columns:\s*repeat\(2,[\s\S]*min-height:\s*11\.5rem;[\s\S]*\.hero-system \.satellite-core,[\s\S]*display:\s*none;/, "recognizable compact mobile organism");
+requireMatch(css, /\.hero-lede\s*{[\s\S]*font-size:\s*clamp\(1rem,[\s\S]*\.primary-nav a,[\s\S]*font-size:\s*0\.875rem;[\s\S]*\.hero-causal-story strong,[\s\S]*font-size:\s*1rem;/, "zero-squint 16px essential and 14px secondary typography");
+requireMatch(css, /\.mission-machine-head > div:first-child strong,[\s\S]*\.authority-wall p:last-child\s*{[\s\S]*font-size:\s*1rem;/, "16px command narrative typography floor");
+requireMatch(css, /\.inspector-stats dd,[\s\S]*\.mission-machine-head > div:first-child span,[\s\S]*\.mission-step > span,[\s\S]*\.command-cycle-orb b,[\s\S]*\.command-cycle-navigation > span,[\s\S]*\.command-cycle-actions \.button small,[\s\S]*\.command-cycle-boundary,[\s\S]*\.wall-state\s*{[\s\S]*font-size:\s*0\.875rem;/, "14px projector truth and navigation typography floor");
+requireMatch(css, /\.primary-nav a,[\s\S]*\.galaxy-atlas-toolbar button,[\s\S]*\.mission-step,[\s\S]*min-height:\s*2\.75rem;/, "44px presentation control targets");
+requireMatch(css, /\.primary-nav,[\s\S]*\.galaxy-controls,[\s\S]*\.lens-bar,[\s\S]*\.command-cycle-navigation\s*{[\s\S]*gap:\s*0\.5rem;/, "eight-pixel presentation control spacing");
+requireMatch(css, /\.command-cycle-climax\s*{[\s\S]*opacity:\s*0;[\s\S]*\.mission-machine\.is-climax \.command-cycle-climax\s*{[\s\S]*opacity:\s*1;/, "WATCH visual climax state");
+requireMatch(css, /\.local-handoff-dialog\s*{[\s\S]*max-height:\s*calc\(100dvh - 2rem\)[\s\S]*\.local-handoff-dialog::backdrop/, "persistent local recovery dialog layout");
 requireMatch(css, /\.map-readout\s*{[\s\S]*?pointer-events:\s*none;/, "non-blocking graph readout overlay");
 requireMatch(css, /\.mission-grid\s*{[\s\S]*?grid-template-columns:\s*repeat\(6, minmax\(0, 1fr\)\)/, "six-stage command flightdeck");
 requireMatch(css, /\.command-cycle-readout\s*{[\s\S]*?grid-template-columns:\s*auto minmax\(0, 1fr\) auto;/, "command cycle proof readout");
@@ -345,7 +397,8 @@ requireMatch(css, /body\.command-flightdeck-open::after[\s\S]*\.mission-machine\
 requireMatch(css, /@keyframes command-cycle-scan[\s\S]*@keyframes command-cycle-node/, "command cycle motion language");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.command-cycle-readout\s*{[\s\S]*?grid-template-columns:\s*1fr;/, "mobile command readout stack");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.command-cycle-readout[\s\S]*\.command-cycle-orb/, "forced-colors command fallback");
-requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.galaxy-workbench \.map-readout\s*{[\s\S]*?bottom:\s*0\.7rem;[\s\S]*?left:\s*0\.7rem;/, "separated mobile galaxy overlays");
+requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.galaxy-stage-bottom\s*{[\s\S]*?bottom:\s*0\.6rem;[\s\S]*?\.galaxy-stage-rail\s*{[\s\S]*?grid-template-columns:\s*1fr;/, "separated mobile galaxy overlays");
+requireMatch(css, /@media \(max-width: 24rem\), \(max-height: 36rem\)[\s\S]*\.galaxy-stage-bottom \.galaxy-hint\s*{[\s\S]*display:\s*none;[\s\S]*\.galaxy-demo-proof\s*{[\s\S]*display:\s*none !important;[\s\S]*\.galaxy-stage\[data-director-step\] \.galaxy-stage-rail,[\s\S]*data-galaxy-director-copy[\s\S]*display:\s*none;[\s\S]*\.galaxy-director-inline-proof\s*{[\s\S]*display:\s*block;/, "short-height 200-percent atlas stack");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*?\.body-surface-links\s*{[\s\S]*?grid-template-columns:\s*1fr;/, "mobile Living Anatomy bridge stack");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-controls\s*{\s*display:\s*none;/, "forced-colors camera fallback");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-atmosphere,[\s\S]*\.galaxy-scanline,[\s\S]*display:\s*none;/, "forced-colors decorative overlay removal");

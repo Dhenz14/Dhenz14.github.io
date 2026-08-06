@@ -200,8 +200,9 @@ for (const route of ["stop", "pointer-interrupt", "close", "motion-pause", "esca
 }
 
 const overlayViewports = [
-  [1920, 1080], [1440, 900], [1366, 768], [1024, 768], [390, 844],
+  [1920, 1080], [1440, 900], [1366, 768], [1024, 768], [768, 1024], [390, 844], [320, 568],
 ];
+// This matrix covers the fixed control envelopes only. Responsive DOM-stack boxes remain a real-browser acceptance gate.
 let overlayCases = 0;
 for (const [physicalWidth, physicalHeight] of overlayViewports) {
   for (const browserZoom of [1, 1.25, 2]) {
@@ -438,4 +439,4 @@ const normalHaloOutside = selectGalaxyHit({ pointer: { x: normalDivisionRadius +
 const selectedHaloInside = selectGalaxyHit({ pointer: { x: selectedDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery", projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0 });
 assert(normalHaloInside.divisionIndex === 0 && normalHaloOutside.divisionIndex === -1 && selectedHaloInside.divisionIndex === 0, "division hit radius diverged from its rendered halo");
 
-console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} overlay_cases=${overlayCases} pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6`);
+console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6`);

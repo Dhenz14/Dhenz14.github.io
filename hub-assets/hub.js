@@ -185,9 +185,9 @@ const COMMAND_CYCLE_STEPS = Object.freeze([
   },
   {
     stage: "WATCH · ABSORBED",
-    title: "Watch the organism change truthfully.",
-    copy: "After the work lands, the compiler absorbs current Git truth, the public snapshot converges, and the body re-renders without inventing liveness.",
-    proof: "GIT BOUND",
+    title: "Proof lands. The body may absorb new source truth.",
+    copy: "Only after accepted work lands may the compiler absorb current Git truth, converge the public snapshot, and re-render the organism. This demonstration causes zero effects.",
+    proof: "SOURCE BOUND",
   },
 ]);
 
@@ -260,6 +260,7 @@ function wireCommandCycle() {
     window.hiveCommandStage = current;
     window.dispatchEvent(new CustomEvent("hive:command-stage", { detail: { index: current, step } }));
     root.dataset.commandVisual = String(current);
+    root.classList.toggle("is-climax", current === COMMAND_CYCLE_STEPS.length - 1);
     scheduleEcho();
     if (announce) showToast(`${step.stage.split(" · ")[0]} — ${step.title}`);
   };
@@ -321,9 +322,10 @@ function wireCommandCycle() {
   walkthrough?.addEventListener("click", () => {
     if (reduceMotion.matches || document.body.classList.contains("motion-paused")) {
       stop();
-      root.dataset.commandState = "manual";
-      select(current >= COMMAND_CYCLE_STEPS.length - 1 ? 0 : current + 1);
-      if (walkthroughLabel) walkthroughLabel.textContent = current === COMMAND_CYCLE_STEPS.length - 1 ? "Restart command cycle" : "Next command stage";
+      root.dataset.commandState = "discrete";
+      select(COMMAND_CYCLE_STEPS.length - 1, false);
+      if (walkthroughLabel) walkthroughLabel.textContent = "Replay verified-change reveal";
+      showToast("Reduced motion: jumped to the discrete verified-change reveal. Demonstration only; zero effects.");
       return;
     }
     if (running) stop(true);
@@ -991,11 +993,50 @@ function wireIdeReleaseCopy() {
   });
 }
 
-function wireLocalChatNotice() {
-  $$('[href^="http://127.0.0.1:"]').forEach((link) => {
-    link.addEventListener("click", () => {
-      showToast("Opening a local Hive-AI surface. Availability is not checked; if it is offline, the new tab will stay unavailable.");
+function wireLocalHandoffGate() {
+  const dialog = $("[data-local-handoff-dialog]");
+  const confirm = $("[data-local-handoff-confirm]", dialog || document);
+  const urlLabel = $("[data-local-handoff-url]", dialog || document);
+  const status = $("[data-local-handoff-status]", dialog || document);
+  if (!dialog || !confirm || !(dialog instanceof HTMLDialogElement)) return;
+  let returnFocus = null;
+
+  const close = () => {
+    if (dialog.open) dialog.close();
+    if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
+  };
+
+  $$('a[href^="http://127.0.0.1:"]:not([data-local-handoff-confirm])').forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      returnFocus = link;
+      const selectedUrl = link.href;
+      confirm.href = selectedUrl;
+      confirm.setAttribute("aria-label", `Try local runtime route for ${link.textContent.trim()}`);
+      if (urlLabel) urlLabel.textContent = selectedUrl;
+      if (status) status.textContent = "No request has been sent to the local runtime.";
+      window.dispatchEvent(new CustomEvent("hive:request-local-handoff"));
+      if (!dialog.open) dialog.showModal();
+      $("[data-local-handoff-close]", dialog)?.focus({ preventScroll: true });
     });
+  });
+
+  confirm.addEventListener("click", () => {
+    if (status) status.textContent = "The explicit local attempt opened in a new tab. This public recovery guidance remains available; local availability is still not claimed.";
+  });
+  $("[data-local-handoff-close]", dialog)?.addEventListener("click", close);
+  $("[data-local-handoff-stay]", dialog)?.addEventListener("click", close);
+  $("[data-local-handoff-copy-url]", dialog)?.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(confirm.href);
+      if (status) status.textContent = "Local URL copied. No request was sent to the runtime.";
+    } catch {
+      if (status) status.textContent = "Copy was unavailable. The exact local URL remains visible above; no request was sent.";
+    }
+  });
+  dialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    close();
   });
 }
 
@@ -1214,6 +1255,7 @@ class GalaxyAtlas {
     this.fullAtlas = false;
     this.fullAtlasReturnFocus = null;
     this.fullAtlasScrollY = 0;
+    this.modalIsolationState = [];
     this.directorTimer = 0;
     this.directorStep = -1;
     this.directorRunning = false;
@@ -1257,6 +1299,9 @@ class GalaxyAtlas {
     });
     window.addEventListener("hive:command-stage", (event) => this.presentCommandStage(event.detail?.index));
     window.addEventListener("hive:manual-galaxy", () => this.cancelDirector(false));
+    window.addEventListener("hive:request-local-handoff", () => {
+      if (this.fullAtlas) this.closeFullAtlas(false);
+    });
     this.setEngaged(false);
     this.wireFullAtlas();
     if (!this.baseRenderAvailable) {
@@ -1284,6 +1329,7 @@ class GalaxyAtlas {
     window.addEventListener("hive:motion", (event) => {
       this.paused = Boolean(event.detail?.paused) || reduceMotion.matches;
       if (this.paused) this.cancelDirector(false);
+      this.syncDirectorMotionPolicy();
       this.syncLoop();
     });
     const onForcedColorsChange = (event) => this.applyRenderAvailability(Boolean(event.matches));
@@ -1447,12 +1493,42 @@ class GalaxyAtlas {
   focusInsideFullAtlas() {
     if (!this.fullAtlas) return false;
     const target = this.directorRunning
-      ? $("[data-galaxy-director-modal]")
+      ? $("[data-galaxy-director]")
       : this.renderAvailable
         ? this.canvas
         : $("[data-galaxy-exit]");
     target?.focus({ preventScroll: true });
     return Boolean(target);
+  }
+
+  setModalIsolation(root, active) {
+    if (!active) {
+      this.modalIsolationState.forEach(({ node, inert, ariaHidden }) => {
+        node.inert = inert;
+        if (ariaHidden === null) node.removeAttribute("aria-hidden");
+        else node.setAttribute("aria-hidden", ariaHidden);
+      });
+      this.modalIsolationState = [];
+      return;
+    }
+    this.setModalIsolation(root, false);
+    if (!root) return;
+    let current = root;
+    while (current?.parentElement) {
+      const parent = current.parentElement;
+      Array.from(parent.children).forEach((sibling) => {
+        if (sibling === current) return;
+        this.modalIsolationState.push({
+          node: sibling,
+          inert: sibling.inert,
+          ariaHidden: sibling.getAttribute("aria-hidden"),
+        });
+        sibling.inert = true;
+        sibling.setAttribute("aria-hidden", "true");
+      });
+      current = parent;
+      if (current === document.body) break;
+    }
   }
 
   openFullAtlas(trigger = null) {
@@ -1465,6 +1541,7 @@ class GalaxyAtlas {
     root?.setAttribute("role", "dialog");
     root?.setAttribute("aria-modal", "true");
     root?.setAttribute("aria-label", "Full viewport public Living Anatomy atlas");
+    this.setModalIsolation(root, true);
     document.body.classList.add("galaxy-fullscreen-open");
     window.requestAnimationFrame(() => {
       this.resize();
@@ -1483,6 +1560,7 @@ class GalaxyAtlas {
     root?.removeAttribute("role");
     root?.removeAttribute("aria-modal");
     root?.removeAttribute("aria-label");
+    this.setModalIsolation(root, false);
     document.body.classList.remove("galaxy-fullscreen-open");
     window.scrollTo({ top: this.fullAtlasScrollY, behavior: "auto" });
     window.requestAnimationFrame(() => this.resize());
@@ -1506,13 +1584,14 @@ class GalaxyAtlas {
     else this.focusDivision(scene.division, false);
     this.targetZoom = scene.zoom;
     if (this.stage) this.stage.dataset.directorStep = String(index);
-    setText("[data-galaxy-director-step]", `${String(index + 1).padStart(2, "0")} / 06 · ${scene.title}`);
+    setText("[data-galaxy-director-step-count]", `${String(index + 1).padStart(2, "0")} / 06 ·`);
+    setText("[data-galaxy-director-step]", scene.title);
     setText("[data-galaxy-director-copy]", scene.copy);
     this.syncLoop();
   }
 
   startDirector() {
-    if (reduceMotion.matches || document.body.classList.contains("motion-paused")) {
+    if (this.paused || reduceMotion.matches || document.body.classList.contains("motion-paused")) {
       showToast("Director automation is off while reduced motion is active. Manual atlas controls remain available.");
       return;
     }
@@ -1535,7 +1614,7 @@ class GalaxyAtlas {
       targetPanY: this.targetPanY,
     });
     this.directorRunning = true;
-    $$('[data-galaxy-director], [data-galaxy-director-modal]').forEach((button) => {
+    $$('[data-galaxy-director]').forEach((button) => {
       button.setAttribute("aria-pressed", "true");
       button.textContent = "Stop director";
     });
@@ -1562,14 +1641,18 @@ class GalaxyAtlas {
   cancelDirector(completed = false) {
     window.clearTimeout(this.directorTimer);
     this.directorTimer = 0;
-    if (!this.directorRunning && this.directorStep < 0) return;
+    if (!this.directorRunning && this.directorStep < 0) {
+      this.syncDirectorMotionPolicy();
+      return;
+    }
     this.directorRunning = false;
     this.directorStep = -1;
     if (this.stage) delete this.stage.dataset.directorStep;
-    $$('[data-galaxy-director], [data-galaxy-director-modal]').forEach((button) => {
+    $$('[data-galaxy-director]').forEach((button) => {
       button.setAttribute("aria-pressed", "false");
       button.textContent = "Run 24s director";
     });
+    this.syncDirectorMotionPolicy();
     const proof = $("[data-galaxy-demo-proof]");
     if (proof) proof.hidden = true;
     const caption = $("[data-galaxy-director-caption]");
@@ -1622,6 +1705,15 @@ class GalaxyAtlas {
       button.setAttribute("aria-label", button.title);
       button.setAttribute("aria-pressed", String(index === this.activeDivision));
       button.addEventListener("click", () => this.focusDivision(index));
+      button.addEventListener("focus", () => {
+        this.showDivision(index, false, false);
+        this.draw(performance.now());
+      });
+      button.addEventListener("blur", () => {
+        this.showDivision(this.activeDivision, false, false);
+        this.restoreActiveFocus();
+        this.draw(performance.now());
+      });
       root.appendChild(button);
     });
     if (focusedDivisionCode) {
@@ -1710,6 +1802,7 @@ class GalaxyAtlas {
     setText("[data-galaxy-index]", `Division ${division.code} / ${this.divisions.length}`);
     setText("[data-galaxy-code]", `${division.code} · CONSTELLATION`);
     setText("[data-galaxy-title]", titleCase(division.name));
+    setText("[data-galaxy-division-name]", `Division ${division.code} · ${titleCase(division.name)}`);
     setText("[data-galaxy-copy]", `This district contains ${division.neuronCount} stable neuron positions across ${division.families.length} purpose families. Dive closer to resolve the individual stars.`);
     setText("[data-galaxy-neurons]", String(division.neuronCount));
     setText("[data-galaxy-families]", String(division.families.length));
@@ -1839,13 +1932,41 @@ class GalaxyAtlas {
   }
 
   setCameraControlsAvailable(available, reason = "") {
-    $$('[data-galaxy-engage], [data-galaxy-zoom], [data-galaxy-reset], [data-galaxy-director], [data-galaxy-director-modal]').forEach((button) => {
+    $$('[data-galaxy-engage], [data-galaxy-zoom], [data-galaxy-reset], [data-galaxy-reset-modal], [data-galaxy-fit-selected]').forEach((button) => {
       button.disabled = !available;
       button.setAttribute("aria-disabled", String(!available));
       button.title = available ? "" : reason;
     });
+    this.syncDirectorMotionPolicy(available, reason);
     this.canvas.setAttribute("tabindex", available ? "0" : "-1");
     this.canvas.setAttribute("aria-disabled", String(!available));
+  }
+
+  syncDirectorMotionPolicy(renderAvailable = this.renderAvailable, unavailableReason = "") {
+    const button = $("[data-galaxy-director]");
+    const note = $("[data-galaxy-director-motion-note]");
+    if (!button) return;
+    const systemReduced = reduceMotion.matches;
+    const pagePaused = this.paused || document.body.classList.contains("motion-paused");
+    const motionBlocked = systemReduced || pagePaused;
+    const motionReason = systemReduced
+      ? "Director automation is unavailable because reduced motion is active. Use Reset view, Fit selected, or the manual atlas controls."
+      : "Director automation is unavailable because page motion is paused. Resume motion, or use Reset view, Fit selected, or the manual atlas controls.";
+    button.disabled = !renderAvailable || motionBlocked;
+    button.setAttribute("aria-disabled", String(button.disabled));
+    button.title = motionBlocked ? motionReason : renderAvailable ? "" : unavailableReason;
+    if (!this.directorRunning) {
+      button.textContent = motionBlocked
+        ? systemReduced ? "Director unavailable — reduced motion" : "Director unavailable — motion paused"
+        : "Run 24s director";
+      button.setAttribute("aria-pressed", "false");
+    }
+    if (note) {
+      note.hidden = !motionBlocked;
+      note.textContent = motionReason;
+      if (motionBlocked) button.setAttribute("aria-describedby", note.id || "galaxy-director-motion-note");
+      else button.removeAttribute("aria-describedby");
+    }
   }
 
   applyRenderAvailability(forcedColorsActive) {
@@ -1883,8 +2004,9 @@ class GalaxyAtlas {
         this.syncLoop();
       });
     });
-    $("[data-galaxy-reset]")?.addEventListener("click", () => this.resetCamera(true));
-    $$('[data-galaxy-director], [data-galaxy-director-modal]').forEach((button) => button.addEventListener("click", () => {
+    $$('[data-galaxy-reset], [data-galaxy-reset-modal]').forEach((button) => button.addEventListener("click", () => this.resetCamera(true)));
+    $("[data-galaxy-fit-selected]")?.addEventListener("click", () => this.fitSelected());
+    $$('[data-galaxy-director]').forEach((button) => button.addEventListener("click", () => {
       if (this.directorRunning) {
         this.cancelDirector(false);
         this.focusInsideFullAtlas();
@@ -1895,6 +2017,14 @@ class GalaxyAtlas {
       this.setEngaged(!this.engaged, true);
       if (this.engaged) this.canvas.focus({ preventScroll: true });
     });
+  }
+
+  fitSelected() {
+    this.takeManualControl();
+    if (this.activeNeuron >= 0) this.focusNeuron(this.activeNeuron, false);
+    else if (this.activeFamily >= 0) this.focusFamily(this.activeFamily, false);
+    else this.focusDivision(Math.max(this.activeDivision, 0), false);
+    showToast("Camera fit to the current selection.");
   }
 
   setEngaged(engaged, announce = false) {
@@ -2078,6 +2208,7 @@ class GalaxyAtlas {
       this.draw(performance.now());
     });
     this.canvas.addEventListener("wheel", (event) => {
+      if (this.directorRunning) this.takeManualControl();
       if (!this.engaged) return;
       event.preventDefault();
       this.takeManualControl();
@@ -2087,14 +2218,14 @@ class GalaxyAtlas {
       this.syncLoop();
     }, { passive: false });
     this.canvas.addEventListener("keydown", (event) => {
+      const handled = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "+", "=", "-", "_", "Home", "0", "PageUp", "PageDown", "Enter", " "];
       if (!this.engaged) {
-        if (!["Enter", " "].includes(event.key)) return;
+        if (!handled.includes(event.key)) return;
         event.preventDefault();
         this.takeManualControl();
         this.setEngaged(true, true);
-        return;
+        if (["Enter", " "].includes(event.key)) return;
       }
-      const handled = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "+", "=", "-", "_", "Home", "0", "PageUp", "PageDown", "Enter", " "];
       if (!handled.includes(event.key)) return;
       event.preventDefault();
       this.takeManualControl();
@@ -2558,7 +2689,7 @@ class GalaxyAtlas {
     const fullName = titleCase(division.name);
     const nameLimit = this.width < 520 ? 23 : 34;
     const compactName = fullName.length > nameLimit ? `${fullName.slice(0, nameLimit - 1).trimEnd()}…` : fullName;
-    const expansive = hovered && this.width >= 620;
+    const expansive = active && this.width >= 620;
     const label = expansive ? `${division.code} · ${compactName}` : division.code;
     context.save();
     context.font = `${active ? 800 : 700} ${expansive ? 16 : 14}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
@@ -2732,7 +2863,7 @@ runSafely("Living command cycle", wireCommandCycle);
 runSafely("Galaxy lenses", wireLenses);
 runSafely("Release copy controls", wireCopyButtons);
 runSafely("Hive IDE release copy", wireIdeReleaseCopy);
-runSafely("Local route notices", wireLocalChatNotice);
+runSafely("Local runtime handoff guidance", wireLocalHandoffGate);
 runSafely("Ambient field", startField);
 runSafely("Living Anatomy galaxy", startGalaxy);
 if ($("[data-source-stamp], [data-galaxy-canvas]")) {

@@ -1541,11 +1541,11 @@ class GalaxyAtlas {
     root?.setAttribute("role", "dialog");
     root?.setAttribute("aria-modal", "true");
     root?.setAttribute("aria-label", "Full viewport public Living Anatomy atlas");
-    this.setModalIsolation(root, true);
     document.body.classList.add("galaxy-fullscreen-open");
+    this.focusInsideFullAtlas();
+    this.setModalIsolation(root, true);
     window.requestAnimationFrame(() => {
       this.resize();
-      this.focusInsideFullAtlas();
     });
     showToast("Full atlas open. Escape releases engaged controls first, then returns to the page.");
   }
@@ -1982,7 +1982,10 @@ class GalaxyAtlas {
     this.canvas.closest("#galaxy")?.classList.toggle("galaxy-fallback-active", fallback);
     const semanticFallback = $("[data-galaxy-semantic-fallback]");
     if (semanticFallback) semanticFallback.hidden = !fallback;
-    if (fallback) this.setEngaged(false);
+    if (fallback) {
+      this.cancelDirector(false);
+      this.setEngaged(false);
+    }
     const reason = state.reasonCode === "FORCED_COLORS"
       ? "Camera controls are hidden in forced-colors mode; use the semantic division and family controls."
       : "Canvas rendering is unavailable; use the semantic division and family controls.";

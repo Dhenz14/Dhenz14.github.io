@@ -268,6 +268,7 @@ requireMatch(js, /focusInsideFullAtlas\(\)[\s\S]*data-galaxy-director[\s\S]*this
 requireNoMatch(js, /data-galaxy-director-modal/, "duplicate Director control");
 requireMatch(js, /setModalIsolation\(root, active\)[\s\S]*node\.inert = inert;[\s\S]*ariaHidden === null[\s\S]*sibling\.inert = true;[\s\S]*sibling\.setAttribute\("aria-hidden", "true"\)/, "exact modal background isolation restoration");
 requireMatch(js, /openFullAtlas\(trigger = null\)[\s\S]*this\.setModalIsolation\(root, true\)[\s\S]*closeFullAtlas\(restoreFocus = true\)[\s\S]*this\.setModalIsolation\(root, false\)/, "full-atlas modal isolation lifecycle");
+requireMatch(js, /openFullAtlas\(trigger = null\)[\s\S]*this\.focusInsideFullAtlas\(\);[\s\S]*this\.setModalIsolation\(root, true\)/, "focus enters the atlas before background isolation");
 requireMatch(js, /!root\?\.contains\(document\.activeElement\)[\s\S]*event\.shiftKey \? last : first/, "full-atlas focus containment from outside focus");
 requireMatch(js, /event\.key !== "Escape" \|\| !this\.engaged[\s\S]*this\.cancelDirector\(false\);[\s\S]*this\.setEngaged\(false, true\);[\s\S]*this\.focusInsideFullAtlas\(\)/, "first Escape preserves modal focus and restores Director state");
 requireMatch(js, /closeFullAtlas\(restoreFocus = true\)[\s\S]*this\.cancelDirector\(false\)/, "full-atlas close restores Director state");
@@ -345,6 +346,7 @@ requireMatch(forcedColorsWiring, /const onForcedColorsChange = \(event\) => this
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addEventListener\("change", onForcedColorsChange\)/, "live forced-colors transition listener");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addListener\(onForcedColorsChange\)/, "legacy forced-colors transition listener");
 requireMatch(js, /applyRenderAvailability\(forcedColorsActive\)/, "live render fallback transition");
+requireMatch(js, /applyRenderAvailability\(forcedColorsActive\)[\s\S]*if \(fallback\) \{[\s\S]*this\.cancelDirector\(false\);[\s\S]*this\.setEngaged\(false\);/, "render fallback cancels Director before controls become unavailable");
 requireMatch(js, /if \(\$\("\[data-source-stamp\], \[data-galaxy-canvas\]"\)\)[\s\S]*loadSourceSnapshot\(\)\.finally\(startSnapshotRefresh\)/, "snapshot refresh surface gate");
 requireMatch(js, /runSafely\("Offscreen scene control", wireSceneActivity\)/, "offscreen CSS animation control");
 requireMatch(js, /runSafely\("Local runtime handoff guidance", wireLocalHandoffGate\)/, "local handoff guidance call chain");
@@ -372,6 +374,7 @@ requireMatch(css, /\[data-reveal\]\.reveal-ready/, "enhanced reveal state");
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-canvas/, "forced-colors galaxy fallback");
 requireMatch(css, /@keyframes centered-orbit-spin[\s\S]*translate\(-50%, -50%\) rotate\(-13deg\)[\s\S]*translate\(-50%, -50%\) rotate\(347deg\)/, "stable centered hero orbit");
 requireMatch(css, /\.motion-scene-paused[\s\S]*animation-play-state:\s*paused !important/, "offscreen CSS animation pause");
+requireMatch(css, /body\.motion-paused \*[\s\S]*animation-play-state:\s*paused !important;[\s\S]*transition-duration:\s*0s !important;/, "manual motion pause suppresses animations and transitions");
 requireMatch(css, /\.galaxy-stage\s*{[\s\S]*?touch-action:\s*pan-y;/, "touch page-scroll preservation");
 requireMatch(css, /\.galaxy-stage\.is-engaged\s*{[\s\S]*?touch-action:\s*none;/, "engaged touch orbit ownership");
 requireMatch(css, /\.hero-system \.satellite-ide\s*{\s*grid-column:[\s\S]*\.hero-system \.stage-readout\s*{[\s\S]*grid-column:/, "collision-proof hero stage ownership");

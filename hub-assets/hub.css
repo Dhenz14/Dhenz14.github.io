@@ -6854,6 +6854,7 @@ body.motion-paused *,
 body.motion-paused *::before,
 body.motion-paused *::after {
   animation-play-state: paused !important;
+  transition-duration: 0s !important;
 }
 
 .motion-scene-paused,

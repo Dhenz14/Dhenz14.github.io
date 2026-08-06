@@ -564,8 +564,11 @@ requireMatch(css, /--type-copy-min:\s*1rem;[\s\S]*--type-meta-min:\s*0\.875rem;/
 requireMatch(zeroSquintCopyBlock, /\)\s*\{\s*font-size:\s*var\(--type-copy-min\);\s*\}/, "16px evidence-classified copy floor");
 requireMatch(zeroSquintMetaBlock, /\)\s*\{\s*font-size:\s*var\(--type-meta-min\);\s*\}/, "14px metadata and control typography floor");
 requireMatch(css, /\.primary-nav a,[\s\S]*\.galaxy-atlas-toolbar button,[\s\S]*\.mission-step,[\s\S]*min-height:\s*2\.75rem;/, "44px presentation control targets");
-requireMatch(css, /\.ide-release-digest button\s*\{[^}]*min-height:\s*44px;/, "44px evidence copy targets");
+requireMatch(css, /\.ide-release-digest button\s*\{[^}]*min-height:\s*44px;/, "44px IDE release digest targets");
+requireMatch(css, /\.release-bindings button\s*\{[^}]*min-height:\s*44px;/, "44px signed-release copy targets");
 requireMatch(css, /\.toast\s*\{[^}]*font-size:\s*1rem;[^}]*line-height:\s*1\.45;/, "16px recovery guidance toast");
+requireMatch(css, /body\.galaxy-fullscreen-open > \.toast\s*\{[^}]*z-index:\s*1100;[^}]*top:\s*50dvh;[^}]*left:\s*calc\(\(100vw - max\(20rem, 26vw\)\) \/ 2\);/, "atlas-stage-safe recovery toast");
+requireMatch(js, /showToast\("Atlas open\. Escape releases controls, then exits\."\);/, "concise atlas Escape recovery guidance");
 requireMatch(css, /\.primary-nav,[\s\S]*\.galaxy-controls,[\s\S]*\.lens-bar,[\s\S]*\.command-cycle-navigation\s*{[\s\S]*gap:\s*0\.5rem;/, "eight-pixel presentation control spacing");
 requireMatch(css, /\.command-cycle-climax\s*{[\s\S]*opacity:\s*0;[\s\S]*\.mission-machine\.is-climax \.command-cycle-climax\s*{[\s\S]*opacity:\s*1;/, "WATCH visual climax state");
 requireMatch(css, /\.mission-machine\.is-climax \.mission-grid\s*{[\s\S]*display:\s*grid;[\s\S]*grid-template-columns:\s*repeat\(6,[\s\S]*\.mission-machine\.is-climax \.mission-step\s*{[\s\S]*min-height:\s*5rem;[\s\S]*\.mission-machine\.is-climax \.command-cycle-viewport\s*{[\s\S]*min-height:\s*clamp\(19rem, 44vh, 26rem\);/, "focus-safe fully visible WATCH climax frame");

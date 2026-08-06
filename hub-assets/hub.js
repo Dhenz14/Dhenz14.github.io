@@ -1616,7 +1616,7 @@ class GalaxyAtlas {
     window.requestAnimationFrame(() => {
       this.resize();
     });
-    showToast("Full atlas open. Escape releases engaged controls first, then returns to the page.");
+    showToast("Atlas open. Escape releases controls, then exits.");
   }
 
   closeFullAtlas(restoreFocus = true) {

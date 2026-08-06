@@ -278,7 +278,8 @@ requireMatch(js, /function wireLenses\(\)[\s\S]*button\.disabled = false;/, "len
 requireMatch(js, /setCameraControlsAvailable\(available[\s\S]*button\.disabled = !available;[\s\S]*aria-disabled[\s\S]*tabindex[\s\S]*aria-disabled/, "camera controls runtime availability gate");
 requireMatch(js, /syncDirectorMotionPolicy\(renderAvailable[\s\S]*data-galaxy-director-motion-note[\s\S]*Director unavailable — reduced motion/, "reduced-motion Director disable and relabel policy");
 requireMatch(js, /root\.dataset\.commandState = "discrete";[\s\S]*select\(COMMAND_CYCLE_STEPS\.length - 1, false\)[\s\S]*Replay verified-change reveal/, "reduced-motion discrete WATCH reveal");
-requireMatch(js, /fitSelected\(\)[\s\S]*activeNeuron[\s\S]*activeFamily[\s\S]*focusDivision/, "fit-selected camera recovery");
+requireMatch(js, /focusPoint\(center, minimumZoom, exactFit = false\)[\s\S]*galaxyFocusCamera\(center,[\s\S]*exactFit \? minimumZoom[\s\S]*targetYRatio:[\s\S]*this\.targetPanY = camera\.panY/, "safe-inset selected camera focus");
+requireMatch(js, /fitSelected\(\)[\s\S]*focusNeuron\(this\.activeNeuron, false, true\)[\s\S]*focusFamily\(this\.activeFamily, false, true\)[\s\S]*focusDivision\(Math\.max\(this\.activeDivision, 0\), false, true\)/, "fit-selected exact zoom recovery");
 requireMatch(js, /buildDivisionIndex\(\)[\s\S]*addEventListener\("focus"[\s\S]*showDivision\(index, false, false\)[\s\S]*addEventListener\("blur"/, "division full-name keyboard discovery");
 requireMatch(js, /showDivision\(index[\s\S]*data-galaxy-division-name[\s\S]*titleCase\(division\.name\)/, "persistent selected division full name");
 requireMatch(js, /runSafely\("Living Anatomy galaxy", startGalaxy\)/, "galaxy call chain");
@@ -393,6 +394,7 @@ requireMatch(css, /\.inspector-stats dd,[\s\S]*\.mission-machine-head > div:firs
 requireMatch(css, /\.primary-nav a,[\s\S]*\.galaxy-atlas-toolbar button,[\s\S]*\.mission-step,[\s\S]*min-height:\s*2\.75rem;/, "44px presentation control targets");
 requireMatch(css, /\.primary-nav,[\s\S]*\.galaxy-controls,[\s\S]*\.lens-bar,[\s\S]*\.command-cycle-navigation\s*{[\s\S]*gap:\s*0\.5rem;/, "eight-pixel presentation control spacing");
 requireMatch(css, /\.command-cycle-climax\s*{[\s\S]*opacity:\s*0;[\s\S]*\.mission-machine\.is-climax \.command-cycle-climax\s*{[\s\S]*opacity:\s*1;/, "WATCH visual climax state");
+requireMatch(css, /\.mission-machine\.is-climax \.mission-grid\s*{[\s\S]*display:\s*grid;[\s\S]*grid-template-columns:\s*repeat\(6,[\s\S]*\.mission-machine\.is-climax \.mission-step\s*{[\s\S]*min-height:\s*5rem;[\s\S]*\.mission-machine\.is-climax \.command-cycle-viewport\s*{[\s\S]*min-height:\s*clamp\(19rem, 44vh, 26rem\);/, "focus-safe fully visible WATCH climax frame");
 requireMatch(css, /\.local-handoff-dialog\s*{[\s\S]*max-height:\s*calc\(100dvh - 2rem\)[\s\S]*\.local-handoff-dialog::backdrop/, "persistent local recovery dialog layout");
 requireMatch(css, /\.map-readout\s*{[\s\S]*?pointer-events:\s*none;/, "non-blocking graph readout overlay");
 requireMatch(css, /\.mission-grid\s*{[\s\S]*?grid-template-columns:\s*repeat\(6, minmax\(0, 1fr\)\)/, "six-stage command flightdeck");

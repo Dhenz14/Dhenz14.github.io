@@ -6484,6 +6484,39 @@ body.galaxy-fullscreen-open {
   transform: scale(1);
 }
 
+.mission-machine.is-climax .mission-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.mission-machine.is-climax .mission-grid li,
+.mission-machine.is-climax .mission-step {
+  min-height: 5rem;
+}
+
+.mission-machine.is-climax .mission-step {
+  padding: 0.75rem 0.6rem;
+}
+
+.mission-machine.is-climax .mission-grid::before {
+  top: 2.05rem;
+}
+
+.mission-machine.is-climax .mission-grid em {
+  top: 1.15rem;
+  right: 0.6rem;
+  font-size: 0.875rem;
+}
+
+.mission-machine.is-climax .mission-grid strong,
+.mission-machine.is-climax .mission-grid small {
+  display: none;
+}
+
+.mission-machine.is-climax .command-cycle-viewport {
+  min-height: clamp(19rem, 44vh, 26rem);
+}
+
 .mission-machine.is-climax .command-cycle-viewport canvas {
   filter: saturate(1.28) contrast(1.14) brightness(0.72) blur(1px);
   transform: scale(1.08);
@@ -6717,6 +6750,10 @@ body.galaxy-fullscreen-open {
   .command-cycle-climax {
     inset: 1rem;
     padding: 1rem;
+  }
+
+  .mission-machine.is-climax .mission-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .command-cycle-climax strong {

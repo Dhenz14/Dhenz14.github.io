@@ -7,6 +7,7 @@ import {
   depthSortGalaxyPoints,
   exactGalaxyDirectorState,
   galaxyDivisionVisualRadius,
+  galaxyFocusCamera,
   galaxyGestureCamera,
   galaxyGestureMetrics,
   galaxyPointerPolicy,
@@ -1849,12 +1850,19 @@ class GalaxyAtlas {
     }
   }
 
-  focusPoint(center, minimumZoom) {
-    this.targetRotationY = Math.atan2(center.x, center.z);
-    this.targetRotationX = -Math.atan2(center.y, Math.hypot(center.x, center.z)) * 0.72;
-    this.targetZoom = Math.max(this.targetZoom, minimumZoom);
-    this.targetPanX = 0;
-    this.targetPanY = 0;
+  focusPoint(center, minimumZoom, exactFit = false) {
+    const camera = galaxyFocusCamera(center, {
+      width: this.width,
+      height: this.height,
+      zoom: exactFit ? minimumZoom : Math.max(this.targetZoom, minimumZoom),
+      targetYRatio: this.fullAtlas ? 0.46 : 0.48,
+    });
+    if (!camera) return;
+    this.targetRotationY = camera.rotationY;
+    this.targetRotationX = camera.rotationX;
+    this.targetZoom = camera.zoom;
+    this.targetPanX = camera.panX;
+    this.targetPanY = camera.panY;
   }
 
   presentCommandStage(index) {
@@ -1878,7 +1886,7 @@ class GalaxyAtlas {
     this.draw(performance.now());
   }
 
-  focusDivision(index, manual = true) {
+  focusDivision(index, manual = true, exactFit = false) {
     const center = this.divisionGeometry[index];
     if (!center) return;
     if (manual) this.takeManualControl();
@@ -1888,13 +1896,13 @@ class GalaxyAtlas {
     this.hoverFamily = -1;
     this.activeNeuron = -1;
     this.hoverNeuron = -1;
-    this.focusPoint(center, 1.18);
+    this.focusPoint(center, 1.18, exactFit);
     this.showDivision(index);
     this.syncContextHandoff();
     this.syncLoop();
   }
 
-  focusFamily(familyGeometryIndex, manual = true) {
+  focusFamily(familyGeometryIndex, manual = true, exactFit = false) {
     const center = this.familyGeometry[familyGeometryIndex];
     if (!center) return;
     if (manual) this.takeManualControl();
@@ -1904,7 +1912,7 @@ class GalaxyAtlas {
     this.hoverDivision = -1;
     this.hoverFamily = -1;
     this.hoverNeuron = -1;
-    this.focusPoint(center, 1.58);
+    this.focusPoint(center, 1.58, exactFit);
     this.showDivision(this.activeDivision, true, false);
     this.showFamilyFocus(familyGeometryIndex);
     const family = this.divisions[center.divisionIndex].families[center.familyIndex];
@@ -1913,7 +1921,7 @@ class GalaxyAtlas {
     this.syncLoop();
   }
 
-  focusNeuron(neuronIndex, manual = true) {
+  focusNeuron(neuronIndex, manual = true, exactFit = false) {
     const neuron = this.neurons[neuronIndex];
     if (!neuron) return;
     if (manual) this.takeManualControl();
@@ -1923,7 +1931,7 @@ class GalaxyAtlas {
     this.hoverDivision = -1;
     this.hoverFamily = -1;
     this.hoverNeuron = -1;
-    this.focusPoint(neuron, 2.15);
+    this.focusPoint(neuron, 2.15, exactFit);
     this.showDivision(this.activeDivision, true, false);
     this.showNeuronFocus(neuronIndex);
     this.canvas.setAttribute("aria-label", `Interactive Hive-AI atlas. Neuron ${neuron.id} is selected. Public topology only; press Escape to release controls.`);
@@ -2024,9 +2032,9 @@ class GalaxyAtlas {
 
   fitSelected() {
     this.takeManualControl();
-    if (this.activeNeuron >= 0) this.focusNeuron(this.activeNeuron, false);
-    else if (this.activeFamily >= 0) this.focusFamily(this.activeFamily, false);
-    else this.focusDivision(Math.max(this.activeDivision, 0), false);
+    if (this.activeNeuron >= 0) this.focusNeuron(this.activeNeuron, false, true);
+    else if (this.activeFamily >= 0) this.focusFamily(this.activeFamily, false, true);
+    else this.focusDivision(Math.max(this.activeDivision, 0), false, true);
     showToast("Camera fit to the current selection.");
   }
 
@@ -2743,7 +2751,7 @@ class GalaxyAtlas {
     const selected = familyGeometryIndex === this.activeFamily || familyGeometryIndex === this.hoverFamily;
     if (!selected && this.zoom < 1.24) return;
     const familyName = titleCase(family.name);
-    const nameLimit = this.width < 520 ? 14 : 20;
+    const nameLimit = selected ? 64 : this.width < 520 ? 14 : 20;
     const compactName = familyName.length > nameLimit ? `${familyName.slice(0, nameLimit - 1).trimEnd()}…` : familyName;
     const label = selected ? `${family.code} · ${compactName}` : family.code;
     context.save();

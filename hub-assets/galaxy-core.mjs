@@ -432,6 +432,36 @@ export function projectGalaxyPoint(point, {
   };
 }
 
+export function galaxyFocusCamera(point, {
+  width,
+  height,
+  zoom,
+  targetYRatio = 0.46,
+}) {
+  if (![point?.x, point?.y, point?.z, width, height, zoom, targetYRatio].every(Number.isFinite)
+    || width <= 0 || height <= 0) return null;
+  const rotationY = Math.atan2(point.x, point.z);
+  const rotationX = -Math.atan2(point.y, Math.hypot(point.x, point.z)) * 0.72;
+  const fittedZoom = clamp(zoom, 0.68, 3.4);
+  const fittedYRatio = clamp(targetYRatio, 0.38, 0.54);
+  const projected = projectGalaxyPoint(point, {
+    rotationX,
+    rotationY,
+    zoom: fittedZoom,
+    width,
+    height,
+    panX: 0,
+    panY: 0,
+  });
+  return Object.freeze({
+    rotationX,
+    rotationY,
+    zoom: fittedZoom,
+    panX: width * 0.5 - projected.x,
+    panY: height * fittedYRatio - projected.y,
+  });
+}
+
 export function galaxyZoomAtPointer({ zoom, panX = 0, panY = 0, pointerX, pointerY, width, height, factor, minimum = 0.68, maximum = 3.4 }) {
   const nextZoom = clamp(zoom * factor, minimum, maximum);
   const ratio = nextZoom / Math.max(zoom, 1e-9);

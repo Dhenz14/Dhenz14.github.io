@@ -20,6 +20,7 @@ import {
   exactGalaxyDirectorState,
   galaxyDivisionVisualRadius,
   galaxyFocusCamera,
+  galaxyOverviewCamera,
   galaxyGestureCamera,
   galaxyGestureMetrics,
   galaxyOverlayBoxes,
@@ -226,7 +227,7 @@ assert(secondLabel && !rectanglesIntersect(firstLabel, secondLabel, 4), "priorit
 assert(placeCanvasLabel(80, 18, 20, 20, 320, 180, [{ x: 0, y: 0, width: 320, height: 180 }], true) === null, "exhausted label placement did not fail closed");
 
 const exactExitOverlay = { x: 929.49, y: 12, width: 123.85, height: 44 };
-const exactDivisionLabel = { x: 568.149, y: 5, width: 374.25, height: 32 };
+const exactDivisionLabel = { x: 512, y: 5, width: 430, height: 36 };
 assert(rectanglesIntersect(exactDivisionLabel, exactExitOverlay), "exact 1440x900 N001 fixture no longer reproduces the Exit collision");
 const exactTopBoundary = exactExitOverlay.y + exactExitOverlay.height + GALAXY_OVERLAY_GAP;
 const exactSafeTop = exactTopBoundary + GALAXY_OVERLAY_GAP;
@@ -263,9 +264,9 @@ for (const { width, height } of [
   const safeTop = topBoundary + GALAXY_OVERLAY_GAP;
   const safeBottom = bottomBoundary - GALAXY_OVERLAY_GAP;
   const tiers = [
-    { name: "division", width: width >= 620 ? 374.25 : 42, height: width >= 620 ? 32 : 27 },
-    { name: "full-family", width: 304, height: 29 },
-    { name: "neuron", width: 58, height: 27 },
+    { name: "division", width: width >= 620 ? 430 : 44, height: width >= 620 ? 36 : 29 },
+    { name: "full-family", width: 304, height: 33 },
+    { name: "neuron", width: 66, height: 29 },
   ];
   for (const tier of tiers) {
     const overlayOccupied = [
@@ -331,6 +332,38 @@ for (const [index, point] of geometry.neurons.entries()) {
   assert(point.id === `N${String(index + 1).padStart(3, "0")}`, `neuron ${index} identity drifted`);
   assert(JSON.stringify(point.authored) === JSON.stringify(facts.galaxy.geometry.neurons[index].slice(-4)), `neuron ${index} lost its authored tuple`);
 }
+
+const overviewViewportCases = [
+  { name: "1920x1080", physicalWidth: 1920, physicalHeight: 1080, width: 1421, height: 1080, zoom: 1.25, minSpanRatio: 0.45 },
+  { name: "1440x900", physicalWidth: 1440, physicalHeight: 900, width: 1066, height: 900, zoom: 1.25, minSpanRatio: 0.45 },
+  { name: "1366x768", physicalWidth: 1366, physicalHeight: 768, width: 1011, height: 768, zoom: 1.25, minSpanRatio: 0.45 },
+  { name: "1024x768", physicalWidth: 1024, physicalHeight: 768, width: 704, height: 768, zoom: 1.08, minSpanRatio: 0.45 },
+  { name: "390x844", physicalWidth: 390, physicalHeight: 844, width: 390, height: 473, zoom: 0.88, minSpanRatio: 0.32 },
+  { name: "320x568", physicalWidth: 320, physicalHeight: 568, width: 320, height: 318, zoom: 0.88, minSpanRatio: 0.32 },
+];
+let overviewCameraCases = 0;
+for (const viewport of overviewViewportCases) {
+  const camera = galaxyOverviewCamera(viewport);
+  assert(camera, `${viewport.name}: overview camera was unavailable`);
+  assert(camera.rotationX === -0.25 && camera.rotationY === -0.64, `${viewport.name}: cinematic overview rotation drifted`);
+  assert(camera.zoom === viewport.zoom, `${viewport.name}: viewport-aware overview zoom drifted`);
+  assert(camera.panX === 0 && camera.panY > 0 && camera.panY <= 64, `${viewport.name}: overview pan left its bounded positive contract`);
+  const projections = geometry.neurons.map((point) => projectGalaxyPoint(point, { ...camera, width: viewport.width, height: viewport.height }));
+  const xs = projections.map(({ x }) => x);
+  const ys = projections.map(({ y }) => y).sort((left, right) => left - right);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = ys[0];
+  const maxY = ys.at(-1);
+  const medianY = ys[Math.floor(ys.length / 2)];
+  assert(minX >= 5 && maxX <= viewport.width - 5, `${viewport.name}: overview escaped horizontal projection bounds`);
+  assert(minY >= viewport.height * 0.12 && maxY <= viewport.height * 0.86, `${viewport.name}: overview escaped conservative vertical projection bounds`);
+  assert(medianY >= viewport.height * 0.42 && medianY <= viewport.height * 0.53, `${viewport.name}: overview lost its centered visual mass`);
+  assert(maxY - minY >= viewport.height * viewport.minSpanRatio, `${viewport.name}: overview collapsed into a top-heavy strip`);
+  overviewCameraCases += 1;
+}
+assert(galaxyOverviewCamera({ width: 0, height: 900 }) === null, "zero-width overview input did not fail closed");
+assert(galaxyOverviewCamera({ width: 1440, height: Number.NaN }) === null, "non-finite overview input did not fail closed");
 
 const projectCanonicalScene = ({ lens = "mastery", ...camera }) => ({
   lens,
@@ -546,4 +579,4 @@ const normalHaloOutside = selectGalaxyHit({ pointer: { x: normalDivisionRadius +
 const selectedHaloInside = selectGalaxyHit({ pointer: { x: selectedDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery", projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0 });
 assert(normalHaloInside.divisionIndex === 0 && normalHaloOutside.divisionIndex === -1 && selectedHaloInside.divisionIndex === 0, "division hit radius diverged from its rendered halo");
 
-console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 division_nav_options=${divisionNavigatorLabels.length} division_nav_selections=${divisionNavigatorSelectionCases} integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} safe_frame_label_cases=${safeFrameLabelCases} exact_exit_fixture=1 pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6`);
+console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 division_nav_options=${divisionNavigatorLabels.length} division_nav_selections=${divisionNavigatorSelectionCases} overview_camera_cases=${overviewCameraCases} integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} safe_frame_label_cases=${safeFrameLabelCases} exact_exit_fixture=1 pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6`);

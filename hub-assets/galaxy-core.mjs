@@ -432,6 +432,31 @@ export function projectGalaxyPoint(point, {
   };
 }
 
+export function galaxyOverviewCamera({ width, height } = {}) {
+  const viewportWidth = Number(width);
+  const viewportHeight = Number(height);
+  if (
+    !Number.isFinite(viewportWidth) ||
+    !Number.isFinite(viewportHeight) ||
+    viewportWidth <= 0 ||
+    viewportHeight <= 0
+  ) {
+    return null;
+  }
+
+  const narrow = viewportWidth <= 520;
+  const compact = !narrow && viewportWidth <= 820;
+  const short = !narrow && !compact && viewportHeight < 560;
+
+  return Object.freeze({
+    rotationX: -0.25,
+    rotationY: -0.64,
+    zoom: narrow ? 0.88 : compact ? 1.08 : short ? 1.12 : 1.25,
+    panX: 0,
+    panY: clamp(viewportHeight * 0.045, narrow ? 12 : 18, narrow ? 32 : 64),
+  });
+}
+
 export function galaxyFocusCamera(point, {
   width,
   height,

@@ -2827,6 +2827,7 @@ h3 {
   position: relative;
   justify-content: flex-start;
   min-width: 0;
+  padding: clamp(1rem, 1.65vw, 1.5rem);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -2850,11 +2851,11 @@ h3 {
 }
 
 .galaxy-inspector .inspector-topline {
-  margin-bottom: 2rem;
+  margin-bottom: 0.85rem;
 }
 
 .galaxy-stats {
-  margin: 1.5rem 0;
+  margin: 0.85rem 0;
 }
 
 .galaxy-focus {
@@ -2890,7 +2891,7 @@ h3 {
 .galaxy-family-list {
   display: grid;
   gap: 0.48rem;
-  margin: 0 0 1.5rem;
+  margin: 0 0 1rem;
   padding: 0;
   list-style: none;
 }
@@ -6334,15 +6335,16 @@ body.galaxy-fullscreen-open {
   justify-self: start;
   max-width: min(38rem, 100%);
   padding: 0.55rem 0.75rem;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid rgba(104, 228, 255, 0.3);
   border-radius: 0.55rem;
   color: #e7fbff;
   background: rgba(3, 8, 15, 0.9);
   box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.32);
   font: 800 1rem/1.35 var(--mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  text-overflow: clip;
+  white-space: normal;
   backdrop-filter: blur(12px);
 }
 
@@ -6414,7 +6416,7 @@ body.galaxy-fullscreen-open {
   z-index: 20;
   top: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
   margin: -0.35rem -0.35rem 0.75rem;
   padding: 0.35rem;
@@ -6427,7 +6429,7 @@ body.galaxy-fullscreen-open {
 
 .galaxy-atlas-toolbar .galaxy-division-nav {
   grid-column: 1 / -1;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.5rem;
   margin: 0;
   padding: 0.5rem;
@@ -6440,12 +6442,12 @@ body.galaxy-fullscreen-open {
   border-radius: 0.5rem;
   color: var(--text);
   background: rgba(255, 255, 255, 0.035);
-  font: 800 1rem/1.2 var(--mono);
+  font: 800 0.875rem/1.2 var(--mono);
   cursor: pointer;
 }
 
 .galaxy-atlas-toolbar [data-galaxy-director] {
-  grid-column: 1 / -1;
+  grid-column: auto;
   border-color: rgba(104, 228, 255, 0.42);
 }
 
@@ -6475,15 +6477,40 @@ body.galaxy-fullscreen-open {
 }
 
 .galaxy-gold-legend {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.75rem;
-  align-items: start;
   margin-bottom: 1rem;
   padding: 0.8rem;
   border: 1px solid rgba(255, 210, 122, 0.28);
   border-radius: 0.65rem;
   background: rgba(255, 210, 122, 0.045);
+}
+
+.galaxy-gold-legend summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 2.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.galaxy-gold-legend summary::-webkit-details-marker {
+  display: none;
+}
+
+.galaxy-gold-legend summary::after {
+  color: #ffe8ad;
+  content: "+";
+  font: 850 1rem/1 var(--mono);
+}
+
+.galaxy-gold-legend[open] summary::after {
+  content: "−";
+}
+
+.galaxy-gold-legend summary:focus-visible {
+  outline: 2px solid var(--cyan-bright);
+  outline-offset: 0.25rem;
 }
 
 .galaxy-gold-swatch {
@@ -6504,7 +6531,7 @@ body.galaxy-fullscreen-open {
 }
 
 .galaxy-gold-legend p {
-  margin: 0.35rem 0 0;
+  margin: 0.65rem 0 0 1.75rem;
   color: var(--muted);
   font-size: 0.875rem;
   line-height: 1.5;
@@ -6744,6 +6771,10 @@ body.galaxy-fullscreen-open {
     padding: 0.65rem;
   }
 
+  .galaxy-atlas-toolbar .galaxy-division-nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .brand-copy small {
     display: none;
   }
@@ -6889,7 +6920,7 @@ body.galaxy-fullscreen-open {
   }
 
   .galaxy-division-name {
-    white-space: nowrap;
+    white-space: normal;
   }
 
   .galaxy-hint i,
@@ -6979,7 +7010,8 @@ body.galaxy-fullscreen-open {
     min-height: 2.25rem;
     padding: 0.35rem 0.45rem;
     font-size: 0.875rem;
-    white-space: nowrap;
+    line-height: 1.25;
+    white-space: normal;
   }
 
   .galaxy-stage-rail {

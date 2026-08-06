@@ -9,6 +9,7 @@ import {
   exactGalaxyDirectorState,
   galaxyDivisionVisualRadius,
   galaxyFocusCamera,
+  galaxyOverviewCamera,
   galaxyGestureCamera,
   galaxyGestureMetrics,
   galaxyPointerPolicy,
@@ -26,6 +27,8 @@ import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
 } from "./ide-release-core.mjs?v=galaxy-stark-v10";
+
+const GALAXY_OVERVIEW_LABEL_LIMIT = 5;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -1230,11 +1233,11 @@ class GalaxyAtlas {
     this.projectedDivisions = [];
     this.projectedFamilies = [];
     this.projectedNeurons = [];
-    this.rotationX = -0.08;
-    this.rotationY = -0.32;
+    this.rotationX = -0.25;
+    this.rotationY = -0.64;
     this.targetRotationX = this.rotationX;
     this.targetRotationY = this.rotationY;
-    this.zoom = 1.08;
+    this.zoom = 1.25;
     this.targetZoom = this.zoom;
     this.panX = 0;
     this.panY = 0;
@@ -1914,7 +1917,11 @@ class GalaxyAtlas {
     setText("[data-galaxy-index]", `Division ${division.code} / ${this.divisions.length}`);
     setText("[data-galaxy-code]", `${division.code} · CONSTELLATION`);
     setText("[data-galaxy-title]", titleCase(division.name));
-    setText("[data-galaxy-division-name]", `Division ${division.code} · ${titleCase(division.name)}`);
+    const divisionDisplayName = `Division ${division.code} · ${titleCase(division.name)}`;
+    setText("[data-galaxy-division-name]", divisionDisplayName);
+    const stageDivisionName = $("[data-galaxy-division-name]");
+    stageDivisionName?.setAttribute("title", divisionDisplayName);
+    stageDivisionName?.setAttribute("aria-label", divisionDisplayName);
     setText("[data-galaxy-copy]", `This district contains ${division.neuronCount} stable neuron positions across ${division.families.length} purpose families. Dive closer to resolve the individual stars.`);
     setText("[data-galaxy-neurons]", String(division.neuronCount));
     setText("[data-galaxy-families]", String(division.families.length));
@@ -2074,11 +2081,16 @@ class GalaxyAtlas {
       : "Director automation is unavailable because page motion is paused. Resume motion, or use Reset view, Fit selected, or the manual atlas controls.";
     button.disabled = !renderAvailable || motionBlocked;
     button.setAttribute("aria-disabled", String(button.disabled));
-    button.title = motionBlocked ? motionReason : renderAvailable ? "" : unavailableReason;
+    const blockedReason = motionBlocked
+      ? motionReason
+      : renderAvailable
+        ? ""
+        : unavailableReason || "Director automation is unavailable because the atlas renderer is unavailable.";
+    button.title = blockedReason;
     if (!this.directorRunning) {
-      button.textContent = motionBlocked
-        ? systemReduced ? "Director unavailable — reduced motion" : "Director unavailable — motion paused"
-        : "Run 24s director";
+      button.textContent = button.disabled ? "Director off" : "Run 24s director";
+      if (button.disabled) button.setAttribute("aria-label", blockedReason);
+      else button.removeAttribute("aria-label");
       button.setAttribute("aria-pressed", "false");
     }
     if (note) {
@@ -2188,11 +2200,14 @@ class GalaxyAtlas {
     this.hoverFamily = -1;
     this.activeNeuron = -1;
     this.hoverNeuron = -1;
-    this.targetRotationX = -0.08;
-    this.targetRotationY = -0.32;
-    this.targetZoom = 1.08;
-    this.targetPanX = 0;
-    this.targetPanY = 0;
+    const overview = galaxyOverviewCamera({ width: this.width, height: this.height });
+    if (overview) {
+      this.targetRotationX = overview.rotationX;
+      this.targetRotationY = overview.rotationY;
+      this.targetZoom = overview.zoom;
+      this.targetPanX = overview.panX;
+      this.targetPanY = overview.panY;
+    }
     this.showDivision(0);
     this.syncContextHandoff();
     this.syncLoop();
@@ -2784,7 +2799,7 @@ class GalaxyAtlas {
       .map((point, index) => ({ point, index }))
       .filter(({ point, index }) => point.z > -0.7 || index === this.activeDivision || index === this.hoverDivision)
       .sort((left, right) => right.point.z - left.point.z);
-    const labelLimit = this.zoom > 1.7 ? 2 : this.zoom > 1.35 ? 4 : 7;
+    const labelLimit = this.zoom > 1.7 ? 2 : this.zoom > 1.35 ? 4 : GALAXY_OVERVIEW_LABEL_LIMIT;
     const priority = [this.hoverDivision, this.activeDivision].filter((index, position, values) => index >= 0 && values.indexOf(index) === position);
     const labelCandidates = priority
       .map((index) => availableLabels.find((candidate) => candidate.index === index))
@@ -2793,7 +2808,9 @@ class GalaxyAtlas {
       if (labelCandidates.length >= labelLimit || labelCandidates.some(({ index }) => index === candidate.index)) return;
       labelCandidates.push(candidate);
     });
-    labelCandidates.forEach(({ point, index }) => this.drawDivisionLabel(context, point, index, occupiedLabels));
+    labelCandidates.forEach(({ point, index }, position) => {
+      this.drawDivisionLabel(context, point, index, occupiedLabels, position < 3);
+    });
     if (this.zoom > profile.familyThreshold) {
       this.projectedFamilies
         .map((point, index) => ({ point, index }))
@@ -2807,19 +2824,20 @@ class GalaxyAtlas {
     }
   }
 
-  drawDivisionLabel(context, point, index, occupied) {
+  drawDivisionLabel(context, point, index, occupied, semanticAnchor = false) {
     const division = this.divisions[index];
     const active = index === this.activeDivision || index === this.hoverDivision;
     const hovered = index === this.hoverDivision;
     const fullName = titleCase(division.name);
     const nameLimit = this.width < 520 ? 23 : 34;
     const compactName = fullName.length > nameLimit ? `${fullName.slice(0, nameLimit - 1).trimEnd()}…` : fullName;
-    const expansive = active && this.width >= 620;
+    const expansive = (active || (this.fullAtlas && semanticAnchor)) && this.width >= 620;
     const label = expansive ? `${division.code} · ${compactName}` : division.code;
     context.save();
-    context.font = `${active ? 800 : 700} ${expansive ? 16 : 14}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
+    const fontSize = active ? 18 : expansive ? 16 : 15;
+    context.font = `${active ? 800 : 700} ${fontSize}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
     const width = context.measureText(label).width + (expansive ? 18 : 12);
-    const height = expansive ? 32 : 27;
+    const height = active ? 36 : expansive ? 33 : 29;
     const calloutGap = clamp(36 * point.perspective * this.zoom, 30, 64);
     const desiredX = expansive
       ? (point.x >= this.width / 2 ? point.x - width - calloutGap : point.x + calloutGap)
@@ -2869,9 +2887,9 @@ class GalaxyAtlas {
     const compactName = familyName.length > nameLimit ? `${familyName.slice(0, nameLimit - 1).trimEnd()}…` : familyName;
     const label = selected ? `${family.code} · ${compactName}` : family.code;
     context.save();
-    context.font = `${selected ? 800 : 700} ${selected ? 15 : 14}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
+    context.font = `${selected ? 800 : 700} ${selected ? 17 : 15}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
     const width = context.measureText(label).width + (selected ? 16 : 10);
-    const height = selected ? 29 : 26;
+    const height = selected ? 33 : 29;
     const box = this.placeSafeCanvasLabel(width, height, point.x - width / 2, point.y + 10, occupied, selected);
     if (!box) {
       context.restore();
@@ -2905,9 +2923,9 @@ class GalaxyAtlas {
     const neuron = this.neurons[neuronIndex];
     if (!point || !neuron) return;
     context.save();
-    context.font = '800 14px "SFMono-Regular", "Cascadia Code", Consolas, monospace';
+    context.font = '800 16px "SFMono-Regular", "Cascadia Code", Consolas, monospace';
     const width = context.measureText(neuron.id).width + 14;
-    const height = 27;
+    const height = 29;
     const box = this.placeSafeCanvasLabel(width, height, point.x + 8, point.y - 33, occupied, true);
     if (!box) {
       context.restore();

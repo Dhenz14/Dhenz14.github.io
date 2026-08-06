@@ -1,4 +1,5 @@
 import {
+  GALAXY_OVERLAY_GAP,
   GALAXY_LENS_PROFILES,
   GALAXY_PUBLIC_PALETTES,
   adaptiveGalaxyDpr,
@@ -30,6 +31,13 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const GALAXY_LABEL_OVERLAYS = Object.freeze([
+  { selector: ".galaxy-depth", edge: "top" },
+  { selector: "[data-galaxy-demo-proof]", edge: "top" },
+  { selector: "[data-galaxy-exit]", edge: "top" },
+  { selector: ".galaxy-stage-bottom", edge: "bottom" },
+  { selector: "[data-galaxy-semantic-fallback]", edge: "floating" },
+]);
 let toastTimer = 0;
 
 function showToast(message) {
@@ -1257,6 +1265,8 @@ class GalaxyAtlas {
     this.fullAtlasReturnFocus = null;
     this.fullAtlasScrollY = 0;
     this.modalIsolationState = [];
+    this.labelSafeFrame = null;
+    this.labelOverlayObstacles = [];
     this.directorTimer = 0;
     this.directorStep = -1;
     this.directorRunning = false;
@@ -1312,6 +1322,9 @@ class GalaxyAtlas {
 
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(this.stage || canvas);
+    GALAXY_LABEL_OVERLAYS.forEach(({ selector }) => {
+      $$(selector, this.stage || document).forEach((node) => this.resizeObserver.observe(node));
+    });
     this.wireInteraction();
     this.wireControls();
     if ("IntersectionObserver" in window) {
@@ -1502,6 +1515,59 @@ class GalaxyAtlas {
     return Boolean(target);
   }
 
+  syncLabelSafeFrame() {
+    const stageRect = (this.stage || this.canvas).getBoundingClientRect();
+    const width = Math.max(1, this.width || stageRect.width);
+    const height = Math.max(1, this.height || stageRect.height);
+    const overlayBoxes = [];
+    let topBoundary = 5;
+    let bottomBoundary = height - 5;
+    let hasTopChrome = false;
+    let hasBottomChrome = false;
+
+    GALAXY_LABEL_OVERLAYS.forEach(({ selector, edge }) => {
+      $$(selector, this.stage || document).forEach((node) => {
+        if (node.hidden || node.getClientRects().length === 0) return;
+        const style = window.getComputedStyle(node);
+        if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) return;
+        const rect = node.getBoundingClientRect();
+        const left = clamp(rect.left - stageRect.left, 0, width);
+        const top = clamp(rect.top - stageRect.top, 0, height);
+        const right = clamp(rect.right - stageRect.left, 0, width);
+        const bottom = clamp(rect.bottom - stageRect.top, 0, height);
+        if (right <= left || bottom <= top) return;
+        overlayBoxes.push({ x: left, y: top, width: right - left, height: bottom - top });
+        if (edge === "top") {
+          hasTopChrome = true;
+          topBoundary = Math.max(topBoundary, Math.min(height, bottom + GALAXY_OVERLAY_GAP));
+        } else if (edge === "bottom") {
+          hasBottomChrome = true;
+          bottomBoundary = Math.min(bottomBoundary, Math.max(0, top - GALAXY_OVERLAY_GAP));
+        }
+      });
+    });
+
+    const safeTop = hasTopChrome ? Math.min(height - 5, topBoundary + GALAXY_OVERLAY_GAP) : 5;
+    const safeBottom = hasBottomChrome ? Math.max(5, bottomBoundary - GALAXY_OVERLAY_GAP) : height - 5;
+    this.labelSafeFrame = {
+      left: 5,
+      top: safeTop,
+      right: width - 5,
+      bottom: safeBottom,
+    };
+    if (hasTopChrome) overlayBoxes.push({ x: 0, y: 0, width, height: topBoundary });
+    if (hasBottomChrome) overlayBoxes.push({ x: 0, y: bottomBoundary, width, height: height - bottomBoundary });
+    this.labelOverlayObstacles = overlayBoxes;
+  }
+
+  placeSafeCanvasLabel(width, height, desiredX, desiredY, occupied, priority = false) {
+    const frame = this.labelSafeFrame || { left: 5, top: 5, right: this.width - 5, bottom: this.height - 5 };
+    if (width > frame.right - frame.left || height > frame.bottom - frame.top) return null;
+    const safeX = clamp(desiredX, frame.left, frame.right - width);
+    const safeY = clamp(desiredY, frame.top, frame.bottom - height);
+    return placeCanvasLabel(width, height, safeX, safeY, this.width, this.height, occupied, priority);
+  }
+
   setModalIsolation(root, active) {
     if (!active) {
       this.modalIsolationState.forEach(({ node, inert, ariaHidden }) => {
@@ -1588,6 +1654,7 @@ class GalaxyAtlas {
     setText("[data-galaxy-director-step-count]", `${String(index + 1).padStart(2, "0")} / 06 ·`);
     setText("[data-galaxy-director-step]", scene.title);
     setText("[data-galaxy-director-copy]", scene.copy);
+    this.syncLabelSafeFrame();
     this.syncLoop();
   }
 
@@ -1623,6 +1690,7 @@ class GalaxyAtlas {
     if (proof) proof.hidden = false;
     const caption = $("[data-galaxy-director-caption]");
     if (caption) caption.hidden = false;
+    this.syncLabelSafeFrame();
     this.applyDirectorScene(0);
     const advance = () => {
       if (!this.directorRunning) return;
@@ -1658,6 +1726,7 @@ class GalaxyAtlas {
     if (proof) proof.hidden = true;
     const caption = $("[data-galaxy-director-caption]");
     if (caption) caption.hidden = true;
+    this.syncLabelSafeFrame();
     const returnContext = this.directorReturn;
     this.directorReturn = null;
     if (returnContext) {
@@ -2048,6 +2117,7 @@ class GalaxyAtlas {
     }
     setText("[data-galaxy-hint-state]", this.engaged ? "Scroll" : "Engage");
     setText("[data-galaxy-hint-copy]", this.engaged ? "to dive" : "controls");
+    this.syncLabelSafeFrame();
     if (announce) showToast(this.engaged ? "Galaxy controls engaged. Press Escape to release page scroll." : "Galaxy controls released. Page scroll restored.");
   }
 
@@ -2325,6 +2395,7 @@ class GalaxyAtlas {
     this.canvas.style.width = `${this.width}px`;
     this.canvas.style.height = `${this.height}px`;
     this.context.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.syncLabelSafeFrame();
     this.draw(performance.now());
   }
 
@@ -2661,7 +2732,7 @@ class GalaxyAtlas {
     this.drawDirectorPacket(context, center, time);
     context.restore();
 
-    const occupiedLabels = [];
+    const occupiedLabels = this.labelOverlayObstacles.map((box) => ({ ...box }));
     const focusedNeuron = this.hoverNeuron >= 0 ? this.hoverNeuron : this.activeNeuron;
     if (focusedNeuron >= 0 && this.zoom > 1.52) {
       this.drawNeuronLabel(context, this.projectedNeurons[focusedNeuron], focusedNeuron, occupiedLabels);
@@ -2713,7 +2784,7 @@ class GalaxyAtlas {
     const desiredY = expansive
       ? point.y - height / 2 - clamp(18 * point.perspective * this.zoom, 10, 32)
       : point.y - clamp(52 * point.perspective * this.zoom, 34, 82);
-    const box = placeCanvasLabel(width, height, desiredX, desiredY, this.width, this.height, occupied, active);
+    const box = this.placeSafeCanvasLabel(width, height, desiredX, desiredY, occupied, active);
     if (!box) {
       context.restore();
       return;
@@ -2758,7 +2829,7 @@ class GalaxyAtlas {
     context.font = `${selected ? 800 : 700} ${selected ? 15 : 14}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
     const width = context.measureText(label).width + (selected ? 16 : 10);
     const height = selected ? 29 : 26;
-    const box = placeCanvasLabel(width, height, point.x - width / 2, point.y + 10, this.width, this.height, occupied, selected);
+    const box = this.placeSafeCanvasLabel(width, height, point.x - width / 2, point.y + 10, occupied, selected);
     if (!box) {
       context.restore();
       return;
@@ -2794,7 +2865,7 @@ class GalaxyAtlas {
     context.font = '800 14px "SFMono-Regular", "Cascadia Code", Consolas, monospace';
     const width = context.measureText(neuron.id).width + 14;
     const height = 27;
-    const box = placeCanvasLabel(width, height, point.x + 8, point.y - 33, this.width, this.height, occupied, true);
+    const box = this.placeSafeCanvasLabel(width, height, point.x + 8, point.y - 33, occupied, true);
     if (!box) {
       context.restore();
       return;

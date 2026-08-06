@@ -224,6 +224,74 @@ assert(firstLabel?.x >= 5 && firstLabel?.y >= 5, "label placement escaped canvas
 assert(secondLabel && !rectanglesIntersect(firstLabel, secondLabel, 4), "priority labels overlap instead of searching alternatives");
 assert(placeCanvasLabel(80, 18, 20, 20, 320, 180, [{ x: 0, y: 0, width: 320, height: 180 }], true) === null, "exhausted label placement did not fail closed");
 
+const exactExitOverlay = { x: 929.49, y: 12, width: 123.85, height: 44 };
+const exactDivisionLabel = { x: 568.149, y: 5, width: 374.25, height: 32 };
+assert(rectanglesIntersect(exactDivisionLabel, exactExitOverlay), "exact 1440x900 N001 fixture no longer reproduces the Exit collision");
+const exactTopBoundary = exactExitOverlay.y + exactExitOverlay.height + GALAXY_OVERLAY_GAP;
+const exactSafeTop = exactTopBoundary + GALAXY_OVERLAY_GAP;
+const exactSafeOccupied = [
+  exactExitOverlay,
+  { x: 0, y: 0, width: 1064, height: exactTopBoundary },
+];
+const exactPlacedDivision = placeCanvasLabel(
+  exactDivisionLabel.width,
+  exactDivisionLabel.height,
+  exactDivisionLabel.x,
+  Math.max(exactDivisionLabel.y, exactSafeTop),
+  1064,
+  900,
+  exactSafeOccupied,
+  true,
+);
+assert(exactPlacedDivision, "exact 1440x900 N001 division label was hidden instead of safely placed");
+assert(exactPlacedDivision.x === exactDivisionLabel.x && exactPlacedDivision.y >= exactSafeTop, "exact N001 repair drifted horizontal framing or escaped the top safe frame");
+assert(exactPlacedDivision.width === exactDivisionLabel.width && exactPlacedDivision.height === exactDivisionLabel.height, "exact N001 repair shrank or truncated the division label box");
+assert(exactPlacedDivision.x >= 5 && exactPlacedDivision.x + exactPlacedDivision.width <= 1059, "exact N001 repair escaped the 1064px canvas");
+assert(!rectanglesIntersect(exactPlacedDivision, exactExitOverlay, GALAXY_OVERLAY_GAP), "exact N001 division label still collides with Exit at the protected gap");
+
+let safeFrameLabelCases = 0;
+for (const { width, height } of [
+  { width: 320, height: 568 },
+  { width: 390, height: 844 },
+  { width: 768, height: 1024 },
+  { width: 1064, height: 900 },
+]) {
+  const boxes = galaxyOverlayBoxes(width, height);
+  const topBoundary = Math.max(boxes.exit.y + boxes.exit.height, boxes.demo.y + boxes.demo.height) + GALAXY_OVERLAY_GAP;
+  const bottomBoundary = boxes.readout.y - GALAXY_OVERLAY_GAP;
+  const safeTop = topBoundary + GALAXY_OVERLAY_GAP;
+  const safeBottom = bottomBoundary - GALAXY_OVERLAY_GAP;
+  const tiers = [
+    { name: "division", width: width >= 620 ? 374.25 : 42, height: width >= 620 ? 32 : 27 },
+    { name: "full-family", width: 304, height: 29 },
+    { name: "neuron", width: 58, height: 27 },
+  ];
+  for (const tier of tiers) {
+    const overlayOccupied = [
+      ...Object.values(boxes),
+      { x: 0, y: 0, width, height: topBoundary },
+      { x: 0, y: bottomBoundary, width, height: height - bottomBoundary },
+    ];
+    const placed = placeCanvasLabel(
+      tier.width,
+      tier.height,
+      (width - tier.width) / 2,
+      safeTop,
+      width,
+      height,
+      overlayOccupied,
+      true,
+    );
+    assert(placed, `${width}x${height}: ${tier.name} label was hidden by the safe frame`);
+    assert(placed.width === tier.width && placed.height === tier.height, `${width}x${height}: ${tier.name} label dimensions changed`);
+    assert(placed.y >= safeTop && placed.y + placed.height <= safeBottom, `${width}x${height}: ${tier.name} label escaped the vertical safe frame`);
+    for (const [overlayName, overlayBox] of Object.entries(boxes)) {
+      assert(!rectanglesIntersect(placed, overlayBox, GALAXY_OVERLAY_GAP), `${width}x${height}: ${tier.name} label collided with ${overlayName}`);
+    }
+    safeFrameLabelCases += 1;
+  }
+}
+
 assert(adaptiveGalaxyDpr({ devicePixelRatio: 3, width: 390, height: 600 }) === 3, "small high-DPI atlas was needlessly blurred");
 assert(adaptiveGalaxyDpr({ devicePixelRatio: 2, width: 1000, height: 800 }) === 2, "2x desktop atlas was needlessly blurred");
 assert(adaptiveGalaxyDpr({ devicePixelRatio: 3, width: 3840, height: 2160 }) === 1, "4K atlas exceeded the bounded pixel budget");
@@ -243,6 +311,7 @@ const depthRows = depthSortGalaxyPoints([{ id: "b", z: 1 }, { id: "a", z: -1 }, 
 assert(depthRows.map((row) => row.id).join("") === "abc", "stable authored depth sort drifted");
 
 const geometry = buildGalaxyGeometry(facts.galaxy);
+assert(geometry.neurons[0]?.id === "N001" && geometry.neurons[0]?.divisionIndex === 0 && geometry.neurons[0]?.familyGeometryIndex === 0, "exact safe-frame fixture drifted from canonical N001 / Division A / A1 identity");
 assert(geometry.divisionGeometry.length === 16 && geometry.familyGeometry.length === 64 && geometry.neurons.length === 640, "authored renderer cardinality drifted");
 for (const [index, point] of geometry.divisionGeometry.entries()) {
   assert(JSON.stringify(point.authored) === JSON.stringify(facts.galaxy.geometry.divisions[index].slice(-4)), `division ${index} lost its authored tuple`);
@@ -455,4 +524,4 @@ const normalHaloOutside = selectGalaxyHit({ pointer: { x: normalDivisionRadius +
 const selectedHaloInside = selectGalaxyHit({ pointer: { x: selectedDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery", projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0 });
 assert(normalHaloInside.divisionIndex === 0 && normalHaloOutside.divisionIndex === -1 && selectedHaloInside.divisionIndex === 0, "division hit radius diverged from its rendered halo");
 
-console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6`);
+console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} safe_frame_label_cases=${safeFrameLabelCases} exact_exit_fixture=1 pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6`);

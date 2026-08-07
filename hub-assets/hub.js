@@ -272,7 +272,7 @@ function wireCommandCycle() {
       sourceHeight = Math.max(1, Math.round(sourceWidth / targetAspect));
     }
     const sourceX = Math.round((sourceCanvas.width - sourceWidth) / 2);
-    const sourceY = Math.round(Math.max(0, (sourceCanvas.height - sourceHeight) * 0.36));
+    const sourceY = Math.round(Math.max(0, (sourceCanvas.height - sourceHeight) * 0.32));
     echoContext.drawImage(sourceCanvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
   };
 
@@ -2612,11 +2612,13 @@ class GalaxyAtlas {
       this.width * 0.5 - span * 0.62 + Math.sin(time * 0.00009) * 20 * drift + this.rotationY * 9,
       this.height * 0.44 - span * 0.6 + Math.cos(time * 0.00007) * 14 * drift + this.rotationX * 7,
     );
-    context.globalAlpha = 0.13;
+    // The warm field anchors the lower-left quadrant: it fills the frame's
+    // darkest region and gives the cyan body a second temperature of light.
+    context.globalAlpha = 0.17;
     context.drawImage(
       sprites.nebulaWarm,
-      this.width * 0.66 - span * 0.5 + Math.sin(time * 0.00006 + 2.1) * 26 * drift + this.rotationY * 14,
-      this.height * 0.3 - span * 0.46 + Math.cos(time * 0.00005 + 1.2) * 18 * drift + this.rotationX * 11,
+      this.width * 0.3 - span * 0.5 + Math.sin(time * 0.00006 + 2.1) * 26 * drift + this.rotationY * 14,
+      this.height * 0.68 - span * 0.46 + Math.cos(time * 0.00005 + 1.2) * 18 * drift + this.rotationX * 11,
     );
     context.restore();
   }
@@ -2700,6 +2702,28 @@ class GalaxyAtlas {
           layer.moveTo(family.x, family.y);
           layer.lineTo(neuron.x, neuron.y);
         });
+        layer.stroke();
+      }
+      // Sibling chains: consecutive neurons within each family are true
+      // roster relations; the faint chain keeps tight outlying clusters
+      // reading as tissue even when their family anchor sits far away.
+      const chains = this.ensureFamilyNeuronLists();
+      layer.lineWidth = 0.4;
+      for (let family = 0; family < chains.length; family += 1) {
+        const members = chains[family];
+        if (members.length < 2) continue;
+        const familyPoint = this.projectedFamilies[family];
+        if (!familyPoint) continue;
+        const color = this.paletteColor(familyPoint.divisionIndex);
+        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(0.05 * profile.links, 0, 0.2)})`;
+        layer.beginPath();
+        for (let position = 1; position < members.length; position += 1) {
+          const previous = this.projectedNeurons[members[position - 1]];
+          const current = this.projectedNeurons[members[position]];
+          if (!previous || !current) continue;
+          layer.moveTo(previous.x, previous.y);
+          layer.lineTo(current.x, current.y);
+        }
         layer.stroke();
       }
       this.webLayerKey = cameraKey;
@@ -2896,7 +2920,7 @@ class GalaxyAtlas {
     // Exposure guard: on small stages the projection compresses the cluster
     // and additive glow saturates to white. Pull accumulated light down so
     // individual stars stay resolvable exactly where the copy promises it.
-    const exposure = clamp(Math.min(this.width, this.height) / 640, 0.6, 1) * (this.zoom < 1 ? 0.82 : 1);
+    const exposure = clamp(Math.min(this.width, this.height) / 640, 0.55, 1) * (this.zoom < 1 ? 0.78 : 1);
 
     context.save();
     context.globalCompositeOperation = "lighter";
@@ -3042,7 +3066,7 @@ class GalaxyAtlas {
           // across frames (projected points are per-frame copies).
           const source = this.neurons[this.neuronIndexById.get(point.id)] || point;
           if (source.sparkleCycle === undefined) {
-            source.sparkleCycle = 26000 + seededFract(point.phase * 51.7) * 14000;
+            source.sparkleCycle = 18000 + seededFract(point.phase * 51.7) * 10000;
             source.sparkleShift = seededFract(point.phase * 17.3) * source.sparkleCycle;
           }
           const sparkleCycle = source.sparkleCycle;
@@ -3126,10 +3150,33 @@ class GalaxyAtlas {
     if (focusedNeuron >= 0 && this.zoom > 1.52) {
       this.drawNeuronLabel(context, this.projectedNeurons[focusedNeuron], focusedNeuron, occupiedLabels);
     }
-    const availableLabels = this.projectedDivisions
-      .map((point, index) => ({ point, index }))
-      .filter(({ point, index }) => point.z > -0.7 || index === this.activeDivision || index === this.hoverDivision)
-      .sort((left, right) => Math.round(right.point.z * 4) - Math.round(left.point.z * 4) || left.index - right.index);
+    // Label dwell lock: the chosen label order freezes for 8 seconds per
+    // selection state, so slow orbital drift can never churn nameplates
+    // mid-gaze. Selection changes (click/hover/lens/zoom band) reset it.
+    const labelOrderKey = [
+      this.activeDivision, this.hoverDivision, this.activeFamily, this.hoverFamily,
+      this.lens, Math.round(this.zoom * 2),
+    ].join(":");
+    if (!this.labelOrder || this.labelOrder.key !== labelOrderKey || time > this.labelOrder.until) {
+      const divisionOrder = this.projectedDivisions
+        .map((point, index) => ({ point, index }))
+        .filter(({ point, index }) => point.z > -0.7 || index === this.activeDivision || index === this.hoverDivision)
+        .sort((left, right) => right.point.z - left.point.z)
+        .map(({ index }) => index);
+      const familyOrder = this.projectedFamilies
+        .map((point, index) => ({ point, index }))
+        .filter(({ point }) => point.divisionIndex === this.activeDivision || point.divisionIndex === this.hoverDivision)
+        .sort((left, right) => {
+          const leftSelected = left.index === this.activeFamily || left.index === this.hoverFamily;
+          const rightSelected = right.index === this.activeFamily || right.index === this.hoverFamily;
+          return Number(rightSelected) - Number(leftSelected) || right.point.z - left.point.z;
+        })
+        .map(({ index }) => index);
+      this.labelOrder = { key: labelOrderKey, until: time + 8000, divisionOrder, familyOrder };
+    }
+    const availableLabels = this.labelOrder.divisionOrder
+      .map((index) => ({ point: this.projectedDivisions[index], index }))
+      .filter(({ point }) => Boolean(point));
     const labelLimit = this.zoom > 1.7 ? 2 : this.zoom > 1.35 ? 4 : GALAXY_OVERVIEW_LABEL_LIMIT;
     const priority = [this.hoverDivision, this.activeDivision].filter((index, position, values) => index >= 0 && values.indexOf(index) === position);
     const labelCandidates = priority
@@ -3143,18 +3190,9 @@ class GalaxyAtlas {
       this.drawDivisionLabel(context, point, index, occupiedLabels, position < 3);
     });
     if (this.zoom > profile.familyThreshold) {
-      this.projectedFamilies
-        .map((point, index) => ({ point, index }))
-        .filter(({ point }) => point.divisionIndex === this.activeDivision || point.divisionIndex === this.hoverDivision)
-        .sort((left, right) => {
-          const leftSelected = left.index === this.activeFamily || left.index === this.hoverFamily;
-          const rightSelected = right.index === this.activeFamily || right.index === this.hoverFamily;
-          // Stable ordering: quantized depth then index, so nameplates never
-          // churn as slow orbital drift crosses the z-sort boundary.
-          return Number(rightSelected) - Number(leftSelected)
-            || Math.round(right.point.z * 4) - Math.round(left.point.z * 4)
-            || left.index - right.index;
-        })
+      this.labelOrder.familyOrder
+        .map((index) => ({ point: this.projectedFamilies[index], index }))
+        .filter(({ point }) => point && (point.divisionIndex === this.activeDivision || point.divisionIndex === this.hoverDivision))
         .forEach(({ point, index }) => this.drawFamilyLabel(context, point, index, occupiedLabels));
     }
   }

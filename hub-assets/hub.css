@@ -7413,6 +7413,19 @@ body.motion-paused *::after {
     padding: 0.35rem 0.65rem;
   }
 
+  .topbar {
+    gap: 0.5rem;
+    overflow: hidden;
+  }
+
+  .motion-toggle {
+    min-width: 0;
+    max-width: 9.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
   .topbar-tools {
     position: static;
     grid-row: 1;
@@ -7617,6 +7630,23 @@ body.motion-paused *::after {
 .local-handoff-boundary p,
 .local-handoff-boundary code {
   margin-top: 0.5rem;
+}
+
+/* Toolbar buttons keep air around their labels. */
+.galaxy-atlas-toolbar button {
+  padding-inline: 0.55rem;
+}
+
+/* Narrow AND short (zoomed small windows): the wordmark yields the row
+   to navigation; the brand mark alone carries identity. */
+@media (max-width: 44rem) and (max-height: 34rem) {
+  .brand-copy {
+    display: none;
+  }
+
+  .primary-nav {
+    justify-content: flex-start;
+  }
 }
 
 /* The selected division already reads from the stage nameplate, the

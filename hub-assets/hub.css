@@ -804,7 +804,7 @@ h3 {
 }
 
 .source-badge[data-state="stale"] {
-  color: #f0deb1;
+  color: var(--muted);
 }
 
 .source-badge[data-state="stale"] .pulse-dot {
@@ -3667,9 +3667,13 @@ h3 {
 .mission-grid em {
   position: absolute;
   z-index: 2;
-  top: 2.45rem;
+  top: 2.56rem;
   right: 1rem;
+  padding: 0.18rem 0.5rem;
+  border: 1px solid rgba(104, 228, 255, 0.14);
+  border-radius: 0.4rem;
   color: var(--dim);
+  background: rgba(6, 11, 19, 0.94);
   font-family: var(--mono);
   font-size: 0.64rem;
   font-style: normal;

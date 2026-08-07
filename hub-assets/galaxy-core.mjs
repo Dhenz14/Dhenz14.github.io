@@ -451,9 +451,9 @@ export function galaxyOverviewCamera({ width, height } = {}) {
   return Object.freeze({
     rotationX: -0.25,
     rotationY: -0.64,
-    zoom: narrow ? 0.88 : compact ? 1.08 : short ? 1.12 : 1.25,
+    zoom: narrow ? 0.92 : compact ? 1.14 : short ? 1.18 : 1.34,
     panX: 0,
-    panY: clamp(viewportHeight * 0.045, narrow ? 12 : 18, narrow ? 32 : 64),
+    panY: clamp(viewportHeight * 0.055, narrow ? 14 : 22, narrow ? 34 : 64),
   });
 }
 

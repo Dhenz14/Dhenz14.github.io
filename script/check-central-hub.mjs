@@ -497,7 +497,7 @@ requireMatch(js, /focusPoint\(center, minimumZoom, exactFit = false\)[\s\S]*gala
 requireMatch(js, /fitSelected\(\)[\s\S]*focusNeuron\(this\.activeNeuron, false, true\)[\s\S]*focusFamily\(this\.activeFamily, false, true\)[\s\S]*focusDivision\(Math\.max\(this\.activeDivision, 0\), false, true\)/, "fit-selected exact zoom recovery");
 requireMatch(js, /buildDivisionIndex\(\)[\s\S]*addEventListener\("focus"[\s\S]*showDivision\(index, false, false\)[\s\S]*addEventListener\("blur"/, "division full-name keyboard discovery");
 requireMatch(js, /showDivision\(index[\s\S]*data-galaxy-division-name[\s\S]*titleCase\(division\.name\)/, "persistent selected division full name");
-requireMatch(galaxyCore, /export function galaxyOverviewCamera\([\s\S]*rotationX: -0\.25,[\s\S]*rotationY: -0\.64,[\s\S]*narrow \? 0\.88[\s\S]*panY: clamp/, "pure viewport-aware overview camera");
+requireMatch(galaxyCore, /export function galaxyOverviewCamera\([\s\S]*rotationX: -0\.25,[\s\S]*rotationY: -0\.64,[\s\S]*narrow \? 0\.92[\s\S]*panY: clamp/, "pure viewport-aware overview camera");
 requireMatch(js, /resetCamera\(manual = true\)[\s\S]*galaxyOverviewCamera\(\{ width: this\.width, height: this\.height \}\)[\s\S]*this\.targetPanY = overview\.panY/, "overview camera reset integration");
 requireMatch(js, /const formatGalaxyDivisionChoice = \(division\) => `\$\{division\.code\} · \$\{titleCase\(division\.name\)\}`;/, "exact division navigator formatter");
 requireMatch(js, /wireDivisionNavigator\(\)[\s\S]*data-galaxy-division-nav-select[\s\S]*addEventListener\("change"[\s\S]*findIndex\([\s\S]*this\.focusDivision\(index\)/, "native division navigator selection path");

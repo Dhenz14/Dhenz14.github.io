@@ -255,7 +255,20 @@ function wireCommandCycle() {
       echoCanvas.height = height;
     }
     echoContext.clearRect(0, 0, width, height);
-    echoContext.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, width, height);
+    const targetAspect = width / height;
+    const sourceAspect = sourceCanvas.width / sourceCanvas.height;
+    let sourceX = 0;
+    let sourceY = 0;
+    let sourceWidth = sourceCanvas.width;
+    let sourceHeight = sourceCanvas.height;
+    if (sourceAspect > targetAspect) {
+      sourceWidth = Math.max(1, Math.round(sourceHeight * targetAspect));
+      sourceX = Math.round((sourceCanvas.width - sourceWidth) / 2);
+    } else {
+      sourceHeight = Math.max(1, Math.round(sourceWidth / targetAspect));
+      sourceY = Math.round((sourceCanvas.height - sourceHeight) / 2);
+    }
+    echoContext.drawImage(sourceCanvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
   };
 
   const scheduleEcho = () => {
@@ -2854,7 +2867,7 @@ class GalaxyAtlas {
     const fullName = titleCase(division.name);
     const nameLimit = this.width < 520 ? 23 : 34;
     const compactName = fullName.length > nameLimit ? `${fullName.slice(0, nameLimit - 1).trimEnd()}…` : fullName;
-    const expansive = (active || (this.fullAtlas && semanticAnchor)) && this.width >= 620;
+    const expansive = ((active && hovered) || (this.fullAtlas && semanticAnchor)) && this.width >= 620;
     const label = expansive ? `${division.code} · ${compactName}` : division.code;
     context.save();
     const fontSize = active ? 19 : expansive ? 17 : 16;

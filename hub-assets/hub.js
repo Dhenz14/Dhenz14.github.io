@@ -1044,44 +1044,38 @@ function wireLocalHandoffGate() {
   const urlLabel = $("[data-local-handoff-url]", dialog || document);
   const status = $("[data-local-handoff-status]", dialog || document);
   if (!dialog || !confirm || !(dialog instanceof HTMLDialogElement)) return;
-  let returnFocus = null;
 
   const close = () => {
     if (dialog.open) dialog.close();
-    if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
   };
 
+  // One click, one motion: the local link navigates immediately in its own
+  // tab — the click IS the explicit confirmation. This public tab keeps a
+  // quiet, non-blocking recovery card. Never a gate, never a probe.
   $$('a[href^="http://127.0.0.1:"]:not([data-local-handoff-confirm])').forEach((link) => {
-    link.addEventListener("click", (event) => {
-      event.preventDefault();
-      returnFocus = link;
+    link.addEventListener("click", () => {
       const selectedUrl = link.href;
       confirm.href = selectedUrl;
-      confirm.setAttribute("aria-label", `Try local runtime route for ${link.textContent.trim()}`);
+      confirm.setAttribute("aria-label", `Open the local route again for ${link.textContent.trim()}`);
       if (urlLabel) urlLabel.textContent = selectedUrl;
-      if (status) status.textContent = "No request has been sent to the local runtime.";
+      if (status) status.textContent = "Opened in a new tab just now. No request was sent from this public page, and availability is never assumed.";
       window.dispatchEvent(new CustomEvent("hive:request-local-handoff"));
-      if (!dialog.open) dialog.showModal();
-      $("[data-local-handoff-close]", dialog)?.focus({ preventScroll: true });
+      if (!dialog.open) dialog.show();
     });
   });
 
   confirm.addEventListener("click", () => {
-    if (status) status.textContent = "The explicit local attempt opened in a new tab. This public recovery guidance remains available; local availability is still not claimed.";
+    if (status) status.textContent = "Opened again in a new tab. This public recovery guidance stays here; local availability is still not claimed.";
   });
   $("[data-local-handoff-close]", dialog)?.addEventListener("click", close);
   $("[data-local-handoff-stay]", dialog)?.addEventListener("click", close);
   $("[data-local-handoff-copy-url]", dialog)?.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(confirm.href);
-      if (status) status.textContent = "Local URL copied. No request was sent to the runtime.";
+      if (status) status.textContent = "Local link copied. No request was sent to the runtime.";
     } catch {
-      if (status) status.textContent = "Copy was unavailable. The exact local URL remains visible above; no request was sent.";
+      if (status) status.textContent = "Copy was unavailable. The exact local link stays visible in the details; no request was sent.";
     }
-  });
-  dialog.addEventListener("cancel", (event) => {
-    event.preventDefault();
-    close();
   });
 }
 

@@ -7547,6 +7547,54 @@ body.motion-paused *::after {
   text-overflow: ellipsis;
 }
 
+/* One-click handoff: the recovery guidance shows non-modally as a quiet
+   corner card in the public tab while the local body opens in its own
+   tab. The modal styles above remain for any future modal use. */
+.local-handoff-dialog[open]:not(:modal) {
+  position: fixed;
+  z-index: 85;
+  inset: auto 1rem 1rem auto;
+  width: min(23rem, calc(100vw - 2rem));
+  max-height: min(calc(100dvh - 5rem), 33rem);
+  margin: 0;
+  padding: 1.1rem 1.25rem;
+  overflow-y: auto;
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.55), 0 0 2rem rgba(104, 228, 255, 0.08);
+}
+
+.local-handoff-dialog[open]:not(:modal) h2 {
+  margin: 0.2rem 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.local-handoff-dialog[open]:not(:modal) .eyebrow {
+  margin-bottom: 0.3rem;
+}
+
+.local-handoff-dialog[open]:not(:modal) .local-handoff-recovery {
+  padding: 0.7rem 0.9rem;
+}
+
+.local-handoff-dialog[open]:not(:modal) .local-handoff-actions {
+  gap: 0.5rem;
+}
+
+.local-handoff-dialog[open]:not(:modal) .local-handoff-actions .button {
+  min-height: 2.6rem;
+  padding: 0.5rem 0.8rem;
+  white-space: nowrap;
+}
+
+.local-handoff-boundary summary {
+  cursor: pointer;
+  color: var(--dim);
+}
+
+.local-handoff-boundary p,
+.local-handoff-boundary code {
+  margin-top: 0.5rem;
+}
+
 /* The selected division already reads from the stage nameplate, the
    navigator select, and the inspector heading. Keep the CURRENT DIVISION
    block for assistive announcements only. */

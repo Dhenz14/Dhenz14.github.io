@@ -127,7 +127,7 @@
           <div class="hero-actions hero-secondary-actions" aria-label="Supporting actions">
             <a class="button button-quiet" data-hero-body-cta href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">
               <span>Open local body</span>
-              <small>Runtime not checked ↗</small>
+              <small>Opens on this computer ↗</small>
             </a>
             <a class="button button-quiet" href="#ide-download">
               <span>Get Hive IDE</span>
@@ -449,8 +449,8 @@
                 <strong data-galaxy-context-summary>Context unavailable · source not yet bound</strong>
                 <p data-galaxy-context-copy>Context parameters remain unavailable until this browser validates the source snapshot. The plain local routes remain explicit and availability is never assumed.</p>
                 <div class="galaxy-body-actions">
-                  <a class="button button-primary galaxy-local-cta" data-local-context-link data-local-presentation="1" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer"><span>Open in local body</span><small>Runtime not checked ↗</small></a>
-                  <a class="button button-quiet galaxy-local-cta" data-local-context-link data-local-presentation="0" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="_blank" rel="noreferrer"><span>Retry operator handoff</span><small>Runtime not checked ↗</small></a>
+                  <a class="button button-primary galaxy-local-cta" data-local-context-link data-local-presentation="1" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer"><span>Open in local body</span><small>Opens on this computer ↗</small></a>
+                  <a class="button button-quiet galaxy-local-cta" data-local-context-link data-local-presentation="0" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="_blank" rel="noreferrer"><span>Retry operator handoff</span><small>Opens on this computer ↗</small></a>
                 </div>
                 <small class="galaxy-start-guidance">If unavailable: start Hive IDE, open Hive-AI, then choose Living Anatomy and retry. This page cannot start it for you.</small>
               </div>
@@ -748,26 +748,29 @@
     </footer>
 
     <dialog class="local-handoff-dialog" data-local-handoff-dialog aria-labelledby="local-handoff-title">
-      <button class="local-handoff-close" type="button" data-local-handoff-close aria-label="Close local runtime guidance">×</button>
-      <p class="eyebrow">Local runtime handoff · no probe</p>
-      <h2 id="local-handoff-title">Keep the public atlas open while you try the local body.</h2>
-      <p data-local-handoff-copy>Availability is not checked or claimed. The public page will remain open, and the local route opens only after your explicit confirmation.</p>
+      <button class="local-handoff-close" type="button" data-local-handoff-close aria-label="Dismiss local runtime guidance">×</button>
+      <p class="eyebrow">Local body · opened in a new tab</p>
+      <h2 id="local-handoff-title">Your living body is opening.</h2>
+      <p data-local-handoff-copy>It opened in its own tab the moment you clicked. Availability is not checked or claimed. If that tab cannot connect, Hive is simply not awake on this computer yet.</p>
       <div class="local-handoff-recovery" data-local-handoff-recovery>
-        <strong>If the route is unavailable or reports DRIFTED:</strong>
+        <strong>Three calm steps wake it:</strong>
         <ol>
           <li>Start Hive IDE on this computer.</li>
           <li>Open Hive-AI, then choose Living Anatomy.</li>
-          <li>Return here and retry the exact source-bound route.</li>
+          <li>Press the same button again.</li>
         </ol>
-        <p>DRIFTED is a truth gate. Do not weaken it, hide it, or treat an unavailable runtime as zero.</p>
       </div>
-      <code class="local-handoff-url" data-local-handoff-url>Local route selected after confirmation</code>
       <div class="local-handoff-actions">
-        <a class="button button-primary" data-local-handoff-confirm href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">Try local runtime ↗</a>
-        <button class="button button-quiet" type="button" data-local-handoff-copy-url>Copy local URL</button>
-        <button class="button button-quiet" type="button" data-local-handoff-stay>Stay in public atlas</button>
+        <a class="button button-primary" data-local-handoff-confirm href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">Open it again ↗</a>
+        <button class="button button-quiet" type="button" data-local-handoff-copy-url>Copy local link</button>
+        <button class="button button-quiet" type="button" data-local-handoff-stay>Got it</button>
       </div>
-      <p class="local-handoff-status" data-local-handoff-status aria-live="polite">No request has been sent to the local runtime.</p>
+      <p class="local-handoff-status" data-local-handoff-status aria-live="polite">No request has been sent from this public page.</p>
+      <details class="local-handoff-boundary">
+        <summary>What this page never does</summary>
+        <p>It never probes, starts, or claims anything on your computer. DRIFTED is a truth gate. Do not weaken it, hide it, or treat an unavailable runtime as zero.</p>
+        <code class="local-handoff-url" data-local-handoff-url>The exact local route appears here when you use a local button</code>
+      </details>
     </dialog>
 
     <div class="toast" data-toast role="status" aria-live="polite" aria-atomic="true"></div>

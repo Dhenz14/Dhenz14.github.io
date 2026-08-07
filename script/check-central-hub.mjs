@@ -588,7 +588,8 @@ requireMatch(js, /applyRenderAvailability\(forcedColorsActive\)[\s\S]*if \(fallb
 requireMatch(js, /if \(\$\("\[data-source-stamp\], \[data-galaxy-canvas\]"\)\)[\s\S]*loadSourceSnapshot\(\)\.finally\(startSnapshotRefresh\)/, "snapshot refresh surface gate");
 requireMatch(js, /runAfterFirstPaint\("Offscreen scene control", wireSceneActivity, 40\)/, "deferred offscreen CSS animation control");
 requireMatch(js, /runAfterFirstPaint\("Local runtime handoff guidance", wireLocalHandoffGate, 180\)/, "deferred local handoff guidance call chain");
-requireMatch(localHandoffWiring, /data-local-handoff-confirm[\s\S]*event\.preventDefault\(\)[\s\S]*dialog\.showModal\(\)/, "guidance precedes explicit local navigation");
+requireMatch(localHandoffWiring, /data-local-handoff-confirm[\s\S]*hive:request-local-handoff[\s\S]*dialog\.show\(\)/, "one-click local navigation with quiet recovery guidance");
+requireNoMatch(localHandoffWiring, /preventDefault|showModal/, "local links navigate on the first click");
 requireNoMatch(localHandoffWiring, /\bfetch\s*\(|new\s+(?:Image|WebSocket)\b|XMLHttpRequest/, "local availability probe");
 requireMatch(js, /hive:request-local-handoff[\s\S]*if \(this\.fullAtlas\) this\.closeFullAtlas\(false\)/, "local guidance exits isolated atlas before opening its dialog");
 requireNoMatch(js, /time\s*-\s*this\.lastFrame\s*<\s*32/, "30fps frame throttle");

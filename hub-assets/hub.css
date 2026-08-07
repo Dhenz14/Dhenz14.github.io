@@ -7426,11 +7426,13 @@ body.motion-paused *::after {
     row-gap: 0.6rem;
   }
 
-  .hero-copy .eyebrow {
-    grid-auto-flow: column;
-    justify-content: start;
-    column-gap: 0.9rem;
+  .hero-copy > .eyebrow {
+    display: block;
     margin-bottom: 0.5rem;
+  }
+
+  .hero-copy > .eyebrow span {
+    display: inline;
   }
 
   .hero-copy h1 {
@@ -7483,10 +7485,16 @@ body.motion-paused *::after {
     grid-column: 3;
   }
 
-  .hero-copy .eyebrow {
-    grid-auto-flow: column;
-    justify-content: start;
-    column-gap: 0.9rem;
+  .hero-copy > .eyebrow {
+    display: block;
+  }
+
+  .hero-copy > .eyebrow span {
+    display: inline;
+  }
+
+  .satellite-neura {
+    right: 21%;
   }
 }
 
@@ -7506,9 +7514,20 @@ body.motion-paused *::after {
 }
 
 /* The pipeline heading has no side paragraph; collapse the phantom
-   second column so the headline band carries no dead quadrant. */
+   second column and let the headline span the full band. */
 .pipeline .section-heading {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.pipeline .section-heading h2 {
+  max-width: none;
+}
+
+/* Native selects clip their value mid-word; ellipsize instead. The
+   pinned base select rule stays untouched — this only adds overflow
+   behavior. */
+.galaxy-division-nav-field select {
+  text-overflow: ellipsis;
 }
 
 /* The selected division already reads from the stage nameplate, the

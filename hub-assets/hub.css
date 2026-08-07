@@ -4685,10 +4685,10 @@ body.command-flightdeck-open::after {
 .toast {
   position: fixed;
   z-index: 80;
+  top: 6rem;
   right: 1rem;
-  bottom: 1rem;
-  max-width: min(24rem, calc(100vw - 2rem));
-  padding: 0.8rem 1rem;
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: 0.7rem 0.95rem;
   border: 1px solid rgba(104, 228, 255, 0.4);
   border-radius: 0.65rem;
   color: var(--text);
@@ -4698,7 +4698,7 @@ body.command-flightdeck-open::after {
   line-height: 1.45;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(1rem);
+  transform: translateY(-0.5rem);
   transition: opacity 180ms ease, transform 180ms ease;
 }
 
@@ -5700,8 +5700,8 @@ body.command-flightdeck-open::after {
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  color: var(--text);
-  font: 750 0.875rem/1.35 var(--mono);
+  color: var(--muted);
+  font: 650 0.875rem/1.35 var(--mono);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -6357,14 +6357,15 @@ body.galaxy-fullscreen-open {
 .galaxy-division-name {
   justify-self: start;
   max-width: min(38rem, 100%);
-  padding: 0.55rem 0.75rem;
+  padding: 0.6rem 0.85rem;
   overflow: visible;
   border: 1px solid rgba(104, 228, 255, 0.3);
   border-radius: 0.55rem;
   color: #e7fbff;
   background: rgba(3, 8, 15, 0.9);
   box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.32);
-  font: 800 1rem/1.35 var(--mono);
+  font: 800 1.08rem/1.35 var(--mono);
+  letter-spacing: 0.015em;
   overflow-wrap: break-word;
   text-overflow: clip;
   white-space: normal;
@@ -7347,3 +7348,102 @@ body.motion-paused *::after {
   font-size: var(--type-meta-min);
 }
 /* ZERO_SQUINT_META_END */
+
+/* GALAXY_STARK_V12_FRAMING_START
+   Cinematic atlas frame + zoomed-viewport rescue. Placed last so these
+   viewport contracts win the cascade over earlier responsive blocks. */
+
+/* Desktop: the atlas is one full framed viewport. The inspector column
+   scrolls internally instead of stretching the stage to its content
+   height (previously ~2040px, which buried the galaxy in dead space). */
+@media (min-width: 62.01rem) {
+  .galaxy-workbench:not(.is-full-atlas) {
+    height: clamp(34rem, calc(100svh - 8.5rem), 60rem);
+    min-height: 0;
+  }
+
+  .galaxy-workbench:not(.is-full-atlas) .galaxy-stage {
+    min-height: 0;
+  }
+
+  .galaxy-workbench:not(.is-full-atlas) .galaxy-inspector {
+    min-height: 0;
+  }
+}
+
+/* Short viewports (browser zoom on laptops, small landscape windows):
+   keep the chrome compact so the headline, CTA, and a real atlas stage
+   all survive the first view. 34rem ≈ 544px effective height covers
+   125%–200% zoom on 720–800px-tall displays. */
+@media (max-height: 34rem) {
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    min-height: 3.4rem;
+    padding: 0.35rem 0.9rem;
+  }
+
+  .brand-copy small {
+    display: none;
+  }
+
+  .brand-mark {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+
+  .primary-nav {
+    display: flex;
+    grid-row: 1;
+    grid-column: 2;
+    justify-content: center;
+    width: auto;
+    padding: 0.15rem;
+  }
+
+  .primary-nav a {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.68rem;
+  }
+
+  .topbar-tools {
+    position: static;
+    grid-row: 1;
+    grid-column: 3;
+  }
+
+  .source-badge {
+    display: none;
+  }
+
+  .hero {
+    min-height: auto;
+    padding-top: 1.4rem;
+    row-gap: 0.6rem;
+  }
+
+  .hero-copy h1 {
+    margin-bottom: 0.6rem;
+    font-size: clamp(2.05rem, 8.4vh, 3.1rem);
+  }
+
+  .toast {
+    top: 4.1rem;
+  }
+}
+
+/* Zoomed/short single-column atlas: never let the stage collapse below a
+   usable frame. Overrides the 82svh workbench sizing that shrank the
+   stage to ~218px at 200% browser zoom. */
+@media (max-width: 62rem) and (max-height: 34rem) {
+  .galaxy-workbench:not(.is-full-atlas) {
+    grid-template-rows: minmax(24rem, auto) auto;
+    height: auto;
+    min-height: 0;
+  }
+
+  .galaxy-workbench:not(.is-full-atlas) .galaxy-stage {
+    min-height: 24rem;
+  }
+}
+/* GALAXY_STARK_V12_FRAMING_END */

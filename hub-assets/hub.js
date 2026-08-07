@@ -22,11 +22,11 @@ import {
   sourceSnapshotPresentation,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v11";
+} from "./galaxy-core.mjs?v=galaxy-stark-v12";
 import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v11";
+} from "./ide-release-core.mjs?v=galaxy-stark-v12";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 5;
 
@@ -2601,7 +2601,7 @@ class GalaxyAtlas {
     context.clearRect(0, 0, this.width, this.height);
     if (!this.divisions.length) {
       context.fillStyle = this.loadError ? "rgba(255, 141, 154, 0.82)" : "rgba(168, 182, 202, 0.72)";
-      context.font = '700 12px "SFMono-Regular", Consolas, monospace';
+      context.font = '700 13px "SFMono-Regular", Consolas, monospace';
       context.textAlign = "center";
       context.fillText(this.loadError ? "SOURCE SNAPSHOT UNAVAILABLE" : "LOADING SOURCE-BOUND GALAXY", this.width / 2, this.height / 2);
       return;
@@ -2857,10 +2857,10 @@ class GalaxyAtlas {
     const expansive = (active || (this.fullAtlas && semanticAnchor)) && this.width >= 620;
     const label = expansive ? `${division.code} · ${compactName}` : division.code;
     context.save();
-    const fontSize = active ? 18 : expansive ? 16 : 15;
+    const fontSize = active ? 19 : expansive ? 17 : 16;
     context.font = `${active ? 800 : 700} ${fontSize}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
     const width = context.measureText(label).width + (expansive ? 18 : 12);
-    const height = active ? 36 : expansive ? 33 : 29;
+    const height = active ? 38 : expansive ? 35 : 31;
     const calloutGap = clamp(36 * point.perspective * this.zoom, 30, 64);
     const desiredX = expansive
       ? (point.x >= this.width / 2 ? point.x - width - calloutGap : point.x + calloutGap)
@@ -2892,7 +2892,7 @@ class GalaxyAtlas {
     roundedRectPath(context, box.x, box.y, width, height, 5);
     context.fill();
     context.stroke();
-    context.fillStyle = active ? "rgba(214, 249, 255, 0.96)" : "rgba(168, 182, 202, 0.78)";
+    context.fillStyle = active ? "rgba(214, 249, 255, 0.96)" : "rgba(176, 191, 212, 0.88)";
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.fillText(label, box.x + width / 2, box.y + height / 2 + 0.5);
@@ -2910,9 +2910,9 @@ class GalaxyAtlas {
     const compactName = familyName.length > nameLimit ? `${familyName.slice(0, nameLimit - 1).trimEnd()}…` : familyName;
     const label = selected ? `${family.code} · ${compactName}` : family.code;
     context.save();
-    context.font = `${selected ? 800 : 700} ${selected ? 17 : 15}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
+    context.font = `${selected ? 800 : 700} ${selected ? 18 : 16}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
     const width = context.measureText(label).width + (selected ? 16 : 10);
-    const height = selected ? 33 : 29;
+    const height = selected ? 35 : 31;
     const box = this.placeSafeCanvasLabel(width, height, point.x - width / 2, point.y + 10, occupied, selected);
     if (!box) {
       context.restore();
@@ -2935,7 +2935,7 @@ class GalaxyAtlas {
     roundedRectPath(context, box.x, box.y, width, height, 5);
     context.fill();
     context.stroke();
-    context.fillStyle = selected ? "rgba(222, 250, 255, 0.96)" : "rgba(177, 202, 226, 0.8)";
+    context.fillStyle = selected ? "rgba(222, 250, 255, 0.96)" : "rgba(185, 208, 230, 0.9)";
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.fillText(label, box.x + width / 2, box.y + height / 2 + 0.5);
@@ -2946,9 +2946,9 @@ class GalaxyAtlas {
     const neuron = this.neurons[neuronIndex];
     if (!point || !neuron) return;
     context.save();
-    context.font = '800 16px "SFMono-Regular", "Cascadia Code", Consolas, monospace';
+    context.font = '800 17px "SFMono-Regular", "Cascadia Code", Consolas, monospace';
     const width = context.measureText(neuron.id).width + 14;
-    const height = 29;
+    const height = 31;
     const box = this.placeSafeCanvasLabel(width, height, point.x + 8, point.y - 33, occupied, true);
     if (!box) {
       context.restore();

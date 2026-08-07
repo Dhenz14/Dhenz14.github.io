@@ -1219,6 +1219,13 @@ class FieldRenderer {
 }
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+// Deterministic 0..1 hash used by every "alive" oscillator below — the
+// renderer contract bans Math.random so all life is seeded and replayable.
+const seededFract = (n) => {
+  const value = Math.sin(n) * 43758.5453;
+  return value - Math.floor(value);
+};
+
 const TITLE_MINOR_WORDS = new Set(["a", "an", "and", "as", "at", "but", "by", "for", "in", "nor", "of", "on", "or", "per", "the", "to", "via", "with"]);
 const titleCase = (value) => String(value || "").toLowerCase().replace(/\b[a-z0-9']+/g, (word, offset) =>
   (offset > 0 && TITLE_MINOR_WORDS.has(word)) ? word : word.charAt(0).toUpperCase() + word.slice(1));
@@ -2511,6 +2518,240 @@ class GalaxyAtlas {
     return palette[index % palette.length];
   }
 
+  ensureAliveSprites() {
+    const key = `${this.lens}:${this.width}x${this.height}`;
+    if (this.aliveSprites && this.aliveSpritesKey === key) return this.aliveSprites;
+    const makeCanvas = (size, height = size) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = height;
+      return canvas;
+    };
+    const nebula = (seedBase, tones) => {
+      const canvas = makeCanvas(480);
+      const nebulaContext = canvas.getContext("2d");
+      if (!nebulaContext) return canvas;
+      for (let blob = 0; blob < 4; blob += 1) {
+        const bx = 90 + seededFract(seedBase + blob * 12.9898) * 300;
+        const by = 90 + seededFract(seedBase + blob * 78.233) * 300;
+        const br = 110 + seededFract(seedBase + blob * 41.731) * 130;
+        const tone = tones[blob % tones.length];
+        const gradient = nebulaContext.createRadialGradient(bx, by, 0, bx, by, br);
+        gradient.addColorStop(0, `rgba(${tone}, 0.5)`);
+        gradient.addColorStop(0.55, `rgba(${tone}, 0.16)`);
+        gradient.addColorStop(1, `rgba(${tone}, 0)`);
+        nebulaContext.fillStyle = gradient;
+        nebulaContext.fillRect(0, 0, 480, 480);
+      }
+      return canvas;
+    };
+    const auras = [];
+    const palette = GALAXY_PUBLIC_PALETTES[this.lens] || GALAXY_PUBLIC_PALETTES.mastery;
+    for (let index = 0; index < 16; index += 1) {
+      const color = palette[index % palette.length];
+      const canvas = makeCanvas(220);
+      const auraContext = canvas.getContext("2d");
+      if (auraContext) {
+        const gradient = auraContext.createRadialGradient(110, 110, 0, 110, 110, 110);
+        gradient.addColorStop(0, `rgba(${color.join(",")}, 0.34)`);
+        gradient.addColorStop(0.42, `rgba(${color.join(",")}, 0.11)`);
+        gradient.addColorStop(0.75, `rgba(${color.join(",")}, 0.03)`);
+        gradient.addColorStop(1, `rgba(${color.join(",")}, 0)`);
+        auraContext.fillStyle = gradient;
+        auraContext.fillRect(0, 0, 220, 220);
+      }
+      auras.push(canvas);
+    }
+    const vignette = makeCanvas(Math.max(2, this.width), Math.max(2, this.height));
+    const vignetteContext = vignette.getContext("2d");
+    if (vignetteContext) {
+      const gradient = vignetteContext.createRadialGradient(
+        this.width * 0.5,
+        this.height * 0.46,
+        Math.min(this.width, this.height) * 0.34,
+        this.width * 0.5,
+        this.height * 0.52,
+        Math.max(this.width, this.height) * 0.74,
+      );
+      gradient.addColorStop(0, "rgba(2, 4, 10, 0)");
+      gradient.addColorStop(0.72, "rgba(2, 4, 10, 0.16)");
+      gradient.addColorStop(1, "rgba(1, 3, 8, 0.5)");
+      vignetteContext.fillStyle = gradient;
+      vignetteContext.fillRect(0, 0, this.width, this.height);
+    }
+    // Pre-scale the nebulae to their final on-screen size so the per-frame
+    // drawImage is a plain blit — scaling every frame is what costs.
+    const span = Math.max(this.width, this.height, 2);
+    const prescale = (sprite, size) => {
+      const scaled = makeCanvas(Math.max(2, Math.round(size)));
+      const scaledContext = scaled.getContext("2d");
+      if (scaledContext) scaledContext.drawImage(sprite, 0, 0, size, size);
+      return scaled;
+    };
+    this.aliveSprites = {
+      nebulaDeep: prescale(nebula(4.117, ["56, 92, 190", "44, 120, 180", "88, 70, 200"]), span * 1.24),
+      nebulaWarm: prescale(nebula(9.731, ["168, 104, 58", "150, 78, 130", "104, 96, 200"]), span),
+      auras,
+      vignette,
+    };
+    this.aliveSpritesKey = key;
+    return this.aliveSprites;
+  }
+
+  drawLivingField(context, time) {
+    const sprites = this.ensureAliveSprites();
+    const drift = this.paused ? 0 : 1;
+    const span = Math.max(this.width, this.height);
+    context.save();
+    context.globalCompositeOperation = "lighter";
+    context.globalAlpha = 0.15;
+    context.drawImage(
+      sprites.nebulaDeep,
+      this.width * 0.5 - span * 0.62 + Math.sin(time * 0.00009) * 20 * drift + this.rotationY * 9,
+      this.height * 0.44 - span * 0.6 + Math.cos(time * 0.00007) * 14 * drift + this.rotationX * 7,
+    );
+    context.globalAlpha = 0.1;
+    context.drawImage(
+      sprites.nebulaWarm,
+      this.width * 0.66 - span * 0.5 + Math.sin(time * 0.00006 + 2.1) * 26 * drift + this.rotationY * 14,
+      this.height * 0.3 - span * 0.46 + Math.cos(time * 0.00005 + 1.2) * 18 * drift + this.rotationX * 11,
+    );
+    context.restore();
+  }
+
+  drawOrganAuras(context, time, profile) {
+    const sprites = this.ensureAliveSprites();
+    context.save();
+    context.globalCompositeOperation = "lighter";
+    this.projectedDivisions.forEach((point, index) => {
+      const breathe = this.paused
+        ? 0.5
+        : 0.5 + 0.5 * Math.sin(time * 0.00052 + seededFract(index * 12.9898) * Math.PI * 2);
+      // Quantized size keeps the per-frame blit unscaled-cheap; the breath
+      // itself lives in alpha, which costs nothing.
+      const size = Math.round((163 * Math.sqrt(this.zoom) * point.perspective * profile.divisions) / 16) * 16;
+      context.globalAlpha = 0.42 + breathe * 0.4;
+      context.drawImage(sprites.auras[index % sprites.auras.length], point.x - size / 2, point.y - size / 2, size, size);
+    });
+    context.restore();
+  }
+
+  ensureFamilyNeuronLists() {
+    if (this.familyNeuronLists && this.familyNeuronLists.length === this.familyGeometry.length) {
+      return this.familyNeuronLists;
+    }
+    const lists = this.familyGeometry.map(() => []);
+    this.neurons.forEach((neuron, index) => {
+      if (lists[neuron.familyGeometryIndex]) lists[neuron.familyGeometryIndex].push(index);
+    });
+    this.familyNeuronLists = lists;
+    return lists;
+  }
+
+  drawNeuralWeb(context, profile) {
+    // True-hierarchy web only: division→family spokes and family→neuron
+    // filaments come straight from the authored public geometry. No edge is
+    // invented; the public snapshot carries structure, not runtime links.
+    // The web is static per camera pose, so it renders into an offscreen
+    // layer that idle frames blit in one call.
+    const cameraKey = [
+      this.rotationX.toFixed(4), this.rotationY.toFixed(4), this.zoom.toFixed(4),
+      this.panX.toFixed(1), this.panY.toFixed(1),
+      this.activeDivision, this.hoverDivision, this.lens,
+      this.width, this.height,
+    ].join(":");
+    if (!this.webLayer || this.webLayerKey !== cameraKey) {
+      if (!this.webLayer
+        || this.webLayer.width !== this.canvas.width
+        || this.webLayer.height !== this.canvas.height) {
+        this.webLayer = document.createElement("canvas");
+        this.webLayer.width = Math.max(2, this.canvas.width);
+        this.webLayer.height = Math.max(2, this.canvas.height);
+      }
+      const layer = this.webLayer.getContext("2d");
+      if (!layer) return;
+      layer.setTransform(1, 0, 0, 1, 0, 0);
+      layer.clearRect(0, 0, this.webLayer.width, this.webLayer.height);
+      layer.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      for (let division = 0; division < this.projectedDivisions.length; division += 1) {
+        const divisionPoint = this.projectedDivisions[division];
+        const color = this.paletteColor(division);
+        const active = division === this.activeDivision || division === this.hoverDivision;
+        const boost = active ? 2.6 : 1;
+        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(0.07 * boost * profile.links, 0, 0.4)})`;
+        layer.lineWidth = active ? 0.75 : 0.5;
+        layer.beginPath();
+        this.projectedFamilies.forEach((family) => {
+          if (family.divisionIndex !== division) return;
+          layer.moveTo(divisionPoint.x, divisionPoint.y);
+          layer.lineTo(family.x, family.y);
+        });
+        layer.stroke();
+        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(0.042 * boost * profile.links, 0, 0.3)})`;
+        layer.lineWidth = active ? 0.55 : 0.4;
+        layer.beginPath();
+        this.projectedNeurons.forEach((neuron) => {
+          if (neuron.divisionIndex !== division) return;
+          const family = this.projectedFamilies[neuron.familyGeometryIndex];
+          if (!family) return;
+          layer.moveTo(family.x, family.y);
+          layer.lineTo(neuron.x, neuron.y);
+        });
+        layer.stroke();
+      }
+      this.webLayerKey = cameraKey;
+    }
+    context.save();
+    context.globalCompositeOperation = "lighter";
+    context.drawImage(this.webLayer, 0, 0, this.width, this.height);
+    context.restore();
+  }
+
+  drawSynapticImpulses(context, time, profile) {
+    if (this.paused) return;
+    const lists = this.ensureFamilyNeuronLists();
+    context.save();
+    context.globalCompositeOperation = "lighter";
+    for (let family = 0; family < this.projectedFamilies.length; family += 1) {
+      const seedA = seededFract(family * 12.9898 + 7.11);
+      const seedB = seededFract(family * 78.233 + 3.77);
+      const period = 5200 + seedA * 4600;
+      const shifted = time + seedB * period;
+      const cycle = Math.floor(shifted / period);
+      const local = shifted - cycle * period;
+      if (local > 1500) continue;
+      const familyPoint = this.projectedFamilies[family];
+      const divisionPoint = this.projectedDivisions[familyPoint.divisionIndex];
+      const members = lists[family];
+      if (!divisionPoint || !members || !members.length) continue;
+      const target = this.projectedNeurons[members[(cycle + Math.floor(seedA * 97)) % members.length]];
+      if (!target) continue;
+      const color = this.paletteColor(familyPoint.divisionIndex);
+      const along = (s) => (s < 0.45
+        ? {
+          x: divisionPoint.x + (familyPoint.x - divisionPoint.x) * (s / 0.45),
+          y: divisionPoint.y + (familyPoint.y - divisionPoint.y) * (s / 0.45),
+        }
+        : {
+          x: familyPoint.x + (target.x - familyPoint.x) * ((s - 0.45) / 0.55),
+          y: familyPoint.y + (target.y - familyPoint.y) * ((s - 0.45) / 0.55),
+        });
+      const progress = local / 1500;
+      const eased = progress * progress * (3 - 2 * progress);
+      const fade = Math.sin(Math.PI * progress);
+      [0, 0.05, 0.1].forEach((lag, order) => {
+        const at = along(clamp(eased - lag, 0, 1));
+        const head = order === 0;
+        context.globalAlpha = clamp(fade * (head ? 0.85 : 0.4 - order * 0.12) * Math.min(profile.links, 1.2), 0, 1);
+        context.fillStyle = head ? "rgba(235, 252, 255, 0.95)" : `rgba(${color.join(",")}, 0.8)`;
+        context.beginPath();
+        context.arc(at.x, at.y, head ? 1.9 : 1.25, 0, Math.PI * 2);
+        context.fill();
+      });
+    }
+    context.restore();
+  }
+
   drawAmbientStars(context, time) {
     context.save();
     context.globalCompositeOperation = "lighter";
@@ -2635,6 +2876,7 @@ class GalaxyAtlas {
     background.addColorStop(1, "rgba(2, 5, 11, 0)");
     context.fillStyle = background;
     context.fillRect(0, 0, this.width, this.height);
+    this.drawLivingField(context, time);
     this.drawAmbientStars(context, time);
 
     const profile = GALAXY_LENS_PROFILES[this.lens] || GALAXY_LENS_PROFILES.mastery;
@@ -2642,9 +2884,16 @@ class GalaxyAtlas {
     this.projectedFamilies = this.familyGeometry.map((point) => this.project(point));
     this.projectedNeurons = this.neurons.map((point) => this.project(point));
     const center = this.project({ x: 0, y: 0, z: 0 });
+    // One organism, one pulse: a slow systolic swell that every layer below
+    // shares, delayed radially from the reactor so the body breathes outward.
+    const globalBeat = this.paused ? 0 : Math.pow(Math.max(0, Math.sin(time * 0.0008976)), 3);
+    const beatAt = (point) => (this.paused
+      ? 0
+      : Math.pow(Math.max(0, Math.sin(time * 0.0008976 - Math.hypot(point.x - center.x, point.y - center.y) * 0.0042)), 3));
 
     context.save();
     context.globalCompositeOperation = "lighter";
+    this.drawOrganAuras(context, time, profile);
     const depthDivisions = depthSortGalaxyPoints(this.projectedDivisions.map((point, index) => ({ ...point, geometryIndex: index })));
     depthDivisions.forEach((point) => {
       const index = point.geometryIndex;
@@ -2668,11 +2917,13 @@ class GalaxyAtlas {
       context.stroke();
     });
 
+    this.drawNeuralWeb(context, profile);
+
     depthDivisions.forEach((point) => {
       const index = point.geometryIndex;
       const color = this.paletteColor(index);
       const active = index === this.activeDivision || index === this.hoverDivision;
-      const radius = galaxyDivisionVisualRadius(point, this.zoom, profile, active);
+      const radius = galaxyDivisionVisualRadius(point, this.zoom, profile, active) * (1 + beatAt(point) * 0.055);
       context.save();
       if (active) {
         context.shadowColor = `rgba(${color.join(",")}, 0.62)`;
@@ -2739,6 +2990,8 @@ class GalaxyAtlas {
       });
     }
 
+    this.drawSynapticImpulses(context, time, profile);
+
     depthSortGalaxyPoints(this.projectedNeurons)
       .forEach((point) => {
         const color = this.paletteColor(point.divisionIndex);
@@ -2747,7 +3000,7 @@ class GalaxyAtlas {
         const active = activeDivision && (selectedFamily < 0 || point.familyGeometryIndex === selectedFamily);
         const depth = clamp((point.z + 2.7) / 5.4, 0, 1);
         const shimmer = this.paused ? 0.86 : 0.78 + Math.sin(time * 0.0015 + point.phase) * 0.16;
-        const alpha = clamp((active ? 0.88 : 0.28 + depth * 0.44) * shimmer * profile.neurons, 0.16, 1);
+        const alpha = clamp((active ? 0.88 : 0.28 + depth * 0.44) * shimmer * (1 + globalBeat * 0.14) * profile.neurons, 0.16, 1);
         const depthScale = 0.72 + depth * 0.72;
         const radius = clamp((active ? 2.05 : 1.28) * point.perspective * Math.sqrt(this.zoom) * Math.sqrt(profile.neurons) * depthScale, 0.82, 4.8);
         context.fillStyle = `rgba(${color.join(",")}, ${alpha * (active ? 0.16 : 0.08)})`;
@@ -2775,9 +3028,41 @@ class GalaxyAtlas {
           context.lineTo(point.x, point.y + focusRadius * 1.6);
           context.stroke();
         }
+        if (!this.paused) {
+          // Rare deterministic star-birth: each neuron flares once per
+          // ~26-40s cycle for 640ms with a four-ray diffraction cross.
+          // Cycle constants cache on the source neuron, which persists
+          // across frames (projected points are per-frame copies).
+          const source = this.neurons[this.neuronIndexById.get(point.id)] || point;
+          if (source.sparkleCycle === undefined) {
+            source.sparkleCycle = 26000 + seededFract(point.phase * 51.7) * 14000;
+            source.sparkleShift = seededFract(point.phase * 17.3) * source.sparkleCycle;
+          }
+          const sparkleCycle = source.sparkleCycle;
+          const sparkleLocal = (time + source.sparkleShift) % sparkleCycle;
+          if (sparkleLocal < 640) {
+            const flare = Math.sin(Math.PI * (sparkleLocal / 640));
+            const ray = radius * (2.6 + flare * 3.4);
+            context.globalAlpha = flare * 0.5;
+            context.strokeStyle = "rgba(236, 252, 255, 0.9)";
+            context.lineWidth = 0.6;
+            context.beginPath();
+            context.moveTo(point.x - ray, point.y);
+            context.lineTo(point.x + ray, point.y);
+            context.moveTo(point.x, point.y - ray);
+            context.lineTo(point.x, point.y + ray);
+            context.stroke();
+            context.globalAlpha = flare * 0.85;
+            context.fillStyle = "rgba(240, 253, 255, 0.95)";
+            context.beginPath();
+            context.arc(point.x, point.y, radius * (1 + flare * 0.7), 0, Math.PI * 2);
+            context.fill();
+            context.globalAlpha = 1;
+          }
+        }
       });
 
-    const reactorRadius = clamp(28 * this.zoom, 20, 58);
+    const reactorRadius = clamp(28 * this.zoom, 20, 58) * (1 + globalBeat * 0.07);
     const reactorGlow = context.createRadialGradient(center.x, center.y, 0, center.x, center.y, reactorRadius * 1.75);
     reactorGlow.addColorStop(0, "rgba(220, 253, 255, 0.74)");
     reactorGlow.addColorStop(0.12, "rgba(104, 228, 255, 0.34)");
@@ -2826,6 +3111,8 @@ class GalaxyAtlas {
     this.drawValidatedSourcePulse(context, center, time);
     this.drawDirectorPacket(context, center, time);
     context.restore();
+
+    context.drawImage(this.ensureAliveSprites().vignette, 0, 0, this.width, this.height);
 
     const occupiedLabels = this.labelOverlayObstacles.map((box) => ({ ...box }));
     const focusedNeuron = this.hoverNeuron >= 0 ? this.hoverNeuron : this.activeNeuron;

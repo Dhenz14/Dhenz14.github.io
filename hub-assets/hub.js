@@ -272,7 +272,7 @@ function wireCommandCycle() {
       sourceHeight = Math.max(1, Math.round(sourceWidth / targetAspect));
     }
     const sourceX = Math.round((sourceCanvas.width - sourceWidth) / 2);
-    const sourceY = Math.round(Math.max(0, (sourceCanvas.height - sourceHeight) * 0.42));
+    const sourceY = Math.round(Math.max(0, (sourceCanvas.height - sourceHeight) * 0.36));
     echoContext.drawImage(sourceCanvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
   };
 
@@ -2552,10 +2552,12 @@ class GalaxyAtlas {
       const canvas = makeCanvas(220);
       const auraContext = canvas.getContext("2d");
       if (auraContext) {
+        // Lift the aura toward luminous nebula rather than gray dust: a
+        // brighter heart plus a faint violet rim.
         const gradient = auraContext.createRadialGradient(110, 110, 0, 110, 110, 110);
-        gradient.addColorStop(0, `rgba(${color.join(",")}, 0.34)`);
-        gradient.addColorStop(0.42, `rgba(${color.join(",")}, 0.11)`);
-        gradient.addColorStop(0.75, `rgba(${color.join(",")}, 0.03)`);
+        gradient.addColorStop(0, `rgba(${color.join(",")}, 0.42)`);
+        gradient.addColorStop(0.42, `rgba(${color.join(",")}, 0.14)`);
+        gradient.addColorStop(0.72, "rgba(146, 112, 235, 0.05)");
         gradient.addColorStop(1, `rgba(${color.join(",")}, 0)`);
         auraContext.fillStyle = gradient;
         auraContext.fillRect(0, 0, 220, 220);
@@ -2610,7 +2612,7 @@ class GalaxyAtlas {
       this.width * 0.5 - span * 0.62 + Math.sin(time * 0.00009) * 20 * drift + this.rotationY * 9,
       this.height * 0.44 - span * 0.6 + Math.cos(time * 0.00007) * 14 * drift + this.rotationX * 7,
     );
-    context.globalAlpha = 0.1;
+    context.globalAlpha = 0.13;
     context.drawImage(
       sprites.nebulaWarm,
       this.width * 0.66 - span * 0.5 + Math.sin(time * 0.00006 + 2.1) * 26 * drift + this.rotationY * 14,
@@ -2630,7 +2632,8 @@ class GalaxyAtlas {
       // Quantized size keeps the per-frame blit unscaled-cheap; the breath
       // itself lives in alpha, which costs nothing.
       const size = Math.round((163 * Math.sqrt(this.zoom) * point.perspective * profile.divisions) / 16) * 16;
-      context.globalAlpha = 0.42 + breathe * 0.4;
+      const exposure = clamp(Math.min(this.width, this.height) / 640, 0.6, 1);
+      context.globalAlpha = (0.36 + breathe * 0.52) * exposure;
       context.drawImage(sprites.auras[index % sprites.auras.length], point.x - size / 2, point.y - size / 2, size, size);
     });
     context.restore();
@@ -2678,7 +2681,7 @@ class GalaxyAtlas {
         const color = this.paletteColor(division);
         const active = division === this.activeDivision || division === this.hoverDivision;
         const boost = active ? 2.6 : 1;
-        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(0.07 * boost * profile.links, 0, 0.4)})`;
+        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(0.09 * boost * profile.links, 0, 0.42)})`;
         layer.lineWidth = active ? 0.75 : 0.5;
         layer.beginPath();
         this.projectedFamilies.forEach((family) => {
@@ -2687,7 +2690,7 @@ class GalaxyAtlas {
           layer.lineTo(family.x, family.y);
         });
         layer.stroke();
-        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(0.042 * boost * profile.links, 0, 0.3)})`;
+        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(0.055 * boost * profile.links, 0, 0.32)})`;
         layer.lineWidth = active ? 0.55 : 0.4;
         layer.beginPath();
         this.projectedNeurons.forEach((neuron) => {
@@ -2890,6 +2893,10 @@ class GalaxyAtlas {
     const beatAt = (point) => (this.paused
       ? 0
       : Math.pow(Math.max(0, Math.sin(time * 0.0008976 - Math.hypot(point.x - center.x, point.y - center.y) * 0.0042)), 3));
+    // Exposure guard: on small stages the projection compresses the cluster
+    // and additive glow saturates to white. Pull accumulated light down so
+    // individual stars stay resolvable exactly where the copy promises it.
+    const exposure = clamp(Math.min(this.width, this.height) / 640, 0.6, 1) * (this.zoom < 1 ? 0.82 : 1);
 
     context.save();
     context.globalCompositeOperation = "lighter";
@@ -2923,7 +2930,7 @@ class GalaxyAtlas {
       const index = point.geometryIndex;
       const color = this.paletteColor(index);
       const active = index === this.activeDivision || index === this.hoverDivision;
-      const radius = galaxyDivisionVisualRadius(point, this.zoom, profile, active) * (1 + beatAt(point) * 0.055);
+      const radius = galaxyDivisionVisualRadius(point, this.zoom, profile, active) * (1 + beatAt(point) * 0.085);
       context.save();
       if (active) {
         context.shadowColor = `rgba(${color.join(",")}, 0.62)`;
@@ -3000,12 +3007,12 @@ class GalaxyAtlas {
         const active = activeDivision && (selectedFamily < 0 || point.familyGeometryIndex === selectedFamily);
         const depth = clamp((point.z + 2.7) / 5.4, 0, 1);
         const shimmer = this.paused ? 0.86 : 0.78 + Math.sin(time * 0.0015 + point.phase) * 0.16;
-        const alpha = clamp((active ? 0.88 : 0.28 + depth * 0.44) * shimmer * (1 + globalBeat * 0.14) * profile.neurons, 0.16, 1);
+        const alpha = clamp((active ? 0.88 : 0.28 + depth * 0.44) * shimmer * (1 + globalBeat * 0.2) * profile.neurons, 0.16, 1);
         const depthScale = 0.72 + depth * 0.72;
         const radius = clamp((active ? 2.05 : 1.28) * point.perspective * Math.sqrt(this.zoom) * Math.sqrt(profile.neurons) * depthScale, 0.82, 4.8);
-        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (active ? 0.16 : 0.08)})`;
+        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (active ? 0.16 : 0.08) * exposure})`;
         context.beginPath();
-        context.arc(point.x, point.y, radius * (active ? 3.3 : 2.45), 0, Math.PI * 2);
+        context.arc(point.x, point.y, radius * (active ? 3.3 : 2.45) * (0.82 + 0.18 * exposure), 0, Math.PI * 2);
         context.fill();
         context.fillStyle = `rgba(${color.join(",")}, ${alpha})`;
         context.beginPath();
@@ -3044,7 +3051,7 @@ class GalaxyAtlas {
             const flare = Math.sin(Math.PI * (sparkleLocal / 640));
             const ray = radius * (2.6 + flare * 3.4);
             context.globalAlpha = flare * 0.5;
-            context.strokeStyle = "rgba(236, 252, 255, 0.9)";
+            context.strokeStyle = "rgba(255, 240, 205, 0.92)";
             context.lineWidth = 0.6;
             context.beginPath();
             context.moveTo(point.x - ray, point.y);
@@ -3053,7 +3060,7 @@ class GalaxyAtlas {
             context.lineTo(point.x, point.y + ray);
             context.stroke();
             context.globalAlpha = flare * 0.85;
-            context.fillStyle = "rgba(240, 253, 255, 0.95)";
+            context.fillStyle = "rgba(255, 246, 222, 0.96)";
             context.beginPath();
             context.arc(point.x, point.y, radius * (1 + flare * 0.7), 0, Math.PI * 2);
             context.fill();
@@ -3062,7 +3069,7 @@ class GalaxyAtlas {
         }
       });
 
-    const reactorRadius = clamp(28 * this.zoom, 20, 58) * (1 + globalBeat * 0.07);
+    const reactorRadius = clamp(28 * this.zoom, 20, 58) * (1 + globalBeat * 0.1);
     const reactorGlow = context.createRadialGradient(center.x, center.y, 0, center.x, center.y, reactorRadius * 1.75);
     reactorGlow.addColorStop(0, "rgba(220, 253, 255, 0.74)");
     reactorGlow.addColorStop(0.12, "rgba(104, 228, 255, 0.34)");
@@ -3122,7 +3129,7 @@ class GalaxyAtlas {
     const availableLabels = this.projectedDivisions
       .map((point, index) => ({ point, index }))
       .filter(({ point, index }) => point.z > -0.7 || index === this.activeDivision || index === this.hoverDivision)
-      .sort((left, right) => right.point.z - left.point.z);
+      .sort((left, right) => Math.round(right.point.z * 4) - Math.round(left.point.z * 4) || left.index - right.index);
     const labelLimit = this.zoom > 1.7 ? 2 : this.zoom > 1.35 ? 4 : GALAXY_OVERVIEW_LABEL_LIMIT;
     const priority = [this.hoverDivision, this.activeDivision].filter((index, position, values) => index >= 0 && values.indexOf(index) === position);
     const labelCandidates = priority
@@ -3142,7 +3149,11 @@ class GalaxyAtlas {
         .sort((left, right) => {
           const leftSelected = left.index === this.activeFamily || left.index === this.hoverFamily;
           const rightSelected = right.index === this.activeFamily || right.index === this.hoverFamily;
-          return Number(rightSelected) - Number(leftSelected) || right.point.z - left.point.z;
+          // Stable ordering: quantized depth then index, so nameplates never
+          // churn as slow orbital drift crosses the z-sort boundary.
+          return Number(rightSelected) - Number(leftSelected)
+            || Math.round(right.point.z * 4) - Math.round(left.point.z * 4)
+            || left.index - right.index;
         })
         .forEach(({ point, index }) => this.drawFamilyLabel(context, point, index, occupiedLabels));
     }

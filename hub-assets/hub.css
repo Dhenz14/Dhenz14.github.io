@@ -7407,7 +7407,10 @@ body.motion-paused *::after {
   }
 
   .primary-nav a {
-    padding: 0.4rem 0.55rem;
+    flex: 0 0 auto;
+    min-width: max-content;
+    min-height: 2.4rem;
+    padding: 0.35rem 0.65rem;
   }
 
   .topbar-tools {

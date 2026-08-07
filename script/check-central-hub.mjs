@@ -460,7 +460,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v10" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v11" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -515,7 +515,9 @@ requireMatch(css, /@media \(max-width: 24rem\), \(max-height: 36rem\)[\s\S]*\.ga
 const shortDivisionNavReclaimPx = Math.round(16 * ((0.875 * 1.3) + 0.35) * 10) / 10;
 if (shortDivisionNavReclaimPx < 20) throw new Error(`short division navigator reclaims only ${shortDivisionNavReclaimPx}px`);
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-division-nav-field select[\s\S]*background: Canvas;/, "forced-colors native division navigator");
-requireMatch(js, /runSafely\("Living Anatomy galaxy", startGalaxy\)/, "galaxy call chain");
+requireMatch(css, /\.truth-strip,[\s\S]*\.site-footer\s*\{[\s\S]*content-visibility: auto;[\s\S]*contain-intrinsic-size: auto 62rem;/, "offscreen section layout containment");
+requireMatch(js, /const primeAtlas = \(\) =>[\s\S]*is-render-primed[\s\S]*pointerenter[\s\S]*pointerdown[\s\S]*focus/, "intent-driven atlas prewarm");
+requireMatch(js, /runAfterFirstPaint\("Living Anatomy galaxy", startGalaxy, 20\)/, "deferred galaxy call chain");
 requireMatch(js, /const COMMAND_CYCLE_STEPS = Object\.freeze\(\[[\s\S]*SEE · SOURCE BOUND[\s\S]*WATCH · ABSORBED/, "command cycle semantic model");
 requireMatch(js, /function wireCommandCycle\(\)[\s\S]*data-command-cycle[\s\S]*setInterval[\s\S]*1500/, "command cycle controller");
 requireMatch(js, /reduceMotion\.matches \|\| document\.body\.classList\.contains\("motion-paused"\)/, "manual reduced-motion command cycle");
@@ -528,7 +530,7 @@ requireMatch(js, /event\.key === "Tab"[\s\S]*button:not\(:disabled\)[\s\S]*docum
 requireMatch(js, /!editable && root\.classList\.contains\("is-flightdeck"\) && \["ArrowLeft", "ArrowRight"\]\.includes\(event\.key\)[\s\S]*select\(current \+ \(event\.key === "ArrowRight" \? 1 : -1\)\)[\s\S]*if \(interactive\) return;/, "flightdeck arrow keys precede interactive-control guard");
 requireMatch(js, /data-command-prev[\s\S]*data-command-next[\s\S]*data-command-reset/, "presenter recovery controls");
 requireMatch(js, /new CustomEvent\("hive:command-stage"[\s\S]*detail: \{ index: current, step \}/, "command-stage choreography event");
-requireMatch(js, /runSafely\("Living command cycle", wireCommandCycle\)/, "command cycle call chain");
+requireMatch(js, /runAfterFirstPaint\("Living command cycle", wireCommandCycle, 120\)/, "deferred command cycle call chain");
 requireMatch(js, /focusFamily\(familyGeometryIndex\)/, "family semantic zoom");
 requireMatch(js, /focusNeuron\(neuronIndex\)/, "neuron semantic zoom");
 requireMatch(js, /presentCommandStage\(index\)[\s\S]*N121[\s\S]*N401[\s\S]*N561/, "truth-safe atlas stage choreography");
@@ -582,8 +584,8 @@ requireMatch(forcedColorsWiring, /this\.forcedColors\.addListener\(onForcedColor
 requireMatch(js, /applyRenderAvailability\(forcedColorsActive\)/, "live render fallback transition");
 requireMatch(js, /applyRenderAvailability\(forcedColorsActive\)[\s\S]*if \(fallback\) \{[\s\S]*this\.cancelDirector\(false\);[\s\S]*this\.setEngaged\(false\);/, "render fallback cancels Director before controls become unavailable");
 requireMatch(js, /if \(\$\("\[data-source-stamp\], \[data-galaxy-canvas\]"\)\)[\s\S]*loadSourceSnapshot\(\)\.finally\(startSnapshotRefresh\)/, "snapshot refresh surface gate");
-requireMatch(js, /runSafely\("Offscreen scene control", wireSceneActivity\)/, "offscreen CSS animation control");
-requireMatch(js, /runSafely\("Local runtime handoff guidance", wireLocalHandoffGate\)/, "local handoff guidance call chain");
+requireMatch(js, /runAfterFirstPaint\("Offscreen scene control", wireSceneActivity, 40\)/, "deferred offscreen CSS animation control");
+requireMatch(js, /runAfterFirstPaint\("Local runtime handoff guidance", wireLocalHandoffGate, 180\)/, "deferred local handoff guidance call chain");
 requireMatch(localHandoffWiring, /data-local-handoff-confirm[\s\S]*event\.preventDefault\(\)[\s\S]*dialog\.showModal\(\)/, "guidance precedes explicit local navigation");
 requireNoMatch(localHandoffWiring, /\bfetch\s*\(|new\s+(?:Image|WebSocket)\b|XMLHttpRequest/, "local availability probe");
 requireMatch(js, /hive:request-local-handoff[\s\S]*if \(this\.fullAtlas\) this\.closeFullAtlas\(false\)/, "local guidance exits isolated atlas before opening its dialog");

@@ -156,6 +156,37 @@ section[id] {
   scroll-margin-top: 0;
 }
 
+/* Keep the cinematic opening inside one bounded layout task. The atlas is
+   prewarmed on pointer, focus, or touch intent because it is the hero's primary
+   action; deeper sections retain geometry and render near the viewport. */
+.truth-strip,
+.systems,
+.organism,
+.ide-release,
+.anatomy,
+.pipeline,
+.mission,
+.tester,
+.access,
+.site-footer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 62rem;
+}
+
+.truth-strip {
+  contain-intrinsic-size: auto 11rem;
+}
+
+.anatomy.is-render-primed,
+body.galaxy-fullscreen-open .anatomy {
+  content-visibility: visible;
+}
+
+.hero-system,
+.hero-support {
+  contain: layout style;
+}
+
 .topbar {
   position: sticky;
   z-index: 50;

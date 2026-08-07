@@ -22,11 +22,11 @@ import {
   sourceSnapshotPresentation,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v10";
+} from "./galaxy-core.mjs?v=galaxy-stark-v11";
 import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v10";
+} from "./ide-release-core.mjs?v=galaxy-stark-v11";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 5;
 
@@ -132,7 +132,10 @@ function wireReveal() {
     return;
   }
   try {
-    items.forEach((item) => item.classList.add("reveal-ready"));
+    const initialItems = items.filter((item) => item.closest(".hero"));
+    const deferredItems = items.filter((item) => !item.closest(".hero"));
+    initialItems.forEach((item) => item.classList.add("is-visible"));
+    deferredItems.forEach((item) => item.classList.add("reveal-ready"));
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
@@ -140,7 +143,7 @@ function wireReveal() {
         observer.unobserve(entry.target);
       });
     }, { rootMargin: "0px 0px -8%", threshold: 0.08 });
-    items.forEach((item) => observer.observe(item));
+    deferredItems.forEach((item) => observer.observe(item));
   } catch (error) {
     items.forEach((item) => item.classList.remove("reveal-ready"));
     console.warn("Section reveals were disabled safely:", error);
@@ -171,7 +174,7 @@ function wireSectionNav() {
     scheduled = true;
     window.requestAnimationFrame(sync);
   };
-  sync();
+  if (window.location.hash) window.requestAnimationFrame(sync);
   window.addEventListener("scroll", schedule, { passive: true });
   window.addEventListener("resize", schedule, { passive: true });
 }
@@ -1484,14 +1487,21 @@ class GalaxyAtlas {
 
   wireFullAtlas() {
     const openers = $$('[data-galaxy-open], [data-galaxy-fullscreen]');
+    const primeAtlas = () => this.canvas.closest("#galaxy")?.classList.add("is-render-primed");
     $$('[data-galaxy-fullscreen]').forEach((button) => {
       button.disabled = false;
       button.setAttribute("aria-disabled", "false");
     });
-    openers.forEach((opener) => opener.addEventListener("click", (event) => {
-      event.preventDefault();
-      this.openFullAtlas(opener);
-    }));
+    openers.forEach((opener) => {
+      opener.addEventListener("pointerenter", primeAtlas, { once: true, passive: true });
+      opener.addEventListener("pointerdown", primeAtlas, { once: true, passive: true });
+      opener.addEventListener("focus", primeAtlas, { once: true, passive: true });
+      opener.addEventListener("click", (event) => {
+        event.preventDefault();
+        primeAtlas();
+        this.openFullAtlas(opener);
+      });
+    });
     $("[data-galaxy-exit]")?.addEventListener("click", () => this.closeFullAtlas(true));
     document.addEventListener("keydown", (event) => {
       if (!this.fullAtlas || event.defaultPrevented) return;
@@ -3010,20 +3020,31 @@ function runSafely(label, start) {
   }
 }
 
+function runAfterFirstPaint(label, start, delayMs = 0) {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      if (delayMs > 0) window.setTimeout(() => runSafely(label, start), delayMs);
+      else runSafely(label, start);
+    });
+  });
+}
+
 runSafely("Motion controls", wireMotionToggle);
 runSafely("Top navigation", wireTopbar);
-runSafely("Section reveals", wireReveal);
-runSafely("Section navigation", wireSectionNav);
-runSafely("Offscreen scene control", wireSceneActivity);
-runSafely("Living command cycle", wireCommandCycle);
-runSafely("Galaxy lenses", wireLenses);
-runSafely("Release copy controls", wireCopyButtons);
-runSafely("Hive IDE release copy", wireIdeReleaseCopy);
-runSafely("Local runtime handoff guidance", wireLocalHandoffGate);
-runSafely("Ambient field", startField);
-runSafely("Living Anatomy galaxy", startGalaxy);
-if ($("[data-source-stamp], [data-galaxy-canvas]")) {
-  void loadSourceSnapshot().finally(startSnapshotRefresh);
-}
-void loadAuthorizedRelease();
-void loadIdeRelease();
+runAfterFirstPaint("Section reveals", wireReveal, 0);
+runAfterFirstPaint("Living Anatomy galaxy", startGalaxy, 20);
+runAfterFirstPaint("Offscreen scene control", wireSceneActivity, 40);
+runAfterFirstPaint("Ambient field", startField, 60);
+runAfterFirstPaint("Section navigation", wireSectionNav, 80);
+runAfterFirstPaint("Galaxy lenses", wireLenses, 100);
+runAfterFirstPaint("Living command cycle", wireCommandCycle, 120);
+runAfterFirstPaint("Release copy controls", wireCopyButtons, 140);
+runAfterFirstPaint("Hive IDE release copy", wireIdeReleaseCopy, 160);
+runAfterFirstPaint("Local runtime handoff guidance", wireLocalHandoffGate, 180);
+runAfterFirstPaint("Source snapshot", () => {
+  if ($("[data-source-stamp], [data-galaxy-canvas]")) {
+    void loadSourceSnapshot().finally(startSnapshotRefresh);
+  }
+}, 50);
+runAfterFirstPaint("Authorized release", () => { void loadAuthorizedRelease(); }, 200);
+runAfterFirstPaint("Hive IDE release", () => { void loadIdeRelease(); }, 220);

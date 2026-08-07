@@ -7435,7 +7435,11 @@ body.motion-paused *::after {
     display: inline;
   }
 
+  /* Narrow-width rules hide this slash for the stacked-flex layout;
+     inline spans need it back or the phrases run together. */
   .hero-copy > .eyebrow span + span::before {
+    display: inline;
+    margin-right: 1rem;
     margin-left: 1rem;
   }
 
@@ -7533,6 +7537,7 @@ body.motion-paused *::after {
 
 .pipeline .section-heading h2 {
   max-width: none;
+  text-wrap: balance;
 }
 
 /* Native selects clip their value mid-word; ellipsize instead. The

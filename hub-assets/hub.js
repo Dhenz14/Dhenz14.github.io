@@ -264,15 +264,15 @@ function wireCommandCycle() {
     } else {
       sourceHeight = Math.max(1, Math.round(sourceWidth / targetAspect));
     }
-    // Pull the crop window out ~12% so division badges near the source
+    // Pull the crop window out ~20% so division badges near the source
     // edges arrive whole, and bias it upward where those badges sit.
     if (sourceWidth < sourceCanvas.width || sourceHeight < sourceCanvas.height) {
-      sourceHeight = Math.min(sourceCanvas.height, Math.round(sourceHeight * 1.12));
+      sourceHeight = Math.min(sourceCanvas.height, Math.round(sourceHeight * 1.2));
       sourceWidth = Math.min(sourceCanvas.width, Math.round(sourceHeight * targetAspect));
       sourceHeight = Math.max(1, Math.round(sourceWidth / targetAspect));
     }
     const sourceX = Math.round((sourceCanvas.width - sourceWidth) / 2);
-    const sourceY = Math.round(Math.max(0, (sourceCanvas.height - sourceHeight) * 0.3));
+    const sourceY = Math.round(Math.max(0, (sourceCanvas.height - sourceHeight) * 0.28));
     echoContext.drawImage(sourceCanvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
   };
 
@@ -3166,7 +3166,13 @@ class GalaxyAtlas {
       this.activeDivision, this.hoverDivision, this.activeFamily, this.hoverFamily,
       this.lens, Math.round(this.zoom * 2),
     ].join(":");
-    if (!this.labelOrder || this.labelOrder.key !== labelOrderKey || time > this.labelOrder.until) {
+    if (this.labelOrder && this.labelOrder.key === labelOrderKey && time > this.labelOrder.until) {
+      // Same selection state, window merely aged: extend it. Placed sets and
+      // plate boxes survive rollovers, so a beat crossing the window
+      // boundary can never re-deal the plates (the round-five A4 hop).
+      this.labelOrder.until = time + 8000;
+    }
+    if (!this.labelOrder || this.labelOrder.key !== labelOrderKey) {
       const divisionOrder = this.projectedDivisions
         .map((point, index) => ({ point, index }))
         .filter(({ point, index }) => point.z > -0.7 || index === this.activeDivision || index === this.hoverDivision)

@@ -2779,7 +2779,7 @@ h3 {
 
 .galaxy-reticle {
   position: absolute;
-  z-index: 2;
+  z-index: 0;
   top: 50%;
   left: 50%;
   width: 6.4rem;

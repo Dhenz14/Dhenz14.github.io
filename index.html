@@ -125,7 +125,7 @@
             <li><span>04</span><strong>Organism changes</strong><small>Only after landing</small></li>
           </ol>
           <div class="hero-actions hero-secondary-actions" aria-label="Supporting actions">
-            <a class="button button-quiet" data-hero-body-cta href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">
+            <a class="button button-quiet" data-hero-body-cta href="http://127.0.0.1:5002/constellation/body?presentation=1" target="hive-local-body" rel="noreferrer">
               <span>Open local body</span>
               <small>Opens on this computer ↗</small>
             </a>
@@ -449,8 +449,8 @@
                 <strong data-galaxy-context-summary>Context unavailable · source not yet bound</strong>
                 <p data-galaxy-context-copy>Context parameters remain unavailable until this browser validates the source snapshot. The plain local routes remain explicit and availability is never assumed.</p>
                 <div class="galaxy-body-actions">
-                  <a class="button button-primary galaxy-local-cta" data-local-context-link data-local-presentation="1" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer"><span>Open in local body</span><small>Opens on this computer ↗</small></a>
-                  <a class="button button-quiet galaxy-local-cta" data-local-context-link data-local-presentation="0" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="_blank" rel="noreferrer"><span>Retry operator handoff</span><small>Opens on this computer ↗</small></a>
+                  <a class="button button-primary galaxy-local-cta" data-local-context-link data-local-presentation="1" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="hive-local-body" rel="noreferrer"><span>Open in local body</span><small>Opens on this computer ↗</small></a>
+                  <a class="button button-quiet galaxy-local-cta" data-local-context-link data-local-presentation="0" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="hive-local-body" rel="noreferrer"><span>Retry operator handoff</span><small>Opens on this computer ↗</small></a>
                 </div>
                 <small class="galaxy-start-guidance">If unavailable: start Hive IDE, open Hive-AI, then choose Living Anatomy and retry. This page cannot start it for you.</small>
               </div>
@@ -469,12 +469,12 @@
                 <strong>Explore the body</strong>
                 <small>640-neuron topology</small>
               </a>
-              <a class="body-surface body-surface-presentation" data-body-surface="presentation" data-local-context-link data-local-presentation="1" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">
+              <a class="body-surface body-surface-presentation" data-body-surface="presentation" data-local-context-link data-local-presentation="1" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="hive-local-body" rel="noreferrer">
                 <span><b>02</b> Presentation</span>
                 <strong>Enter Living Anatomy <i aria-hidden="true">↗</i></strong>
                 <small>Gold Twitches · cinematic body</small>
               </a>
-              <a class="body-surface body-surface-operator" data-body-surface="operator" data-local-context-link data-local-presentation="0" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="_blank" rel="noreferrer">
+              <a class="body-surface body-surface-operator" data-body-surface="operator" data-local-context-link data-local-presentation="0" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="hive-local-body" rel="noreferrer">
                 <span><b>03</b> Operator</span>
                 <strong>Open command body <i aria-hidden="true">↗</i></strong>
                 <small>Truth · urgency · missions</small>
@@ -502,7 +502,7 @@
         <div class="pipeline-note" data-motion-scene data-reveal>
           <span class="pipeline-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
           <p><strong>The hub shows the flight plan.</strong> The local Hive-AI runtime performs the work; the chat link never proxies through Pages.</p>
-          <a href="http://127.0.0.1:5002/chat" target="_blank" rel="noreferrer">Open local chat <span aria-hidden="true">↗</span></a>
+          <a href="http://127.0.0.1:5002/chat" target="hive-local-body" rel="noreferrer">Open local chat <span aria-hidden="true">↗</span></a>
         </div>
       </section>
 
@@ -571,8 +571,8 @@
               <button type="button" class="button button-quiet" data-command-flightdeck aria-pressed="false">
                 <span data-command-flightdeck-label>Enter flightdeck</span><small>F · projector mode</small>
               </button>
-              <a class="button button-quiet" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="_blank" rel="noreferrer"><span>Open command body</span><small>Real scan · missions · receipts</small></a>
-              <a class="text-link" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">Return to cinematic body <span aria-hidden="true">↗</span></a>
+              <a class="button button-quiet" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="hive-local-body" rel="noreferrer"><span>Open command body</span><small>Real scan · missions · receipts</small></a>
+              <a class="text-link" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="hive-local-body" rel="noreferrer">Return to cinematic body <span aria-hidden="true">↗</span></a>
             </div>
             <p class="command-cycle-boundary">The walkthrough narrates the lifecycle; it performs zero effects. The authenticated local body owns credentials, mutation, mission custody, and runtime truth. A real source change appears here only after validated Git landing and snapshot absorption.</p>
             <div class="authority-wall">
@@ -721,9 +721,9 @@
             <h2 id="access-title">Chat is part of Hive-AI—not GitHub Pages.</h2>
             <p>If Hive-AI is running on this computer, the link opens its real <code>/chat</code> route. If it is offline, nothing silently falls back to a public service.</p>
             <div class="access-actions">
-              <a class="button button-primary local-chat-button" href="http://127.0.0.1:5002/chat" target="_blank" rel="noreferrer"><span>Open local chat</span><small>Runtime not checked</small></a>
-              <a class="text-link" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">Presentation body <span aria-hidden="true">→</span></a>
-              <a class="text-link" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="_blank" rel="noreferrer">Operator body <span aria-hidden="true">→</span></a>
+              <a class="button button-primary local-chat-button" href="http://127.0.0.1:5002/chat" target="hive-local-body" rel="noreferrer"><span>Open local chat</span><small>Runtime not checked</small></a>
+              <a class="text-link" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="hive-local-body" rel="noreferrer">Presentation body <span aria-hidden="true">→</span></a>
+              <a class="text-link" href="http://127.0.0.1:8791/constellation/body?presentation=0" target="hive-local-body" rel="noreferrer">Operator body <span aria-hidden="true">→</span></a>
             </div>
           </div>
         </div>
@@ -749,26 +749,26 @@
 
     <dialog class="local-handoff-dialog" data-local-handoff-dialog aria-labelledby="local-handoff-title">
       <button class="local-handoff-close" type="button" data-local-handoff-close aria-label="Dismiss local runtime guidance">×</button>
-      <p class="eyebrow">Local body · opened in a new tab</p>
+      <p class="eyebrow">Opened in a new tab</p>
       <h2 id="local-handoff-title">Your living body is opening.</h2>
-      <p data-local-handoff-copy>It opened in its own tab the moment you clicked. Availability is not checked or claimed. If that tab cannot connect, Hive is simply not awake on this computer yet.</p>
+      <p data-local-handoff-copy>If it is alive in that tab, you are done — close this note. If it cannot connect, Hive is simply not awake on this computer yet.</p>
       <div class="local-handoff-recovery" data-local-handoff-recovery>
-        <strong>Three calm steps wake it:</strong>
+        <strong>Wake it in three steps:</strong>
         <ol>
-          <li>Start Hive IDE on this computer.</li>
+          <li>Start Hive IDE — it is in your Start menu.</li>
           <li>Open Hive-AI, then choose Living Anatomy.</li>
-          <li>Press the same button again.</li>
+          <li>Press <strong>Open it again</strong> below.</li>
         </ol>
       </div>
       <div class="local-handoff-actions">
-        <a class="button button-primary" data-local-handoff-confirm href="http://127.0.0.1:5002/constellation/body?presentation=1" target="_blank" rel="noreferrer">Open it again ↗</a>
+        <a class="button button-primary" data-local-handoff-confirm href="http://127.0.0.1:5002/constellation/body?presentation=1" target="hive-local-body" rel="noreferrer">Open it again ↗</a>
         <button class="button button-quiet" type="button" data-local-handoff-copy-url>Copy local link</button>
         <button class="button button-quiet" type="button" data-local-handoff-stay>Got it</button>
       </div>
       <p class="local-handoff-status" data-local-handoff-status aria-live="polite">No request has been sent from this public page.</p>
       <details class="local-handoff-boundary">
         <summary>What this page never does</summary>
-        <p>It never probes, starts, or claims anything on your computer. DRIFTED is a truth gate. Do not weaken it, hide it, or treat an unavailable runtime as zero.</p>
+        <p>It never probes, starts, or claims anything on your computer. Availability is not checked or claimed. DRIFTED is a truth gate. Do not weaken it, hide it, or treat an unavailable runtime as zero.</p>
         <code class="local-handoff-url" data-local-handoff-url>The exact local route appears here when you use a local button</code>
       </details>
     </dialog>

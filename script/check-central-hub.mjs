@@ -404,12 +404,13 @@ requireMatch(html, /A same-origin compromise is outside the signature guarantee/
 requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/chat/, "local chat route");
 requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1/, "local presentation body route");
 requireMatch(html, /http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0/, "local operator body route");
-requireMatch(html, /class="button button-quiet" data-hero-body-cta href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1" target="_blank" rel="noreferrer"/, "direct hero Living Anatomy entry");
+requireMatch(html, /class="button button-quiet" data-hero-body-cta href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1" target="hive-local-body" rel="noreferrer"/, "direct hero Living Anatomy entry");
 requireMatch(html, /class="button button-quiet" href="#ide-download"/, "subordinate Hive IDE download handoff");
-requireMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1"[^>]*target="_blank"[^>]*rel="noreferrer"/, "safe presentation body navigation");
-requireMatch(html, /href="http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0"[^>]*target="_blank"[^>]*rel="noreferrer"/, "safe operator body navigation");
-requireMatch(html, /data-local-handoff-dialog[\s\S]*Availability is not checked or claimed\.[\s\S]*Start Hive IDE[\s\S]*Open Hive-AI, then choose Living Anatomy[\s\S]*DRIFTED is a truth gate/, "persistent no-probe local recovery guidance");
-requireMatch(html, /data-local-handoff-confirm[^>]+target="_blank"[^>]+rel="noreferrer"/, "explicit local handoff opens a separate tab");
+requireMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1"[^>]*target="hive-local-body"[^>]*rel="noreferrer"/, "safe presentation body navigation");
+requireMatch(html, /href="http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0"[^>]*target="hive-local-body"[^>]*rel="noreferrer"/, "safe operator body navigation");
+requireMatch(html, /data-local-handoff-dialog[\s\S]*Start Hive IDE[\s\S]*Open Hive-AI, then choose Living Anatomy[\s\S]*Availability is not checked or claimed\.[\s\S]*DRIFTED is a truth gate/, "persistent no-probe local recovery guidance");
+requireMatch(html, /data-local-handoff-confirm[^>]+target="hive-local-body"[^>]+rel="noreferrer"/, "local handoff reuses one named local tab");
+requireNoMatch(html, /href="http:\/\/127\.0\.0\.1:[^"]*"[^>]*target="_blank"/, "local links never scatter into unnamed tabs");
 requireMatch(html, /data-body-surface="atlas"[\s\S]*data-body-surface="presentation"[\s\S]*data-body-surface="operator"/, "three-surface Living Anatomy bridge");
 requireMatch(html, /public page never claims or probes local availability/, "truthful local availability boundary");
 requireMatch(html, /GitHub Pages never receives your prompt/, "prompt privacy");

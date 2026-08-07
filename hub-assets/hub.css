@@ -7576,13 +7576,34 @@ body.motion-paused *::after {
 }
 
 .local-handoff-dialog[open]:not(:modal) .local-handoff-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
+}
+
+.local-handoff-dialog[open]:not(:modal) .local-handoff-actions .button-primary {
+  grid-column: 1 / -1;
 }
 
 .local-handoff-dialog[open]:not(:modal) .local-handoff-actions .button {
   min-height: 2.6rem;
   padding: 0.5rem 0.8rem;
   white-space: nowrap;
+}
+
+.local-handoff-dialog[open]:not(:modal) .local-handoff-recovery ol {
+  margin: 0.4rem 0 0;
+}
+
+/* In card mode the eyebrow already says it; keep the status for
+   assistive announcements only. */
+.local-handoff-dialog[open]:not(:modal) .local-handoff-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .local-handoff-boundary summary {

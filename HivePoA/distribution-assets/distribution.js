@@ -603,29 +603,18 @@ import {
       candidates.push(url);
     }
 
-    // 1) Optional unsigned live tip (cloudflared URL rotates); still sha256-checked.
-    try {
-      var tipResp = await fetch(new URL("../gateway.json", window.location.href).toString(), {
-        cache: "no-store",
-      });
-      if (tipResp.ok) {
-        var tip = await tipResp.json();
-        if (tip && tip.ipfsGatewayBase) {
-          pushCandidate(String(tip.ipfsGatewayBase).replace(/\/$/, "") + "/" + release.manifestCid);
-        }
-      }
-    } catch (error) {
-      // tip is optional
-    }
+    // The unsigned live-tip probe (../gateway.json) was retired: that file was
+    // removed on 2026-07-30, so every IPFS attempt spent a request on a 404.
+    // Only signed candidates remain, which is strictly the stronger contract.
 
-    // 2) Pages cid-mirror + GitHub manifest asset before flaky public gateways.
+    // 1) Pages cid-mirror + GitHub manifest asset before flaky public gateways.
     if (release.cidMirrorPath) {
       pushCandidate(new URL("../" + release.cidMirrorPath, window.location.href).toString());
     }
     var asset = githubAssetUrl(release, release.githubManifestAsset);
     if (asset) pushCandidate(asset);
 
-    // 3) Signed public gateways only (skip LAN/RFC1918 — remote friends cannot use them).
+    // 2) Signed public gateways only (skip LAN/RFC1918 — remote friends cannot use them).
     var gateways = (release.ipfsGateways && release.ipfsGateways.length)
       ? release.ipfsGateways.slice()
       : [];

@@ -9,34 +9,34 @@
     "profile": "tester-complete-internal-option-c"
   },
   "release": {
-    "tag": "hive-ide-v0.3.0-tester.2",
+    "tag": "hive-ide-v0.3.0-tester.3",
     "stage": "tester",
     "channel": "unsigned-public-tester",
     "repository": "Dhenz14/Dhenz14.github.io",
-    "releasedAtUtc": "2026-08-05T19:48:52.506Z",
-    "releasePageUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/tag/hive-ide-v0.3.0-tester.2",
+    "releasedAtUtc": "2026-08-07T02:47:18.262Z",
+    "releasePageUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/tag/hive-ide-v0.3.0-tester.3",
     "updateFeedUrl": "https://dhenz14.github.io/downloads/hive-ide/latest.json",
-    "manifestUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.2/hive-ide-release-manifest.json",
-    "provenanceUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.2/windows-installer-provenance.json",
-    "installerUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.2/Hive-IDE-OneClick-Windows-x64.exe"
+    "manifestUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.3/hive-ide-release-manifest.json",
+    "provenanceUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.3/windows-installer-provenance.json",
+    "installerUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.3/Hive-IDE-OneClick-Windows-x64.exe"
   },
   "artifact": {
     "name": "Hive-IDE-OneClick-Windows-x64.exe",
-    "sizeBytes": 924714039,
-    "sha256": "0a5c4cd16bf033e0a757b5b7e51499dfec5a2d15ea14643b54a1fe7021db02f9",
-    "unsignedBuildSha256": "0a5c4cd16bf033e0a757b5b7e51499dfec5a2d15ea14643b54a1fe7021db02f9",
+    "sizeBytes": 924824858,
+    "sha256": "0ae8331e19d25de88134f05de6b93611a7fa4f5cf975ece4a72a2abbc6a88a68",
+    "unsignedBuildSha256": "0ae8331e19d25de88134f05de6b93611a7fa4f5cf975ece4a72a2abbc6a88a68",
     "publisherAuthenticated": false,
     "authenticodeReceiptSha256": null,
     "installedApplication": {
       "name": "hive-workbench-v2.exe",
-      "sizeBytes": 20370944,
-      "sha256": "c60e5bc82e209f20f56bb0fcf51b25fbc7d4acc8bd27e160a7b884dd2ae35b1c"
+      "sizeBytes": 20288000,
+      "sha256": "82ae3c47637330b3516bcb0d46f3af5efd1e682f6950fb6f746ef2b1d74f9b6f"
     }
   },
   "source": {
     "hiveIde": {
-      "commit": "5dce8b3a616ef2c94e6ee585f2ea1fc12f7f2ad0",
-      "tree": "0539fbf70058caf0d526deb10f977f06d9af4230"
+      "commit": "b5c1a3bcbe6d96abdd9888bed5ec37ed7cd8f2f7",
+      "tree": "7a76096411cf4084721199b632cc63ab6b4ad92b"
     },
     "hiveAi": {
       "commit": "a0fe64832edb801c9944c0923e222a64ef14e498",
@@ -55,18 +55,18 @@
   "runtime": {
     "runtimeManifest": {
       "name": "runtime-manifest.json",
-      "sizeBytes": 49366,
-      "sha256": "551fec98ac04222c435a84f7fa39a9cdcb1c80a687a5a3fe09d875803b9cf3f9"
+      "sizeBytes": 47508,
+      "sha256": "db41552a5de0a1415c0dc89c508490f9d03e5140ce95fe94af36b2eaea82d54a"
     },
     "payloadReceipt": {
       "name": "oneclick-payload-receipt.json",
-      "sizeBytes": 4863,
-      "sha256": "0ed2ef8528c56a5ec31af71557f5b20829cf66dc0928dc408df4ecc06efb0bd2"
+      "sizeBytes": 3041,
+      "sha256": "acf9d118f6e34dd5a68aecd6a1b62c5c51f66c526d9c224060d95ca735034d35"
     },
     "installerProvenanceReceipt": {
       "name": "windows-installer-provenance.json",
-      "sizeBytes": 4740,
-      "sha256": "364a912ae913c68aa2426414c9024ea72960f1796ac79a29011fe1138d451828"
+      "sizeBytes": 4733,
+      "sha256": "30d67a77cc4256afd0a288471b9eab9f77759e1bc5bacc994653eef7fddb40b7"
     },
     "cleanSourceWorktrees": true,
     "offlineBundledDependencies": true,

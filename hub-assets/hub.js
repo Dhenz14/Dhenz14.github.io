@@ -1616,6 +1616,49 @@ class GalaxyAtlas {
     return placeCanvasLabel(width, height, safeX, safeY, this.width, this.height, occupied, priority);
   }
 
+  glideStickyBox(cacheKey, point, width, height, occupied) {
+    // Object permanence for plates: once placed, a plate never re-enters
+    // the placement ladder. It rides its anchor, yields at most 2px per
+    // frame under a TRUE overlap, and glides home at 1px per frame once
+    // the overlap clears. Teleporting is structurally impossible here.
+    const cached = this.labelOrder?.plateBoxes?.[cacheKey];
+    if (!cached) return null;
+    if (Math.hypot(point.x - cached.anchorX, point.y - cached.anchorY) >= 60) return null;
+    let x = cached.x + (point.x - cached.anchorX);
+    let y = cached.y + (point.y - cached.anchorY);
+    const home = { x: point.x + cached.homeOffsetX, y: point.y + cached.homeOffsetY };
+    const box = { x, y, width, height };
+    let pushX = 0;
+    let pushY = 0;
+    occupied.forEach((other) => {
+      const overlapX = Math.min(box.x + width, other.x + other.width) - Math.max(box.x, other.x);
+      const overlapY = Math.min(box.y + height, other.y + other.height) - Math.max(box.y, other.y);
+      if (overlapX <= 0 || overlapY <= 0) return;
+      if (overlapX < overlapY) {
+        pushX += (box.x + width / 2 < other.x + other.width / 2 ? -1 : 1) * overlapX;
+      } else {
+        pushY += (box.y + height / 2 < other.y + other.height / 2 ? -1 : 1) * overlapY;
+      }
+    });
+    if (pushX !== 0 || pushY !== 0) {
+      x += clamp(pushX, -2, 2);
+      y += clamp(pushY, -2, 2);
+    } else {
+      x += clamp(home.x - x, -1, 1);
+      y += clamp(home.y - y, -1, 1);
+    }
+    const frame = this.labelSafeFrame || { left: 5, top: 5, right: this.width - 5, bottom: this.height - 5 };
+    x = clamp(x, frame.left, frame.right - width);
+    y = clamp(y, frame.top, frame.bottom - height);
+    const placed = { x, y, width, height };
+    occupied.push(placed);
+    cached.x = x;
+    cached.y = y;
+    cached.anchorX = point.x;
+    cached.anchorY = point.y;
+    return placed;
+  }
+
   setModalIsolation(root, active) {
     if (!active) {
       this.modalIsolationState.forEach(({ node, inert, ariaHidden }) => {
@@ -3261,23 +3304,20 @@ class GalaxyAtlas {
     const desiredY = expansive
       ? point.y - height / 2 - clamp(18 * point.perspective * this.zoom, 10, 32)
       : point.y - clamp(52 * point.perspective * this.zoom, 34, 82);
-    const cachedBox = this.labelOrder?.plateBoxes?.[`d${index}`];
-    const anchorShift = cachedBox ? Math.hypot(point.x - cachedBox.anchorX, point.y - cachedBox.anchorY) : 0;
-    const box = this.placeSafeCanvasLabel(
-      width,
-      height,
-      cachedBox && anchorShift < 60 ? cachedBox.x + (point.x - cachedBox.anchorX) : desiredX,
-      cachedBox && anchorShift < 60 ? cachedBox.y + (point.y - cachedBox.anchorY) : desiredY,
-      occupied,
-      active || sticky,
-    );
+    const box = this.glideStickyBox(`d${index}`, point, width, height, occupied)
+      || this.placeSafeCanvasLabel(width, height, desiredX, desiredY, occupied, active || sticky);
     if (!box) {
       context.restore();
       return false;
     }
     if (this.labelOrder) {
       if (!this.labelOrder.plateBoxes) this.labelOrder.plateBoxes = {};
-      if (!cachedBox) this.labelOrder.plateBoxes[`d${index}`] = { x: box.x, y: box.y, anchorX: point.x, anchorY: point.y };
+      if (!this.labelOrder.plateBoxes[`d${index}`]) {
+        this.labelOrder.plateBoxes[`d${index}`] = {
+          x: box.x, y: box.y, anchorX: point.x, anchorY: point.y,
+          homeOffsetX: box.x - point.x, homeOffsetY: box.y - point.y,
+        };
+      }
     }
     if (expansive) {
       context.strokeStyle = "rgba(104, 228, 255, 0.34)";
@@ -3320,23 +3360,20 @@ class GalaxyAtlas {
     context.font = `${selected ? 800 : 700} ${selected ? 18 : 16}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
     const width = context.measureText(label).width + (selected ? 16 : 10);
     const height = selected ? 35 : 31;
-    const cachedBox = this.labelOrder?.plateBoxes?.[`f${familyGeometryIndex}`];
-    const anchorShift = cachedBox ? Math.hypot(point.x - cachedBox.anchorX, point.y - cachedBox.anchorY) : 0;
-    const box = this.placeSafeCanvasLabel(
-      width,
-      height,
-      cachedBox && anchorShift < 60 ? cachedBox.x + (point.x - cachedBox.anchorX) : point.x - width / 2,
-      cachedBox && anchorShift < 60 ? cachedBox.y + (point.y - cachedBox.anchorY) : point.y + 10,
-      occupied,
-      selected || sticky,
-    );
+    const box = this.glideStickyBox(`f${familyGeometryIndex}`, point, width, height, occupied)
+      || this.placeSafeCanvasLabel(width, height, point.x - width / 2, point.y + 10, occupied, selected || sticky);
     if (!box) {
       context.restore();
       return false;
     }
     if (this.labelOrder) {
       if (!this.labelOrder.plateBoxes) this.labelOrder.plateBoxes = {};
-      if (!cachedBox) this.labelOrder.plateBoxes[`f${familyGeometryIndex}`] = { x: box.x, y: box.y, anchorX: point.x, anchorY: point.y };
+      if (!this.labelOrder.plateBoxes[`f${familyGeometryIndex}`]) {
+        this.labelOrder.plateBoxes[`f${familyGeometryIndex}`] = {
+          x: box.x, y: box.y, anchorX: point.x, anchorY: point.y,
+          homeOffsetX: box.x - point.x, homeOffsetY: box.y - point.y,
+        };
+      }
     }
     const color = this.paletteColor(geometry.divisionIndex);
     if (selected) {

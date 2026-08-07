@@ -7403,7 +7403,6 @@ body.motion-paused *::after {
 
   .primary-nav a {
     padding: 0.4rem 0.55rem;
-    font-size: 0.68rem;
   }
 
   .topbar-tools {
@@ -7418,8 +7417,15 @@ body.motion-paused *::after {
 
   .hero {
     min-height: auto;
-    padding-top: 1.4rem;
+    padding-top: 1rem;
     row-gap: 0.6rem;
+  }
+
+  .hero-copy .eyebrow {
+    grid-auto-flow: column;
+    justify-content: start;
+    column-gap: 0.9rem;
+    margin-bottom: 0.5rem;
   }
 
   .hero-copy h1 {
@@ -7427,8 +7433,49 @@ body.motion-paused *::after {
     font-size: clamp(2.05rem, 8.4vh, 3.1rem);
   }
 
+  .hero-primary-action {
+    margin-top: 0.75rem;
+  }
+
   .toast {
     top: 4.1rem;
+  }
+}
+
+/* Mid-width band (992–1248px, including 125% zoom on 1280px displays):
+   keep the topbar a single compact row instead of the 149px two-row
+   stack, so the first view and the top-docked toast stay clear. */
+@media (min-width: 62.01rem) and (max-width: 78rem) {
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 1rem;
+    min-height: 3.9rem;
+    padding-block: 0.45rem;
+  }
+
+  .brand-copy small {
+    display: none;
+  }
+
+  .primary-nav {
+    grid-row: 1;
+    grid-column: 2;
+    justify-content: center;
+    width: auto;
+  }
+
+  .primary-nav a {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .source-badge {
+    display: none;
+  }
+
+  .topbar-tools {
+    position: static;
+    grid-row: 1;
+    grid-column: 3;
   }
 }
 

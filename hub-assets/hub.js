@@ -272,7 +272,7 @@ function wireCommandCycle() {
       sourceHeight = Math.max(1, Math.round(sourceWidth / targetAspect));
     }
     const sourceX = Math.round((sourceCanvas.width - sourceWidth) / 2);
-    const sourceY = Math.round(Math.max(0, (sourceCanvas.height - sourceHeight) * 0.32));
+    const sourceY = Math.round(Math.max(0, (sourceCanvas.height - sourceHeight) * 0.3));
     echoContext.drawImage(sourceCanvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
   };
 
@@ -2592,7 +2592,7 @@ class GalaxyAtlas {
     };
     this.aliveSprites = {
       nebulaDeep: prescale(nebula(4.117, ["56, 92, 190", "44, 120, 180", "88, 70, 200"]), span * 1.24),
-      nebulaWarm: prescale(nebula(9.731, ["214, 128, 66", "196, 96, 120", "170, 110, 70"], 0.72), span),
+      nebulaWarm: prescale(nebula(9.731, ["230, 146, 78", "212, 110, 130", "186, 124, 80"], 0.78), span),
       auras,
       vignette,
     };
@@ -2614,7 +2614,10 @@ class GalaxyAtlas {
     );
     // The warm field anchors the lower-left quadrant: it fills the frame's
     // darkest region and gives the cyan body a second temperature of light.
-    context.globalAlpha = 0.3;
+    // Alpha is set for the COMPOSITED surface: the warm core must clear
+    // R>70 on screen, not merely exist in canvas space. Small stages get a
+    // lift so the chord stays audible when the projection compresses.
+    context.globalAlpha = Math.min(this.width, this.height) < 640 ? 0.72 : 0.55;
     context.drawImage(
       sprites.nebulaWarm,
       this.width * 0.3 - span * 0.5 + Math.sin(time * 0.00006 + 2.1) * 26 * drift + this.rotationY * 14,
@@ -2786,18 +2789,24 @@ class GalaxyAtlas {
       const driftX = this.rotationY * (5 + tier * 4);
       const driftY = this.rotationX * (3 + tier * 3);
       const pulse = this.paused ? 0.82 : 0.76 + Math.sin(time * 0.00038 + tier * 1.7) * 0.1;
-      context.fillStyle = `rgba(${tier === 2 ? "151, 205, 255" : "104, 228, 255"}, ${(0.045 + tier * 0.025) * pulse})`;
-      context.beginPath();
-      this.ambientStars.forEach((star) => {
-        if (star.tier !== tier) return;
-        const x = ((star.x * this.width + driftX + this.width) % this.width);
-        const y = ((star.y * this.height + driftY + this.height) % this.height);
-        const shimmer = this.paused ? 1 : 0.82 + Math.sin(time * 0.0009 + star.phase) * 0.18;
-        const radius = (0.38 + tier * 0.24) * shimmer;
-        context.moveTo(x + radius, y);
-        context.arc(x, y, radius, 0, Math.PI * 2);
-      });
-      context.fill();
+      // Two passes per tier: most stars burn cool, a seeded ~18% burn warm
+      // gold — the second temperature of starlight, scattered field-wide.
+      for (let warmPass = 0; warmPass < 2; warmPass += 1) {
+        const tone = warmPass === 1 ? "255, 206, 140" : tier === 2 ? "151, 205, 255" : "104, 228, 255";
+        context.fillStyle = `rgba(${tone}, ${(0.045 + tier * 0.025) * pulse * (warmPass === 1 ? 1.7 : 1)})`;
+        context.beginPath();
+        this.ambientStars.forEach((star) => {
+          if (star.tier !== tier) return;
+          if ((seededFract(star.phase * 91.3) < 0.18) !== (warmPass === 1)) return;
+          const x = ((star.x * this.width + driftX + this.width) % this.width);
+          const y = ((star.y * this.height + driftY + this.height) % this.height);
+          const shimmer = this.paused ? 1 : 0.82 + Math.sin(time * 0.0009 + star.phase) * 0.18;
+          const radius = (0.38 + tier * 0.24) * shimmer * (warmPass === 1 ? 1.35 : 1);
+          context.moveTo(x + radius, y);
+          context.arc(x, y, radius, 0, Math.PI * 2);
+        });
+        context.fill();
+      }
     }
     context.restore();
   }
@@ -3034,11 +3043,11 @@ class GalaxyAtlas {
         const alpha = clamp((active ? 0.88 : 0.28 + depth * 0.44) * shimmer * (1 + globalBeat * 0.16) * profile.neurons, 0.16, 1);
         const depthScale = 0.72 + depth * 0.72;
         const radius = clamp((active ? 2.05 : 1.28) * point.perspective * Math.sqrt(this.zoom) * Math.sqrt(profile.neurons) * depthScale, 0.82, 4.8) * (0.8 + 0.2 * exposure);
-        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (active ? 0.16 : 0.08) * exposure * (1 - globalBeat * 0.12)})`;
+        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (active ? 0.16 : 0.08) * exposure * (1 - globalBeat * (0.12 + 0.25 * (1 - exposure)))})`;
         context.beginPath();
         context.arc(point.x, point.y, radius * (active ? 3.3 : 2.45) * (0.82 + 0.18 * exposure), 0, Math.PI * 2);
         context.fill();
-        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (1 - globalBeat * 0.1)})`;
+        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (1 - globalBeat * (0.1 + 0.22 * (1 - exposure)))})`;
         context.beginPath();
         context.arc(point.x, point.y, radius, 0, Math.PI * 2);
         context.fill();
@@ -3246,10 +3255,23 @@ class GalaxyAtlas {
     const desiredY = expansive
       ? point.y - height / 2 - clamp(18 * point.perspective * this.zoom, 10, 32)
       : point.y - clamp(52 * point.perspective * this.zoom, 34, 82);
-    const box = this.placeSafeCanvasLabel(width, height, desiredX, desiredY, occupied, active || sticky);
+    const cachedBox = this.labelOrder?.plateBoxes?.[`d${index}`];
+    const anchorShift = cachedBox ? Math.hypot(point.x - cachedBox.anchorX, point.y - cachedBox.anchorY) : 0;
+    const box = this.placeSafeCanvasLabel(
+      width,
+      height,
+      cachedBox && anchorShift < 60 ? cachedBox.x + (point.x - cachedBox.anchorX) : desiredX,
+      cachedBox && anchorShift < 60 ? cachedBox.y + (point.y - cachedBox.anchorY) : desiredY,
+      occupied,
+      active || sticky,
+    );
     if (!box) {
       context.restore();
       return false;
+    }
+    if (this.labelOrder) {
+      if (!this.labelOrder.plateBoxes) this.labelOrder.plateBoxes = {};
+      if (!cachedBox) this.labelOrder.plateBoxes[`d${index}`] = { x: box.x, y: box.y, anchorX: point.x, anchorY: point.y };
     }
     if (expansive) {
       context.strokeStyle = "rgba(104, 228, 255, 0.34)";
@@ -3264,7 +3286,7 @@ class GalaxyAtlas {
       context.shadowColor = "rgba(104, 228, 255, 0.24)";
       context.shadowBlur = 12;
     }
-    context.fillStyle = active ? "rgba(5, 11, 20, 0.92)" : "rgba(5, 10, 18, 0.86)";
+    context.fillStyle = active ? "rgba(5, 11, 20, 0.95)" : "rgba(5, 10, 18, 0.93)";
     context.strokeStyle = active ? "rgba(104, 228, 255, 0.5)" : "rgba(169, 195, 224, 0.16)";
     context.lineWidth = 0.7;
     roundedRectPath(context, box.x, box.y, width, height, 5);
@@ -3292,10 +3314,23 @@ class GalaxyAtlas {
     context.font = `${selected ? 800 : 700} ${selected ? 18 : 16}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
     const width = context.measureText(label).width + (selected ? 16 : 10);
     const height = selected ? 35 : 31;
-    const box = this.placeSafeCanvasLabel(width, height, point.x - width / 2, point.y + 10, occupied, selected || sticky);
+    const cachedBox = this.labelOrder?.plateBoxes?.[`f${familyGeometryIndex}`];
+    const anchorShift = cachedBox ? Math.hypot(point.x - cachedBox.anchorX, point.y - cachedBox.anchorY) : 0;
+    const box = this.placeSafeCanvasLabel(
+      width,
+      height,
+      cachedBox && anchorShift < 60 ? cachedBox.x + (point.x - cachedBox.anchorX) : point.x - width / 2,
+      cachedBox && anchorShift < 60 ? cachedBox.y + (point.y - cachedBox.anchorY) : point.y + 10,
+      occupied,
+      selected || sticky,
+    );
     if (!box) {
       context.restore();
       return false;
+    }
+    if (this.labelOrder) {
+      if (!this.labelOrder.plateBoxes) this.labelOrder.plateBoxes = {};
+      if (!cachedBox) this.labelOrder.plateBoxes[`f${familyGeometryIndex}`] = { x: box.x, y: box.y, anchorX: point.x, anchorY: point.y };
     }
     const color = this.paletteColor(geometry.divisionIndex);
     if (selected) {
@@ -3308,7 +3343,7 @@ class GalaxyAtlas {
       context.shadowColor = `rgba(${color.join(",")}, 0.2)`;
       context.shadowBlur = 10;
     }
-    context.fillStyle = "rgba(4, 9, 17, 0.88)";
+    context.fillStyle = "rgba(4, 9, 17, 0.94)";
     context.strokeStyle = `rgba(${color.join(",")}, ${selected ? 0.48 : 0.2})`;
     context.lineWidth = 0.7;
     roundedRectPath(context, box.x, box.y, width, height, 5);

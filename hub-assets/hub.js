@@ -2527,7 +2527,7 @@ class GalaxyAtlas {
       canvas.height = height;
       return canvas;
     };
-    const nebula = (seedBase, tones) => {
+    const nebula = (seedBase, tones, intensity = 0.5) => {
       const canvas = makeCanvas(480);
       const nebulaContext = canvas.getContext("2d");
       if (!nebulaContext) return canvas;
@@ -2537,8 +2537,8 @@ class GalaxyAtlas {
         const br = 110 + seededFract(seedBase + blob * 41.731) * 130;
         const tone = tones[blob % tones.length];
         const gradient = nebulaContext.createRadialGradient(bx, by, 0, bx, by, br);
-        gradient.addColorStop(0, `rgba(${tone}, 0.5)`);
-        gradient.addColorStop(0.55, `rgba(${tone}, 0.16)`);
+        gradient.addColorStop(0, `rgba(${tone}, ${intensity})`);
+        gradient.addColorStop(0.55, `rgba(${tone}, ${intensity * 0.32})`);
         gradient.addColorStop(1, `rgba(${tone}, 0)`);
         nebulaContext.fillStyle = gradient;
         nebulaContext.fillRect(0, 0, 480, 480);
@@ -2592,7 +2592,7 @@ class GalaxyAtlas {
     };
     this.aliveSprites = {
       nebulaDeep: prescale(nebula(4.117, ["56, 92, 190", "44, 120, 180", "88, 70, 200"]), span * 1.24),
-      nebulaWarm: prescale(nebula(9.731, ["168, 104, 58", "150, 78, 130", "104, 96, 200"]), span),
+      nebulaWarm: prescale(nebula(9.731, ["214, 128, 66", "196, 96, 120", "170, 110, 70"], 0.72), span),
       auras,
       vignette,
     };
@@ -2614,7 +2614,7 @@ class GalaxyAtlas {
     );
     // The warm field anchors the lower-left quadrant: it fills the frame's
     // darkest region and gives the cyan body a second temperature of light.
-    context.globalAlpha = 0.17;
+    context.globalAlpha = 0.3;
     context.drawImage(
       sprites.nebulaWarm,
       this.width * 0.3 - span * 0.5 + Math.sin(time * 0.00006 + 2.1) * 26 * drift + this.rotationY * 14,
@@ -2715,7 +2715,7 @@ class GalaxyAtlas {
         const familyPoint = this.projectedFamilies[family];
         if (!familyPoint) continue;
         const color = this.paletteColor(familyPoint.divisionIndex);
-        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(0.05 * profile.links, 0, 0.2)})`;
+        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(0.09 * profile.links, 0, 0.28)})`;
         layer.beginPath();
         for (let position = 1; position < members.length; position += 1) {
           const previous = this.projectedNeurons[members[position - 1]];
@@ -3031,14 +3031,14 @@ class GalaxyAtlas {
         const active = activeDivision && (selectedFamily < 0 || point.familyGeometryIndex === selectedFamily);
         const depth = clamp((point.z + 2.7) / 5.4, 0, 1);
         const shimmer = this.paused ? 0.86 : 0.78 + Math.sin(time * 0.0015 + point.phase) * 0.16;
-        const alpha = clamp((active ? 0.88 : 0.28 + depth * 0.44) * shimmer * (1 + globalBeat * 0.2) * profile.neurons, 0.16, 1);
+        const alpha = clamp((active ? 0.88 : 0.28 + depth * 0.44) * shimmer * (1 + globalBeat * 0.16) * profile.neurons, 0.16, 1);
         const depthScale = 0.72 + depth * 0.72;
-        const radius = clamp((active ? 2.05 : 1.28) * point.perspective * Math.sqrt(this.zoom) * Math.sqrt(profile.neurons) * depthScale, 0.82, 4.8);
-        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (active ? 0.16 : 0.08) * exposure})`;
+        const radius = clamp((active ? 2.05 : 1.28) * point.perspective * Math.sqrt(this.zoom) * Math.sqrt(profile.neurons) * depthScale, 0.82, 4.8) * (0.8 + 0.2 * exposure);
+        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (active ? 0.16 : 0.08) * exposure * (1 - globalBeat * 0.12)})`;
         context.beginPath();
         context.arc(point.x, point.y, radius * (active ? 3.3 : 2.45) * (0.82 + 0.18 * exposure), 0, Math.PI * 2);
         context.fill();
-        context.fillStyle = `rgba(${color.join(",")}, ${alpha})`;
+        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (1 - globalBeat * 0.1)})`;
         context.beginPath();
         context.arc(point.x, point.y, radius, 0, Math.PI * 2);
         context.fill();
@@ -3074,8 +3074,8 @@ class GalaxyAtlas {
           if (sparkleLocal < 640) {
             const flare = Math.sin(Math.PI * (sparkleLocal / 640));
             const ray = radius * (2.6 + flare * 3.4);
-            context.globalAlpha = flare * 0.5;
-            context.strokeStyle = "rgba(255, 240, 205, 0.92)";
+            context.globalAlpha = flare * 0.6;
+            context.strokeStyle = "rgba(255, 226, 170, 0.95)";
             context.lineWidth = 0.6;
             context.beginPath();
             context.moveTo(point.x - ray, point.y);
@@ -3083,8 +3083,8 @@ class GalaxyAtlas {
             context.moveTo(point.x, point.y - ray);
             context.lineTo(point.x, point.y + ray);
             context.stroke();
-            context.globalAlpha = flare * 0.85;
-            context.fillStyle = "rgba(255, 246, 222, 0.96)";
+            context.globalAlpha = flare * 0.9;
+            context.fillStyle = "rgba(255, 214, 150, 0.97)";
             context.beginPath();
             context.arc(point.x, point.y, radius * (1 + flare * 0.7), 0, Math.PI * 2);
             context.fill();
@@ -3186,18 +3186,46 @@ class GalaxyAtlas {
       if (labelCandidates.length >= labelLimit || labelCandidates.some(({ index }) => index === candidate.index)) return;
       labelCandidates.push(candidate);
     });
-    labelCandidates.forEach(({ point, index }, position) => {
-      this.drawDivisionLabel(context, point, index, occupiedLabels, position < 3);
-    });
+    // Placed-set freeze: the first frame of a dwell window records which
+    // plates actually won placement; every later frame in the window draws
+    // exactly that set with priority placement and never substitutes. The
+    // churn lived in per-frame collision outcomes, not candidate order.
+    if (!this.labelOrder.divisionPlaced) {
+      const placedDivisions = [];
+      labelCandidates.forEach(({ point, index }, position) => {
+        if (this.drawDivisionLabel(context, point, index, occupiedLabels, position < 3)) {
+          placedDivisions.push(index);
+        }
+      });
+      this.labelOrder.divisionPlaced = placedDivisions;
+    } else {
+      const sticky = new Set(this.labelOrder.divisionPlaced);
+      labelCandidates
+        .filter(({ index }) => sticky.has(index))
+        .forEach(({ point, index }, position) => {
+          this.drawDivisionLabel(context, point, index, occupiedLabels, position < 3, true);
+        });
+    }
     if (this.zoom > profile.familyThreshold) {
-      this.labelOrder.familyOrder
+      const familyCandidates = this.labelOrder.familyOrder
         .map((index) => ({ point: this.projectedFamilies[index], index }))
-        .filter(({ point }) => point && (point.divisionIndex === this.activeDivision || point.divisionIndex === this.hoverDivision))
-        .forEach(({ point, index }) => this.drawFamilyLabel(context, point, index, occupiedLabels));
+        .filter(({ point }) => point && (point.divisionIndex === this.activeDivision || point.divisionIndex === this.hoverDivision));
+      if (!this.labelOrder.familyPlaced) {
+        const placedFamilies = [];
+        familyCandidates.forEach(({ point, index }) => {
+          if (this.drawFamilyLabel(context, point, index, occupiedLabels)) placedFamilies.push(index);
+        });
+        this.labelOrder.familyPlaced = placedFamilies;
+      } else {
+        const sticky = new Set(this.labelOrder.familyPlaced);
+        familyCandidates
+          .filter(({ index }) => sticky.has(index))
+          .forEach(({ point, index }) => this.drawFamilyLabel(context, point, index, occupiedLabels, true));
+      }
     }
   }
 
-  drawDivisionLabel(context, point, index, occupied, semanticAnchor = false) {
+  drawDivisionLabel(context, point, index, occupied, semanticAnchor = false, sticky = false) {
     const division = this.divisions[index];
     const active = index === this.activeDivision || index === this.hoverDivision;
     const hovered = index === this.hoverDivision;
@@ -3218,10 +3246,10 @@ class GalaxyAtlas {
     const desiredY = expansive
       ? point.y - height / 2 - clamp(18 * point.perspective * this.zoom, 10, 32)
       : point.y - clamp(52 * point.perspective * this.zoom, 34, 82);
-    const box = this.placeSafeCanvasLabel(width, height, desiredX, desiredY, occupied, active);
+    const box = this.placeSafeCanvasLabel(width, height, desiredX, desiredY, occupied, active || sticky);
     if (!box) {
       context.restore();
-      return;
+      return false;
     }
     if (expansive) {
       context.strokeStyle = "rgba(104, 228, 255, 0.34)";
@@ -3236,7 +3264,7 @@ class GalaxyAtlas {
       context.shadowColor = "rgba(104, 228, 255, 0.24)";
       context.shadowBlur = 12;
     }
-    context.fillStyle = active ? "rgba(5, 11, 20, 0.9)" : "rgba(5, 10, 18, 0.72)";
+    context.fillStyle = active ? "rgba(5, 11, 20, 0.92)" : "rgba(5, 10, 18, 0.86)";
     context.strokeStyle = active ? "rgba(104, 228, 255, 0.5)" : "rgba(169, 195, 224, 0.16)";
     context.lineWidth = 0.7;
     roundedRectPath(context, box.x, box.y, width, height, 5);
@@ -3247,14 +3275,15 @@ class GalaxyAtlas {
     context.textBaseline = "middle";
     context.fillText(label, box.x + width / 2, box.y + height / 2 + 0.5);
     context.restore();
+    return true;
   }
 
-  drawFamilyLabel(context, point, familyGeometryIndex, occupied) {
+  drawFamilyLabel(context, point, familyGeometryIndex, occupied, sticky = false) {
     const geometry = this.familyGeometry[familyGeometryIndex];
     const family = this.divisions[geometry.divisionIndex]?.families?.[geometry.familyIndex];
-    if (!family) return;
+    if (!family) return false;
     const selected = familyGeometryIndex === this.activeFamily || familyGeometryIndex === this.hoverFamily;
-    if (!selected && this.zoom < 1.24) return;
+    if (!selected && this.zoom < 1.24) return false;
     const familyName = titleCase(family.name);
     const nameLimit = selected ? 64 : this.width < 520 ? 14 : 20;
     const compactName = familyName.length > nameLimit ? `${familyName.slice(0, nameLimit - 1).trimEnd()}…` : familyName;
@@ -3263,10 +3292,10 @@ class GalaxyAtlas {
     context.font = `${selected ? 800 : 700} ${selected ? 18 : 16}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
     const width = context.measureText(label).width + (selected ? 16 : 10);
     const height = selected ? 35 : 31;
-    const box = this.placeSafeCanvasLabel(width, height, point.x - width / 2, point.y + 10, occupied, selected);
+    const box = this.placeSafeCanvasLabel(width, height, point.x - width / 2, point.y + 10, occupied, selected || sticky);
     if (!box) {
       context.restore();
-      return;
+      return false;
     }
     const color = this.paletteColor(geometry.divisionIndex);
     if (selected) {
@@ -3290,6 +3319,7 @@ class GalaxyAtlas {
     context.textBaseline = "middle";
     context.fillText(label, box.x + width / 2, box.y + height / 2 + 0.5);
     context.restore();
+    return true;
   }
 
   drawNeuronLabel(context, point, neuronIndex, occupied) {

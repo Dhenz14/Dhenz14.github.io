@@ -44,7 +44,9 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const facts = JSON.parse(fs.readFileSync(path.join(root, "hub-assets", "hub-facts.json"), "utf8"));
 const clone = (value) => structuredClone(value);
-const titleCase = (value) => String(value || "").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const TITLE_MINOR_WORDS = new Set(["a", "an", "and", "as", "at", "but", "by", "for", "in", "nor", "of", "on", "or", "per", "the", "to", "via", "with"]);
+const titleCase = (value) => String(value || "").toLowerCase().replace(/\b[a-z0-9']+/g, (word, offset) =>
+  (offset > 0 && TITLE_MINOR_WORDS.has(word)) ? word : word.charAt(0).toUpperCase() + word.slice(1));
 const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);

@@ -16,7 +16,9 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
-const titleCase = (value) => String(value || "").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const TITLE_MINOR_WORDS = new Set(["a", "an", "and", "as", "at", "but", "by", "for", "in", "nor", "of", "on", "or", "per", "the", "to", "via", "with"]);
+const titleCase = (value) => String(value || "").toLowerCase().replace(/\b[a-z0-9']+/g, (word, offset) =>
+  (offset > 0 && TITLE_MINOR_WORDS.has(word)) ? word : word.charAt(0).toUpperCase() + word.slice(1));
 const requireMatch = (value, pattern, label) => {
   if (!pattern.test(value)) throw new Error(`${label} contract missing`);
 };
@@ -373,7 +375,7 @@ if (!(divisionDialogIndex >= 0
 const atlasStatusCount = [...html.matchAll(/\sdata-galaxy-atlas-status(?=[\s>])/g)].length;
 if (atlasStatusCount !== 1) throw new Error(`dialog-local atlas status must be unique, found ${atlasStatusCount}`);
 requireMatch(html, /<\/label>\s*<\/div>\s*<\/div>\s*<p class="galaxy-atlas-status"[^>]*data-galaxy-atlas-status[^>]*role="status"[^>]*aria-live="polite"[^>]*aria-atomic="true"><\/p>/, "polite normal-flow atlas status immediately follows the toolbar");
-requireMatch(html, /data-galaxy-division-nav-current[^>]*>A · Route, Hold, And Activation Budget<\//, "full initial compact division name");
+requireMatch(html, /data-galaxy-division-nav-current[^>]*>A · Route, Hold, and Activation Budget<\//, "full initial compact division name");
 requireMatch(html, /<select[^>]+data-galaxy-division-nav-select[^>]+disabled[^>]+aria-disabled="true"[^>]*><\/select>/, "fail-closed native division select");
 requireMatch(html, /<select[^>]+data-galaxy-division-nav-select[^>]+aria-label="Jump to division"/, "explicit short-mode native division label");
 requireMatch(html, /data-galaxy-context-summary>Context unavailable · source not yet bound<[\s\S]*data-galaxy-context-copy>Context parameters remain unavailable until this browser validates/, "unbound local-context truth");

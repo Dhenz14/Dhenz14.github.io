@@ -257,17 +257,22 @@ function wireCommandCycle() {
     echoContext.clearRect(0, 0, width, height);
     const targetAspect = width / height;
     const sourceAspect = sourceCanvas.width / sourceCanvas.height;
-    let sourceX = 0;
-    let sourceY = 0;
     let sourceWidth = sourceCanvas.width;
     let sourceHeight = sourceCanvas.height;
     if (sourceAspect > targetAspect) {
       sourceWidth = Math.max(1, Math.round(sourceHeight * targetAspect));
-      sourceX = Math.round((sourceCanvas.width - sourceWidth) / 2);
     } else {
       sourceHeight = Math.max(1, Math.round(sourceWidth / targetAspect));
-      sourceY = Math.round((sourceCanvas.height - sourceHeight) / 2);
     }
+    // Pull the crop window out ~12% so division badges near the source
+    // edges arrive whole, and bias it upward where those badges sit.
+    if (sourceWidth < sourceCanvas.width || sourceHeight < sourceCanvas.height) {
+      sourceHeight = Math.min(sourceCanvas.height, Math.round(sourceHeight * 1.12));
+      sourceWidth = Math.min(sourceCanvas.width, Math.round(sourceHeight * targetAspect));
+      sourceHeight = Math.max(1, Math.round(sourceWidth / targetAspect));
+    }
+    const sourceX = Math.round((sourceCanvas.width - sourceWidth) / 2);
+    const sourceY = Math.round(Math.max(0, (sourceCanvas.height - sourceHeight) * 0.42));
     echoContext.drawImage(sourceCanvas, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
   };
 
@@ -1220,7 +1225,9 @@ class FieldRenderer {
 }
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
-const titleCase = (value) => String(value || "").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const TITLE_MINOR_WORDS = new Set(["a", "an", "and", "as", "at", "but", "by", "for", "in", "nor", "of", "on", "or", "per", "the", "to", "via", "with"]);
+const titleCase = (value) => String(value || "").toLowerCase().replace(/\b[a-z0-9']+/g, (word, offset) =>
+  (offset > 0 && TITLE_MINOR_WORDS.has(word)) ? word : word.charAt(0).toUpperCase() + word.slice(1));
 const formatGalaxyDivisionChoice = (division) => `${division.code} · ${titleCase(division.name)}`;
 
 function roundedRectPath(context, x, y, width, height, radius) {

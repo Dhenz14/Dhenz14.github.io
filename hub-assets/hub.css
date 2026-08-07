@@ -7435,6 +7435,10 @@ body.motion-paused *::after {
     display: inline;
   }
 
+  .hero-copy > .eyebrow span + span::before {
+    margin-left: 1rem;
+  }
+
   .hero-copy h1 {
     margin-bottom: 0.6rem;
     font-size: clamp(2.05rem, 8.4vh, 3.1rem);
@@ -7493,8 +7497,16 @@ body.motion-paused *::after {
     display: inline;
   }
 
+  .hero-copy > .eyebrow span + span::before {
+    margin-left: 1rem;
+  }
+
   .satellite-neura {
-    right: 21%;
+    right: 23%;
+  }
+
+  .satellite-neura strong {
+    font-size: 0.72rem;
   }
 }
 

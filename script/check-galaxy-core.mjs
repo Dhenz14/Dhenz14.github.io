@@ -172,7 +172,7 @@ const handoffMatrix = [
   },
   {
     input: { presentation: "0", lens: "artifact", node: "neuron:N640", level: "neuron" },
-    expected: `http://127.0.0.1:8791/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=build&node=N640&level=neuron`,
+    expected: `http://127.0.0.1:5002/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=build&node=N640&level=neuron`,
   },
   {
     input: { presentation: "1", lens: "evidence", node: "family:P4", level: "family" },
@@ -180,7 +180,7 @@ const handoffMatrix = [
   },
   {
     input: { presentation: "0", lens: "runtime", node: "N001", level: "interior" },
-    expected: `http://127.0.0.1:8791/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=runtime&node=N001&level=interior`,
+    expected: `http://127.0.0.1:5002/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=runtime&node=N001&level=interior`,
   },
   {
     input: { presentation: "1", lens: "product", node: "", level: "body" },

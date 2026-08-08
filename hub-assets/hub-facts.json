@@ -2,11 +2,11 @@
   "schema": "hive.ecosystem.public-source-snapshot.v3",
   "snapshotVersion": "3.0.0",
   "hiveAi": {
-    "sourceCommit": "f3dcab1ad9b8f344097cda5f0c7e55ed4c8b967a",
+    "sourceCommit": "174b8c77baa0593fb2ee8f064a2d314fc130e67e",
     "sourceBranch": "main",
     "graphSource": "compiled from the source manifest and authored layout; no private graph bytes published",
     "graphSchema": "hiveai.living_anatomy_graph.v2",
-    "graphHash": "f9685aa43db70c5f8bd934c95577b88f51795d41c716bbd67641ba0d44eb8e02",
+    "graphHash": "085d5677e0c3b1030535225e66e5e6034b2b8185a077fa0e3c986a76f0576e77",
     "sourceFingerprint": "932ba5dfd28fc917d289aeec7ab1cb7ad086b035dd08285e83856447218551e8",
     "neurons": 640,
     "trainableNeurons": 448,
@@ -27,7 +27,7 @@
   "galaxy": {
     "schema": "hive.ecosystem.public-galaxy.v2",
     "generatorVersion": "3.0.0",
-    "sourceGraphHash": "f9685aa43db70c5f8bd934c95577b88f51795d41c716bbd67641ba0d44eb8e02",
+    "sourceGraphHash": "085d5677e0c3b1030535225e66e5e6034b2b8185a077fa0e3c986a76f0576e77",
     "representedNeurons": 640,
     "divisions": [
       {
@@ -1170,7 +1170,7 @@
     "geometry": {
       "schema": "hive.galaxy.public-geometry.v1",
       "projection": "living-anatomy-body",
-      "sourceGraphHash": "f9685aa43db70c5f8bd934c95577b88f51795d41c716bbd67641ba0d44eb8e02",
+      "sourceGraphHash": "085d5677e0c3b1030535225e66e5e6034b2b8185a077fa0e3c986a76f0576e77",
       "contractVersion": "1.0.0",
       "contractHash": "698d9c371ebe98b47cffbf10643080cb06ccb2c06267d580349063fb992230ad",
       "coordinateSpace": "hiveai.living_anatomy_layout.v1",
@@ -7648,7 +7648,7 @@
     },
     "statusProjection": "none",
     "claimBoundary": "The public atlas shows topology and family purpose only. Gold Twitch, mastery, runtime, work-lane, mission, and urgency states remain on the authenticated local Living Anatomy surface.",
-    "projectionHash": "8881da1a33cea5f60af24b865d8a52e5e57fc22e44eb69d0d26cc46668fc497a"
+    "projectionHash": "3faa684f2f6bdf08e89b230640eca8b3df2d373ac67b74458403fa5e27cbad0f"
   },
   "ecosystem": {
     "schema": "hive.ecosystem.public-organ-map.v1",
@@ -7693,9 +7693,9 @@
     "federationRepositories": 20
   },
   "refresh": {
-    "privateSourceMode": "manual-source-bound-snapshot",
-    "automaticBridgeEnabled": false,
-    "reasonCode": "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
+    "privateSourceMode": "scheduled-living-main-publisher",
+    "automaticBridgeEnabled": true,
+    "reasonCode": "SCHEDULED_LIVING_MAIN_PUBLISHER",
     "lastGoodBehavior": "retain_previous_snapshot"
   },
   "boundaries": {
@@ -7706,6 +7706,6 @@
     "localChatUrl": "http://127.0.0.1:5002/chat",
     "localGalaxyUrl": "http://127.0.0.1:5002/constellation/body?presentation=1"
   },
-  "capturedAt": "2026-08-06T23:10:34Z",
-  "snapshotHash": "b5172788862114221f74f3f2b1f97d0d01fa942e0fb8dfff1a275861c530ae26"
+  "capturedAt": "2026-08-08T22:28:55Z",
+  "snapshotHash": "d67388ecf2b525786126249d43dfdf291f12f257ab1b2effbae67849c35df4f7"
 }

@@ -464,7 +464,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v12" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v13" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -581,7 +581,7 @@ requireMatch(js, /Last-good snapshot/, "last-good refresh behavior");
 requireMatch(js, /AbortController/, "snapshot request cancellation");
 requireMatch(js, /snapshotRequestGeneration/, "snapshot response generation gate");
 requireMatch(js, /snapshotResponseCanCommit\([\s\S]*aborted:/, "behavioral snapshot response gate integration");
-requireMatch(js, /sourceSnapshotPresentation\([\s\S]*automaticBridgeEnabled === true[\s\S]*presentation\.freshness === "historical"[\s\S]*presentation\.freshness === "aged"[\s\S]*presentation\.bridge === "active"/, "source-age and bridge-state separation");
+requireMatch(js, /sourceSnapshotPresentation\([\s\S]*automaticBridgeEnabled === true[\s\S]*presentation\.freshness === "historical"[\s\S]*presentation\.freshness === "aged"[\s\S]*presentation\.bridge === "configured"/, "source-age and bridge-configuration separation");
 requireMatch(forcedColorsWiring, /const onForcedColorsChange = \(event\) => this\.applyRenderAvailability\(Boolean\(event\.matches\)\);/, "live forced-colors transition callback");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addEventListener\("change", onForcedColorsChange\)/, "live forced-colors transition listener");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addListener\(onForcedColorsChange\)/, "legacy forced-colors transition listener");
@@ -776,7 +776,7 @@ const activeLocalRefresh = facts.refresh?.automaticBridgeEnabled === true
   && facts.refresh?.reasonCode === "LOCAL_LIVING_MAIN_PUBLISHER";
 const inactiveRefresh = facts.refresh?.automaticBridgeEnabled === false
   && facts.refresh?.privateSourceMode === "manual-source-bound-snapshot"
-  && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED"].includes(facts.refresh?.reasonCode);
+  && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED", "MANUAL_WORKFLOW_DISPATCH"].includes(facts.refresh?.reasonCode);
 if (!activeRefresh && !activeLocalRefresh && !inactiveRefresh) throw new Error("refresh automation boundary drifted");
 
 const syncWorkflow = read(".github/workflows/sync-living-galaxy.yml");

@@ -76,7 +76,10 @@ page rechecks the same-origin snapshot every 60 seconds while visible and keeps
 the last validated snapshot if a refresh fails.
 
 The living-main publisher in `.github/workflows/sync-living-galaxy.yml` attempts
-that exact source-bound build every five minutes and on manual dispatch. Private
+that exact source-bound build every five minutes and on manual dispatch. The
+snapshot records automatic publication as configured only while the
+`LIVING_GALAXY_CLOUD_SYNC_ENABLED` repository variable is true; a manual run
+with that switch off remains truthfully labeled a manual snapshot. Private
 source access is intentionally limited to the `HIVE_AI_READ_DEPLOY_KEY` Actions
 secret: a read-only deploy key installed only on Hive-AI. If it is absent, the
 workflow succeeds fail-closed, retains the last-good source snapshot, and marks
@@ -94,6 +97,8 @@ Cloud runs remain explicitly gated by the `LIVING_GALAXY_CLOUD_SYNC_ENABLED`
 repository variable. Until a dedicated read-only cloud key is authorized, an
 authenticated operator can run the same compiler in local publisher mode with
 `GALAXY_AUTOMATIC_BRIDGE=true GALAXY_BRIDGE_MODE=local`. The public badge labels
+automatic publication as configured rather than claiming the next runner is
+healthy; capture age and later successful publications remain the evidence. It labels
 the represented capture aged after 15 minutes and historical after one hour;
 that is source age, not publisher delay or local-runtime health. It never
 converts unavailable or older truth into zeroes.

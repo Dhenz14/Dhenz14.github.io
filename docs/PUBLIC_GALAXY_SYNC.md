@@ -89,6 +89,10 @@ would additionally require a narrowly scoped GitHub App installed on exactly
 Hive-AI and Pages. The scheduled publisher needs no personal token, broad
 cross-repository token, private runtime proxy, or write access to Hive-AI; its
 single private credential is the repository-specific read-only deploy key.
+The public badge therefore says auto-sync is configured, never that a future
+runner is guaranteed healthy. When `LIVING_GALAXY_CLOUD_SYNC_ENABLED` is false,
+even a manually dispatched workflow publishes only a manual source-bound
+snapshot and does not claim automatic convergence.
 
 When cloud credentials are intentionally absent, the same strict compiler may
 run from a clean authenticated operator checkout with

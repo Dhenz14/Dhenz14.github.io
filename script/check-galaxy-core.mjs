@@ -159,8 +159,9 @@ for (const automaticBridgeEnabled of [true, false]) {
   const aged = sourceSnapshotPresentation("2026-08-04T20:40:00Z", automaticBridgeEnabled, freshnessNow);
   const historical = sourceSnapshotPresentation("2026-08-04T19:00:00Z", automaticBridgeEnabled, freshnessNow);
   assert(recent.freshness === "recent" && aged.freshness === "aged" && historical.freshness === "historical", `source age was coupled to bridge=${automaticBridgeEnabled}`);
-  const expectedBridge = automaticBridgeEnabled ? "active" : "inactive";
-  assert([recent, aged, historical].every((value) => value.bridge === expectedBridge && value.label.endsWith(`bridge ${expectedBridge}`)), `bridge=${automaticBridgeEnabled} was not reported separately`);
+  const expectedBridge = automaticBridgeEnabled ? "configured" : "manual";
+  const expectedSuffix = automaticBridgeEnabled ? "auto-sync configured" : "manual snapshot";
+  assert([recent, aged, historical].every((value) => value.bridge === expectedBridge && value.label.endsWith(expectedSuffix)), `bridge=${automaticBridgeEnabled} was not reported separately`);
 }
 
 const handoffCommit = "a".repeat(40);

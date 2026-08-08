@@ -104,7 +104,7 @@ export function buildPublicHandoffUrl({ presentation, sourceCommit, graphHash, l
 
 export function sourceSnapshotPresentation(capturedAt, automaticBridgeEnabled, now = Date.now()) {
   const freshness = snapshotFreshness(capturedAt, now);
-  const bridge = automaticBridgeEnabled ? "active" : "inactive";
+  const bridge = automaticBridgeEnabled ? "configured" : "manual";
   const ageLabel = freshness.state === "historical"
     ? "Historical source capture"
     : freshness.state === "aged"
@@ -115,8 +115,8 @@ export function sourceSnapshotPresentation(capturedAt, automaticBridgeEnabled, n
   return Object.freeze({
     freshness: freshness.state,
     bridge,
-    badgeState: freshness.state === "recent" && bridge === "active" ? "" : "stale",
-    label: `${ageLabel} · bridge ${bridge}`,
+    badgeState: freshness.state === "recent" && bridge === "configured" ? "" : "stale",
+    label: `${ageLabel} · ${bridge === "configured" ? "auto-sync configured" : "manual snapshot"}`,
   });
 }
 
@@ -645,7 +645,7 @@ export async function validSnapshot(snapshot) {
     && snapshot.refresh.reasonCode === "LOCAL_LIVING_MAIN_PUBLISHER";
   const inactive = snapshot.refresh.automaticBridgeEnabled === false
     && snapshot.refresh.privateSourceMode === "manual-source-bound-snapshot"
-    && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED"].includes(snapshot.refresh.reasonCode);
+    && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED", "MANUAL_WORKFLOW_DISPATCH"].includes(snapshot.refresh.reasonCode);
   if (!activeCloud && !activeLocal && !inactive) return false;
   if (!await validGalaxyProjection(snapshot.galaxy, facts)) return false;
   const { snapshotHash, ...body } = snapshot;

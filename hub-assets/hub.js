@@ -22,11 +22,11 @@ import {
   sourceSnapshotPresentation,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v12";
+} from "./galaxy-core.mjs?v=galaxy-stark-v13";
 import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v12";
+} from "./ide-release-core.mjs?v=galaxy-stark-v13";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 5;
 
@@ -694,9 +694,9 @@ async function loadSourceSnapshot() {
       : presentation.freshness === "aged"
         ? `The represented source capture is more than fifteen minutes old (${snapshot.capturedAt}).`
         : `The represented source capture is recent (${snapshot.capturedAt}).`;
-    const bridgeTruth = presentation.bridge === "active"
-      ? "The scheduled/local publication bridge declares itself active."
-      : "The publication bridge declares itself inactive; the last validated source facts remain visible.";
+    const bridgeTruth = presentation.bridge === "configured"
+      ? "Automatic publication is configured; source age and future successful runs remain the health evidence."
+      : "This is a manual source-bound snapshot; the last validated source facts remain visible.";
     setSourceBadge(
       presentation.badgeState,
       presentation.label,

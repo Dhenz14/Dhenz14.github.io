@@ -403,11 +403,12 @@ requireMatch(html, /Not verified here/, "local-byte boundary");
 requireMatch(html, /A same-origin compromise is outside the signature guarantee/, "same-origin boundary");
 requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/chat/, "local chat route");
 requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1/, "local presentation body route");
-requireMatch(html, /http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0/, "local operator body route");
+requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=0/, "single-service local operator body route");
 requireMatch(html, /class="button button-quiet" data-hero-body-cta href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1" target="hive-local-body" rel="noreferrer"/, "direct hero Living Anatomy entry");
 requireMatch(html, /class="button button-quiet" href="#ide-download"/, "subordinate Hive IDE download handoff");
 requireMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1"[^>]*target="hive-local-body"[^>]*rel="noreferrer"/, "safe presentation body navigation");
-requireMatch(html, /href="http:\/\/127\.0\.0\.1:8791\/constellation\/body\?presentation=0"[^>]*target="hive-local-body"[^>]*rel="noreferrer"/, "safe operator body navigation");
+requireMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=0"[^>]*target="hive-local-body"[^>]*rel="noreferrer"/, "safe single-service operator body navigation");
+requireNoMatch(html, /127\.0\.0\.1:8791/, "retired split-port Living Anatomy route");
 requireMatch(html, /data-local-handoff-dialog[\s\S]*Start Hive IDE[\s\S]*Open Hive-AI, then choose Living Anatomy[\s\S]*Availability is not checked or claimed\.[\s\S]*DRIFTED is a truth gate/, "persistent no-probe local recovery guidance");
 requireMatch(html, /data-local-handoff-confirm[^>]+target="hive-local-body"[^>]+rel="noreferrer"/, "local handoff reuses one named local tab");
 requireNoMatch(html, /href="http:\/\/127\.0\.0\.1:[^"]*"[^>]*target="_blank"/, "local links never scatter into unnamed tabs");
@@ -463,7 +464,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v12" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v13" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -580,7 +581,7 @@ requireMatch(js, /Last-good snapshot/, "last-good refresh behavior");
 requireMatch(js, /AbortController/, "snapshot request cancellation");
 requireMatch(js, /snapshotRequestGeneration/, "snapshot response generation gate");
 requireMatch(js, /snapshotResponseCanCommit\([\s\S]*aborted:/, "behavioral snapshot response gate integration");
-requireMatch(js, /sourceSnapshotPresentation\([\s\S]*automaticBridgeEnabled === true[\s\S]*presentation\.freshness === "historical"[\s\S]*presentation\.freshness === "aged"[\s\S]*presentation\.bridge === "active"/, "source-age and bridge-state separation");
+requireMatch(js, /sourceSnapshotPresentation\([\s\S]*automaticBridgeEnabled === true[\s\S]*presentation\.freshness === "historical"[\s\S]*presentation\.freshness === "aged"[\s\S]*presentation\.bridge === "configured"/, "source-age and bridge-configuration separation");
 requireMatch(forcedColorsWiring, /const onForcedColorsChange = \(event\) => this\.applyRenderAvailability\(Boolean\(event\.matches\)\);/, "live forced-colors transition callback");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addEventListener\("change", onForcedColorsChange\)/, "live forced-colors transition listener");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addListener\(onForcedColorsChange\)/, "legacy forced-colors transition listener");
@@ -775,7 +776,7 @@ const activeLocalRefresh = facts.refresh?.automaticBridgeEnabled === true
   && facts.refresh?.reasonCode === "LOCAL_LIVING_MAIN_PUBLISHER";
 const inactiveRefresh = facts.refresh?.automaticBridgeEnabled === false
   && facts.refresh?.privateSourceMode === "manual-source-bound-snapshot"
-  && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED"].includes(facts.refresh?.reasonCode);
+  && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED", "MANUAL_WORKFLOW_DISPATCH"].includes(facts.refresh?.reasonCode);
 if (!activeRefresh && !activeLocalRefresh && !inactiveRefresh) throw new Error("refresh automation boundary drifted");
 
 const syncWorkflow = read(".github/workflows/sync-living-galaxy.yml");

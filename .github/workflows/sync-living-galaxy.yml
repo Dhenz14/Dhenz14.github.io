@@ -110,8 +110,9 @@ jobs:
       - name: Compile one coherent observation of living main
         if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome == 'success'
         env:
-          GALAXY_AUTOMATIC_BRIDGE: "true"
+          GALAXY_AUTOMATIC_BRIDGE: ${{ vars.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true' && 'true' || 'false' }}
           GALAXY_BRIDGE_MODE: "cloud"
+          GALAXY_BRIDGE_INACTIVE_REASON: "MANUAL_WORKFLOW_DISPATCH"
         shell: bash
         run: |
           set -euo pipefail

@@ -159,8 +159,9 @@ for (const automaticBridgeEnabled of [true, false]) {
   const aged = sourceSnapshotPresentation("2026-08-04T20:40:00Z", automaticBridgeEnabled, freshnessNow);
   const historical = sourceSnapshotPresentation("2026-08-04T19:00:00Z", automaticBridgeEnabled, freshnessNow);
   assert(recent.freshness === "recent" && aged.freshness === "aged" && historical.freshness === "historical", `source age was coupled to bridge=${automaticBridgeEnabled}`);
-  const expectedBridge = automaticBridgeEnabled ? "active" : "inactive";
-  assert([recent, aged, historical].every((value) => value.bridge === expectedBridge && value.label.endsWith(`bridge ${expectedBridge}`)), `bridge=${automaticBridgeEnabled} was not reported separately`);
+  const expectedBridge = automaticBridgeEnabled ? "configured" : "manual";
+  const expectedSuffix = automaticBridgeEnabled ? "auto-sync configured" : "manual snapshot";
+  assert([recent, aged, historical].every((value) => value.bridge === expectedBridge && value.label.endsWith(expectedSuffix)), `bridge=${automaticBridgeEnabled} was not reported separately`);
 }
 
 const handoffCommit = "a".repeat(40);
@@ -172,7 +173,7 @@ const handoffMatrix = [
   },
   {
     input: { presentation: "0", lens: "artifact", node: "neuron:N640", level: "neuron" },
-    expected: `http://127.0.0.1:8791/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=build&node=N640&level=neuron`,
+    expected: `http://127.0.0.1:5002/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=build&node=N640&level=neuron`,
   },
   {
     input: { presentation: "1", lens: "evidence", node: "family:P4", level: "family" },
@@ -180,7 +181,7 @@ const handoffMatrix = [
   },
   {
     input: { presentation: "0", lens: "runtime", node: "N001", level: "interior" },
-    expected: `http://127.0.0.1:8791/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=runtime&node=N001&level=interior`,
+    expected: `http://127.0.0.1:5002/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=runtime&node=N001&level=interior`,
   },
   {
     input: { presentation: "1", lens: "product", node: "", level: "body" },

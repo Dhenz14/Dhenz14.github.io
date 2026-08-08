@@ -19,6 +19,9 @@ const REQUIRED_PUBLISHER_EVIDENCE_PATHS = Object.freeze([
   "tests/fixtures/physiology/formal_l3_e02/window_seal/RATIFY_L3_E02_V1.json",
 ]);
 const automaticBridgeEnabled = process.env.GALAXY_AUTOMATIC_BRIDGE === "true";
+const inactiveBridgeReason = process.env.GALAXY_BRIDGE_INACTIVE_REASON === "MANUAL_WORKFLOW_DISPATCH"
+  ? "MANUAL_WORKFLOW_DISPATCH"
+  : "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED";
 const bridgeMode = automaticBridgeEnabled && process.env.GALAXY_BRIDGE_MODE === "local"
   ? "local"
   : automaticBridgeEnabled ? "cloud" : "inactive";
@@ -487,7 +490,7 @@ const base = {
     automaticBridgeEnabled,
     reasonCode: bridgeMode === "local"
       ? "LOCAL_LIVING_MAIN_PUBLISHER"
-      : automaticBridgeEnabled ? "SCHEDULED_LIVING_MAIN_PUBLISHER" : "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
+      : automaticBridgeEnabled ? "SCHEDULED_LIVING_MAIN_PUBLISHER" : inactiveBridgeReason,
     lastGoodBehavior: "retain_previous_snapshot",
   },
   boundaries: {

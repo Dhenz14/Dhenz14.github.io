@@ -337,12 +337,12 @@ for (const [index, point] of geometry.neurons.entries()) {
 }
 
 const overviewViewportCases = [
-  { name: "1920x1080", physicalWidth: 1920, physicalHeight: 1080, width: 1421, height: 1080, zoom: 1.12, minSpanRatio: 0.38 },
-  { name: "1440x900", physicalWidth: 1440, physicalHeight: 900, width: 1066, height: 900, zoom: 1.12, minSpanRatio: 0.38 },
-  { name: "1366x768", physicalWidth: 1366, physicalHeight: 768, width: 1011, height: 768, zoom: 1.12, minSpanRatio: 0.38 },
-  { name: "1024x768", physicalWidth: 1024, physicalHeight: 768, width: 704, height: 768, zoom: 1.14, minSpanRatio: 0.45 },
-  { name: "390x844", physicalWidth: 390, physicalHeight: 844, width: 390, height: 473, zoom: 0.92, minSpanRatio: 0.32 },
-  { name: "320x568", physicalWidth: 320, physicalHeight: 568, width: 320, height: 318, zoom: 0.92, minSpanRatio: 0.32 },
+  { name: "1920x1080", physicalWidth: 1920, physicalHeight: 1080, width: 1421, height: 1080, zoom: 1.3, minSpanRatio: 0.44 },
+  { name: "1440x900", physicalWidth: 1440, physicalHeight: 900, width: 1066, height: 900, zoom: 1.3, minSpanRatio: 0.44 },
+  { name: "1366x768", physicalWidth: 1366, physicalHeight: 768, width: 1011, height: 768, zoom: 1.3, minSpanRatio: 0.44 },
+  { name: "1024x768", physicalWidth: 1024, physicalHeight: 768, width: 704, height: 768, zoom: 1.2, minSpanRatio: 0.46 },
+  { name: "390x844", physicalWidth: 390, physicalHeight: 844, width: 390, height: 473, zoom: 0.98, minSpanRatio: 0.35 },
+  { name: "320x568", physicalWidth: 320, physicalHeight: 568, width: 320, height: 318, zoom: 0.98, minSpanRatio: 0.35 },
 ];
 let overviewCameraCases = 0;
 for (const viewport of overviewViewportCases) {

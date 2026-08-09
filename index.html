@@ -24,7 +24,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="/hub-assets/hub.css?v=galaxy-stark-v14">
+    <link rel="stylesheet" href="/hub-assets/hub.css?v=galaxy-stark-v15">
     <title>Hive Ecosystem — The living intelligence galaxy</title>
     <script type="application/ld+json">
       {
@@ -79,8 +79,8 @@
           </p>
           <div class="hero-actions hero-primary-action" aria-label="Primary action">
             <a class="button button-primary hero-enter" data-hero-atlas-cta data-galaxy-open href="#galaxy">
-              <span>Enter the living galaxy</span>
-              <small>Full 640-neuron atlas</small>
+              <span class="hero-enter-copy"><strong>Enter the living galaxy</strong><small>Explore all 640 neurons</small></span>
+              <span class="hero-enter-arrow" aria-hidden="true">↗</span>
             </a>
           </div>
         </div>
@@ -369,10 +369,17 @@
               <div class="map-grid" aria-hidden="true"></div>
               <canvas class="galaxy-canvas" data-galaxy-canvas tabindex="-1" aria-disabled="true" role="img" aria-label="Interactive public-safe atlas of 640 Hive-AI neurons in exact authored coordinates. Engage controls before wheel zoom; drag to orbit, Shift-drag to pan, pinch around its centroid, Home to reset, and Escape to release controls or exit the full atlas."></canvas>
               <div class="galaxy-reticle" aria-hidden="true"><i></i><i></i></div>
-              <div class="galaxy-depth" aria-hidden="true"><span>DIVISION</span><i></i><span>FAMILY</span><i></i><span>NEURON</span></div>
+              <div class="galaxy-depth" aria-hidden="true"><span>16 DIVISIONS</span><i></i><span>64 FAMILIES</span><i></i><span>640 NEURONS</span></div>
+              <div class="galaxy-mark-key" role="list" aria-label="Atlas visual key">
+                <span role="listitem"><i class="mark-neuron" aria-hidden="true"></i><b>Point</b> neuron</span>
+                <span role="listitem"><i class="mark-family" aria-hidden="true"></i><b>Hub</b> family</span>
+                <span role="listitem"><i class="mark-division" aria-hidden="true"></i><b>Halo</b> division</span>
+                <span role="listitem"><i class="mark-code" aria-hidden="true">A</i><b>Letter</b> division ID</span>
+                <span role="listitem"><i class="mark-link" aria-hidden="true"></i><b>Line</b> authored membership</span>
+              </div>
               <div class="galaxy-demo-proof" data-galaxy-demo-proof hidden><span>DEMO</span><strong>ZERO EFFECTS</strong></div>
               <div class="galaxy-stage-bottom">
-                <div class="galaxy-division-name" data-galaxy-division-name aria-live="polite" aria-atomic="true">Division A · Route, Hold, and Activation Budget</div>
+                <div class="galaxy-division-name" data-galaxy-division-name aria-live="polite" aria-atomic="true">Focus · A · 40 neurons · 4 families</div>
                 <div class="galaxy-director-caption" data-galaxy-director-caption hidden aria-live="polite">
                   <span class="galaxy-director-inline-proof">DEMO · ZERO EFFECTS</span>
                   <strong><span class="galaxy-director-step-count" data-galaxy-director-step-count>01 / 06 ·</span> <span data-galaxy-director-step>Evidence enters</span></strong>
@@ -392,9 +399,9 @@
 
             <aside class="lens-inspector galaxy-inspector">
               <div class="galaxy-atlas-toolbar" aria-label="Atlas presentation and recovery tools">
-                <button class="galaxy-director-control" type="button" data-galaxy-director aria-pressed="false" aria-disabled="true" disabled>Run 24s director</button>
+                <button type="button" data-galaxy-fit-selected aria-disabled="true" disabled>Dive into Division A</button>
+                <button class="galaxy-director-control" type="button" data-galaxy-director aria-pressed="false" aria-disabled="true" disabled>Guided tour</button>
                 <button type="button" data-galaxy-reset-modal aria-disabled="true" disabled>Reset view</button>
-                <button type="button" data-galaxy-fit-selected aria-disabled="true" disabled>Fit selected</button>
                 <div class="galaxy-division-nav" data-galaxy-division-nav aria-label="Atlas division navigator">
                   <div class="galaxy-division-nav-current">
                     <span>Current division</span>
@@ -408,6 +415,12 @@
               </div>
               <p class="galaxy-atlas-status" data-galaxy-atlas-status role="status" aria-live="polite" aria-atomic="true"></p>
               <p class="galaxy-director-motion-note" id="galaxy-director-motion-note" data-galaxy-director-motion-note hidden>Director is disabled because reduced motion is active. Manual atlas controls remain available.</p>
+              <div class="galaxy-state-rail" aria-label="Current public aggregate state">
+                <div><strong data-fact="neurons">640</strong><span>mapped</span></div>
+                <div><strong data-fact="twitches">—</strong><span>live Twitches</span></div>
+                <div><strong data-fact="pmOnly">—</strong><span>PM-only</span></div>
+                <div><strong data-galaxy-snapshot-state>pending</strong><span>capture</span></div>
+              </div>
               <div class="inspector-topline"><span data-galaxy-index>Division A / 16</span><span data-lens-code>BODY</span></div>
               <p class="eyebrow" data-galaxy-code>A · ROUTE</p>
               <h3 data-galaxy-title>Route, hold, and activation budget</h3>
@@ -777,6 +790,6 @@
     <noscript>
       <div class="noscript-banner">Source freshness, motion controls, and signed-index verification need JavaScript. All navigation remains available; no package or live-source claim is authorized by this fallback.</div>
     </noscript>
-    <script type="module" src="/hub-assets/hub.js?v=galaxy-stark-v14"></script>
+    <script type="module" src="/hub-assets/hub.js?v=galaxy-stark-v15"></script>
   </body>
 </html>

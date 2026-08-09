@@ -464,7 +464,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v13" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v14" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -504,9 +504,10 @@ requireMatch(js, /showDivision\(index[\s\S]*data-galaxy-division-name[\s\S]*titl
 requireMatch(galaxyCore, /export function galaxyOverviewCamera\([\s\S]*rotationX: -0\.25,[\s\S]*rotationY: -0\.64,[\s\S]*narrow \? 0\.92[\s\S]*panY: clamp/, "pure viewport-aware overview camera");
 requireMatch(js, /resetCamera\(manual = true\)[\s\S]*galaxyOverviewCamera\(\{ width: this\.width, height: this\.height \}\)[\s\S]*this\.targetPanY = overview\.panY/, "overview camera reset integration");
 requireMatch(js, /const formatGalaxyDivisionChoice = \(division\) => `\$\{division\.code\} · \$\{titleCase\(division\.name\)\}`;/, "exact division navigator formatter");
+requireMatch(js, /const formatGalaxyDivisionSelectChoice = \(division\) => `Division \$\{division\.code\}`;/, "compact unclipped division select formatter");
 requireMatch(js, /wireDivisionNavigator\(\)[\s\S]*data-galaxy-division-nav-select[\s\S]*addEventListener\("change"[\s\S]*findIndex\([\s\S]*this\.focusDivision\(index\)/, "native division navigator selection path");
-requireMatch(js, /buildDivisionNavigator\(\)[\s\S]*this\.divisions\.length === 16[\s\S]*String\.fromCharCode\(65 \+ index\)[\s\S]*option\.textContent = formatGalaxyDivisionChoice\(division\)[\s\S]*select\.replaceChildren\(\.\.\.options\)[\s\S]*aria-disabled/, "facts-gated sixteen-option division navigator");
-requireMatch(js, /syncDivisionNavigator\(index\)[\s\S]*data-galaxy-division-nav-current[\s\S]*select\.value = division\.code[\s\S]*option\.selected = option\.value === division\.code/, "division navigator current and selected-option sync");
+requireMatch(js, /buildDivisionNavigator\(\)[\s\S]*this\.divisions\.length === 16[\s\S]*String\.fromCharCode\(65 \+ index\)[\s\S]*option\.textContent = formatGalaxyDivisionSelectChoice\(division\)[\s\S]*option\.title = formatGalaxyDivisionChoice\(division\)[\s\S]*select\.replaceChildren\(\.\.\.options\)[\s\S]*aria-disabled/, "facts-gated sixteen-option division navigator");
+requireMatch(js, /syncDivisionNavigator\(index\)[\s\S]*data-galaxy-division-nav-current[\s\S]*Jump to division\. Current:[\s\S]*select\.value = division\.code[\s\S]*option\.selected = option\.value === division\.code/, "division navigator current and selected-option sync");
 requireMatch(js, /showDivision\(index, updateButtons = true[\s\S]*if \(updateButtons\)[\s\S]*this\.syncDivisionNavigator\(index\)/, "canvas index and Director division sync path");
 requireMatch(css, /\.galaxy-division-nav-current strong\s*\{[^}]*overflow: visible;[^}]*font: 800 1rem\/1\.4[^}]*overflow-wrap: break-word;[^}]*text-overflow: clip;[^}]*white-space: normal;/, "unclipped wrapping current division label");
 requireMatch(css, /\.galaxy-division-name\s*\{[^}]*overflow: visible;[^}]*font: 800 1\.08rem\/1\.35[^}]*overflow-wrap: break-word;[^}]*text-overflow: clip;[^}]*white-space: normal;/, "unclipped full selected stage division label");
@@ -625,7 +626,7 @@ requireMatch(css, /@media \(min-width: 42\.01rem\) and \(max-width: 62rem\) and 
 requireMatch(css, /\.galaxy-stage-bottom\s*{[\s\S]*right:\s*1rem;[\s\S]*bottom:\s*1rem;[\s\S]*left:\s*1rem;[\s\S]*\.galaxy-stage-rail\s*{[\s\S]*grid-template-columns:/, "collision-proof shared atlas bottom rail");
 requireMatch(css, /@media \(max-width: 20rem\)[\s\S]*\.galaxy-demo-proof\s*{[\s\S]*top:\s*4rem;/, "200-percent mobile overlay stack");
 requireMatch(css, /\.galaxy-atlas-toolbar\s*{[\s\S]*position:\s*sticky;[\s\S]*\.galaxy-atlas-toolbar \[data-galaxy-director\]\s*{[\s\S]*grid-column:\s*auto;/, "compact persistent Director, Reset, and Fit toolbar");
-requireMatch(js, /const GALAXY_OVERVIEW_LABEL_LIMIT = 5;[\s\S]*const fontSize = active \? 19 : expansive \? 17 : 16;[\s\S]*selected \? 18 : 16[\s\S]*800 17px/, "semantic canvas label count and typography floors");
+requireMatch(js, /const GALAXY_OVERVIEW_LABEL_LIMIT = 1;[\s\S]*const fontSize = active \? 19 : expansive \? 17 : 16;[\s\S]*selected \? 18 : 16[\s\S]*800 17px/, "single-focus overview label and typography floors");
 requireMatch(js, /glideStickyBox\(cacheKey, point, width, height, occupied\)[\s\S]*never re-enters[\s\S]*clamp\(pushX, -2, 2\)[\s\S]*occupied\.push\(placed\)/, "plate object permanence: sticky plates glide, never re-ladder");
 requireMatch(js, /this\.glideStickyBox\(`d\$\{index\}`, point, width, height, occupied\)\s*\|\| this\.placeSafeCanvasLabel/, "division plates take the glide path before any ladder");
 requireMatch(js, /this\.glideStickyBox\(`f\$\{familyGeometryIndex\}`, point, width, height, occupied\)\s*\|\| this\.placeSafeCanvasLabel/, "family plates take the glide path before any ladder");

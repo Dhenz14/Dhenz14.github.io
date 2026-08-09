@@ -389,7 +389,8 @@ requireMatch(html, /id="galaxy-director-motion-note"[^>]+data-galaxy-director-mo
 requireMatch(html, /Gold means verified mastered Twitch\.[\s\S]*Public atlas points stay neutral because private per-neuron status remains local\./, "plain gold Twitch legend and public privacy boundary");
 requireMatch(html, /data-galaxy-division-name[^>]+aria-live="polite"[^>]+aria-atomic="true"/, "accessible full selected division stage label");
 requireMatch(html, /16 DIVISIONS[\s\S]*64 FAMILIES[\s\S]*640 NEURONS/, "projector-readable atlas hierarchy key");
-requireMatch(html, /galaxy-mark-key[\s\S]*Point[\s\S]*neuron[\s\S]*Hub[\s\S]*family[\s\S]*Halo[\s\S]*division[\s\S]*Line[\s\S]*authored membership/, "explicit atlas visual grammar");
+requireMatch(html, /galaxy-mark-key[\s\S]*Body[\s\S]*Halo[\s\S]*division[\s\S]*Hub[\s\S]*family[\s\S]*Point[\s\S]*neuron[\s\S]*Route[\s\S]*authored membership/, "explicit atlas visual grammar");
+requireMatch(html, /galaxy-mobile-context[\s\S]*BODY[\s\S]*DIVISION[\s\S]*FAMILY[\s\S]*NEURON[\s\S]*data-fact="twitches"[\s\S]*LIVE/, "mobile hierarchy and live-state context");
 requireMatch(html, /galaxy-state-rail[\s\S]*data-fact="neurons"[\s\S]*data-fact="twitches"[\s\S]*data-fact="pmOnly"[\s\S]*data-galaxy-snapshot-state/, "aggregate public command state rail");
 requireMatch(html, /class="inspector-topline"[\s\S]*class="galaxy-family-list"[\s\S]*<details class="galaxy-gold-legend"[\s\S]*<summary>[\s\S]*Gold means verified mastered Twitch\.[\s\S]*<\/details>/, "selected context before collapsible public truth disclosure");
 requireMatch(html, /Current authorized beta tester package/, "tester authorization label");
@@ -468,7 +469,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v15" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v16" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -633,13 +634,16 @@ requireMatch(css, /@media \(max-width: 20rem\)[\s\S]*\.galaxy-demo-proof\s*{[\s\
 requireMatch(css, /\.galaxy-atlas-toolbar\s*{[\s\S]*position:\s*sticky;[\s\S]*\.galaxy-atlas-toolbar \[data-galaxy-director\]\s*{[\s\S]*grid-column:\s*auto;/, "compact persistent Director, Reset, and Fit toolbar");
 requireMatch(js, /const GALAXY_OVERVIEW_LABEL_LIMIT = 1;[\s\S]*const fontSize = active \? 19 : 17;[\s\S]*selected \? 18 : 16[\s\S]*800 17px/, "single-focus overview label and typography floors");
 requireMatch(js, /context\.globalAlpha = Math\.min\(this\.width, this\.height\) < 640 \? 0\.38 : 0\.28;/, "subordinate warm-field exposure");
-requireMatch(js, /stageFocusSummary = `Focus · \$\{division\.code\} · \$\{division\.neuronCount\} neurons · \$\{division\.families\.length\} families`/, "non-duplicative atlas focus summary");
+requireMatch(js, /stageFocusSummary = this\.width < 420[\s\S]*FOCUS · \$\{division\.code\} · \$\{division\.neuronCount\}N · \$\{division\.families\.length\}F[\s\S]*Focus · \$\{division\.code\} · \$\{division\.neuronCount\} neurons · \$\{division\.families\.length\} families/, "responsive non-duplicative atlas focus summary");
 requireMatch(js, /const expansive = active && hovered && !this\.fullAtlas && semanticAnchor/, "full-atlas canvas label stays compact");
 requireMatch(js, /if \(!selected && this\.zoom < 1\.55\) return false;/, "semantic family-label zoom gate");
 requireMatch(js, /this\.fullAtlas && this\.width >= 620 && this\.zoom < 1\.5[\s\S]*\? this\.divisions\.length/, "all-division desktop atlas orientation");
 requireMatch(css, /\.galaxy-director-motion-note\s*\{[^}]*position: absolute;[^}]*width: 1px;[^}]*clip-path: inset\(50%\);[^}]*white-space: nowrap;/, "reduced-motion explanation remains accessible without dominating the inspector");
-requireMatch(css, /\.galaxy-mark-key\s*\{[^}]*font: 700 0\.875rem\/1\.25/, "projector-readable atlas visual key");
-requireMatch(css, /\.galaxy-atlas-toolbar \[data-galaxy-fit-selected\]\s*\{[^}]*linear-gradient[\s\S]*\.galaxy-state-rail\s*\{[^}]*flex: 0 0 auto;[^}]*grid-template-columns: repeat\(4,/, "dominant focus action and non-collapsing command state rail");
+requireMatch(css, /\.galaxy-mark-key\s*\{[^}]*font: 760 0\.875rem\/1\.3/, "projector-readable atlas visual key");
+requireMatch(js, /galaxyMembershipBundleGeometry[\s\S]*familyMembershipBundle\([\s\S]*quadraticCurveTo\(bundle\.sourceControl[\s\S]*quadraticCurveTo\(bundle\.trunkControl[\s\S]*bundle\.junction/, "deterministic authored membership route bundling");
+requireMatch(css, /\.galaxy-depth,[\s\S]*\.map-readout span\s*\{[^}]*color:\s*#bdccde;[\s\S]*\.galaxy-hint\s*\{[^}]*color:\s*#b8c8da;[\s\S]*\.galaxy-state-rail span\s*\{[^}]*color:\s*#b7c6d8;/, "projector-grade HUD microcopy contrast");
+requireMatch(css, /\.galaxy-atlas-toolbar \[data-galaxy-fit-selected\]\s*\{[^}]*linear-gradient[\s\S]*\.galaxy-state-rail\s*\{[^}]*flex: 0 0 auto;[^}]*grid-template-columns: minmax\(0, 0\.9fr\)[^;]*minmax\(0, 1\.35fr\)/, "dominant focus action and non-collapsing command state rail");
+requireMatch(css, /\.galaxy-workbench\.is-full-atlas \.galaxy-depth\s*\{[^}]*display:\s*grid;[\s\S]*\.galaxy-workbench\.is-full-atlas \.galaxy-mobile-context\s*\{[^}]*display:\s*grid;/, "mobile full-atlas hierarchy and live-state visibility");
 requireMatch(js, /glideStickyBox\(cacheKey, point, width, height, occupied\)[\s\S]*never re-enters[\s\S]*clamp\(pushX, -2, 2\)[\s\S]*occupied\.push\(placed\)/, "plate object permanence: sticky plates glide, never re-ladder");
 requireMatch(js, /this\.glideStickyBox\(`d\$\{index\}`, point, width, height, occupied\)\s*\|\| this\.placeSafeCanvasLabel/, "division plates take the glide path before any ladder");
 requireMatch(js, /this\.glideStickyBox\(`f\$\{familyGeometryIndex\}`, point, width, height, occupied\)\s*\|\| this\.placeSafeCanvasLabel/, "family plates take the glide path before any ladder");

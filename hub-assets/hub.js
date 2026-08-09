@@ -12,6 +12,7 @@ import {
   galaxyOverviewCamera,
   galaxyGestureCamera,
   galaxyGestureMetrics,
+  galaxyMembershipBundleGeometry,
   galaxyPointerPolicy,
   galaxyRenderState,
   galaxyZoomAtPointer,
@@ -22,11 +23,11 @@ import {
   sourceSnapshotPresentation,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v15";
+} from "./galaxy-core.mjs?v=galaxy-stark-v16";
 import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v15";
+} from "./ide-release-core.mjs?v=galaxy-stark-v16";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 1;
 
@@ -2012,7 +2013,9 @@ class GalaxyAtlas {
     setText("[data-galaxy-code]", `${division.code} · CONSTELLATION`);
     setText("[data-galaxy-title]", titleCase(division.name));
     const divisionDisplayName = `Division ${division.code} · ${titleCase(division.name)}`;
-    const stageFocusSummary = `Focus · ${division.code} · ${division.neuronCount} neurons · ${division.families.length} families`;
+    const stageFocusSummary = this.width < 420
+      ? `FOCUS · ${division.code} · ${division.neuronCount}N · ${division.families.length}F`
+      : `Focus · ${division.code} · ${division.neuronCount} neurons · ${division.families.length} families`;
     setText("[data-galaxy-fit-selected]", `Dive into Division ${division.code}`);
     setText("[data-galaxy-division-name]", stageFocusSummary);
     const stageDivisionName = $("[data-galaxy-division-name]");
@@ -2710,16 +2713,31 @@ class GalaxyAtlas {
     return lists;
   }
 
+  familyMembershipBundle(familyGeometryIndex, lists = this.ensureFamilyNeuronLists()) {
+    const family = this.projectedFamilies[familyGeometryIndex];
+    const division = family ? this.projectedDivisions[family.divisionIndex] : null;
+    const memberIndexes = lists[familyGeometryIndex];
+    if (!family || !division || !memberIndexes?.length) return null;
+    const members = memberIndexes.map((index) => this.projectedNeurons[index]).filter(Boolean);
+    return galaxyMembershipBundleGeometry({
+      division,
+      family,
+      members,
+      lane: (family.familyIndex ?? 1.5) - 1.5,
+    });
+  }
+
   drawNeuralWeb(context, profile) {
-    // True-hierarchy web only: division→family spokes and family→neuron
-    // filaments come straight from the authored public geometry. No edge is
-    // invented; the public snapshot carries structure, not runtime links.
+    // True-hierarchy web only: exact authored division→family and
+    // family→neuron membership is routed through deterministic visual trunks.
+    // No edge or position is invented; bundling only keeps the authored
+    // hierarchy readable where many memberships share the same screen space.
     // The web is static per camera pose, so it renders into an offscreen
     // layer that idle frames blit in one call.
     const cameraKey = [
       this.rotationX.toFixed(4), this.rotationY.toFixed(4), this.zoom.toFixed(4),
       this.panX.toFixed(1), this.panY.toFixed(1),
-      this.activeDivision, this.hoverDivision, this.lens,
+      this.activeDivision, this.hoverDivision, this.activeFamily, this.hoverFamily, this.lens,
       this.width, this.height,
     ].join(":");
     if (!this.webLayer || this.webLayerKey !== cameraKey) {
@@ -2735,35 +2753,52 @@ class GalaxyAtlas {
       layer.setTransform(1, 0, 0, 1, 0, 0);
       layer.clearRect(0, 0, this.webLayer.width, this.webLayer.height);
       layer.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-      for (let division = 0; division < this.projectedDivisions.length; division += 1) {
-        const divisionPoint = this.projectedDivisions[division];
-        const color = this.paletteColor(division);
-        const active = division === this.activeDivision || division === this.hoverDivision;
-        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp((active ? 0.5 : 0.065) * profile.links, 0, 0.56)})`;
-        layer.lineWidth = active ? 1.08 : 0.72;
+      layer.lineCap = "round";
+      layer.lineJoin = "round";
+      const chains = this.ensureFamilyNeuronLists();
+      const focusedFamily = this.hoverFamily >= 0 ? this.hoverFamily : this.activeFamily;
+      const compactOverview = this.width < 520 && focusedFamily < 0 && this.zoom < 1.5;
+      for (let family = 0; family < this.projectedFamilies.length; family += 1) {
+        const familyPoint = this.projectedFamilies[family];
+        const divisionPoint = this.projectedDivisions[familyPoint.divisionIndex];
+        const bundle = this.familyMembershipBundle(family, chains);
+        if (!divisionPoint || !bundle) continue;
+        const color = this.paletteColor(familyPoint.divisionIndex);
+        const selected = family === this.activeFamily || family === this.hoverFamily;
+        const activeDivision = familyPoint.divisionIndex === this.activeDivision
+          || familyPoint.divisionIndex === this.hoverDivision;
+        const routeAlpha = selected ? 0.62 : activeDivision ? (focusedFamily >= 0 ? 0.095 : compactOverview ? 0.11 : 0.2) : 0.038;
+        const branchAlpha = selected ? 0.46 : activeDivision ? (focusedFamily >= 0 ? 0.028 : compactOverview ? 0.03 : 0.065) : 0.014;
+        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(routeAlpha * profile.links, 0, 0.68)})`;
+        layer.lineWidth = selected ? 1.28 : activeDivision ? 0.86 : 0.54;
         layer.beginPath();
-        this.projectedFamilies.forEach((family) => {
-          if (family.divisionIndex !== division) return;
-          layer.moveTo(divisionPoint.x, divisionPoint.y);
-          layer.lineTo(family.x, family.y);
-        });
+        layer.moveTo(divisionPoint.x, divisionPoint.y);
+        layer.quadraticCurveTo(bundle.sourceControl.x, bundle.sourceControl.y, familyPoint.x, familyPoint.y);
+        layer.moveTo(familyPoint.x, familyPoint.y);
+        layer.quadraticCurveTo(bundle.trunkControl.x, bundle.trunkControl.y, bundle.junction.x, bundle.junction.y);
         layer.stroke();
-        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp((active ? 0.3 : 0.035) * profile.links, 0, 0.42)})`;
-        layer.lineWidth = active ? 0.78 : 0.56;
+
+        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(branchAlpha * profile.links, 0, 0.5)})`;
+        layer.lineWidth = selected ? 0.92 : activeDivision ? 0.62 : 0.34;
         layer.beginPath();
-        this.projectedNeurons.forEach((neuron) => {
-          if (neuron.divisionIndex !== division) return;
-          const family = this.projectedFamilies[neuron.familyGeometryIndex];
-          if (!family) return;
-          layer.moveTo(family.x, family.y);
+        chains[family].forEach((neuronIndex) => {
+          const neuron = this.projectedNeurons[neuronIndex];
+          if (!neuron) return;
+          layer.moveTo(bundle.junction.x, bundle.junction.y);
           layer.lineTo(neuron.x, neuron.y);
         });
         layer.stroke();
+
+        if (activeDivision) {
+          layer.fillStyle = `rgba(${color.join(",")}, ${selected ? 0.82 : focusedFamily >= 0 ? 0.2 : compactOverview ? 0.22 : 0.34})`;
+          layer.beginPath();
+          layer.arc(bundle.junction.x, bundle.junction.y, selected ? 1.75 : 1.1, 0, Math.PI * 2);
+          layer.fill();
+        }
       }
       // Sibling chains: consecutive neurons within each family are true
-      // roster relations; the faint chain keeps tight outlying clusters
-      // reading as tissue even when their family anchor sits far away.
-      const chains = this.ensureFamilyNeuronLists();
+      // roster relations. They appear only at selected/deep semantic focus so
+      // the overview reads as a body rather than a crossing-heavy wireframe.
       layer.lineWidth = 0.4;
       for (let family = 0; family < chains.length; family += 1) {
         const members = chains[family];
@@ -2771,9 +2806,11 @@ class GalaxyAtlas {
         const familyPoint = this.projectedFamilies[family];
         if (!familyPoint) continue;
         const color = this.paletteColor(familyPoint.divisionIndex);
+        const selected = family === this.activeFamily || family === this.hoverFamily;
         const active = familyPoint.divisionIndex === this.activeDivision || familyPoint.divisionIndex === this.hoverDivision;
-        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp((active ? 0.22 : 0.03) * profile.links, 0, 0.34)})`;
-        layer.lineWidth = active ? 0.62 : 0.34;
+        if (!selected && !(active && this.zoom > 1.55)) continue;
+        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp((selected ? 0.24 : 0.075) * profile.links, 0, 0.34)})`;
+        layer.lineWidth = selected ? 0.62 : 0.38;
         layer.beginPath();
         for (let position = 1; position < members.length; position += 1) {
           const previous = this.projectedNeurons[members[position - 1]];
@@ -2809,18 +2846,27 @@ class GalaxyAtlas {
       const divisionPoint = this.projectedDivisions[familyPoint.divisionIndex];
       const members = lists[family];
       if (!divisionPoint || !members || !members.length) continue;
+      const bundle = this.familyMembershipBundle(family, lists);
+      if (!bundle) continue;
       const target = this.projectedNeurons[members[(cycle + Math.floor(seedA * 97)) % members.length]];
       if (!target) continue;
       const color = this.paletteColor(familyPoint.divisionIndex);
-      const along = (s) => (s < 0.45
-        ? {
-          x: divisionPoint.x + (familyPoint.x - divisionPoint.x) * (s / 0.45),
-          y: divisionPoint.y + (familyPoint.y - divisionPoint.y) * (s / 0.45),
-        }
-        : {
-          x: familyPoint.x + (target.x - familyPoint.x) * ((s - 0.45) / 0.55),
-          y: familyPoint.y + (target.y - familyPoint.y) * ((s - 0.45) / 0.55),
-        });
+      const quadraticPoint = (start, control, end, progress) => {
+        const inverse = 1 - progress;
+        return {
+          x: inverse * inverse * start.x + 2 * inverse * progress * control.x + progress * progress * end.x,
+          y: inverse * inverse * start.y + 2 * inverse * progress * control.y + progress * progress * end.y,
+        };
+      };
+      const along = (s) => {
+        if (s < 0.34) return quadraticPoint(divisionPoint, bundle.sourceControl, familyPoint, s / 0.34);
+        if (s < 0.7) return quadraticPoint(familyPoint, bundle.trunkControl, bundle.junction, (s - 0.34) / 0.36);
+        const branchProgress = (s - 0.7) / 0.3;
+        return {
+          x: bundle.junction.x + (target.x - bundle.junction.x) * branchProgress,
+          y: bundle.junction.y + (target.y - bundle.junction.y) * branchProgress,
+        };
+      };
       const progress = local / 1500;
       const eased = progress * progress * (3 - 2 * progress);
       const fade = Math.sin(Math.PI * progress);
@@ -3064,21 +3110,25 @@ class GalaxyAtlas {
         const divisionPoint = this.projectedDivisions[family.divisionIndex];
         const color = this.paletteColor(family.divisionIndex);
         const selected = familyGeometryIndex === this.activeFamily || familyGeometryIndex === this.hoverFamily;
-        context.strokeStyle = `rgba(${color.join(",")}, ${(selected ? 0.58 : 0.28) * profile.families})`;
-        context.lineWidth = selected ? 1.25 : 0.75;
+        const familyFocused = this.activeFamily >= 0 || this.hoverFamily >= 0;
+        const supporting = familyFocused && !selected;
+        const bundle = this.familyMembershipBundle(familyGeometryIndex);
+        context.strokeStyle = `rgba(${color.join(",")}, ${(selected ? 0.58 : supporting ? 0.075 : 0.2) * profile.families})`;
+        context.lineWidth = selected ? 1.25 : supporting ? 0.5 : 0.68;
         context.beginPath();
         context.moveTo(divisionPoint.x, divisionPoint.y);
-        context.lineTo(family.x, family.y);
+        if (bundle) context.quadraticCurveTo(bundle.sourceControl.x, bundle.sourceControl.y, family.x, family.y);
+        else context.lineTo(family.x, family.y);
         context.stroke();
         const radius = clamp((selected ? 17 : 11) * family.perspective * Math.sqrt(this.zoom) * profile.families, 7, selected ? 34 : 22);
         const familyHalo = context.createRadialGradient(family.x, family.y, 0, family.x, family.y, radius);
-        familyHalo.addColorStop(0, `rgba(${color.join(",")}, ${selected ? 0.31 : 0.15})`);
+        familyHalo.addColorStop(0, `rgba(${color.join(",")}, ${selected ? 0.31 : supporting ? 0.055 : 0.12})`);
         familyHalo.addColorStop(1, `rgba(${color.join(",")}, 0)`);
         context.fillStyle = familyHalo;
         context.beginPath();
         context.arc(family.x, family.y, radius, 0, Math.PI * 2);
         context.fill();
-        context.strokeStyle = `rgba(${color.join(",")}, ${selected ? 0.7 : 0.3})`;
+        context.strokeStyle = `rgba(${color.join(",")}, ${selected ? 0.7 : supporting ? 0.14 : 0.25})`;
         context.beginPath();
         context.arc(family.x, family.y, radius * 0.58, 0, Math.PI * 2);
         context.stroke();
@@ -3093,14 +3143,15 @@ class GalaxyAtlas {
         const selectedFamily = this.hoverFamily >= 0 ? this.hoverFamily : this.activeFamily;
         const activeDivision = point.divisionIndex === this.activeDivision || point.divisionIndex === this.hoverDivision;
         const active = activeDivision && (selectedFamily < 0 || point.familyGeometryIndex === selectedFamily);
+        const compactOverview = this.width < 520 && selectedFamily < 0 && this.zoom < 1.5;
         const depth = clamp((point.z + 2.7) / 5.4, 0, 1);
         const shimmer = this.paused ? 0.86 : 0.78 + Math.sin(time * 0.0015 + point.phase) * 0.16;
-        const alpha = clamp((active ? 0.97 : 0.2 + depth * 0.3) * shimmer * (1 + globalBeat * 0.16) * profile.neurons, 0.14, 1);
+        const alpha = clamp((active ? compactOverview ? 0.48 : 0.97 : 0.2 + depth * 0.3) * shimmer * (1 + globalBeat * 0.16) * profile.neurons, 0.14, 1);
         const depthScale = 0.72 + depth * 0.72;
-        const radius = clamp((active ? 2.4 : 1.38) * point.perspective * Math.sqrt(this.zoom) * Math.sqrt(profile.neurons) * depthScale, 0.9, 4.8) * (0.8 + 0.2 * exposure);
+        const radius = clamp((active ? compactOverview ? 1.32 : 2.4 : 1.38) * point.perspective * Math.sqrt(this.zoom) * Math.sqrt(profile.neurons) * depthScale, 0.78, 4.8) * (0.8 + 0.2 * exposure);
         context.fillStyle = `rgba(${color.join(",")}, ${alpha * (active ? 0.12 : 0.04) * exposure * (1 - globalBeat * (0.12 + 0.25 * (1 - exposure)))})`;
         context.beginPath();
-        context.arc(point.x, point.y, radius * (active ? 2.65 : 1.85) * (0.82 + 0.18 * exposure), 0, Math.PI * 2);
+        context.arc(point.x, point.y, radius * (active ? compactOverview ? 1.5 : 2.65 : 1.85) * (0.82 + 0.18 * exposure), 0, Math.PI * 2);
         context.fill();
         context.fillStyle = `rgba(${color.join(",")}, ${alpha * (1 - globalBeat * (0.1 + 0.22 * (1 - exposure)))})`;
         context.beginPath();
@@ -3369,6 +3420,8 @@ class GalaxyAtlas {
     const family = this.divisions[geometry.divisionIndex]?.families?.[geometry.familyIndex];
     if (!family) return false;
     const selected = familyGeometryIndex === this.activeFamily || familyGeometryIndex === this.hoverFamily;
+    const focusedFamily = this.hoverFamily >= 0 ? this.hoverFamily : this.activeFamily;
+    if (focusedFamily >= 0 && familyGeometryIndex !== focusedFamily) return false;
     if (!selected && this.zoom < 1.55) return false;
     const familyName = titleCase(family.name);
     const nameLimit = selected ? 64 : this.width < 520 ? 14 : 20;
@@ -3378,8 +3431,12 @@ class GalaxyAtlas {
     context.font = `${selected ? 800 : 700} ${selected ? 18 : 16}px "SFMono-Regular", "Cascadia Code", Consolas, monospace`;
     const width = context.measureText(label).width + (selected ? 16 : 10);
     const height = selected ? 35 : 31;
+    const desiredX = selected
+      ? (point.x >= this.width * 0.46 ? point.x - width - 44 : point.x + 44)
+      : point.x - width / 2;
+    const desiredY = selected ? point.y - height / 2 : point.y + 10;
     const box = this.glideStickyBox(`f${familyGeometryIndex}`, point, width, height, occupied)
-      || this.placeSafeCanvasLabel(width, height, point.x - width / 2, point.y + 10, occupied, selected || sticky);
+      || this.placeSafeCanvasLabel(width, height, desiredX, desiredY, occupied, selected || sticky);
     if (!box) {
       context.restore();
       return false;
@@ -3398,8 +3455,11 @@ class GalaxyAtlas {
       context.strokeStyle = `rgba(${color.join(",")}, 0.34)`;
       context.lineWidth = 0.65;
       context.beginPath();
-      context.moveTo(point.x, point.y + 3);
-      context.lineTo(clamp(point.x, box.x + 6, box.x + width - 6), box.y);
+      context.moveTo(point.x, point.y);
+      context.lineTo(
+        point.x < box.x ? box.x : point.x > box.x + width ? box.x + width : clamp(point.x, box.x + 6, box.x + width - 6),
+        point.y < box.y ? box.y : point.y > box.y + height ? box.y + height : box.y + height / 2,
+      );
       context.stroke();
       context.shadowColor = `rgba(${color.join(",")}, 0.2)`;
       context.shadowBlur = 10;

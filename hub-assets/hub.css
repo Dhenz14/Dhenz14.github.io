@@ -2828,6 +2828,11 @@ h3 {
   background: linear-gradient(90deg, var(--cyan), transparent);
 }
 
+.galaxy-depth b {
+  color: var(--cyan-bright);
+  font: inherit;
+}
+
 .galaxy-mark-key {
   position: absolute;
   z-index: 8;
@@ -2839,12 +2844,12 @@ h3 {
   gap: 0.45rem 0.85rem;
   max-width: calc(100% - 8rem);
   padding: 0.55rem 0.7rem;
-  border: 1px solid rgba(169, 195, 224, 0.15);
+  border: 1px solid rgba(169, 205, 229, 0.28);
   border-radius: 0.55rem;
-  color: #aebdd0;
-  background: rgba(3, 8, 15, 0.8);
-  box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.2);
-  font: 700 0.875rem/1.25 var(--mono);
+  color: #c5d4e5;
+  background: rgba(3, 8, 15, 0.92);
+  box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.36), inset 0 0 1.5rem rgba(104, 228, 255, 0.025);
+  font: 760 0.875rem/1.3 var(--mono);
   pointer-events: none;
   backdrop-filter: blur(12px);
 }
@@ -2857,7 +2862,13 @@ h3 {
 }
 
 .galaxy-mark-key b {
-  color: #e4f8ff;
+  color: #f0fbff;
+}
+
+.galaxy-mark-key em {
+  color: var(--cyan);
+  font-style: normal;
+  font-weight: 850;
 }
 
 .galaxy-mark-key i {
@@ -2899,10 +2910,29 @@ h3 {
 }
 
 .galaxy-mark-key .mark-link {
-  width: 1rem;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(104, 228, 255, 0.95), rgba(104, 228, 255, 0.2));
+  position: relative;
+  width: 1.2rem;
+  height: 0.75rem;
+  background: linear-gradient(90deg, rgba(104, 228, 255, 0.96) 0 54%, transparent 54%);
+  background-position: 0 50%;
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
 }
+
+.galaxy-mark-key .mark-link::before,
+.galaxy-mark-key .mark-link::after {
+  position: absolute;
+  top: 50%;
+  left: 52%;
+  width: 0.58rem;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(104, 228, 255, 0.9), rgba(104, 228, 255, 0.22));
+  content: "";
+  transform-origin: 0 50%;
+}
+
+.galaxy-mark-key .mark-link::before { transform: rotate(-28deg); }
+.galaxy-mark-key .mark-link::after { transform: rotate(28deg); }
 
 .galaxy-hint {
   position: absolute;
@@ -6650,7 +6680,7 @@ body.galaxy-fullscreen-open {
 .galaxy-state-rail {
   display: grid;
   flex: 0 0 auto;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 1.35fr);
   gap: 1px;
   margin: 0 0 0.9rem;
   overflow: hidden;
@@ -6671,7 +6701,7 @@ body.galaxy-fullscreen-open {
   min-width: 0;
   overflow: hidden;
   color: #e7fbff;
-  font: 850 1.02rem/1.15 var(--mono);
+  font: 850 1.1rem/1.15 var(--mono);
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
@@ -6679,13 +6709,73 @@ body.galaxy-fullscreen-open {
 
 .galaxy-state-rail span {
   color: #8fa2ba;
-  font: 750 0.72rem/1.2 var(--mono);
+  font: 750 0.78rem/1.2 var(--mono);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .galaxy-state-rail div:last-child strong {
-  font-size: 0.76rem;
+  font-size: 0.8rem;
+  letter-spacing: -0.025em;
+}
+
+.galaxy-mobile-context {
+  display: none;
+}
+
+/* Projector-grade HUD contrast: metadata stays subordinate, but never asks
+   the audience to squint through glow, compression, or a dim display. */
+.galaxy-depth,
+.map-readout span {
+  color: #bdccde;
+  font-weight: 800;
+  text-shadow: 0 1px 0 #02060b, 0 0 0.8rem rgba(104, 228, 255, 0.16);
+}
+
+.galaxy-depth {
+  font-size: 0.95rem;
+}
+
+.galaxy-mark-key {
+  gap: 0.4rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+.map-readout {
+  border: 1px solid rgba(169, 205, 229, 0.24);
+  border-left: 2px solid var(--cyan);
+  border-radius: 0.55rem;
+  background: rgba(3, 8, 15, 0.94);
+  box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.36), inset 0 0 1.5rem rgba(104, 228, 255, 0.025);
+  backdrop-filter: blur(12px);
+}
+
+.map-readout strong {
+  color: #f0fbff;
+  font-weight: 820;
+  letter-spacing: 0.015em;
+}
+
+.galaxy-hint {
+  color: #b8c8da;
+  font-weight: 720;
+  line-height: 1.35;
+  text-shadow: 0 1px 0 #02060b;
+}
+
+.galaxy-hint b {
+  color: #dce8f5;
+  font-weight: 720;
+}
+
+.galaxy-focus small,
+.galaxy-lens-brief p {
+  color: #bdcadb;
+}
+
+.galaxy-state-rail span {
+  color: #b7c6d8;
+  font-weight: 800;
 }
 
 .galaxy-gold-legend {
@@ -7132,7 +7222,7 @@ body.galaxy-fullscreen-open {
   }
 
   .galaxy-division-name {
-    white-space: normal;
+    white-space: nowrap;
   }
 
   .galaxy-hint i,
@@ -7223,7 +7313,7 @@ body.galaxy-fullscreen-open {
     padding: 0.35rem 0.45rem;
     font-size: 0.875rem;
     line-height: 1.25;
-    white-space: normal;
+    white-space: nowrap;
   }
 
   .galaxy-stage-rail {
@@ -7239,13 +7329,19 @@ body.galaxy-fullscreen-open {
     padding: 0.3rem 0.45rem;
   }
 
-  .galaxy-stage-bottom .map-readout span,
   .galaxy-stage-bottom .galaxy-hint {
     display: none;
   }
 
+  .galaxy-stage-bottom .map-readout span {
+    display: inline;
+    flex: 0 0 auto;
+    margin-right: 0.5rem;
+    font-size: 0.7rem;
+  }
+
   .galaxy-stage-bottom .map-readout strong {
-    width: 100%;
+    width: auto;
     margin: 0;
     font-size: 0.875rem;
   }
@@ -7303,6 +7399,59 @@ body.galaxy-fullscreen-open {
 
   .galaxy-state-rail {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .galaxy-workbench.is-full-atlas .galaxy-depth {
+    top: 0.5rem;
+    left: 0.55rem;
+    display: grid;
+    gap: 0.12rem;
+    width: 7.7rem;
+    padding: 0.42rem 0.5rem;
+    border: 1px solid rgba(169, 205, 229, 0.24);
+    border-radius: 0.5rem;
+    color: #d1deec;
+    background: rgba(3, 8, 15, 0.9);
+    box-shadow: 0 0.65rem 1.6rem rgba(0, 0, 0, 0.34);
+    font-size: 0.72rem;
+    line-height: 1.18;
+    letter-spacing: 0.055em;
+    backdrop-filter: blur(10px);
+  }
+
+  .galaxy-workbench.is-full-atlas .galaxy-depth i {
+    display: none;
+  }
+
+  .galaxy-workbench.is-full-atlas .galaxy-mobile-context {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.55rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid rgba(104, 228, 255, 0.28);
+    border-radius: 0.55rem;
+    color: #c8d6e6;
+    background: rgba(5, 11, 20, 0.96);
+    font: 800 0.7rem/1.25 var(--mono);
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+  }
+
+  .galaxy-mobile-context i {
+    color: var(--cyan);
+    font-style: normal;
+  }
+
+  .galaxy-mobile-context strong {
+    color: #fff0bd;
+    font: 850 0.75rem/1.2 var(--mono);
+  }
+
+  .galaxy-mobile-context b {
+    color: var(--gold);
+    font: inherit;
   }
 }
 

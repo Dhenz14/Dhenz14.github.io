@@ -22,13 +22,13 @@ import {
   sourceSnapshotPresentation,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v13";
+} from "./galaxy-core.mjs?v=galaxy-stark-v14";
 import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v13";
+} from "./ide-release-core.mjs?v=galaxy-stark-v14";
 
-const GALAXY_OVERVIEW_LABEL_LIMIT = 5;
+const GALAXY_OVERVIEW_LABEL_LIMIT = 1;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -1230,6 +1230,7 @@ const TITLE_MINOR_WORDS = new Set(["a", "an", "and", "as", "at", "but", "by", "f
 const titleCase = (value) => String(value || "").toLowerCase().replace(/\b[a-z0-9']+/g, (word, offset) =>
   (offset > 0 && TITLE_MINOR_WORDS.has(word)) ? word : word.charAt(0).toUpperCase() + word.slice(1));
 const formatGalaxyDivisionChoice = (division) => `${division.code} · ${titleCase(division.name)}`;
+const formatGalaxyDivisionSelectChoice = (division) => `Division ${division.code}`;
 
 function roundedRectPath(context, x, y, width, height, radius) {
   context.beginPath();
@@ -1273,7 +1274,7 @@ class GalaxyAtlas {
     this.rotationY = -0.64;
     this.targetRotationX = this.rotationX;
     this.targetRotationY = this.rotationY;
-    this.zoom = 1.25;
+    this.zoom = 1.12;
     this.targetZoom = this.zoom;
     this.panX = 0;
     this.panY = 0;
@@ -1870,7 +1871,8 @@ class GalaxyAtlas {
     const options = (exactCatalog ? this.divisions : []).map((division) => {
       const option = document.createElement("option");
       option.value = division.code;
-      option.textContent = formatGalaxyDivisionChoice(division);
+      option.textContent = formatGalaxyDivisionSelectChoice(division);
+      option.title = formatGalaxyDivisionChoice(division);
       return option;
     });
     select.replaceChildren(...options);
@@ -1886,6 +1888,7 @@ class GalaxyAtlas {
     setText("[data-galaxy-division-nav-current]", label);
     const select = $("[data-galaxy-division-nav-select]");
     if (!select) return;
+    select.setAttribute("aria-label", `Jump to division. Current: ${label}`);
     select.value = division.code;
     Array.from(select.options).forEach((option) => {
       option.selected = option.value === division.code;

@@ -23,6 +23,7 @@ import {
   galaxyOverviewCamera,
   galaxyGestureCamera,
   galaxyGestureMetrics,
+  galaxyMembershipBundleGeometry,
   galaxyOverlayBoxes,
   galaxyPointerPolicy,
   galaxyRenderState,
@@ -134,6 +135,48 @@ const mouseIdle = galaxyPointerPolicy("mouse", false);
 assert(!touchIdle.engage && !touchIdle.focusCanvas && !touchIdle.orbitAllowed, "idle touch stole page-scroll ownership");
 assert(!touchEngaged.engage && touchEngaged.focusCanvas && touchEngaged.orbitAllowed, "engaged touch cannot orbit");
 assert(mouseIdle.engage && mouseIdle.focusCanvas && mouseIdle.orbitAllowed, "mouse pointer cannot engage galaxy controls");
+
+const membershipFixture = {
+  division: { x: 8, y: 18 },
+  family: { x: 108, y: 76 },
+  members: [
+    { x: 196, y: 28 }, { x: 212, y: 47 }, { x: 226, y: 66 },
+    { x: 218, y: 87 }, { x: 201, y: 104 }, { x: 183, y: 91 },
+  ],
+  lane: 0.5,
+};
+const membershipFixtureBefore = JSON.stringify(membershipFixture);
+const membershipBundle = galaxyMembershipBundleGeometry(membershipFixture);
+const repeatedMembershipBundle = galaxyMembershipBundleGeometry(structuredClone(membershipFixture));
+assert(membershipBundle && JSON.stringify(membershipBundle) === JSON.stringify(repeatedMembershipBundle), "membership bundle is not deterministic");
+assert(JSON.stringify(membershipFixture) === membershipFixtureBefore, "membership bundle mutated authored projected points");
+assert(Object.isFrozen(membershipBundle)
+  && Object.isFrozen(membershipBundle.junction)
+  && Object.isFrozen(membershipBundle.sourceControl)
+  && Object.isFrozen(membershipBundle.trunkControl), "membership bundle output is mutable");
+assert([
+  membershipBundle.centroid.x, membershipBundle.centroid.y,
+  membershipBundle.junction.x, membershipBundle.junction.y,
+  membershipBundle.sourceControl.x, membershipBundle.sourceControl.y,
+  membershipBundle.trunkControl.x, membershipBundle.trunkControl.y,
+  membershipBundle.spread,
+].every(Number.isFinite), "membership bundle emitted non-finite geometry");
+const averageDistance = (origin, points) => points.reduce((total, point) => (
+  total + Math.hypot(point.x - origin.x, point.y - origin.y)
+), 0) / points.length;
+assert(
+  averageDistance(membershipBundle.junction, membershipFixture.members)
+    < averageDistance(membershipFixture.family, membershipFixture.members) * 0.58,
+  "membership junction did not shorten the neuron fan",
+);
+const invalidMembershipBundles = [
+  galaxyMembershipBundleGeometry(),
+  galaxyMembershipBundleGeometry({ ...membershipFixture, members: [] }),
+  galaxyMembershipBundleGeometry({ ...membershipFixture, family: { x: Number.NaN, y: 2 } }),
+  galaxyMembershipBundleGeometry({ ...membershipFixture, members: [{ x: 2, y: Number.POSITIVE_INFINITY }] }),
+];
+assert(invalidMembershipBundles.every((value) => value === null), "invalid membership geometry did not fail closed");
+const bundledMembershipCases = 2 + invalidMembershipBundles.length;
 
 const normalRender = galaxyRenderState({ hasContext: true, hasResizeObserver: true, forcedColorsActive: false });
 const contrastRender = galaxyRenderState({ hasContext: true, hasResizeObserver: true, forcedColorsActive: true });
@@ -582,4 +625,4 @@ const normalHaloOutside = selectGalaxyHit({ pointer: { x: normalDivisionRadius +
 const selectedHaloInside = selectGalaxyHit({ pointer: { x: selectedDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery", projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0 });
 assert(normalHaloInside.divisionIndex === 0 && normalHaloOutside.divisionIndex === -1 && selectedHaloInside.divisionIndex === 0, "division hit radius diverged from its rendered halo");
 
-console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 division_nav_options=${divisionNavigatorLabels.length} division_nav_selections=${divisionNavigatorSelectionCases} overview_camera_cases=${overviewCameraCases} integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} safe_frame_label_cases=${safeFrameLabelCases} exact_exit_fixture=1 pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6`);
+console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 division_nav_options=${divisionNavigatorLabels.length} division_nav_selections=${divisionNavigatorSelectionCases} overview_camera_cases=${overviewCameraCases} integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} safe_frame_label_cases=${safeFrameLabelCases} exact_exit_fixture=1 pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6 bundled_membership_cases=${bundledMembershipCases}`);

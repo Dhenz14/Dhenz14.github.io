@@ -150,6 +150,68 @@ export function galaxyOverlayBoxes(width, height) {
   return Object.freeze({ exit, demo, readout, caption });
 }
 
+const finiteScreenPoint = (point) => isPlainObject(point)
+  && Number.isFinite(point.x)
+  && Number.isFinite(point.y);
+
+// Route authored family membership through a deterministic visual bundle.
+// This changes only how the exact hierarchy is drawn: every family and neuron
+// retains its authored position and every authored membership remains present.
+export function galaxyMembershipBundleGeometry({ division, family, members, lane = 0 } = {}) {
+  if (!finiteScreenPoint(division)
+    || !finiteScreenPoint(family)
+    || !Array.isArray(members)
+    || members.length === 0
+    || members.some((point) => !finiteScreenPoint(point))) return null;
+
+  const centroid = members.reduce((total, point) => ({
+    x: total.x + point.x / members.length,
+    y: total.y + point.y / members.length,
+  }), { x: 0, y: 0 });
+  const spread = Math.sqrt(members.reduce((total, point) => (
+    total + ((point.x - centroid.x) ** 2) + ((point.y - centroid.y) ** 2)
+  ), 0) / members.length);
+
+  const sourceX = family.x - division.x;
+  const sourceY = family.y - division.y;
+  const sourceLength = Math.hypot(sourceX, sourceY);
+  const sourceUnitX = sourceLength > 1e-6 ? sourceX / sourceLength : 1;
+  const sourceUnitY = sourceLength > 1e-6 ? sourceY / sourceLength : 0;
+  const laneValue = Number.isFinite(lane) ? clamp(lane, -1.5, 1.5) : 0;
+  const laneOffset = laneValue * Math.min(18, Math.max(3, sourceLength * 0.07));
+  const sourceControl = {
+    x: (division.x + family.x) * 0.5 - sourceUnitY * laneOffset,
+    y: (division.y + family.y) * 0.5 + sourceUnitX * laneOffset,
+  };
+
+  const clusterX = centroid.x - family.x;
+  const clusterY = centroid.y - family.y;
+  const clusterLength = Math.hypot(clusterX, clusterY);
+  const clusterUnitX = clusterLength > 1e-6 ? clusterX / clusterLength : -sourceUnitY;
+  const clusterUnitY = clusterLength > 1e-6 ? clusterY / clusterLength : sourceUnitX;
+  const junctionRatio = clamp(0.58 + (spread / Math.max(1, clusterLength + spread)) * 0.12, 0.58, 0.7);
+  const junction = {
+    x: family.x + clusterX * junctionRatio,
+    y: family.y + clusterY * junctionRatio,
+  };
+  const cross = sourceX * clusterY - sourceY * clusterX;
+  const bendDirection = Math.abs(cross) > 1e-6 ? Math.sign(cross) : (laneValue < 0 ? -1 : 1);
+  const bend = Math.min(18, Math.max(3, Math.min(clusterLength * 0.13, spread * 0.22 + 4)));
+  const trunkControl = {
+    x: (family.x + junction.x) * 0.5 - clusterUnitY * bend * bendDirection,
+    y: (family.y + junction.y) * 0.5 + clusterUnitX * bend * bendDirection,
+  };
+
+  return Object.freeze({
+    centroid: Object.freeze(centroid),
+    junction: Object.freeze(junction),
+    sourceControl: Object.freeze(sourceControl),
+    trunkControl: Object.freeze(trunkControl),
+    spread,
+    memberCount: members.length,
+  });
+}
+
 async function sha256Hex(value) {
   if (!globalThis.crypto?.subtle || typeof TextEncoder !== "function") return "";
   const bytes = new TextEncoder().encode(value);

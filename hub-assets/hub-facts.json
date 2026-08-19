@@ -2,19 +2,19 @@
   "schema": "hive.ecosystem.public-source-snapshot.v3",
   "snapshotVersion": "3.0.0",
   "hiveAi": {
-    "sourceCommit": "01ddfa5e17254c190a50071cb921300242160499",
+    "sourceCommit": "78cf13cc7c8b22e0012665c30d76b8d4bca228ae",
     "sourceBranch": "main",
     "graphSource": "compiled from the source manifest and authored layout; no private graph bytes published",
     "graphSchema": "hiveai.living_anatomy_graph.v2",
-    "graphHash": "4dc3fc239252763a28a57e28c08d47d6fd262ae21b638c4ebdf319e4ca10881d",
-    "sourceFingerprint": "8fd5655328d1605fc3a08dbc5ea394ac10b3e9908b113a873354946fc7e7220f",
+    "graphHash": "bd6c608b146599481971958661dba3ebbef0993c57fb65fac34ebd6960a5c81e",
+    "sourceFingerprint": "813a6cd62cf3696b25ddcdef8c94332f6c6bdf3e3edf9c4e29c3c35f87cd1121",
     "neurons": 640,
     "trainableNeurons": 448,
     "deterministicNeurons": 192,
-    "purposeMastered": 545,
-    "twitches": 545,
+    "purposeMastered": 550,
+    "twitches": 550,
     "pmOnly": 0,
-    "notPurposeMastered": 95,
+    "notPurposeMastered": 90,
     "nodes": 1329,
     "edges": 1375,
     "divisions": 16,
@@ -27,7 +27,7 @@
   "galaxy": {
     "schema": "hive.ecosystem.public-galaxy.v2",
     "generatorVersion": "3.0.0",
-    "sourceGraphHash": "4dc3fc239252763a28a57e28c08d47d6fd262ae21b638c4ebdf319e4ca10881d",
+    "sourceGraphHash": "bd6c608b146599481971958661dba3ebbef0993c57fb65fac34ebd6960a5c81e",
     "representedNeurons": 640,
     "divisions": [
       {
@@ -1170,7 +1170,7 @@
     "geometry": {
       "schema": "hive.galaxy.public-geometry.v1",
       "projection": "living-anatomy-body",
-      "sourceGraphHash": "4dc3fc239252763a28a57e28c08d47d6fd262ae21b638c4ebdf319e4ca10881d",
+      "sourceGraphHash": "bd6c608b146599481971958661dba3ebbef0993c57fb65fac34ebd6960a5c81e",
       "contractVersion": "1.0.0",
       "contractHash": "698d9c371ebe98b47cffbf10643080cb06ccb2c06267d580349063fb992230ad",
       "coordinateSpace": "hiveai.living_anatomy_layout.v1",
@@ -7648,7 +7648,7 @@
     },
     "statusProjection": "none",
     "claimBoundary": "The public atlas shows topology and family purpose only. Gold Twitch, mastery, runtime, work-lane, mission, and urgency states remain on the authenticated local Living Anatomy surface.",
-    "projectionHash": "4287a84fe0c4dbc8f1cdb4a933392199cbe7ac08b475f0198977cfe17cb6a191"
+    "projectionHash": "ba1983141ff1dbeba01f2574b6058c5ce48b4306789947ee0704b4b2391edae0"
   },
   "ecosystem": {
     "schema": "hive.ecosystem.public-organ-map.v1",
@@ -7706,6 +7706,6 @@
     "localChatUrl": "http://127.0.0.1:5002/chat",
     "localGalaxyUrl": "http://127.0.0.1:5002/constellation/body?presentation=1"
   },
-  "capturedAt": "2026-08-18T23:43:53Z",
-  "snapshotHash": "e9357e84e501eedc446e54243e654fddf235471dd7035319661512202cbaccb6"
+  "capturedAt": "2026-08-19T01:46:35Z",
+  "snapshotHash": "3f4af9c56d673c24756378c1acc1b992578c1d75dce738bff324f2066f858a59"
 }

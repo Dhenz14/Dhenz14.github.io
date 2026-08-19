@@ -2,12 +2,12 @@
   "schema": "hive.ecosystem.public-source-snapshot.v3",
   "snapshotVersion": "3.0.0",
   "hiveAi": {
-    "sourceCommit": "44798647a2c0d283d8e8044934ff952451301dfd",
+    "sourceCommit": "4a3a1c5fcfce1356c759eca0bdded85b99ff49ab",
     "sourceBranch": "main",
     "graphSource": "compiled from the source manifest and authored layout; no private graph bytes published",
     "graphSchema": "hiveai.living_anatomy_graph.v2",
-    "graphHash": "5361ff5ab2c17117ee46f9beb551c07b456e7c8a840b4675ca91678ebf6da2bf",
-    "sourceFingerprint": "1032739284bb3e638c467b4668db46971be19b89ac9fdc4b5991fa3358f7698d",
+    "graphHash": "24e0b1b62762363ab706bbe179d0edc1080c800a1df9c089ac06ca6451047fcd",
+    "sourceFingerprint": "239b01abdad99a42eeb3ea91a8bd450bd6f96c47e06675693ebd8ba692014cde",
     "neurons": 640,
     "trainableNeurons": 448,
     "deterministicNeurons": 192,
@@ -27,7 +27,7 @@
   "galaxy": {
     "schema": "hive.ecosystem.public-galaxy.v2",
     "generatorVersion": "3.0.0",
-    "sourceGraphHash": "5361ff5ab2c17117ee46f9beb551c07b456e7c8a840b4675ca91678ebf6da2bf",
+    "sourceGraphHash": "24e0b1b62762363ab706bbe179d0edc1080c800a1df9c089ac06ca6451047fcd",
     "representedNeurons": 640,
     "divisions": [
       {
@@ -1170,7 +1170,7 @@
     "geometry": {
       "schema": "hive.galaxy.public-geometry.v1",
       "projection": "living-anatomy-body",
-      "sourceGraphHash": "5361ff5ab2c17117ee46f9beb551c07b456e7c8a840b4675ca91678ebf6da2bf",
+      "sourceGraphHash": "24e0b1b62762363ab706bbe179d0edc1080c800a1df9c089ac06ca6451047fcd",
       "contractVersion": "1.0.0",
       "contractHash": "698d9c371ebe98b47cffbf10643080cb06ccb2c06267d580349063fb992230ad",
       "coordinateSpace": "hiveai.living_anatomy_layout.v1",
@@ -7648,7 +7648,7 @@
     },
     "statusProjection": "none",
     "claimBoundary": "The public atlas shows topology and family purpose only. Gold Twitch, mastery, runtime, work-lane, mission, and urgency states remain on the authenticated local Living Anatomy surface.",
-    "projectionHash": "7275aab689d7e0a3b928be1d6b44fc2036ab3a3b71347c4f6d33826c0bf83531"
+    "projectionHash": "fcccc9c1f668df9944b868d82230a4aa472fd28abc459945c5423e0b451616a2"
   },
   "ecosystem": {
     "schema": "hive.ecosystem.public-organ-map.v1",
@@ -7706,6 +7706,6 @@
     "localChatUrl": "http://127.0.0.1:5002/chat",
     "localGalaxyUrl": "http://127.0.0.1:5002/constellation/body?presentation=1"
   },
-  "capturedAt": "2026-08-19T22:40:34Z",
-  "snapshotHash": "3f0fedddca21cc1768b7a8a3a40d75853447e529b61d6b46d2df5ec26fd9d4f9"
+  "capturedAt": "2026-08-19T23:01:42Z",
+  "snapshotHash": "6bdb5af81933be6bc1f88b1e01bfcf45dd3a9bbf3a5a6fa9a544ab2fd077a1d6"
 }

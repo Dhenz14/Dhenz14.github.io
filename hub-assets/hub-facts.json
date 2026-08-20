@@ -2,7 +2,7 @@
   "schema": "hive.ecosystem.public-source-snapshot.v3",
   "snapshotVersion": "3.0.0",
   "hiveAi": {
-    "sourceCommit": "4b94b0ce125009ff46adcbb142f9324a8b89e08f",
+    "sourceCommit": "e00a682fcba47ff6ca649aa49cedc4f88aeeb860",
     "sourceBranch": "main",
     "graphSource": "compiled from the source manifest and authored layout; no private graph bytes published",
     "graphSchema": "hiveai.living_anatomy_graph.v2",
@@ -7706,6 +7706,6 @@
     "localChatUrl": "http://127.0.0.1:5002/chat",
     "localGalaxyUrl": "http://127.0.0.1:5002/constellation/body?presentation=1"
   },
-  "capturedAt": "2026-08-20T07:13:27Z",
-  "snapshotHash": "7aef76c3181edc62e8c0fbd8736327f2e7c6557f3df5b767614cfc18268448d2"
+  "capturedAt": "2026-08-20T08:47:54Z",
+  "snapshotHash": "a779aad19fe03c003997873473f4799ee30a46162ebcf5d734c7b9b6ffce6c24"
 }

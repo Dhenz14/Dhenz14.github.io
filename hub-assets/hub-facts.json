@@ -7693,9 +7693,9 @@
     "federationRepositories": 20
   },
   "refresh": {
-    "privateSourceMode": "manual-source-bound-snapshot",
-    "automaticBridgeEnabled": false,
-    "reasonCode": "PRIVATE_SOURCE_CHECKOUT_FAILED",
+    "privateSourceMode": "scheduled-living-main-publisher",
+    "automaticBridgeEnabled": true,
+    "reasonCode": "SCHEDULED_LIVING_MAIN_PUBLISHER",
     "lastGoodBehavior": "retain_previous_snapshot"
   },
   "boundaries": {
@@ -7706,6 +7706,6 @@
     "localChatUrl": "http://127.0.0.1:5002/chat",
     "localGalaxyUrl": "http://127.0.0.1:5002/constellation/body?presentation=1"
   },
-  "capturedAt": "2026-08-21T04:20:59Z",
-  "snapshotHash": "2564b396da5b267eaeff18523c82773021ed045f9831f94dffdf064da21664e7"
+  "capturedAt": "2026-08-21T14:46:37Z",
+  "snapshotHash": "a9d740ecdef9d7baebd83d306a46f2a380693d416f78cf674043504fc8ab0f77"
 }

@@ -404,24 +404,29 @@ const browserTruthSelfTests = await Promise.all([
   expectBrowserTruthReject("browser_rehashed_unbound_landing_promotion_refused", (value) => {
     value.canonicalManifest.status = "LANDED_HASH_VERIFIED";
     value.canonicalManifest.landedCommit = "1".repeat(40);
+    value.canonicalManifest.landedTree = "3".repeat(40);
     value.canonicalManifest.landedSha256 = "2".repeat(64);
     value.canonicalManifest.landedBytes = value.canonicalManifest.candidateBytes;
+    value.canonicalManifest.landedGitBlobOid = "4".repeat(40);
   }),
   expectBrowserTruthReject("browser_rehashed_unfrozen_subject_evidence_ref_refused", (value) => { value.truth_subjects.source_atlas.evidenceRef = "self-attested"; }),
   expectBrowserTruthReject("browser_rehashed_release_byte_verification_promotion_refused", (value) => {
-    value.truth_subjects.released_tester.evidence = "Remote executable independently downloaded and hashed; PASS.";
-    value.truth_subjects.released_tester.claim = "The public package is functionally certified.";
-    value.truth_subjects.released_tester.artifact_bytes_independently_verified = true;
-    value.truth_subjects.released_tester.artifact_sha256_independently_verified = true;
+    value.truth_subjects.released_tester_5.claim = "The public package is functionally certified.";
+    value.truth_subjects.released_tester_5.packageContentsStatus = "VERIFIED";
+    value.truth_subjects.released_tester_5.artifactExecuted = true;
+  }),
+  expectBrowserTruthReject("browser_rehashed_tester6_publication_promotion_refused", (value) => {
+    value.truth_subjects.candidate_tester_6_publication.githubReleaseApiStatus = 200;
+    value.truth_subjects.candidate_tester_6_publication.url = "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.6/Hive-IDE-OneClick-Windows-x64.exe";
   }),
   expectBrowserTruthReject("browser_rehashed_windows_platform_certification_refused", (value) => {
-    const windows = value.platforms.find((entry) => entry.id === "windows-x64");
+    const windows = value.platforms.find((entry) => entry.id === "windows-x64-remote");
     windows.supportStatus = "PUBLIC_FUNCTIONAL_TESTING_ARTIFACT";
     windows.testStatus = "FUNCTIONALLY_CERTIFIED";
     windows.packageStatus = "PUBLIC_HTTPS_ARTIFACT_BYTES_VERIFIED";
   }),
   expectBrowserTruthJsonReject("browser_duplicate_manifest_key_refused", '{"schema":"first","schema":"second"}'),
-  expectBrowserTruthJsonReject("browser_nested_duplicate_manifest_key_refused", '{"truth_subjects":{"released_tester":{"claim":"first","claim":"second"}}}'),
+  expectBrowserTruthJsonReject("browser_nested_duplicate_manifest_key_refused", '{"truth_subjects":{"released_tester_5":{"claim":"first","claim":"second"}}}'),
   expectBrowserTruthJsonReject("browser_malformed_manifest_refused", '{"schema":'),
 ]);
 if (browserTruthSelfTests.some((test) => !test.passed)) {
@@ -713,19 +718,35 @@ requireMatch(html, /Historical HivePoA tester-network metadata/, "historical Hiv
 requireMatch(html, /Package delivery[\s\S]*Not observed[\s\S]*Local byte hash[\s\S]*Not verified here[\s\S]*Local execution[\s\S]*Not observed/, "separate HivePoA delivery, local-byte, and execution evidence planes");
 requireMatch(html, /Prove package delivery separately[\s\S]*signed index alone does not fetch or verify transport[\s\S]*Live coordinator \+ enrollment held[\s\S]*No current coordinator or public-enrollment proof is carried here/i, "held HivePoA delivery, coordinator, and enrollment path");
 requireMatch(html, /id="ide-download"[^>]+data-ide-release data-state="checking"/, "inert Hive IDE release section");
-requireMatch(html, /release manifest declares one current-user installer containing the IDE,[\s\S]*internal HivePoA\/IPFS Service Center/, "declared one-download tester design boundary");
-requireMatch(html, /Time-bounded metadata declares only a Windows x64 tester\.5 URL, size, and SHA-256; this review did not download or hash the executable[\s\S]*Remote executable bytes remain independently unverified until download and local size\/SHA checking/i, "tester metadata-versus-byte boundary");
-requireMatch(html, /START HERE \/ no terminal[\s\S]*One download\. Five calm steps\./, "visible no-terminal tester onboarding");
-requireMatch(html, /More info[\s\S]*Run anyway[\s\S]*Hive is ready[\s\S]*Brain[\s\S]*Get help/, "complete nontechnical tester path");
-requireMatch(html, /Only after the downloaded file matches the declared size and SHA-256:[\s\S]*Run anyway[\s\S]*at your discretion/, "conditional SmartScreen guidance after local byte verification");
-requireMatch(html, /No terminal\. No manual services\. No hunting for separate Hive-AI, chat, HivePoA, or IPFS downloads\./, "single-package reassurance");
-const ideStartHere = html.match(/<article class="ide-start-here"[\s\S]*?<\/article>/)?.[0] || "";
-if ((ideStartHere.match(/<li>/g) || []).length !== 5) throw new Error("START HERE must contain exactly five tester steps");
-requireNoMatch(ideStartHere, /<code>|wsl\.exe|powershell\.exe|pip install|npm (?:run|install)|cargo /i, "START HERE command-line dead end");
-requireMatch(html, /Test credits[\s\S]*Valueless · non-transferable/, "valueless IDE tester credits");
-requireMatch(html, /does not claim a public HivePoA reward-network release/, "IDE versus HivePoA release boundary");
+// The tester surface is now evidence-only: outer bytes are verified, but the download
+// itself is HELD. These gates enforce that stricter contract and, critically, that the
+// old "download then run anyway" onboarding has NOT come back.
+requireMatch(html, /Tester\.5 outer bytes verified\. Download authority still HOLD\./, "held tester download headline");
+requireMatch(html, /matched exactly[\s\S]{0,40}924864317[\s\S]{0,40}bytes and its SHA-256[\s\S]{0,80}Authenticode is[\s\S]{0,20}NotSigned[\s\S]{0,120}package contents, installation, and runtime remain[\s\S]{0,20}UNKNOWN/, "outer-byte verification scoped to bytes only");
+requireMatch(html, /This page exposes evidence but authorizes no download\./, "evidence-only download boundary");
+requireMatch(html, /DIFFERENT GENERATION[\s\S]*Tester\.5 must not be presented as realizing the mapped HiveBrain Constellation[\s\S]*472131baa[\s\S]*a0fe6483/, "tester/atlas generation mismatch disclosed at the download surface");
+requireMatch(html, /Tester\.6 publication remains a separate HOLD\./, "tester.6 held separately from tester.5");
+requireMatch(html, /EVIDENCE LADDER[\s\S]*Remote outer bytes[\s\S]*VERIFIED[\s\S]*Publisher authentication[\s\S]*NOT SIGNED[\s\S]*Package contents[\s\S]*UNKNOWN[\s\S]*Installation \+ runtime[\s\S]*UNKNOWN[\s\S]*Public functional testing[\s\S]*HOLD/, "five-plane evidence ladder");
+requireMatch(html, /A separate, unexpired operator authorization is required before this truth contract can expose an active download\./, "download requires separate operator authority");
+// "Run anyway" may appear exactly once, and only inside the sentence that refuses it.
+// Any second occurrence means the retired install-and-run onboarding has come back.
+requireMatch(html, /No\s*[\u201c"]Run anyway[\u201d"]\s*guidance, install promise, or runtime claim is authorized by this evidence-only candidate\./, "explicit refusal of run-anyway guidance");
+{
+  const runAnywayHits = (html.match(/Run anyway/gi) || []).length;
+  if (runAnywayHits !== 1) {
+    throw new Error(`retired run-anyway guidance must not return while the download is held: found ${runAnywayHits} occurrences, expected exactly the refusal sentence`);
+  }
+}
+requireNoMatch(html, /One download\. Five calm steps\./, "retired one-download onboarding must not return while the download is held");
+requireMatch(html, /non-transferable, non-redeemable counter per accepted proof/, "non-transferable tester credit counter");
+requireMatch(html, /policy metadata, not evidence of a live award/, "credit policy is not an award receipt");
+requireMatch(html, /Credits have no monetary value\./, "valueless IDE tester credits");
+// The ecosystem diagram must not imply that a normal local prompt reaches chain,
+// IPFS, or pooled compute.
+requireMatch(html, /Ecosystem map[\s\S]{0,20}not a default prompt route/, "ecosystem map is not a prompt route");
+requireMatch(html, /does not claim that chain, IPFS, or pooled compute receives a normal local prompt; every handoff needs its own authorized route\./, "IDE versus HivePoA handoff boundary");
+requireMatch(html, /Local links never probe or start your machine\./, "public page never probes the visitor machine");
 requireMatch(html, /Not verified here/, "local-byte boundary");
-requireMatch(html, /A same-origin compromise is outside the signature guarantee/, "same-origin boundary");
 const localChatLinks = [...html.matchAll(/<a\b[^>]*\bhref=["'][^"']*\/chat(?:[/?#][^"']*)?["'][^>]*>/gi)];
 if (localChatLinks.length) {
   throw new Error(`presentation-safe hub must not expose a clickable local chat route, found ${localChatLinks.length}`);
@@ -743,7 +764,9 @@ requireMatch(html, /data-local-handoff-confirm[^>]+target="hive-local-body"[^>]+
 requireNoMatch(html, /href="http:\/\/127\.0\.0\.1:[^"]*"[^>]*target="_blank"/, "local links never scatter into unnamed tabs");
 requireMatch(html, /data-body-surface="atlas"[\s\S]*data-body-surface="presentation"[\s\S]*data-body-surface="operator"/, "three-surface Living Anatomy bridge");
 requireMatch(html, /public page never claims or probes local availability/, "truthful local availability boundary");
-requireMatch(html, /no public prompt relay/, "prompt privacy");
+// Prompt privacy is now stated positively: the local app owns prompts, and the public
+// page separately disclaims relaying any prompt to chain, IPFS, or pooled compute.
+requireMatch(html, /Local app[\s\S]{0,60}Owns execution, prompts, and state\./, "prompt privacy");
 requireMatch(html, /class="pipeline-rail"[\s\S]*Intent[\s\S]*Route[\s\S]*Halo[\s\S]*Trust[\s\S]*Compose[\s\S]*Gate[\s\S]*Witness[\s\S]*Record outcome or HOLD/, "constellation causal flight path");
 requireNoMatch(html, /class="pipeline-rail"[\s\S]{0,2000}<strong>Generate<\/strong>/, "retired conventional Generate endpoint");
 const commandStepIds = [...html.matchAll(/data-command-step="(\d+)"/g)].map((match) => Number(match[1]));
@@ -781,13 +804,30 @@ for (const [attribute, expectedCount] of [["data-ide-download", 1], ["data-ide-s
 }
 requireNoMatch(html, /galaxy-inspector["'][^>]*aria-live/, "hover-driven live-region noise");
 requireMatch(js, /PRODUCT_TRUTH_SCHEMA = "hive\.ecosystem\.product-truth\.public-projection\.v1"/, "browser Product Truth schema gate");
-requireMatch(js, /PRODUCT_TRUTH_SUBJECTS[\s\S]*target_architecture:[\s\S]*SOURCE_BOUND_DOCTRINE[\s\S]*source_atlas:[\s\S]*SOURCE_PRESENT_AT_PIN[\s\S]*tip_influence:[\s\S]*SOURCE_GOVERNED_HOLD[\s\S]*fleet_halos:[\s\S]*DECLARED_HARD_OFF[\s\S]*released_tester:[\s\S]*PUBLIC_RELEASE_METADATA_STALE_SUBJECT[\s\S]*installed_runtime:[\s\S]*UNKNOWN[\s\S]*observed_behavior:[\s\S]*UNKNOWN/, "browser subject-scoped truth status gate");
+requireMatch(js, /PRODUCT_TRUTH_SUBJECTS[\s\S]*target_architecture:[\s\S]*SOURCE_BOUND_DOCTRINE[\s\S]*source_atlas:[\s\S]*SOURCE_PRESENT_AT_PIN[\s\S]*tip_influence:[\s\S]*SOURCE_GOVERNED_HOLD[\s\S]*fleet_halos:[\s\S]*DECLARED_HARD_OFF[\s\S]*released_tester_5:[\s\S]*PUBLIC_REMOTE_BYTES_VERIFIED_OLDER_SOURCE_SUBJECT[\s\S]*candidate_tester_6_publication:[\s\S]*HELD_NOT_PUBLIC[\s\S]*windows_wsl_candidate_design:[\s\S]*DECLARED_AT_PIN_BY_NON_DURABLE_EXTERNAL_OBSERVATION[\s\S]*linux_hive_ide_publication:[\s\S]*UNKNOWN_NO_ADMISSIBLE_PUBLICATION_OBSERVATION[\s\S]*macos_hive_ide_publication:[\s\S]*HELD_MISSING_ADMISSIBLE_PUBLICATION_OBSERVATION[\s\S]*installed_runtime:[\s\S]*UNKNOWN[\s\S]*observed_behavior:[\s\S]*UNKNOWN/, "browser subject-scoped truth status gate");
 requireMatch(js, /WHAT_ARCHITECTURE_AM_I\?[\s\S]*SOVEREIGN_HIVEBRAIN_CONSTELLATION[\s\S]*hiveai\.sovereign_hivebrain_constellation\.v1[\s\S]*971437dd8d1474262627881e6c2d4baef9b0d705424d7eb4abd09a5d2baf5b61/, "browser canonical architecture identity gate");
-requireMatch(js, /subject\.freshness[\s\S]*subject\.invalidators[\s\S]*subject\.evidenceRef[\s\S]*subject\.verifiedAt/, "browser subject evidence metadata gate");
-requireMatch(js, /subject_kind === "PUBLIC_RELEASE_METADATA"[\s\S]*claim_plane === "PUBLIC_ARTIFACT_METADATA_VERIFIED"[\s\S]*artifact_identity_evidence === "PUBLIC_RELEASE_API_AND_FEED_METADATA_READBACK"[\s\S]*artifact_bytes_independently_verified === false[\s\S]*artifact_sha256_independently_verified === false/, "browser release metadata-versus-byte plane gate");
-requireMatch(js, /PUBLIC_ARTIFACT_METADATA_VERIFIED[\s\S]*PUBLIC_METADATA_READBACK_ONLY[\s\S]*PUBLIC_HTTPS_URL_DECLARED[\s\S]*UNSIGNED_PUBLISHER_NOT_AUTHENTICATED_IN_METADATA[\s\S]*did not download or hash the executable bytes/i, "browser Windows metadata-only platform ceiling");
-requireMatch(js, /TESTER_RELEASE_VALID_UNTIL = Date\.parse\("2026-08-24T18:46:30Z"\)[\s\S]*tester\.validUntil === "2026-08-24T18:46:30Z"[\s\S]*Date\.parse\(tester\.validUntil\) > Date\.parse\(tester\.verifiedAt\)/, "browser tester evidence expiry contract");
-requireMatch(js, /testerExpired[\s\S]*PUBLICATION_FRESHNESS_EXPIRED · HELD[\s\S]*active availability is HELD/, "expired tester Product Truth rendering");
+// Order-free: the browser must independently gate every piece of subject evidence
+// metadata, including the newer doesNotProve and recertification contracts.
+for (const field of ["evidence", "claim", "invalidators", "doesNotProve", "evidenceRef", "verifiedAt", "validUntil", "freshness", "recertification"]) {
+  requireMatch(js, new RegExp(`subject\\.${field}\\b`), `browser subject evidence metadata gate (${field})`);
+}
+// The browser must hold tester.5 at exactly one upgraded plane: outer bytes verified,
+// everything downstream of the bytes still unproven.
+requireMatch(js, /artifactBytesIndependentlyVerified === true[\s\S]{0,120}artifactSha256IndependentlyVerified === true/, "browser tester.5 byte-verification plane gate");
+requireMatch(js, /artifactExecuted === false[\s\S]{0,120}packageContentsStatus === "UNKNOWN_NOT_INSPECTED"/, "browser tester.5 contents-and-execution ceiling");
+requireMatch(js, /representsCurrentSourceAtlas === false/, "browser tester/atlas generation separation");
+requireMatch(js, /released_tester_5:[\s\S]{0,200}PUBLIC_RELEASE_REMOTE_ARTIFACT_BYTES[\s\S]{0,120}PUBLIC_REMOTE_BYTES_VERIFIED/, "browser tester.5 subject kind and plane");
+requireMatch(js, /windows\.subjectId === "released_tester_5"[\s\S]{0,400}PUBLIC_RELEASE_AVAILABLE_UNSIGNED[\s\S]{0,200}REMOTE_BYTES_VERIFIED_NOT_EXECUTED[\s\S]{0,200}AUTHENTICODE_NOT_SIGNED/, "browser Windows remote-byte platform ceiling");
+// Both tester subjects carry their own independently pinned observation window.
+requireMatch(js, /tester5\.verifiedAt === "2026-08-23T19:20:09\.7630961Z"[\s\S]{0,80}tester5\.validUntil === "2026-08-24T19:20:09\.7630961Z"/, "browser tester.5 evidence expiry contract");
+requireMatch(js, /tester6\.verifiedAt === "2026-08-23T19:37:31\.6497275Z"[\s\S]{0,80}tester6\.validUntil === "2026-08-24T19:37:31\.6497275Z"/, "browser tester.6 evidence expiry contract");
+requireMatch(js, /Date\.parse\(subject\.validUntil\) > Date\.parse\(subject\.verifiedAt\)/, "browser advancing validity window contract");
+// When an observation window lapses the surface must degrade to HELD, not keep
+// rendering the last green state.
+requireMatch(js, /evidenceExpired \? "EVIDENCE FRESHNESS EXPIRED · HELD"/, "expired subject Product Truth rendering");
+requireMatch(js, /EVIDENCE EXPIRED · HELD/, "expired platform row rendering");
+requireMatch(js, /Remote-byte evidence expired · every action held/, "expired tester action hold");
+requireMatch(js, /No action is authorized; refresh the evidence contract before relying on availability or byte identity\./, "expired tester refresh instruction");
 requireMatch(js, /evidenceExpired[\s\S]*EVIDENCE EXPIRED · HELD[\s\S]*Current publication claims are HELD pending a fresh readback/, "expired platform evidence rendering");
 requireMatch(js, /function renderIdeRelease\(latest, truthResult\)[\s\S]*truthResult\.evidenceCurrent[\s\S]*Date\.now\(\) < Date\.parse\(truthResult\.validUntilUtc\)[\s\S]*Remote-byte evidence expired · every action held[\s\S]*window\.setTimeout[\s\S]*evidenceCurrent: false/, "wall-clock tester evidence expiry HOLD");
 requireMatch(js, /bindingDigest[\s\S]*recursive-key-sort-json-utf8[\s\S]*delete projection\.bindingDigest[\s\S]*sha256Text\(canonicalJson\(projection\)\)[\s\S]*projection digest mismatch/, "browser full-projection digest gate");
@@ -819,7 +859,9 @@ if (rootCssVersion !== "galaxy-stark-v17" || rootCssVersion !== rootJsVersion
   throw new Error("root and 404 asset versions must remain identical");
 }
 
-const quarantinedHivePoaBlock = boundedBlock(js, "function loadAuthorizedRelease()", "function holdIdeReleaseActions()", "HivePoA quarantine rendering");
+// The verifier loader was deleted by the quarantine; the quarantine renderer replaces it.
+requireNoMatch(js, /function loadAuthorizedRelease\(/, "retired HivePoA verifier loader must stay deleted");
+const quarantinedHivePoaBlock = boundedBlock(js, "function renderHivePoaQuarantine()", "function holdIdeReleaseActions()", "HivePoA quarantine rendering");
 requireMatch(quarantinedHivePoaBlock, /consoleNode\.dataset\.state = "held"/, "HivePoA quarantine remains HELD");
 requireMatch(quarantinedHivePoaBlock, /Historical HivePoA metadata quarantined · delivery\/network held/, "scoped HivePoA quarantine status");
 requireMatch(quarantinedHivePoaBlock, /executes no HivePoA verifier and fetches no HivePoA release surface/, "HivePoA verifier and fetch quarantine");
@@ -928,10 +970,14 @@ requireMatch(renderIdeReleaseBlock, /SOURCE_CANDIDATE_NOT_LANDED[\s\S]*Authentic
 requireMatch(renderIdeReleaseBlock, /Download held · unsigned \+ runtime unknown[\s\S]*START HERE held[\s\S]*Truth contract validated · action held[\s\S]*Release action held[\s\S]*holdIdeReleaseActions\(\)/, "Hive IDE hydrated action HOLD");
 requireNoMatch(renderIdeReleaseBlock, /\.href\s*=|classList\.remove\(["']is-disabled["']|removeAttribute\(["'](?:aria-disabled|tabindex)["']\)/, "Hive IDE hydrated action promotion");
 const loadIdeReleaseBlock = boundedBlock(js, "async function loadIdeRelease()", "async function copyText", "Hive IDE v2 evidence loading");
-requireMatch(loadIdeReleaseBlock, /AbortController[\s\S]*fetch\("\/downloads\/hive-ide\/latest\.json"[\s\S]*IDE_RELEASE_LATEST_MAX_BYTES[\s\S]*IDE_RELEASE_LATEST_SHA256[\s\S]*parseJsonStrict\(body[\s\S]*validateIdeReleaseLatest/, "bounded and strict Hive IDE v2 feed validation");
-requireMatch(loadIdeReleaseBlock, /new URL\(latest\.truthManifestUrl\)\.pathname[\s\S]*fetch\(truthPath[\s\S]*IDE_RELEASE_TRUTH_MAX_BYTES[\s\S]*IDE_RELEASE_TRUTH_MANIFEST_SHA256[\s\S]*latest\.truthManifestSha256[\s\S]*parseJsonStrict\(truthBody[\s\S]*validateIdeReleaseTruthManifest/, "same-origin Hive IDE truth-manifest byte and semantic validation");
+requireMatch(loadIdeReleaseBlock, /AbortController[\s\S]*fetch\("\/downloads\/hive-ide\/latest\.json"[\s\S]*IDE_RELEASE_LATEST_MAX_BYTES[\s\S]*IDE_RELEASE_LATEST_SHA256[\s\S]*validateIdeReleaseLatest\(parseJsonStrict\(body/, "bounded and strict Hive IDE v2 feed validation");
+requireMatch(loadIdeReleaseBlock, /new URL\(latest\.truthManifestUrl\)\.pathname[\s\S]*fetch\(truthPath[\s\S]*IDE_RELEASE_TRUTH_MAX_BYTES[\s\S]*IDE_RELEASE_TRUTH_MANIFEST_SHA256[\s\S]*latest\.truthManifestSha256[\s\S]*validateIdeReleaseTruthManifest\(parseJsonStrict\(truthBody/, "same-origin Hive IDE truth-manifest byte and semantic validation");
 requireNoMatch(loadIdeReleaseBlock, /JSON\.parse|\.href\s*=|classList\.remove\(["']is-disabled["']/, "Hive IDE v2 loose parse or action promotion");
-requireMatch(ideReleaseCore, /PUBLIC_REMOTE_BYTES_VERIFIED[\s\S]*SOURCE_CANDIDATE_NOT_LANDED[\s\S]*rawHttpRetained:[\s\S]*independentlySigned:/, "Hive IDE remote-byte receipt custody gate");
+// Order-free custody gate: the receipt is unlanded, unsigned, and retains no raw bytes.
+requireMatch(ideReleaseCore, /status: "PUBLIC_REMOTE_BYTES_VERIFIED"/, "Hive IDE remote-byte receipt custody gate (status)");
+requireMatch(ideReleaseCore, /evidenceReceiptAvailability: "SOURCE_CANDIDATE_NOT_LANDED"/, "Hive IDE remote-byte receipt custody gate (unlanded)");
+requireMatch(ideReleaseCore, /rawHttpRetained: false/, "Hive IDE remote-byte receipt custody gate (no raw bytes retained)");
+requireMatch(ideReleaseCore, /independentlySigned: false/, "Hive IDE remote-byte receipt custody gate (unsigned)");
 requireMatch(ideReleaseCore, /packageContents:[\s\S]*UNKNOWN[\s\S]*installation:[\s\S]*UNKNOWN[\s\S]*runtime:[\s\S]*UNKNOWN[\s\S]*productLive:[\s\S]*FALSE[\s\S]*publicFunctionalTesting:[\s\S]*HOLD/, "Hive IDE subject-scoped claim-plane gate");
 requireMatch(ideReleaseCore, /requireDownloadDisposition[\s\S]*activeDownloadAuthorized[\s\S]*UNSIGNED_AND_INSTALL_RUNTIME_UNVERIFIED[\s\S]*SEPARATE_UNEXPIRED_OPERATOR_AUTHORIZATION/, "Hive IDE download-disposition HOLD gate");
 requireNoMatch(ideReleaseCore, /eval\(|new Function\(/, "Hive IDE release validator dynamic code");
@@ -1287,10 +1333,12 @@ const sitemap = read("sitemap.xml");
 requireMatch(sitemap, /<loc>https:\/\/dhenz14\.github\.io\/<\/loc>/, "root sitemap URL");
 requireNoMatch(sitemap, /HivePoA/, "noindex HivePoA sitemap exclusion");
 
-for (const route of ["", "download", "verify", "releases", "get-started", "tester-network"]) {
-  const routeHtml = read(path.posix.join("HivePoA", route, "index.html"));
-  requireMatch(routeHtml, /<a href="\/">Hive ecosystem hub<\/a>/, `HivePoA/${route || "index"} central-hub link`);
-  requireMatch(routeHtml, /HivePoA home/, `HivePoA/${route || "index"} subsite-home label`);
+// Superseded by the quarantine contract above: every HivePoA route is now one
+// byte-identical hold page whose only href is the Product Truth escape. The retired
+// subsite navigation must not come back while the surface is quarantined.
+for (const relative of hivePoaQuarantineRoutes) {
+  const routeHtml = read(relative);
+  requireNoMatch(routeHtml, /Hive ecosystem hub|HivePoA home/, `${relative} retired subsite navigation`);
 }
 
 for (const match of html.matchAll(/(?:href|src)=["'](\/[^"'#?]*)["']/g)) {

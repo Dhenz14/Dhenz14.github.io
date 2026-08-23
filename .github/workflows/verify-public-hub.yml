@@ -19,6 +19,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          # check-signed-release.mjs recovers the pre-quarantine signed-index fixture
+          # by the exact blob OID the quarantine receipt pins. A shallow clone cannot
+          # reach that object, so this must stay at full depth.
+          fetch-depth: 0
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
@@ -27,6 +32,7 @@ jobs:
           node --check hub-assets/hub.js
           node --check hub-assets/galaxy-core.mjs
           node --check script/check-central-hub.mjs
+          node --check script/check-product-truth.mjs
           node --check script/check-ide-release.mjs
           node --check script/check-galaxy-bridge.mjs
           node --check script/check-http-surface.mjs
@@ -54,6 +60,7 @@ jobs:
       - name: Verify public hub contract
         run: |
           node script/check-central-hub.mjs
+          node script/check-product-truth.mjs --self-test
           node script/check-ide-release.mjs --self-test
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs

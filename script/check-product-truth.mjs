@@ -398,14 +398,16 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   }
   assert(target.evidenceRef.startsWith(`Dhenz14/Hive-AI source baseline ${canonicalManifest.evidenceSourceCommit}:`),
     "target architecture evidence is not bound to the exact evidence baseline commit");
-  assert(!target.evidenceRef.includes(canonicalManifest.candidateSha256),
-    "target architecture evidence must not cite the candidate manifest's own digest as its proof");
   const doctrinePrefix = `Dhenz14/Hive-AI source baseline ${canonicalManifest.evidenceSourceCommit}:`;
   // Landing appends a readback clause; doctrine references are only the candidate prefix.
   const landingMarker = "; later landing readback ";
   const doctrineSection = target.evidenceRef.includes(landingMarker)
     ? target.evidenceRef.slice(0, target.evidenceRef.indexOf(landingMarker))
     : target.evidenceRef;
+  // The doctrine basis must be independent of the manifest it certifies. A landing
+  // readback citing the landed digest is legitimate; doctrine citing it is circular.
+  assert(!doctrineSection.includes(canonicalManifest.candidateSha256),
+    "target architecture evidence must not cite the candidate manifest's own digest as its proof");
   const doctrineRefs = doctrineSection.slice(doctrinePrefix.length).split(";").map((entry) => entry.trim()).filter(Boolean);
   assert(doctrineRefs.length >= 3, "target architecture evidence must cite at least three independent doctrine files");
   for (const ref of doctrineRefs) {
@@ -1018,18 +1020,20 @@ if (isMain) {
     const index = process.argv.indexOf(flag);
     return index >= 0 ? process.argv[index + 1] : undefined;
   };
-  const landingFlags = ["--expect-landing-commit", "--expect-landing-sha256", "--expect-landing-bytes"];
+  const landingFlags = ["--expect-landing-commit", "--expect-landing-tree", "--expect-landing-sha256", "--expect-landing-bytes", "--expect-landing-blob"];
   const landingFlagCount = landingFlags.filter((flag) => process.argv.includes(flag)).length;
-  assert(landingFlagCount === 0 || landingFlagCount === landingFlags.length, "landing expectation requires commit, SHA-256, and byte-count flags together");
+  assert(landingFlagCount === 0 || landingFlagCount === landingFlags.length, "landing expectation requires commit, tree, SHA-256, byte-count, and blob flags together");
   const expectedLanding = landingFlagCount
     ? validateLandingExpectation({
       commit: valueAfter("--expect-landing-commit") ?? "",
+      tree: valueAfter("--expect-landing-tree") ?? "",
       sha256: valueAfter("--expect-landing-sha256") ?? "",
       bytes: Number(valueAfter("--expect-landing-bytes")),
+      blobOid: valueAfter("--expect-landing-blob") ?? "",
     })
     : undefined;
   if (process.argv.includes("--project-landing")) {
-    assert(expectedLanding, "--project-landing requires all three --expect-landing-* values");
+    assert(expectedLanding, "--project-landing requires every --expect-landing-* value");
     const result = validatePublishedProductTruth();
     const projected = projectVerifiedLanding(result.manifest, expectedLanding);
     validateProductTruth(projected, { facts: result.facts, latest: result.latest, releaseManifest: result.releaseManifest, expectedLanding });

@@ -351,18 +351,30 @@ const valueAfter = (flag) => {
   const index = process.argv.indexOf(flag);
   return index >= 0 ? process.argv[index + 1] : undefined;
 };
-const landingFlags = ["--expect-landing-commit", "--expect-landing-sha256", "--expect-landing-bytes"];
+const landingFlags = ["--expect-landing-commit", "--expect-landing-tree", "--expect-landing-sha256", "--expect-landing-bytes", "--expect-landing-blob"];
 const landingFlagCount = landingFlags.filter((flag) => process.argv.includes(flag)).length;
 if (landingFlagCount !== 0 && landingFlagCount !== landingFlags.length) {
-  throw new Error("central hub landing expectation requires commit, SHA-256, and byte-count flags together");
+  throw new Error("central hub landing expectation requires commit, tree, SHA-256, byte-count, and blob flags together");
 }
+// The landing this hub is built to expect, pinned here rather than taken from the
+// manifest it is checking. A manifest that claims a different landing must fail even
+// when no flags are supplied, so the default run is the strict one.
+const PINNED_LANDING = Object.freeze({
+  commit: "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+  tree: "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
+  sha256: "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056",
+  bytes: 49342,
+  blobOid: "c1036d2fc877e058965688fe8da5097576a37826",
+});
 const expectedLanding = landingFlagCount
   ? {
     commit: valueAfter("--expect-landing-commit") ?? "",
+    tree: valueAfter("--expect-landing-tree") ?? "",
     sha256: valueAfter("--expect-landing-sha256") ?? "",
     bytes: Number(valueAfter("--expect-landing-bytes")),
+    blobOid: valueAfter("--expect-landing-blob") ?? "",
   }
-  : undefined;
+  : PINNED_LANDING;
 const productTruthVerification = validatePublishedProductTruth({ selfTest: true, expectedLanding });
 const browserTruthStart = js.indexOf('const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v1";');
 const browserTruthEnd = js.indexOf("function createTruthElement", browserTruthStart);

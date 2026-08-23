@@ -634,7 +634,7 @@ function setSourceBadge(state, label, title) {
 }
 
 const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v1";
-const PRODUCT_TRUTH_PROJECTION_DIGEST = "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791";
+const PRODUCT_TRUTH_PROJECTION_DIGEST = "b6db75af2bf23a30d8058404d4104e7eefa6a6352cad4b3f559699c73abb15e3";
 const PRODUCT_TRUTH_MAX_BYTES = 128 * 1024;
 const PRODUCT_TRUTH_SUBJECTS = Object.freeze({
   target_architecture: { label: "Target architecture", kind: "ARCHITECTURE_TARGET", status: "SOURCE_BOUND_DOCTRINE", plane: "TARGET" },
@@ -653,6 +653,11 @@ const PRODUCT_TRUTH_SUBJECT_BASE_KEYS = Object.freeze([
   "subject_id", "subject_kind", "subject_status", "claim_plane", "evidence", "evidenceRef", "verifiedAt", "validUntil",
   "freshness", "invalidators", "claim", "doesNotProve", "recertification",
 ]);
+const CANONICAL_MANIFEST_SHA256 = "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056";
+const CANONICAL_MANIFEST_BYTES = 49342;
+const CANONICAL_MANIFEST_BLOB = "c1036d2fc877e058965688fe8da5097576a37826";
+const CANONICAL_LANDED_COMMIT = "0ab04f6c19ffd41bb162bea674e77853fb27cc0e";
+const CANONICAL_LANDED_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
 const TARGET_SERVING_BOUNDARY = "The source-bound target path is hive-runtime: a constellation-local in-process deterministic scaffold. The doctrine has no BYOM product lane, no implicit external-checkpoint fallback, and no local-model product serve path. An explicitly user-directed external agent may be the inbound caller; that is not a hidden Hive-selected backend fallback. None of this attests an installed runtime or observed behavior.";
 const ARCHITECTURE_LIVE_BOUNDARY = "The public atlas and this projection describe source-bound architecture. Local presentation and operator bodies are anonymous read-only GET surfaces when separately available; authority-bearing Mission Control mutations are credential-gated when configured. Installed runtime, route availability, and observed behavior require independent evidence.";
 const CURRENT_LEGACY_BOUNDARY = "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron removal is EXTERNAL_REPO_PROOF_REQUIRED and Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held.";
@@ -824,25 +829,43 @@ async function validateProductTruthManifest(manifest, snapshot) {
     "candidateGitBlobOid", "landedCommit", "landedTree", "landedSha256", "landedBytes", "landedGitBlobOid", "audit",
   ], "canonical manifest custody");
   assertProductTruthKeys(canonicalManifest.audit, ["status", "bindingStatus", "authorityConferred"], "canonical candidate audit");
+  // Identity of the manifest content is fixed and independent of whether it has landed.
   assertProductTruth(
-    canonicalManifest.status === "CANDIDATE_NOT_LANDED"
-      && canonicalManifest.repository === "Dhenz14/Hive-AI"
+    canonicalManifest.repository === "Dhenz14/Hive-AI"
       && canonicalManifest.path === "configs/public/constellation_architecture_v1.json"
       && canonicalManifest.evidenceSourceCommit === snapshot.hiveAi.sourceCommit
       && canonicalManifest.evidenceSourceTree === "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00"
-      && canonicalManifest.candidateSha256 === "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056"
-      && canonicalManifest.candidateBytes === 49342
-      && canonicalManifest.candidateGitBlobOid === "c1036d2fc877e058965688fe8da5097576a37826"
-      && canonicalManifest.landedCommit === null
-      && canonicalManifest.landedTree === null
-      && canonicalManifest.landedSha256 === null
-      && canonicalManifest.landedBytes === null
-      && canonicalManifest.landedGitBlobOid === null
+      && canonicalManifest.candidateSha256 === CANONICAL_MANIFEST_SHA256
+      && canonicalManifest.candidateBytes === CANONICAL_MANIFEST_BYTES
+      && canonicalManifest.candidateGitBlobOid === CANONICAL_MANIFEST_BLOB
       && canonicalManifest.audit.status === "PASS"
-      && canonicalManifest.audit.bindingStatus === "CANDIDATE_NOT_LANDED"
+      && canonicalManifest.audit.bindingStatus === canonicalManifest.status
       && canonicalManifest.audit.authorityConferred === false,
     "canonical candidate custody or authority rejected",
   );
+  // Custody has exactly two admissible shapes. The landed shape is pinned here in the
+  // browser, so a tampered manifest cannot assert a landing this page has not been
+  // built to expect; and landing never confers authority.
+  if (canonicalManifest.status === "CANDIDATE_NOT_LANDED") {
+    assertProductTruth(
+      canonicalManifest.landedCommit === null
+        && canonicalManifest.landedTree === null
+        && canonicalManifest.landedSha256 === null
+        && canonicalManifest.landedBytes === null
+        && canonicalManifest.landedGitBlobOid === null,
+      "unlanded canonical manifest claimed landing evidence",
+    );
+  } else {
+    assertProductTruth(
+      canonicalManifest.status === "LANDED_HASH_VERIFIED"
+        && canonicalManifest.landedCommit === CANONICAL_LANDED_COMMIT
+        && canonicalManifest.landedTree === CANONICAL_LANDED_TREE
+        && canonicalManifest.landedSha256 === CANONICAL_MANIFEST_SHA256
+        && canonicalManifest.landedBytes === CANONICAL_MANIFEST_BYTES
+        && canonicalManifest.landedGitBlobOid === CANONICAL_MANIFEST_BLOB,
+      "landed canonical manifest custody rejected",
+    );
+  }
 
   const identity = manifest.what_architecture_am_i;
   assertProductTruthKeys(identity, ["question", "answer", "architecture_id", "architecture_version", "identity_material", "identity_sha256", "subject_id", "claim_plane"], "architecture identity");
@@ -950,7 +973,10 @@ async function validateProductTruthManifest(manifest, snapshot) {
   assertProductTruthKeys(manifest.relations.candidateServed, ["status", "claim"], "candidate/served relation");
   assertProductTruth(manifest.relations.atlasTester.status === "MISMATCH" && manifest.relations.atlasTester.atlasSourceCommit === source.sourceCommit && manifest.relations.atlasTester.testerEmbeddedHiveAiCommit === tester5.embeddedHiveAiCommit && /must not be presented as realizing/.test(manifest.relations.atlasTester.claim), "atlas/tester relation rejected");
   assertProductTruth(manifest.relations.testerSubjects.status === "SEPARATE_SUBJECTS" && manifest.relations.testerSubjects.tester5Subject === "released_tester_5" && manifest.relations.testerSubjects.tester6Subject === "candidate_tester_6_publication", "tester subject separation rejected");
-  assertProductTruth(manifest.relations.candidateServed.status === "CANDIDATE_NOT_LANDED", "candidate/served HOLD rejected");
+  // Mirrors custody, and must keep disclaiming runtime/behaviour/authority/product-live
+  // on both sides of a landing. Landing may only retire the landing/main disclaimer.
+  assertProductTruth(manifest.relations.candidateServed.status === canonicalManifest.status
+    && /installed-runtime, behavior, authority, or product-live claim is allowed/i.test(manifest.relations.candidateServed.claim), "candidate/served HOLD rejected");
 
   assertProductTruth(Array.isArray(manifest.definitions) && manifest.definitions.map((item) => item.id).join("|") === "neuron|halo|division-family|hivebrain|twitch|living-anatomy", "definition set rejected");
   manifest.definitions.forEach((definition) => assertProductTruthKeys(definition, ["id", "label", "definition", "boundary"], `${definition.id} definition`));
@@ -979,7 +1005,7 @@ async function validateProductTruthManifest(manifest, snapshot) {
   assertProductTruth(platformById["macos-publication"].subjectId === "macos_hive_ide_publication" && platformById["macos-publication"].evidenceRef === null && platformById["macos-publication"].claimPlane === "HELD", "macOS publication row rejected");
 
   assertProductTruthKeys(manifest.integrityBoundary, ["manifestSelfHashProvesSemanticTruth", "authorityConferred", "sourceCandidateNotLanded", "claim"], "integrity boundary");
-  assertProductTruth(manifest.integrityBoundary.manifestSelfHashProvesSemanticTruth === false && manifest.integrityBoundary.authorityConferred === false && manifest.integrityBoundary.sourceCandidateNotLanded === true && /not a detached signature/.test(manifest.integrityBoundary.claim), "integrity authority ceiling rejected");
+  assertProductTruth(manifest.integrityBoundary.manifestSelfHashProvesSemanticTruth === false && manifest.integrityBoundary.authorityConferred === false && manifest.integrityBoundary.sourceCandidateNotLanded === (canonicalManifest.status === "CANDIDATE_NOT_LANDED") && /not a detached signature/.test(manifest.integrityBoundary.claim), "integrity authority ceiling rejected");
   assertProductTruthKeys(manifest.bindingDigest, ["algorithm", "canonicalization", "excluded", "value"], "binding digest");
   assertProductTruth(manifest.bindingDigest.algorithm === "sha256" && manifest.bindingDigest.canonicalization === "recursive-key-sort-json-utf8" && Array.isArray(manifest.bindingDigest.excluded) && manifest.bindingDigest.excluded.length === 1 && manifest.bindingDigest.excluded[0] === "bindingDigest", "projection digest recipe rejected");
   const projection = { ...manifest };

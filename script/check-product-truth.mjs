@@ -934,7 +934,11 @@ export function runProductTruthSelfTests(manifest, context) {
     expectRejectRebound("wsl_durability_promotion_refused", manifest, context, (value) => { value.truth_subjects.windows_wsl_candidate_design.evidencePersistence = "SOURCE_CONTROLLED_RECEIPT"; }),
     expectRejectRebound("conferred_authority_refused", manifest, context, (value) => { value.integrityBoundary.authorityConferred = true; }),
     expectRejectRebound("canonical_audit_conferral_refused", manifest, context, (value) => { value.canonicalManifest.audit.authorityConferred = true; }),
-    expectRejectRebound("canonical_audit_binding_split_refused", manifest, context, (value) => { value.canonicalManifest.audit.bindingStatus = "LANDED_HASH_VERIFIED"; }),
+    expectRejectRebound("canonical_audit_binding_split_refused", manifest, context, (value) => {
+      value.canonicalManifest.audit.bindingStatus = value.canonicalManifest.status === "CANDIDATE_NOT_LANDED"
+        ? "LANDED_HASH_VERIFIED"
+        : "CANDIDATE_NOT_LANDED";
+    }),
     expectRejectRebound("self_referential_doctrine_evidence_refused", manifest, context, (value) => {
       value.truth_subjects.target_architecture.evidenceRef = `Dhenz14/Hive-AI source baseline ${value.canonicalManifest.evidenceSourceCommit}: configs/public/constellation_architecture_v1.json sha256 ${value.canonicalManifest.candidateSha256}`;
     }),
@@ -1020,6 +1024,15 @@ if (isMain) {
     const index = process.argv.indexOf(flag);
     return index >= 0 ? process.argv[index + 1] : undefined;
   };
+  // The landing this checkout is built to expect. Pinned so a bare run still verifies a
+  // landed manifest against exact independent identities instead of skipping the check.
+  const PINNED_LANDING = Object.freeze({
+    commit: "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+    tree: "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
+    sha256: "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056",
+    bytes: 49342,
+    blobOid: "c1036d2fc877e058965688fe8da5097576a37826",
+  });
   const landingFlags = ["--expect-landing-commit", "--expect-landing-tree", "--expect-landing-sha256", "--expect-landing-bytes", "--expect-landing-blob"];
   const landingFlagCount = landingFlags.filter((flag) => process.argv.includes(flag)).length;
   assert(landingFlagCount === 0 || landingFlagCount === landingFlags.length, "landing expectation requires commit, tree, SHA-256, byte-count, and blob flags together");
@@ -1031,10 +1044,10 @@ if (isMain) {
       bytes: Number(valueAfter("--expect-landing-bytes")),
       blobOid: valueAfter("--expect-landing-blob") ?? "",
     })
-    : undefined;
+    : PINNED_LANDING;
   if (process.argv.includes("--project-landing")) {
     assert(expectedLanding, "--project-landing requires every --expect-landing-* value");
-    const result = validatePublishedProductTruth();
+    const result = validatePublishedProductTruth({ expectedLanding: undefined });
     const projected = projectVerifiedLanding(result.manifest, expectedLanding);
     validateProductTruth(projected, { facts: result.facts, latest: result.latest, releaseManifest: result.releaseManifest, expectedLanding });
     console.log(JSON.stringify(projected, null, 2));

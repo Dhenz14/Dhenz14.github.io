@@ -1,0 +1,639 @@
+{
+  "schema": "hive.ecosystem.product-truth.public-projection.v1",
+  "version": "1.0.0",
+  "status": "SOURCE_BOUND_TRUTH_WITH_SUBJECT_SCOPED_RUNTIME_UNKNOWNS",
+  "canonicalManifest": {
+    "status": "LANDED_HASH_VERIFIED",
+    "repository": "Dhenz14/Hive-AI",
+    "path": "configs/public/constellation_architecture_v1.json",
+    "evidenceSourceCommit": "472131baa2bc212a043966773bd92477c3a8a16c",
+    "evidenceSourceTree": "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00",
+    "candidateSha256": "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056",
+    "candidateBytes": 49342,
+    "candidateGitBlobOid": "c1036d2fc877e058965688fe8da5097576a37826",
+    "landedCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+    "landedTree": "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
+    "landedSha256": "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056",
+    "landedBytes": 49342,
+    "landedGitBlobOid": "c1036d2fc877e058965688fe8da5097576a37826",
+    "audit": {
+      "status": "PASS",
+      "bindingStatus": "LANDED_HASH_VERIFIED",
+      "authorityConferred": false
+    }
+  },
+  "what_architecture_am_i": {
+    "question": "WHAT_ARCHITECTURE_AM_I?",
+    "answer": "SOVEREIGN_HIVEBRAIN_CONSTELLATION",
+    "architecture_id": "hiveai.sovereign_hivebrain_constellation.v1",
+    "architecture_version": "1.0.0",
+    "identity_material": "hiveai.sovereign_hivebrain_constellation.v1|1.0.0|472131baa2bc212a043966773bd92477c3a8a16c|1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00",
+    "identity_sha256": "971437dd8d1474262627881e6c2d4baef9b0d705424d7eb4abd09a5d2baf5b61",
+    "subject_id": "target_architecture",
+    "claim_plane": "TARGET"
+  },
+  "source": {
+    "projectionRole": "bounded public projection of a source candidate; not the canonical manifest at evidence pin, a served/main receipt, runtime telemetry, behavior evidence, or authority",
+    "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+    "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
+    "snapshotHash": "634524e22039c696387a455fe0c1bd1d04e544a5745967acf4d27509fd882088",
+    "capturedAt": "2026-08-23T22:53:32Z"
+  },
+  "architecture": {
+    "label": "HiveBrain Constellation",
+    "status": "SOURCE_BOUND_DOCTRINE",
+    "servingBoundary": "The source-bound target path is hive-runtime: a constellation-local in-process deterministic scaffold. The doctrine has no BYOM product lane, no implicit external-checkpoint fallback, and no local-model product serve path. An explicitly user-directed external agent may be the inbound caller; that is not a hidden Hive-selected backend fallback. None of this attests an installed runtime or observed behavior."
+  },
+  "boundaries": {
+    "architectureVsLive": {
+      "status": "SEPARATE_PLANES",
+      "claim": "The public atlas and this projection describe source-bound architecture. Local presentation and operator bodies are anonymous read-only GET surfaces when separately available; authority-bearing Mission Control mutations are credential-gated when configured. Installed runtime, route availability, and observed behavior require independent evidence."
+    },
+    "currentVsLegacy": {
+      "status": "SUBJECT_SCOPED_DISPOSITIONS",
+      "claim": "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron removal is EXTERNAL_REPO_PROOF_REQUIRED and Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held."
+    },
+    "noLlmClaim": {
+      "status": "HOLD",
+      "claim": "This site does not publish a bare 'no LLM' claim.",
+      "exactBoundary": "At the evidence baseline, doctrine permits an authorized external agent such as Codex or Claude to supply fluent generation as the explicit inbound caller while Hive is assigned local retrieval, routing, verification, and proof gating. The declared route is not an implicit outbound fallback selected by Hive, and it is not current runtime or network-egress proof."
+    }
+  },
+  "truth_subjects": {
+    "target_architecture": {
+      "subject_id": "target_architecture",
+      "subject_kind": "ARCHITECTURE_TARGET",
+      "subject_status": "SOURCE_BOUND_DOCTRINE",
+      "claim_plane": "TARGET",
+      "evidence": "Exact source-doctrine files and the strict canonical candidate audit at the evidence baseline; landing readback hash verified",
+      "evidenceRef": "Dhenz14/Hive-AI source baseline 472131baa2bc212a043966773bd92477c3a8a16c: AGENTS.md sha256 ceb29594ec3948243924c2c6529e19a341d0bed6f14702347a793a3d1b0a0ef6; README.md sha256 7f31169a6aa6ce05bc130b9c595688f6dba27f0cd5c397d712f3223a90d1f827; configs/external_agent_first_policy.json sha256 b142036b547c0a0b5800e428af7cb0bfa0957ecd467bf20e7c1a52847bbd258c; later landing readback Dhenz14/Hive-AI@0ab04f6c19ffd41bb162bea674e77853fb27cc0e: configs/public/constellation_architecture_v1.json sha256 a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056; 49342 bytes",
+      "verifiedAt": "2026-08-23T18:46:30Z",
+      "validUntil": null,
+      "freshness": "IMMUTABLE_SOURCE_BOUND_DOCTRINE_AT_EVIDENCE_BASELINE",
+      "invalidators": [
+        "evidence baseline changes",
+        "doctrine evidence bytes change",
+        "strict evaluator bytes change",
+        "operator ratification withdrawal"
+      ],
+      "claim": "Hive AI's source-bound target architecture is the Sovereign HiveBrain Constellation on the hive-runtime default path.",
+      "doesNotProve": [
+        "installed runtime identity",
+        "current generation behavior",
+        "custom-head serve influence",
+        "execution authority",
+        "product-live status"
+      ],
+      "recertification": {
+        "ownerId": "HIVEAI_PRODUCT_TRUTH_SOURCE_AUDITOR",
+        "procedureId": "SOURCE_CUT_STRICT_REAUDIT_V1",
+        "trigger": "EVIDENCE_INPUT_OR_EVALUATOR_CHANGE",
+        "expiryAction": "NOT_TIME_EXPIRING_HOLD_ON_REVOCATION_UNTIL_REAUDIT_PASS"
+      },
+      "productLaneByom": false,
+      "legacyApiNamesPresent": true,
+      "implicitExternalFallback": false,
+      "outboundCentralizedModelDependency": false,
+      "externalCheckpointFallback": false,
+      "localModelProductServePath": false,
+      "externalAgentIsClientNotBackend": true,
+      "directPersonClientsSupported": true,
+      "customNeuralArtifactsExist": true,
+      "bareNoLlmClaimAllowed": false,
+      "defaultPath": "hive-runtime (constellation-local in-process deterministic scaffold)",
+      "inboundGenerationDoctrineAtPin": "Source doctrine at the evidence baseline: centralized AI-as-user traffic until the custom generation head earns H10 serve influence.",
+      "publicGenerationExplanation": "An authorized external agent may be the explicit inbound caller while Hive is assigned retrieval, routing, verification, and proof gating. This is not an implicit outbound backend fallback and not current runtime proof."
+    },
+    "source_atlas": {
+      "subject_id": "source_atlas",
+      "subject_kind": "SOURCE_TOPOLOGY",
+      "subject_status": "SOURCE_PRESENT_AT_PIN",
+      "claim_plane": "SOURCE_PRESENT",
+      "evidence": "Pinned catalog, registry, and public graph projection at the immutable Hive-AI evidence baseline",
+      "evidenceRef": "hub-assets/hub-facts.json; Dhenz14/Hive-AI@0ab04f6c19ffd41bb162bea674e77853fb27cc0e configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 46626c1662d1fe04e056ba1c44926184d523c65d490a76ad89acd2e58e04f62c",
+      "verifiedAt": "2026-08-23T18:46:30Z",
+      "validUntil": null,
+      "freshness": "IMMUTABLE_SOURCE_CUT",
+      "invalidators": [
+        "sourceCommit mismatch",
+        "catalog or registry bytes change",
+        "graphHash mismatch",
+        "snapshotHash mismatch"
+      ],
+      "claim": "The authored 640-neuron source topology is present at one immutable Hive-AI cut; it is not runtime telemetry.",
+      "doesNotProve": [
+        "released tester contents",
+        "installed runtime identity",
+        "runtime behavior",
+        "halo indexing",
+        "neuron activation",
+        "product-live status"
+      ],
+      "recertification": {
+        "ownerId": "HIVEAI_PRODUCT_TRUTH_SOURCE_AUDITOR",
+        "procedureId": "SOURCE_CUT_STRICT_REAUDIT_V1",
+        "trigger": "EVIDENCE_INPUT_OR_EVALUATOR_CHANGE",
+        "expiryAction": "NOT_TIME_EXPIRING_HOLD_ON_REVOCATION_UNTIL_REAUDIT_PASS"
+      },
+      "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+      "sourceTree": "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
+      "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
+      "snapshotHash": "634524e22039c696387a455fe0c1bd1d04e544a5745967acf4d27509fd882088",
+      "neurons": 640,
+      "trainable": 448,
+      "deterministic": 192,
+      "divisions": 16,
+      "families": 64,
+      "rowBackedTwitchProofs": 636
+    },
+    "tip_influence": {
+      "subject_id": "tip_influence",
+      "subject_kind": "SOURCE_GOVERNED_INFLUENCE_ACCOUNTING",
+      "subject_status": "SOURCE_GOVERNED_HOLD",
+      "claim_plane": "SOURCE_DERIVED",
+      "evidence": "Named source query and authority-ledger accounting at the immutable evidence baseline",
+      "evidenceRef": "python scripts/agent_query.py tip-truth @ 472131baa2bc212a043966773bd92477c3a8a16c; scripts/audit_served_influence_reachability.py sha256 bbf4b11be222af97c84b4b938a723c37112dad7885364b26868f7d9c70ea83c7",
+      "verifiedAt": "2026-08-23T18:46:30Z",
+      "validUntil": null,
+      "freshness": "IMMUTABLE_SOURCE_DERIVATION_AT_CUT",
+      "invalidators": [
+        "source baseline changes",
+        "authority ledger changes",
+        "TIP fuse binding changes",
+        "evaluator bytes change"
+      ],
+      "claim": "Thirty-seven rows are source-governed claim-permitted at the evidence baseline; execute authority and a permanent product-turn wire remain false.",
+      "doesNotProve": [
+        "installed runtime",
+        "successful execution",
+        "fleet halo state",
+        "permanent turn wire",
+        "100 percent product-live"
+      ],
+      "recertification": {
+        "ownerId": "HIVEAI_PRODUCT_TRUTH_SOURCE_AUDITOR",
+        "procedureId": "SOURCE_CUT_STRICT_REAUDIT_V1",
+        "trigger": "EVIDENCE_INPUT_OR_EVALUATOR_CHANGE",
+        "expiryAction": "NOT_TIME_EXPIRING_HOLD_ON_REVOCATION_UNTIL_REAUDIT_PASS"
+      },
+      "runtimeEnabled": 37,
+      "servedInfluenceEnabled": 37,
+      "productLiveClaimAllowed": 37,
+      "executeAuthorized": false,
+      "permanentProductTurnWire": false,
+      "safeToClaim100PercentProductLive": false,
+      "reason": "TIP_FUSE_CODE_BINDING_BYTES_MISMATCH_FAIL_CLOSED"
+    },
+    "fleet_halos": {
+      "subject_id": "fleet_halos",
+      "subject_kind": "NEURON_LOCAL_RETRIEVAL_CONTEXT",
+      "subject_status": "DECLARED_HARD_OFF",
+      "claim_plane": "SOURCE_PRESENT",
+      "evidence": "Pinned halo profiles and Living Anatomy graph at the immutable evidence baseline",
+      "evidenceRef": "Dhenz14/Hive-AI@472131baa2bc212a043966773bd92477c3a8a16c: configs/hivebrain/neuron_rag_halo_profiles_v1.json sha256 9fd9d11b2cf595b51e80b05ba4ec76d7d07a55023159756127f6cf61a17d3e49; docs/generated/living_anatomy_graph.v2.json sha256 ef804428576068626aa85230821633daf04371ec23f4e4540aa5aff0d408396c",
+      "verifiedAt": "2026-08-23T18:46:30Z",
+      "validUntil": null,
+      "freshness": "IMMUTABLE_SOURCE_CUT",
+      "invalidators": [
+        "halo profile bytes change",
+        "admission receipt appears",
+        "index receipt appears",
+        "runtime or serve receipt appears"
+      ],
+      "claim": "All 640 profiles are logical HALO_DECLARED hard-off contracts; zero sections are admitted, zero indexes are materialized, and no runtime, served, or product-live halo claim is granted.",
+      "doesNotProve": [
+        "indexed neuron memory",
+        "retrieval",
+        "runtime halo influence",
+        "served halo influence",
+        "product-live halo behavior"
+      ],
+      "recertification": {
+        "ownerId": "HIVEAI_PRODUCT_TRUTH_SOURCE_AUDITOR",
+        "procedureId": "SOURCE_CUT_STRICT_REAUDIT_V1",
+        "trigger": "EVIDENCE_INPUT_OR_EVALUATOR_CHANGE",
+        "expiryAction": "NOT_TIME_EXPIRING_HOLD_ON_REVOCATION_UNTIL_REAUDIT_PASS"
+      },
+      "declared": 640,
+      "admitted": 0,
+      "indexed": 0,
+      "runtime": false,
+      "served": false,
+      "productLive": false
+    },
+    "released_tester_5": {
+      "subject_id": "released_tester_5",
+      "subject_kind": "PUBLIC_RELEASE_REMOTE_ARTIFACT_BYTES",
+      "subject_status": "PUBLIC_REMOTE_BYTES_VERIFIED_OLDER_SOURCE_SUBJECT",
+      "claim_plane": "PUBLIC_REMOTE_BYTES_VERIFIED",
+      "evidence": "Independent bounded GitHub API, TLS, full-body remote download, byte-count, SHA-256, and Authenticode observation; raw HTTP bytes were not retained",
+      "evidenceRef": "tests/fixtures/constellation_public_truth/tester5_remote_bytes_observation_v1.json sha256 6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56",
+      "verifiedAt": "2026-08-23T19:20:09.7630961Z",
+      "validUntil": "2026-08-24T19:20:09.7630961Z",
+      "freshness": "EXTERNAL_REMOTE_BYTES_READBACK_WINDOW",
+      "invalidators": [
+        "validity expiry",
+        "release or asset identity change",
+        "remote byte-count mismatch",
+        "remote SHA-256 mismatch",
+        "contradictory Authenticode observation"
+      ],
+      "claim": "Tester.5 remote outer EXE bytes independently match 924864317 bytes and SHA-256 be1795…b000. Authenticode is NotSigned. Package contents, installation, execution, runtime, and behavior remain unproven, and the declared embedded Hive-AI source is older than the atlas.",
+      "doesNotProve": [
+        "archive or package contents",
+        "software safety",
+        "installation",
+        "execution",
+        "installed runtime",
+        "current source atlas",
+        "runtime behavior",
+        "product-live"
+      ],
+      "recertification": {
+        "ownerId": "INDEPENDENT_PUBLIC_ARTIFACT_READBACK_VERIFIER",
+        "procedureId": "TESTER5_REMOTE_ARTIFACT_RECERTIFICATION_V1",
+        "trigger": "VALID_UNTIL_OR_REMOTE_IDENTITY_CHANGE",
+        "expiryAction": "HOLD_SUBJECT_AND_ARCHITECTURE_ROUTE_UNTIL_FRESH_RECEIPT"
+      },
+      "tag": "hive-ide-v0.3.0-tester.5",
+      "url": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/Hive-IDE-OneClick-Windows-x64.exe",
+      "releaseId": 366980498,
+      "assetId": 505603161,
+      "assetState": "uploaded",
+      "responseChain": "302_TO_200",
+      "tlsVerified": true,
+      "bytes": 924864317,
+      "sha256": "be1795640763e99315b426757c76d655f6f07f92701d040c62f6126c1401b000",
+      "artifactBytesIndependentlyVerified": true,
+      "artifactSha256IndependentlyVerified": true,
+      "authenticodeStatus": "NotSigned",
+      "publisherAuthenticated": false,
+      "signedPublicRelease": false,
+      "smartScreenWarningExpected": true,
+      "artifactExecuted": false,
+      "packageContentsStatus": "UNKNOWN_NOT_INSPECTED",
+      "sourceCommit": "6f7fd8a9a18c8921aa0fad1fe5b0b901bacd3383",
+      "embeddedHiveAiCommit": "a0fe64832edb801c9944c0923e222a64ef14e498",
+      "representsCurrentSourceAtlas": false,
+      "verificationReceiptSha256": "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56"
+    },
+    "candidate_tester_6_publication": {
+      "subject_id": "candidate_tester_6_publication",
+      "subject_kind": "PUBLICATION_CANDIDATE",
+      "subject_status": "HELD_NOT_PUBLIC",
+      "claim_plane": "HELD",
+      "evidence": "Independent bounded five-URL tester.6 publication readback plus source-controlled derived observation receipt; raw HTTP bodies were not retained",
+      "evidenceRef": "tests/fixtures/constellation_public_truth/tester6_publication_readback_v1.json sha256 cf4101d607fbcfce8a9173311cb1d45c9fc6c81d82514d013df30c4a5bec97b0",
+      "verifiedAt": "2026-08-23T19:37:31.6497275Z",
+      "validUntil": "2026-08-24T19:37:31.6497275Z",
+      "freshness": "EXTERNAL_PUBLICATION_READBACK_WINDOW",
+      "invalidators": [
+        "validity expiry",
+        "tester.6 tag appears",
+        "tester.6 installer appears",
+        "version manifest appears",
+        "latest feed changes"
+      ],
+      "claim": "Tester.6 is held and not public at this readback: its tag API, intended installer, and version-specific Pages manifest returned 404 while canonical mirrors continued to name tester.5.",
+      "doesNotProve": [
+        "future publication state",
+        "tester.6 artifact identity",
+        "tester.6 signature state",
+        "installation",
+        "runtime behavior"
+      ],
+      "recertification": {
+        "ownerId": "INDEPENDENT_PUBLIC_ARTIFACT_READBACK_VERIFIER",
+        "procedureId": "TESTER6_PUBLICATION_RECERTIFICATION_V1",
+        "trigger": "VALID_UNTIL_OR_REMOTE_IDENTITY_CHANGE",
+        "expiryAction": "HOLD_SUBJECT_AND_ARCHITECTURE_ROUTE_UNTIL_FRESH_RECEIPT"
+      },
+      "tag": "hive-ide-v0.3.0-tester.6",
+      "githubReleaseApiStatus": 404,
+      "url": null,
+      "bytes": null,
+      "sha256": null,
+      "signatureStatus": "UNKNOWN",
+      "readbackReceiptSha256": "cf4101d607fbcfce8a9173311cb1d45c9fc6c81d82514d013df30c4a5bec97b0"
+    },
+    "windows_wsl_candidate_design": {
+      "subject_id": "windows_wsl_candidate_design",
+      "subject_kind": "CROSS_REPOSITORY_CANDIDATE_DESIGN",
+      "subject_status": "DECLARED_AT_PIN_BY_NON_DURABLE_EXTERNAL_OBSERVATION",
+      "claim_plane": "EXTERNAL_SOURCE_OBSERVATION",
+      "evidence": "Bounded read-only reviewer observation at an exact Hive IDE candidate ref and commit; no source-controlled receipt is present",
+      "evidenceRef": "Hive IDE candidate hive/wt/theyc/ide-electron-final-20260822 @ f459e85cc71801afbed4a8579b31133b9ff58edd",
+      "verifiedAt": "2026-08-23T18:46:30Z",
+      "validUntil": null,
+      "freshness": "NON_DURABLE_EXTERNAL_SOURCE_OBSERVATION",
+      "invalidators": [
+        "candidate ref moves",
+        "candidate commit changes",
+        "contradictory owner-repository observation",
+        "durable receipt supersedes this observation"
+      ],
+      "claim": "A non-durable external observation reports a Windows x64 NSIS host with a packaged Linux x86_64 runtime used inside Ubuntu WSL. This is candidate design, not landing, installation, or runtime proof.",
+      "doesNotProve": [
+        "a second platform package",
+        "landing",
+        "activation",
+        "installation",
+        "runtime identity",
+        "runtime behavior",
+        "product-live"
+      ],
+      "recertification": null,
+      "ownerRepository": "Hive IDE",
+      "repositoryRef": "hive/wt/theyc/ide-electron-final-20260822",
+      "repositoryCommit": "f459e85cc71801afbed4a8579b31133b9ff58edd",
+      "designTopology": "Windows x64 NSIS host with a packaged Linux x86_64 runtime used inside Ubuntu WSL.",
+      "evidencePersistence": "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT"
+    },
+    "linux_hive_ide_publication": {
+      "subject_id": "linux_hive_ide_publication",
+      "subject_kind": "PLATFORM_PUBLICATION",
+      "subject_status": "UNKNOWN_NO_ADMISSIBLE_PUBLICATION_OBSERVATION",
+      "claim_plane": "UNKNOWN",
+      "evidence": "No bounded current native Linux Hive IDE publication observation is admitted by this evidence set",
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "validUntil": null,
+      "freshness": "UNKNOWN",
+      "invalidators": [
+        "UNKNOWN requires a new bounded native Linux publication observation"
+      ],
+      "claim": "Native Linux Hive IDE publication state is UNKNOWN; make no availability, signing, install, runtime, or behavior claim.",
+      "doesNotProve": [
+        "publication availability or absence",
+        "package identity",
+        "signature state",
+        "installation",
+        "runtime behavior"
+      ],
+      "recertification": null,
+      "platform": "linux",
+      "url": null,
+      "bytes": null,
+      "sha256": null,
+      "signatureStatus": null,
+      "unknownReason": "No bounded current native Linux Hive IDE publication observation is admitted by this evidence set."
+    },
+    "macos_hive_ide_publication": {
+      "subject_id": "macos_hive_ide_publication",
+      "subject_kind": "PLATFORM_PUBLICATION",
+      "subject_status": "HELD_MISSING_ADMISSIBLE_PUBLICATION_OBSERVATION",
+      "claim_plane": "HELD",
+      "evidence": "No bounded current macOS Hive IDE package, signature, or notarization observation is admitted by this evidence set",
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "validUntil": null,
+      "freshness": "HELD_NO_ADMISSIBLE_OBSERVATION",
+      "invalidators": [
+        "HOLD requires a new bounded macOS package, signature, and notarization observation"
+      ],
+      "claim": "macOS publication is held without admissible package, signature, or notarization evidence; this is not proof of universal nonexistence.",
+      "doesNotProve": [
+        "publication availability or universal absence",
+        "package identity",
+        "signature or notarization state",
+        "installation",
+        "runtime behavior"
+      ],
+      "recertification": null,
+      "platform": "macos",
+      "url": null,
+      "bytes": null,
+      "sha256": null,
+      "signatureStatus": null,
+      "notarizationStatus": null,
+      "holdReason": "No bounded current macOS Hive IDE package, signature, or notarization observation is admitted by this evidence set."
+    },
+    "installed_runtime": {
+      "subject_id": "installed_runtime",
+      "subject_kind": "LOCAL_INSTALLED_RUNTIME",
+      "subject_status": "UNKNOWN",
+      "claim_plane": "UNKNOWN",
+      "evidence": "A source manifest and public release readback cannot identify or attest a specific installed machine runtime",
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "validUntil": null,
+      "freshness": "UNKNOWN",
+      "invalidators": [
+        "UNKNOWN requires a fresh local installed-runtime attestation"
+      ],
+      "claim": "This Pages site neither probes nor claims an installed Hive runtime, route, process, or authentication configuration.",
+      "doesNotProve": [
+        "runtime identity",
+        "runtime health",
+        "route availability",
+        "authentication configuration"
+      ],
+      "recertification": null,
+      "runtimeSourceCommit": null,
+      "installPath": null,
+      "healthStatus": null,
+      "attestationRef": null,
+      "unknownReason": "A source manifest and public release readback cannot identify or attest a specific installed machine runtime."
+    },
+    "observed_behavior": {
+      "subject_id": "observed_behavior",
+      "subject_kind": "LIVE_BEHAVIOR_OBSERVATION",
+      "subject_status": "UNKNOWN",
+      "claim_plane": "UNKNOWN",
+      "evidence": "No mission-bound runtime trace or behavior receipt is present in this source-only evidence set",
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "validUntil": null,
+      "freshness": "UNKNOWN",
+      "invalidators": [
+        "UNKNOWN requires a fresh request-bound runtime observation and receipt"
+      ],
+      "claim": "Source presence, doctrine, remote EXE byte identity, and a release tag do not prove request success, route availability, chat, mutations, or product-live behavior.",
+      "doesNotProve": [
+        "request success",
+        "chat availability",
+        "body route availability",
+        "operator mutation availability",
+        "product-live behavior"
+      ],
+      "recertification": null,
+      "observationId": null,
+      "runtimeIdentityRef": null,
+      "behaviorStatus": null,
+      "receiptRef": null,
+      "unknownReason": "No live behavior probe is part of this source-only manifest."
+    }
+  },
+  "atlasTesterMatch": "MISMATCH",
+  "relations": {
+    "atlasTester": {
+      "status": "MISMATCH",
+      "atlasSourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+      "testerEmbeddedHiveAiCommit": "a0fe64832edb801c9944c0923e222a64ef14e498",
+      "claim": "Tester.5 source declarations point to a Hive-AI generation that does not match the mapped 0ab04f6c source atlas; tester.5 must not be presented as realizing that Constellation."
+    },
+    "testerSubjects": {
+      "status": "SEPARATE_SUBJECTS",
+      "tester5Subject": "released_tester_5",
+      "tester6Subject": "candidate_tester_6_publication",
+      "claim": "Tester.5 remote-byte verification and tester.6 publication HOLD have independent identities, evidence planes, observations, and expiry clocks."
+    },
+    "candidateServed": {
+      "status": "LANDED_HASH_VERIFIED",
+      "claim": "The canonical source candidate is landed and hash-verified at the stated commit. No installed-runtime, behavior, authority, or product-live claim is allowed."
+    }
+  },
+  "definitions": [
+    {
+      "id": "neuron",
+      "label": "Neuron",
+      "definition": "A stable cataloged capability cell with a narrow purpose, division and family identity, deterministic or trainable classification, activation contract, evidence policy, and lifecycle gates.",
+      "boundary": "Neuron never means one scalar neural-network weight, and catalog presence never means active, trained, running, served, or product-live."
+    },
+    {
+      "id": "halo",
+      "label": "Halo",
+      "definition": "A bounded neuron-local retrieval and evidence context contract.",
+      "boundary": "HALO_DECLARED never means populated, indexed, retrievable, connected, running, served, or product-live. The current profile has zero admitted sections and zero materialized indexes."
+    },
+    {
+      "id": "division-family",
+      "label": "Division + family",
+      "definition": "The stable taxonomy that groups related capability neurons and keeps routing legible.",
+      "boundary": "The luminous division ring or orbit is authored visual geometry; it is never a retrieval halo."
+    },
+    {
+      "id": "hivebrain",
+      "label": "HiveBrain",
+      "definition": "The target cognition and control architecture that routes, retrieves, verifies, composes, remembers, and applies proof gates.",
+      "boundary": "HiveBrain is not the public renderer, not one monolithic general model, and not proof that an installed runtime performed the target path."
+    },
+    {
+      "id": "twitch",
+      "label": "Twitch",
+      "definition": "A formal row-backed physiology or purpose-mastery evidence object represented in Living Anatomy.",
+      "boundary": "A Twitch proof row is not automatic execution, runtime availability, served influence, or product-live authority."
+    },
+    {
+      "id": "living-anatomy",
+      "label": "Living Anatomy",
+      "definition": "A stable source topology with bounded local overlays for separately proven status, work, and causal observations.",
+      "boundary": "The visualization is not brain authority, and its authored geometry does not become runtime proof or relayout in response to live state."
+    }
+  ],
+  "registryClaimCut": {
+    "status": "HOLD",
+    "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+    "derivedAt": "2026-08-23T18:46:30Z",
+    "authority": "full_catalog_grant_bound_influence_accounting_via_agent_query",
+    "runtimeEnabled": 37,
+    "servedInfluenceEnabled": 37,
+    "productLiveClaimAllowed": 37,
+    "executeAuthorized": false,
+    "permanentProductTurnWire": false,
+    "safeToClaim100PercentProductLive": false,
+    "reason": "TIP_FUSE_CODE_BINDING_BYTES_MISMATCH_FAIL_CLOSED",
+    "boundary": "Source registry and claim-permission truth at the evidence baseline; not observation of an installed or running process."
+  },
+  "platforms": [
+    {
+      "id": "windows-x64-remote",
+      "label": "Windows x64 · tester.5 remote EXE",
+      "subjectId": "released_tester_5",
+      "subjectKind": "PUBLIC_RELEASE_REMOTE_ARTIFACT_BYTES",
+      "claimPlane": "PUBLIC_REMOTE_BYTES_VERIFIED",
+      "scope": "PUBLIC_TESTER_REMOTE_BYTES",
+      "supportStatus": "PUBLIC_RELEASE_AVAILABLE_UNSIGNED",
+      "testStatus": "REMOTE_BYTES_VERIFIED_NOT_EXECUTED",
+      "packageStatus": "TESTER_5_PUBLIC_REMOTE_BYTES_VERIFIED",
+      "signingStatus": "AUTHENTICODE_NOT_SIGNED",
+      "evidence": "Remote tester.5 outer EXE bytes independently matched the declared byte count and SHA-256. Contents, install, execution, runtime, and behavior remain unproven; the declared embedded Hive-AI source is older than the atlas.",
+      "evidenceRef": "truth_subjects.released_tester_5; tests/fixtures/constellation_public_truth/tester5_remote_bytes_observation_v1.json",
+      "verifiedAt": "2026-08-23T19:20:09.7630961Z",
+      "validUntil": "2026-08-24T19:20:09.7630961Z",
+      "freshness": "EXTERNAL_REMOTE_BYTES_READBACK_WINDOW"
+    },
+    {
+      "id": "windows-wsl-design",
+      "label": "Windows + WSL · candidate design",
+      "subjectId": "windows_wsl_candidate_design",
+      "subjectKind": "CROSS_REPOSITORY_CANDIDATE_DESIGN",
+      "claimPlane": "EXTERNAL_SOURCE_OBSERVATION",
+      "scope": "TESTER_DESIGN_TOPOLOGY",
+      "supportStatus": "DECLARED_INSIDE_WINDOWS_TESTER_PATH",
+      "testStatus": "NOT_A_SEPARATE_PUBLIC_PACKAGE",
+      "packageStatus": "BUNDLED_TOPOLOGY_NOT_PLATFORM_ARTIFACT",
+      "signingStatus": "NOT_APPLICABLE",
+      "evidence": "A non-durable external observation reports Windows plus WSL candidate design at one exact Hive IDE ref and commit. This is not durable custody, a second package, landing, installation, or runtime proof.",
+      "evidenceRef": "truth_subjects.windows_wsl_candidate_design",
+      "verifiedAt": "2026-08-23T18:46:30Z",
+      "validUntil": null,
+      "freshness": "NON_DURABLE_EXTERNAL_SOURCE_OBSERVATION"
+    },
+    {
+      "id": "linux-source",
+      "label": "Linux x64 · source/development",
+      "subjectId": "source_atlas",
+      "subjectKind": "SOURCE_TOPOLOGY",
+      "claimPlane": "SOURCE_PRESENT",
+      "scope": "CORE_SOURCE_AND_DEVELOPMENT",
+      "supportStatus": "SOURCE_PATH_PRESENT",
+      "testStatus": "SOURCE_ONLY",
+      "packageStatus": "NOT_A_PUBLIC_IDE_PACKAGE_CLAIM",
+      "signingStatus": "NOT_APPLICABLE",
+      "evidence": "Linux core source and development paths exist at the evidence baseline. This row makes no native public Hive IDE package claim.",
+      "evidenceRef": "truth_subjects.source_atlas; Dhenz14/Hive-AI@472131baa2bc212a043966773bd92477c3a8a16c README.md",
+      "verifiedAt": "2026-08-23T18:46:30Z",
+      "validUntil": null,
+      "freshness": "IMMUTABLE_SOURCE_CUT"
+    },
+    {
+      "id": "linux-publication",
+      "label": "Linux x64 · public Hive IDE package",
+      "subjectId": "linux_hive_ide_publication",
+      "subjectKind": "PLATFORM_PUBLICATION",
+      "claimPlane": "UNKNOWN",
+      "scope": "PUBLIC_HIVE_IDE_PACKAGE",
+      "supportStatus": "UNKNOWN",
+      "testStatus": "UNKNOWN",
+      "packageStatus": "UNKNOWN",
+      "signingStatus": "UNKNOWN",
+      "evidence": "No admissible current native Linux Hive IDE publication observation is present; make no availability, signing, install, runtime, or behavior claim.",
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "validUntil": null,
+      "freshness": "UNKNOWN"
+    },
+    {
+      "id": "macos-publication",
+      "label": "macOS · public Hive IDE package",
+      "subjectId": "macos_hive_ide_publication",
+      "subjectKind": "PLATFORM_PUBLICATION",
+      "claimPlane": "HELD",
+      "scope": "PUBLIC_HIVE_IDE_PACKAGE_AND_NOTARIZATION",
+      "supportStatus": "HELD_MISSING_ADMISSIBLE_PROOF",
+      "testStatus": "UNKNOWN",
+      "packageStatus": "HELD_NOT_PROVEN_PUBLISHED",
+      "signingStatus": "HELD_NOT_PROVEN_NOTARIZED",
+      "evidence": "No bounded current macOS package, signature, or notarization observation is admitted. This is HOLD, not proof of universal nonexistence.",
+      "evidenceRef": null,
+      "verifiedAt": null,
+      "validUntil": null,
+      "freshness": "HELD_NO_ADMISSIBLE_OBSERVATION"
+    }
+  ],
+  "integrityBoundary": {
+    "manifestSelfHashProvesSemanticTruth": false,
+    "authorityConferred": false,
+    "sourceCandidateNotLanded": false,
+    "claim": "The projection digest verifies canonicalized same-origin bytes and source binding only. It is not a detached signature, served/main receipt, runtime attestation, behavior observation, operator grant, or product-live authority."
+  },
+  "bindingDigest": {
+    "algorithm": "sha256",
+    "canonicalization": "recursive-key-sort-json-utf8",
+    "excluded": [
+      "bindingDigest"
+    ],
+    "value": "91c4a598413d269f9970032e76a5b3078810c8a9cf8195d2083e899a600808d1"
+  }
+}

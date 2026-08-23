@@ -1,5 +1,5 @@
 {
-  "schema": "hive.ide.public_release_manifest.v1",
+  "schema": "hive.ide.public_release_truth_manifest.v2",
   "product": {
     "name": "Hive IDE",
     "version": "0.3.0",
@@ -13,27 +13,66 @@
     "stage": "tester",
     "channel": "unsigned-public-tester",
     "repository": "Dhenz14/Dhenz14.github.io",
-    "releasedAtUtc": "2026-08-07T20:00:28.000Z",
+    "declaredReleasedAtUtc": "2026-08-07T20:00:28.000Z",
+    "githubPublishedAtUtc": "2026-08-07T20:00:40Z",
     "releasePageUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/tag/hive-ide-v0.3.0-tester.5",
     "updateFeedUrl": "https://dhenz14.github.io/downloads/hive-ide/latest.json",
-    "manifestUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/hive-ide-release-manifest.json",
-    "provenanceUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/windows-installer-provenance.json",
     "installerUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/Hive-IDE-OneClick-Windows-x64.exe"
   },
-  "artifact": {
+  "historicalReleaseManifest": {
+    "status": "HISTORICAL_RELEASE_DECLARATION_ONLY",
+    "url": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/hive-ide-release-manifest.json",
+    "assetId": 505602951,
+    "sizeBytes": 3528,
+    "sha256": "880df343aa2d2344f4e14547de72e0362afd5067e70d96821230b5fd46e463d9",
+    "claim": "This immutable v1 document records release-time declarations. Its fields do not prove current package contents, installation, runtime behavior, or product-live status."
+  },
+  "outerExecutable": {
     "name": "Hive-IDE-OneClick-Windows-x64.exe",
+    "url": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/Hive-IDE-OneClick-Windows-x64.exe",
     "sizeBytes": 924864317,
     "sha256": "be1795640763e99315b426757c76d655f6f07f92701d040c62f6126c1401b000",
-    "unsignedBuildSha256": "be1795640763e99315b426757c76d655f6f07f92701d040c62f6126c1401b000",
-    "publisherAuthenticated": false,
-    "authenticodeReceiptSha256": null,
-    "installedApplication": {
-      "name": "hive-workbench-v2.exe",
-      "sizeBytes": 20375040,
-      "sha256": "1001ba35c6dfb51cb4c7253c021e7be3272c3d4e672a45deb8b5d9359b8f7097"
+    "observation": {
+      "status": "PUBLIC_REMOTE_BYTES_VERIFIED",
+      "observer": "independent-public-artifact-verifier",
+      "apiObservedAtUtc": "2026-08-23T19:20:09.7630961Z",
+      "downloadHashObservedAtUtc": "2026-08-23T19:19:54.1841621Z",
+      "validUntilUtc": "2026-08-24T19:20:09.7630961Z",
+      "validityPolicy": "24_HOURS_FROM_API_READBACK",
+      "method": "GITHUB_RELEASE_API_PLUS_FULL_BODY_DOWNLOAD_BYTE_COUNT_AND_SHA256",
+      "releaseId": 366980498,
+      "assetId": 505603161,
+      "assetState": "uploaded",
+      "responseChain": "302_TO_200",
+      "tlsVerified": true,
+      "fullBodyDownloaded": true,
+      "exactByteCountMatched": true,
+      "exactSha256Matched": true,
+      "rawHttpRetained": false,
+      "independentlySigned": false,
+      "evidenceRef": "Dhenz14/Hive-AI:tests/fixtures/constellation_public_truth/tester5_remote_bytes_observation_v1.json",
+      "evidenceReceiptSchema": "hiveai.public_artifact_remote_bytes_observation.v1",
+      "evidenceReceiptId": "tester5-remote-bytes-20260823T192009Z",
+      "evidenceReceiptBytes": 3026,
+      "evidenceReceiptSha256": "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56",
+      "evidenceReceiptSelfZeroSha256": "8bf78ee21940a064daf51a621ecca7a4bbb9431f5cf7292a29b233a40f3da15b",
+      "evidenceReceiptGitBlobOid": "3703036fc42ab35413462ff343b5357a7dae9f05",
+      "evidenceReceiptAvailability": "SOURCE_CANDIDATE_NOT_LANDED"
+    },
+    "publisherAuthentication": {
+      "status": "NOT_SIGNED",
+      "publisherAuthenticated": false,
+      "authenticodeStatus": "NotSigned",
+      "signerCertificate": null,
+      "timestampCertificate": null,
+      "observedAtUtc": "2026-08-23T19:20:09.7630961Z",
+      "validUntilUtc": "2026-08-24T19:20:09.7630961Z",
+      "evidenceRef": "outerExecutable.observation.evidenceReceiptSha256",
+      "claim": "The SHA-256 identifies the observed outer EXE bytes. It is not a publisher signature, identity proof, software-safety verdict, or runtime attestation."
     }
   },
-  "source": {
+  "sourceDeclarations": {
+    "status": "HISTORICAL_RELEASE_MANIFEST_DECLARATION_ONLY",
     "hiveIde": {
       "commit": "6f7fd8a9a18c8921aa0fad1fe5b0b901bacd3383",
       "tree": "0c107f9fc6c788ab4aeb8a68092e52dfbf0e14cb"
@@ -50,35 +89,98 @@
       "artifactSha256": "fdf630831c83625ff5647e21814c810892f01c9ef567e7f653f18ef3b1e7a840",
       "checksumReceiptSha256": "fa4f47cfbcdb998db402d2173cf2b6d487de38f25a223dfe692cde114820beb9",
       "publicHivePoAReleaseClaimed": false
-    }
+    },
+    "claim": "These are release-time source declarations from the historical v1 manifest. They are not current installed-runtime identities."
   },
-  "runtime": {
-    "runtimeManifest": {
+  "historicalBuildDeclarations": {
+    "status": "DECLARATION_ONLY_NOT_CURRENTLY_OBSERVED",
+    "declaredAtUtc": "2026-08-07T20:00:28.000Z",
+    "currentObservationValidUntilUtc": null,
+    "evidenceRef": "historicalReleaseManifest",
+    "innerApplicationExpectedByProvenance": {
+      "name": "hive-workbench-v2.exe",
+      "sizeBytes": 20375040,
+      "sha256": "1001ba35c6dfb51cb4c7253c021e7be3272c3d4e672a45deb8b5d9359b8f7097"
+    },
+    "runtimeManifestDeclared": {
       "name": "runtime-manifest.json",
       "sizeBytes": 47543,
       "sha256": "47d5b81e9121ceaba86d9419ae312bdef5000f6297e571a62ba46af4bc8fe756"
     },
-    "payloadReceipt": {
+    "payloadReceiptDeclared": {
       "name": "oneclick-payload-receipt.json",
       "sizeBytes": 3041,
       "sha256": "c6e161e71a7fe8c808bc5bb583296f7d8bea9a656cb5e322f51337ef7c1fbf33"
     },
-    "installerProvenanceReceipt": {
+    "installerProvenanceReceiptDeclared": {
       "name": "windows-installer-provenance.json",
       "sizeBytes": 4733,
       "sha256": "217206519fd8fbbf6ff0efbc005a20b549d3e36016850d09750ba933c6f2ea4d"
     },
-    "cleanSourceWorktrees": true,
-    "offlineBundledDependencies": true,
-    "wslBootstrapMayRequireWindowsManagedNetwork": true
+    "sourceWorktrees": "DECLARED_CLEAN_NOT_CURRENTLY_RECHECKED",
+    "offlineBundledDependencies": "DECLARED_PRESENT_NOT_CURRENTLY_INSPECTED",
+    "wslBootstrap": "DECLARED_MAY_REQUIRE_WINDOWS_MANAGED_NETWORK",
+    "claim": "No current review opened the installer, inspected its payload, installed it, or executed it. These historical declarations cannot upgrade the current UNKNOWN planes."
+  },
+  "claimPlanes": {
+    "outerExecutableBytes": {
+      "status": "VERIFIED",
+      "observedAtUtc": "2026-08-23T19:20:09.7630961Z",
+      "validUntilUtc": "2026-08-24T19:20:09.7630961Z",
+      "evidenceRef": "outerExecutable.observation",
+      "claim": "Only the remote outer EXE byte count and SHA-256 are verified."
+    },
+    "packageContents": {
+      "status": "UNKNOWN",
+      "observedAtUtc": null,
+      "validUntilUtc": null,
+      "evidenceRef": "historicalBuildDeclarations",
+      "claim": "The outer EXE was not opened or inventoried in the current observation."
+    },
+    "installation": {
+      "status": "UNKNOWN",
+      "observedAtUtc": null,
+      "validUntilUtc": null,
+      "evidenceRef": "historicalBuildDeclarations",
+      "claim": "The installer was not executed and no current installed-state receipt exists."
+    },
+    "runtime": {
+      "status": "UNKNOWN",
+      "observedAtUtc": null,
+      "validUntilUtc": null,
+      "evidenceRef": "historicalBuildDeclarations",
+      "claim": "No current process, listener, behavior, restart, rollback, or operator-control attestation exists."
+    },
+    "productLive": {
+      "status": "FALSE",
+      "observedAtUtc": null,
+      "validUntilUtc": null,
+      "evidenceRef": "claimPlanes.runtime",
+      "claim": "No product-live claim is authorized without current installed-runtime and observed-behavior evidence."
+    },
+    "publicFunctionalTesting": {
+      "status": "HOLD",
+      "observedAtUtc": "2026-08-23T19:20:09.7630961Z",
+      "validUntilUtc": "2026-08-24T19:20:09.7630961Z",
+      "evidenceRef": "outerExecutable.observation + outerExecutable.publisherAuthentication + claimPlanes.runtime",
+      "claim": "Verified unsigned outer bytes alone do not authorize public functional testing."
+    }
+  },
+  "downloadDisposition": {
+    "status": "HOLD",
+    "activeDownloadAuthorized": false,
+    "reason": "UNSIGNED_AND_INSTALL_RUNTIME_UNVERIFIED",
+    "requires": "SEPARATE_UNEXPIRED_OPERATOR_AUTHORIZATION",
+    "claim": "Evidence may be shown, but this truth contract does not authorize an active download action."
   },
   "testerPolicy": {
-    "readyForPublicFunctionalTesting": true,
+    "publicFunctionalTesting": "HOLD",
     "signedPublicRelease": false,
     "smartScreenWarningExpected": true,
     "testCreditsHaveMonetaryValue": false,
     "testCreditsTransferable": false,
-    "testCreditsRedeemable": false
+    "testCreditsRedeemable": false,
+    "evidenceRef": "outerExecutable.publisherAuthentication + claimPlanes.publicFunctionalTesting"
   },
-  "claimBoundary": "PUBLIC_HTTPS_UNSIGNED_WINDOWS_TESTER_RELEASE_NOT_PUBLISHER_AUTHENTICATED_OR_PUBLIC_HIVEPOA_REWARD_NETWORK"
+  "claimBoundary": "PUBLIC_REMOTE_OUTER_EXE_BYTES_VERIFIED_UNTIL_2026-08-24T19:20:09.7630961Z; AUTHENTICODE_NOT_SIGNED; PACKAGE_CONTENTS_INSTALLATION_RUNTIME_UNKNOWN; PRODUCT_LIVE_FALSE; PUBLIC_FUNCTIONAL_TESTING_HOLD"
 }

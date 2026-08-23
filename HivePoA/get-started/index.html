@@ -1,82 +1,254 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex">
-  <title>Get started — HivePoA Storage Preview</title>
-  <link rel="stylesheet" href="../distribution-assets/distribution.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%230f5c4c'/%3E%3Cpath%20d='M16%206.5l8.2%204.75v9.5L16%2025.5l-8.2-4.75v-9.5z'%20fill='none'%20stroke='%23f3efe6'%20stroke-width='2.2'%20stroke-linejoin='round'/%3E%3Ccircle%20cx='16'%20cy='16'%20r='2.6'%20fill='%23f3efe6'/%3E%3C/svg%3E">
-  <link rel="canonical" href="https://dhenz14.github.io/HivePoA/get-started/">
-  <meta name="description" content="Download, verify, enroll, then opt in to Forever Drive at 20%.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#0f5c4c">
-  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#14161a">
+  <meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, noimageindex">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta name="theme-color" content="#06131b">
+  <title>HivePoA // Public Surface Hold</title>
+  <meta name="description" content="HivePoA public distribution and tester-network actions are held. Historical operator-key metadata is preserved, but no current delivery, coordinator, enrollment, execution, or public-network proof is claimed.">
+  <meta property="og:title" content="HivePoA // Public Surface Hold">
+  <meta property="og:description" content="Historical operator-key release-index metadata only. Public delivery, coordinator, enrollment, execution, runtime, and network availability remain held.">
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="HivePoA Storage Preview">
-  <meta property="og:title" content="Get started — HivePoA Storage Preview">
-  <meta property="og:description" content="Download, verify, enroll, then opt in to Forever Drive at 20%.">
-  <meta property="og:url" content="https://dhenz14.github.io/HivePoA/get-started/">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Get started — HivePoA Storage Preview">
-  <meta name="twitter:description" content="Download, verify, enroll, then opt in to Forever Drive at 20%.">
+  <meta name="twitter:title" content="HivePoA // Public Surface Hold">
+  <meta name="twitter:description" content="Historical release-index metadata only. No current package, coordinator, enrollment, execution, or public-network claim.">
+  <style>
+    :root {
+      color-scheme: dark;
+      --void: #02080e;
+      --deep: #06131b;
+      --panel: rgba(7, 25, 34, 0.94);
+      --line: rgba(90, 234, 206, 0.28);
+      --mint: #72f4d7;
+      --cyan: #76d7ff;
+      --amber: #ffc767;
+      --text: #eaf7f5;
+      --muted: #9db7b6;
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--void); }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      overflow-x: hidden;
+      padding: clamp(1rem, 4vw, 3rem);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 18% 15%, rgba(35, 216, 182, 0.14), transparent 32rem),
+        radial-gradient(circle at 82% 76%, rgba(69, 143, 255, 0.13), transparent 36rem),
+        linear-gradient(145deg, var(--void), var(--deep) 58%, #041019);
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.14;
+      background-image:
+        linear-gradient(rgba(118, 215, 255, 0.24) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(118, 215, 255, 0.24) 1px, transparent 1px);
+      background-size: 3rem 3rem;
+      mask-image: linear-gradient(to bottom, black, transparent 82%);
+    }
+    main {
+      position: relative;
+      isolation: isolate;
+      width: min(64rem, 100%);
+      border: 1px solid var(--line);
+      border-radius: 1.35rem;
+      padding: clamp(1.4rem, 4vw, 3.25rem);
+      overflow: hidden;
+      background: linear-gradient(155deg, rgba(12, 38, 49, 0.96), var(--panel));
+      box-shadow: 0 2rem 7rem rgba(0, 0, 0, 0.52), inset 0 1px rgba(255, 255, 255, 0.04);
+    }
+    main::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      width: 26rem;
+      aspect-ratio: 1;
+      right: -12rem;
+      top: -13rem;
+      border: 1px solid rgba(114, 244, 215, 0.25);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 3rem rgba(118, 215, 255, 0.035),
+        0 0 0 7rem rgba(114, 244, 215, 0.025);
+    }
+    .eyebrow {
+      margin: 0 0 1rem;
+      color: var(--mint);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 1.2rem;
+      border: 1px solid rgba(255, 199, 103, 0.55);
+      border-radius: 999px;
+      padding: 0.45rem 0.8rem;
+      color: #ffe2aa;
+      background: rgba(116, 74, 13, 0.28);
+      font: 800 0.77rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: 0.12em;
+    }
+    .status::before {
+      content: "";
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      background: var(--amber);
+      box-shadow: 0 0 1rem rgba(255, 199, 103, 0.9);
+    }
+    h1 {
+      max-width: 16ch;
+      margin: 0;
+      font-size: clamp(2.25rem, 7vw, 5.4rem);
+      line-height: 0.96;
+      letter-spacing: -0.055em;
+      text-wrap: balance;
+    }
+    .lead {
+      max-width: 52rem;
+      margin: 1.4rem 0 0;
+      color: #c9dcda;
+      font-size: clamp(1.02rem, 2vw, 1.25rem);
+      line-height: 1.7;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.85rem;
+      margin: 2rem 0 0;
+    }
+    .grid section {
+      min-height: 10rem;
+      border: 1px solid rgba(118, 215, 255, 0.17);
+      border-radius: 0.95rem;
+      padding: 1rem;
+      background: rgba(1, 11, 17, 0.48);
+    }
+    h2 {
+      margin: 0 0 0.6rem;
+      color: var(--cyan);
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .grid p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.6;
+    }
+    .telemetry {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      margin-top: 0.85rem;
+      overflow: hidden;
+      border: 1px solid rgba(255, 199, 103, 0.22);
+      border-radius: 0.8rem;
+      background: rgba(255, 199, 103, 0.2);
+    }
+    .telemetry span {
+      padding: 0.8rem;
+      color: #ffd994;
+      background: #09161c;
+      font: 700 0.72rem/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+    .telemetry strong {
+      display: block;
+      color: #769493;
+      font-size: 0.64rem;
+      letter-spacing: 0.12em;
+    }
+    .boundary {
+      margin: 1.4rem 0 0;
+      border-left: 2px solid var(--amber);
+      padding: 0.1rem 0 0.1rem 1rem;
+      color: #d7e6e4;
+      line-height: 1.65;
+    }
+    .truth {
+      display: inline-flex;
+      margin-top: 1.5rem;
+      border: 1px solid rgba(114, 244, 215, 0.5);
+      border-radius: 999px;
+      padding: 0.75rem 1rem;
+      color: var(--mint);
+      font-weight: 800;
+      text-decoration: none;
+      background: rgba(21, 108, 94, 0.18);
+    }
+    .truth:focus-visible,
+    .truth:hover {
+      outline: 2px solid var(--mint);
+      outline-offset: 3px;
+      color: #06131b;
+      background: var(--mint);
+    }
+    .foot {
+      margin: 1rem 0 0;
+      color: #769493;
+      font: 600 0.73rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    @media (max-width: 720px) {
+      body { place-items: start center; padding: 0.75rem; }
+      main { border-radius: 1rem; padding: 1.3rem; }
+      .grid { grid-template-columns: 1fr; }
+      .grid section { min-height: 0; }
+      .telemetry { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header">
-    <p class="brand">HivePoA Storage Preview</p>
-    <nav aria-label="Primary">
-      <a href="/">Hive ecosystem hub</a>
-      <a href="../">HivePoA home</a>
-      <a href="../download/">Download</a>
-      <a href="../verify/">Verify</a>
-      <a href="../releases/">Releases</a>
-      <a href="./" aria-current="page">Get started</a>
-      <a href="../tester-network/">Tester Network</a>
-    </nav>
-  </header>
-  <main id="main">
-  <noscript>
-    <p class="status" data-state="blocked">This page needs JavaScript to check the signed release index. Nothing is downloaded or verified without it.</p>
-  </noscript>
-    <h1>Get started</h1>
-    <p><strong>Current authorized tip:</strong> <code data-field="version">checking the signed index…</code>. Until index verification succeeds, this page approves no build. Revoked releases stay withdrawn. GitHub and IPFS are byte transports; authenticate the expected digest and compare SHA-256 locally.</p>
-    <p data-platform-summary>Platform-specific launch guidance appears only after the signed current tip verifies. A matching hash establishes byte integrity against that authenticated digest, not software safety.</p>
-    <ol>
-      <li>Prefer the authenticated <strong>three-file handoff</strong> when the operator issues one; otherwise use the signed Pages tip shown on Download and verify its SHA-256 on Verify.</li>
-      <li>Two channels carry releases: <strong>GitHub Releases</strong> and <strong>IPFS</strong>. They are signed against the same release index, but a given build may publish the package to one and only signed metadata to the other — Download says which is which. Whichever you use, the SHA-256 you verify is the same.</li>
-      <li>Confirm the pinned channel-index fingerprint locally; the webpage alone is not the trust root.</li>
-      <li>Verify filename, bytes, and SHA-256 before running anything.</li>
-      <li>Storage stays off until you deliberately opt in inside the desktop app.</li>
-    </ol>
-    <p>This page never auto-downloads packages and never silently switches mirrors. IPFS-first signed artifacts plus an independently authenticated handoff are the authority.</p>
+  <main id="hivepoa-public-hold" aria-labelledby="hold-title">
+    <p class="eyebrow">HivePoA // public surface quarantine</p>
+    <div class="status" role="status">HOLD · ACTIONS DISABLED</div>
+    <h1 id="hold-title">The gate is closed until the proof chain is current.</h1>
+    <p class="lead">This mirror preserves historical operator-key-signed release-index metadata. That metadata is provenance only: it is not current proof of package delivery, a live coordinator, public enrollment, execution, runtime acceptance, public-network availability, or product-live behavior.</p>
 
-    <section data-tester-network hidden>
-      <h2>Tester Network path</h2>
-      <p>The signed tip enables two distinct workers, real Kubo, multi-block PoA, and 100 valueless test credits exactly once per accepted proof. Replay awards zero; restart and revocation are part of acceptance.</p>
-      <p><a class="button" href="../tester-network/">Open Tester Network instructions</a></p>
-    </section>
+    <div class="grid">
+      <section>
+        <h2>Historical metadata only</h2>
+        <p>The preserved index records an earlier operator declaration. The public mirror does not currently bind every served verifier byte to a complete, current build receipt.</p>
+      </section>
+      <section>
+        <h2>No live network claim</h2>
+        <p>No public coordinator or enrollment endpoint is published here. Historical candidate receipts do not establish a reachable network today.</p>
+      </section>
+      <section>
+        <h2>No action surface</h2>
+        <p>No download, verifier, installer, enrollment, credit, or network action is exposed from this quarantine page.</p>
+      </section>
+    </div>
 
-    <section data-storage-preview-only>
-    <h2>Standalone card (Forever Drive + voluntary pins)</h2>
-    <p>When the verified current manifest authorizes standalone storage, the intended path is:</p>
-    <ol>
-      <li>Download the current tip <code data-field="version">checking the signed index…</code> from Download (or operator handoff), verify SHA-256, and launch.</li>
-      <li>Opt in Forever Drive at 20% inside the app.</li>
-      <li>Browse → pin videos you choose. Voluntary pins share the same 20% quota; Forever Drive reservations keep priority. No compute, Brain, Neura, or paid rewards are claimed from local pins alone.</li>
-    </ol>
+    <div class="telemetry" aria-label="Current HivePoA public status">
+      <span><strong>DELIVERY</strong>HOLD</span>
+      <span><strong>COORDINATOR</strong>NOT PROVEN</span>
+      <span><strong>ENROLLMENT</strong>NOT PUBLISHED</span>
+      <span><strong>PRODUCT LIVE</strong>FALSE</span>
+    </div>
 
-    <h3>Joining the shared pool is not available yet</h3>
-    <p>Pool assignment needs a private enrollment packet issued against a <strong>live HTTPS coordinator</strong>, and no such coordinator is published today. Until the operator announces one and issues you a packet, the tray's <strong>Copy Enrollment Request</strong> and <strong>Import Private Enrollment</strong> items have nothing to register against and will fail closed rather than pretend. That is expected, not a fault in your setup.</p>
-    <p><code>readyForPool</code> stays truthful throughout — embedded-only mode is deliberately not pool-ready, and the app will keep saying so until a real coordinator assigns work.</p>
-    <p>When enrollment opens, identity is established only by an operator-issued authenticated packet bound to the tester. A username displayed on Pages would not imply access or reservation, so none is published here.</p>
-    </section>
-
-    <h2>If the app does not open</h2>
-    <p>Storage Preview only recovers a <strong>verified owned</strong> leftover on its local port. A healthy foreign or unverifiable listener is never force-killed. If an older Storage Preview window is already open, use the system-tray icon — a second double-click focuses that window.</p>
-    <p>If another unrelated program blocks the local preview port, close that program and open Storage Preview again.</p>
+    <p class="boundary">This is a reversible deployment quarantine, not a canonical HivePoA source repair. Historical assets remain preserved in repository custody and are not executed or trusted by this page.</p>
+    <a class="truth" href="/#product-truth">Return to Product Truth</a>
+    <p class="foot">Authority: none · public actions: none · source repair: held</p>
   </main>
-  <script type="application/json" id="release-index-fixture">{"schema":"https://hivepoa.io/schemas/hivepoa-release-channel-index.v1.json","schemaVersion":1,"signed":{"product":"HivePoA Storage Preview","profile":"storage-preview-desktop-x64.v2","createdAt":"2026-08-03T20:12:55.377Z","expiresAt":"2026-11-01T20:12:55.377Z","latestBetaSequence":7,"latestStableSequence":0,"capabilityCeilingText":"Tester Network storage PoA; 100 valueless test credits exactly once per accepted proof; no transfer, redemption, monetary reward, posting key, or Hive transaction","signer":"hivepoa-storage-preview-operator","mirrorParity":true,"releases":[{"version":"2.0.1-storage-preview.7","releaseSequence":7,"channel":"beta","manifestSha256":"8fb5fe3b838b48cb1d60d312f2525ff03b2c97dc6132fbcaf9e260e69235e304","manifestCid":"bafkreiepwx7dxa4ljdfr2ygtclzfex7qhmwjpxdbgl54v6pcmdtjenpdaq","publicationProofCid":"bafkreicnn2esivmzvtaqucmjcyysqixqaff2z32glicfs6ifsuckwvdc2a","receiptCid":"bafkreifzenpkcb4pcu7ih5j3eb4jf6ooki6vnunxqg3bjd5a4tmrwwguly","runtimeAcceptanceCid":"bafkreicglv7rvpweykprefu72z742ynj6by3p6vmwtnnqzti553njjvg24","githubReleaseTag":"storage-preview-2.0.1-7","githubRepository":"Dhenz14/HivePoA-Distribution","githubRepositoryId":1316835999,"githubManifestAsset":"tester-network-manifest-2.0.1-storage-preview.7.json","platform":"linux","architecture":"x64","bytes":181632556,"artifactDigests":{"SpiritBomb-2.0.1-storage-preview.7-x86_64.AppImage":"b6d79ef80986cbc5967ab58d2ae4678a0acb6e7ad0856a182e0c2073f4ffadef","tester-network-manifest-2.0.1-storage-preview.7.json":"8fb5fe3b838b48cb1d60d312f2525ff03b2c97dc6132fbcaf9e260e69235e304","tester-network-publication-receipt-2.0.1-storage-preview.7.json":"b9235ea1078f153e83f53b207892f9ce523d56d1b781b6148fa0e4d91b58d45e","tester-network-runtime-acceptance-2.0.1-storage-preview.7.json":"465d7f1abec4c29f12169fd67fcd61a9f071b7faacb4dad86668ef76d4a6a6d7","tester-network-publication-proof-2.0.1-storage-preview.7.json":"4d6e89245599acc10a098916312822f0014bacef465a045979059504ab5462d0"},"primaryArtifactCid":"bafybeibhwapxwf5ojdtrw7pe23ijstbdt6pbzz6gqcdmnr5lhu2564pqqm","primaryArtifact":"SpiritBomb-2.0.1-storage-preview.7-x86_64.AppImage","tufVersion":7,"revoked":false,"ipfsGateways":["https://dweb.link/ipfs","https://ipfs.filebase.io/ipfs"],"cidMirrorPath":"cid-mirrors/bafkreiepwx7dxa4ljdfr2ygtclzfex7qhmwjpxdbgl54v6pcmdtjenpdaq.json","metadataMirrors":{"manifest":{"filename":"tester-network-manifest-2.0.1-storage-preview.7.json","bytes":6728,"sha256":"8fb5fe3b838b48cb1d60d312f2525ff03b2c97dc6132fbcaf9e260e69235e304","cid":"bafkreiepwx7dxa4ljdfr2ygtclzfex7qhmwjpxdbgl54v6pcmdtjenpdaq","path":"cid-mirrors/bafkreiepwx7dxa4ljdfr2ygtclzfex7qhmwjpxdbgl54v6pcmdtjenpdaq.json"},"receipt":{"filename":"tester-network-publication-receipt-2.0.1-storage-preview.7.json","bytes":1826,"sha256":"b9235ea1078f153e83f53b207892f9ce523d56d1b781b6148fa0e4d91b58d45e","cid":"bafkreifzenpkcb4pcu7ih5j3eb4jf6ooki6vnunxqg3bjd5a4tmrwwguly","path":"cid-mirrors/bafkreifzenpkcb4pcu7ih5j3eb4jf6ooki6vnunxqg3bjd5a4tmrwwguly.json"},"runtimeAcceptance":{"filename":"tester-network-runtime-acceptance-2.0.1-storage-preview.7.json","bytes":4106,"sha256":"465d7f1abec4c29f12169fd67fcd61a9f071b7faacb4dad86668ef76d4a6a6d7","cid":"bafkreicglv7rvpweykprefu72z742ynj6by3p6vmwtnnqzti553njjvg24","path":"cid-mirrors/bafkreicglv7rvpweykprefu72z742ynj6by3p6vmwtnnqzti553njjvg24.json"},"publicationProof":{"filename":"tester-network-publication-proof-2.0.1-storage-preview.7.json","bytes":7267,"sha256":"4d6e89245599acc10a098916312822f0014bacef465a045979059504ab5462d0","cid":"bafkreicnn2esivmzvtaqucmjcyysqixqaff2z32glicfs6ifsuckwvdc2a","path":"cid-mirrors/bafkreicnn2esivmzvtaqucmjcyysqixqaff2z32glicfs6ifsuckwvdc2a.json"}},"testerNetwork":{"capability":"storage-poa-tester-network-v1","runbook":{"path":"docs/handoffs/STORAGE_POA_TESTER_NETWORK_RUNBOOK_20260802.md","sha256":"c6fd4b9259bf9e87559596e0f063d556714e9223823f8b5e9d6c334bc30cdeb4"},"bootstrap":{"minimumWorkers":2,"distinctWorkerIdentities":true,"operatorEnrollmentRequired":true,"realKuboRequired":true,"minimumHiveApiEndpoints":3},"proofPolicy":{"multiBlock":true,"irreversibleEntropyQuorum":"2-of-3-hive-api","replayIdempotent":true,"restartPersistenceRequired":true,"revocationSupported":true},"creditPolicy":{"schema":"hivepoa.storage-poa-test-credit-policy.v1","amountPerAcceptedProof":100,"replayAward":0,"unit":"test-credit","awardExactlyOnce":true,"transferable":false,"redeemable":false,"monetaryValue":false},"hiveBoundary":{"readOnlyBlockData":true,"postingKeyRequired":false,"broadcastsTransactions":false,"fabricatedTransactionIds":false}}},{"version":"2.0.1-storage-preview.6","releaseSequence":6,"channel":"beta","manifestSha256":"d99ae92cdfe42bbe7d78db578af7a242f57ab324941ac7afcf0facde9c0b4c50","manifestCid":"bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka","publicationProofCid":"bafkreihnwn65vtnyrohj5vbi6efzv3vvlfholk7pz2nqirutic63qcevea","receiptCid":"bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge","githubReleaseTag":"storage-preview-2.0.1-6","githubRepository":"Dhenz14/HivePoA-Distribution","githubRepositoryId":1316835999,"githubManifestAsset":"tester-network-manifest-2.0.1-storage-preview.6.json","platform":"linux","architecture":"x64","bytes":179361113,"artifactDigests":{"SpiritBomb-2.0.1-storage-preview.6-x86_64.AppImage":"9178c8d4a6c7f3e1fe210061b712c63b232d77554883d0c18576331825b76212","tester-network-manifest-2.0.1-storage-preview.6.json":"d99ae92cdfe42bbe7d78db578af7a242f57ab324941ac7afcf0facde9c0b4c50","tester-network-publication-receipt-2.0.1-storage-preview.6.json":"134242b5643598da3bad84fc437e4759196737139cb80f7f803df960f5c24731","tester-network-publication-proof-2.0.1-storage-preview.6.json":"edb37ddacdb88b8e9ed428f10b9aeeb5594ee5abefce9b04469340bdb8089520"},"primaryArtifactCid":"bafybeict7ct2hhbp74cvwf3j3kh345n7wcedpzsnfolcqo65hqvibg3h5i","primaryArtifact":"SpiritBomb-2.0.1-storage-preview.6-x86_64.AppImage","tufVersion":6,"revoked":true,"ipfsGateways":["https://dweb.link/ipfs","https://ipfs.filebase.io/ipfs"],"cidMirrorPath":"cid-mirrors/bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka.json","metadataMirrors":{"manifest":{"filename":"tester-network-manifest-2.0.1-storage-preview.6.json","bytes":6728,"sha256":"d99ae92cdfe42bbe7d78db578af7a242f57ab324941ac7afcf0facde9c0b4c50","cid":"bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka","path":"cid-mirrors/bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka.json"},"receipt":{"filename":"tester-network-publication-receipt-2.0.1-storage-preview.6.json","bytes":1826,"sha256":"134242b5643598da3bad84fc437e4759196737139cb80f7f803df960f5c24731","cid":"bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge","path":"cid-mirrors/bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge.json"},"publicationProof":{"filename":"tester-network-publication-proof-2.0.1-storage-preview.6.json","bytes":5610,"sha256":"edb37ddacdb88b8e9ed428f10b9aeeb5594ee5abefce9b04469340bdb8089520","cid":"bafkreihnwn65vtnyrohj5vbi6efzv3vvlfholk7pz2nqirutic63qcevea","path":"cid-mirrors/bafkreihnwn65vtnyrohj5vbi6efzv3vvlfholk7pz2nqirutic63qcevea.json"}},"testerNetwork":{"capability":"storage-poa-tester-network-v1","runbook":{"path":"docs/handoffs/STORAGE_POA_TESTER_NETWORK_RUNBOOK_20260802.md","sha256":"c6fd4b9259bf9e87559596e0f063d556714e9223823f8b5e9d6c334bc30cdeb4"},"bootstrap":{"minimumWorkers":2,"distinctWorkerIdentities":true,"operatorEnrollmentRequired":true,"realKuboRequired":true,"minimumHiveApiEndpoints":3},"proofPolicy":{"multiBlock":true,"irreversibleEntropyQuorum":"2-of-3-hive-api","replayIdempotent":true,"restartPersistenceRequired":true,"revocationSupported":true},"creditPolicy":{"schema":"hivepoa.storage-poa-test-credit-policy.v1","amountPerAcceptedProof":100,"replayAward":0,"unit":"test-credit","awardExactlyOnce":true,"transferable":false,"redeemable":false,"monetaryValue":false},"hiveBoundary":{"readOnlyBlockData":true,"postingKeyRequired":false,"broadcastsTransactions":false,"fabricatedTransactionIds":false}}},{"version":"2.0.1-storage-preview.5","releaseSequence":5,"channel":"beta","manifestSha256":"459f050699d215ba2dca7c0dbd3aa45f06f46b1d3a7e2441b2c418be32fd94fe","manifestCid":"bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y","publicationProofCid":"bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y","receiptCid":"bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y","githubReleaseTag":"storage-preview-2.0.1-5","githubRepository":"Dhenz14/HivePoA-Distribution","githubRepositoryId":1316835999,"githubManifestAsset":"ipfs-release-manifest-v2.0.1-storage-preview.5.json","platform":"windows","architecture":"x64","bytes":123798810,"artifactDigests":{"SpiritBomb-Portable-2.0.1-storage-preview.5.exe":"79b91356eb39daa6dac5d88882d02df63fcf969c3a7c00b0c8e932a66c539570","ipfs-release-manifest-v2.0.1-storage-preview.5.json":"459f050699d215ba2dca7c0dbd3aa45f06f46b1d3a7e2441b2c418be32fd94fe"},"primaryArtifactCid":"bafybeicdwxaa73mj4ypk2ockpnzgizlelp2ytqwgkkjjibzlgkfs32yn4u","primaryArtifact":"SpiritBomb-Portable-2.0.1-storage-preview.5.exe","tufVersion":1,"revoked":false,"ipfsGateways":["https://dweb.link/ipfs","https://ipfs.filebase.io/ipfs"],"cidMirrorPath":"cid-mirrors/bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y.json"},{"version":"2.0.1-storage-preview.4","releaseSequence":4,"channel":"beta","manifestSha256":"cb8f3d0cde71b6101dfc9dc495662c6aebd881d019ec46fd1566d18a9936e7ad","manifestCid":"bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu","publicationProofCid":"bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu","receiptCid":"bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu","githubReleaseTag":"storage-preview-2.0.1-4","githubRepository":"Dhenz14/HivePoA-Distribution","githubRepositoryId":1316835999,"githubManifestAsset":"ipfs-release-manifest-v2.0.1-storage-preview.4.json","platform":"windows","architecture":"x64","bytes":125623659,"artifactDigests":{"SpiritBomb-Portable-2.0.1-storage-preview.4.exe":"e273ab1129e31aa7a58f5aa725f70b2e0589bb5bdbb651239672a83c1dad28ae","ipfs-release-manifest-v2.0.1-storage-preview.4.json":"cb8f3d0cde71b6101dfc9dc495662c6aebd881d019ec46fd1566d18a9936e7ad"},"primaryArtifact":"SpiritBomb-Portable-2.0.1-storage-preview.4.exe","tufVersion":1,"revoked":true,"ipfsGateways":["https://dweb.link/ipfs","https://ipfs.filebase.io/ipfs"],"cidMirrorPath":"cid-mirrors/bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu.json"},{"version":"2.0.1-storage-preview.3","releaseSequence":3,"channel":"beta","manifestSha256":"feefa0e2dfbdb0725e052f8b0aae3d7dfbe80cc136f22ef6fcdeb0aeb7fb8552","manifestCid":"bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki","publicationProofCid":"bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki","receiptCid":"bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki","githubReleaseTag":"storage-preview-2.0.1-3","githubRepository":"Dhenz14/HivePoA-Distribution","githubRepositoryId":1316835999,"githubManifestAsset":"ipfs-release-manifest-v2.0.1-storage-preview.3.json","platform":"windows/linux","architecture":"x64","bytes":125620962,"artifactDigests":{"SpiritBomb-Portable-2.0.1-storage-preview.3.exe":"93c9d1ee63a40ff9600a9004d0b8621864abc9c60db822216abab0d23a204b77","ipfs-release-manifest-v2.0.1-storage-preview.3.json":"feefa0e2dfbdb0725e052f8b0aae3d7dfbe80cc136f22ef6fcdeb0aeb7fb8552"},"primaryArtifact":"SpiritBomb-Portable-2.0.1-storage-preview.3.exe","tufVersion":1,"revoked":true,"ipfsGateways":["https://dweb.link/ipfs","https://ipfs.filebase.io/ipfs"],"cidMirrorPath":"cid-mirrors/bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki.json"},{"version":"2.0.1-storage-preview.2","releaseSequence":2,"channel":"beta","manifestSha256":"df2efd735564927a7981c108dbe11d0653fe9c36445e6f8821eefb9c0e155286","manifestCid":"bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy","publicationProofCid":"bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy","receiptCid":"bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy","githubReleaseTag":"storage-preview-2.0.1-2","githubRepository":"Dhenz14/HivePoA-Distribution","githubRepositoryId":1316835999,"githubManifestAsset":"ipfs-release-manifest-v2.0.1-storage-preview.2.json","platform":"windows/linux","architecture":"x64","bytes":125619577,"artifactDigests":{"SpiritBomb-Portable-2.0.1-storage-preview.2.exe":"ac1b08969d53ce4338b0768f21144e14934c5b8e65bdc9f175fd0d2e2fbe8015","ipfs-release-manifest-v2.0.1-storage-preview.2.json":"df2efd735564927a7981c108dbe11d0653fe9c36445e6f8821eefb9c0e155286"},"primaryArtifact":"SpiritBomb-Portable-2.0.1-storage-preview.2.exe","tufVersion":1,"revoked":true,"ipfsGateways":["https://dweb.link/ipfs","https://ipfs.filebase.io/ipfs"],"cidMirrorPath":"cid-mirrors/bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy.json"},{"version":"2.0.1-storage-preview.1","releaseSequence":1,"channel":"beta","manifestSha256":"73f15a3a205eb212b39d95d88bf4a7e4d3b59e0af868d528af890f9af0d03007","manifestCid":"bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4","publicationProofCid":"bafkreihsrbx7h4sycmuf5mkmogpbvhqtbbhp7lajwxulrvjslsslzmjjky","receiptCid":"bafkreibdvxhdmkxbnf6iqnvmloc3q3t2ngq34psakn5ys26yddn3z7xr5q","githubReleaseTag":"storage-preview-2.0.1","githubRepository":"Dhenz14/HivePoA-Distribution","githubRepositoryId":1316835999,"githubManifestAsset":"ipfs-release-manifest-v2.0.1-storage-preview.1.json","platform":"windows/linux","architecture":"x64","bytes":450121803,"artifactDigests":{"HivePoA-Storage-Runtime-Proof-2.0.1-storage-preview.1-universal.json":"9c54b21cf029af956b2c3557dc32413f1748c13a17ba79194fcd1cb771e7cace","HivePoA-Storage-Tester-2.0.1-storage-preview.1-universal.tar.gz":"802f863fe6ab7f61b4443c3a3a416fd31483b4f1f12afe7521b481011ceb805b","HivePoA-Web-Interface-2.0.1-storage-preview.1-universal.tar.gz":"bc96e5534a907058ba4f100ff2ba1f33a22f14c45f4d6eca263135eb05f6f074","SpiritBomb-2.0.1-storage-preview.1-amd64.deb":"262b36468874403c2518c3e37676daac871d6ac1a228ffa0fa7ebb4cddb14a46","SpiritBomb-2.0.1-storage-preview.1-x86_64.AppImage":"58db30db54e2167d53e758fcb5534f4b7f728dc2f128c149aa5f58e31943d00a","SpiritBomb-Portable-2.0.1-storage-preview.1.exe":"33b93110fc12a68117ef8f37a29984ddfc6564249e8a2a01c174f0d1478346c6"},"primaryArtifact":"SpiritBomb-Portable-2.0.1-storage-preview.1.exe","tufVersion":1,"revoked":false,"ipfsGateways":["https://dweb.link/ipfs","https://ipfs.filebase.io/ipfs","http://192.168.1.117:8080/ipfs"],"cidMirrorPath":"cid-mirrors/bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4.json"}],"revocations":[{"releaseSequence":2,"revokedAt":"2026-07-30T21:45:53.540Z","reason":"WITHDRAWN: not approved for testing; incomplete proof; do not install"},{"releaseSequence":3,"revokedAt":"2026-07-30T21:45:53.540Z","reason":"WITHDRAWN: superseded by storage-preview.4 remediation tip"},{"releaseSequence":4,"revokedAt":"2026-07-31T19:08:57.238Z","reason":"WITHDRAWN: never starts — shadowed-require temporal dead zone in the packaged main process; superseded by .5"},{"releaseSequence":6,"revokedAt":"2026-08-03T20:12:55.377Z","reason":"WITHDRAWN: publication completed before two-worker public acceptance; no acceptance receipt was produced; superseded by .7"}],"revocationStateVersion":4,"previousIndex":{"version":"2.0.1-storage-preview.6","releaseSequence":6,"filename":"hivepoa-release-channel-index-2.0.1-storage-preview.6.json","bytes":14512,"sha256":"e329fa0d4d06ef80e09cac2a5fd6a6e83510937da8d5198d06d7ba0c59820477","cid":"bafkreihdfh5a2tig56aobhfmfjp5njxiguijg7ni2umy2bwxxigftaqeo4","githubReleaseTag":"storage-preview-2.0.1-6"}},"signatures":[{"keyId":"hivepoa-storage-preview-operator","algorithm":"ed25519","signature":"EYmHU7G37LjDoDz6O3VKb5iRrDvUSdN55bgMMgTBr1uVmhsCuHh5mNUnYgH+v4eBDSQS/CCmWdhmGhS2wy90Cw==","publicKeySha256":"11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081"}],"trustBootstrap":{"keyId":"hivepoa-storage-preview-operator","algorithm":"ed25519","publicKeyPem":"-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAzExvNnIwqDCR4M9UfX/LRVCgd752NHpcPrTmOwM5xvI=\n-----END PUBLIC KEY-----\n","publicKeySha256":"11098a69d338689c46e2ac08b66f315fd7ded7f794b74d8c0bf09bf03715c081"}}</script>
-  <script type="module" src="../distribution-assets/distribution.js"></script>
 </body>
 </html>

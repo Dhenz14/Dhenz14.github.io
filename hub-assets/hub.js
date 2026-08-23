@@ -23,11 +23,16 @@ import {
   sourceSnapshotPresentation,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v16";
+} from "./galaxy-core.mjs?v=galaxy-stark-v17";
 import {
+  IDE_RELEASE_LATEST_MAX_BYTES,
+  IDE_RELEASE_LATEST_SHA256,
+  IDE_RELEASE_TRUTH_MANIFEST_SHA256,
+  IDE_RELEASE_TRUTH_MAX_BYTES,
   humanInstallerBytes,
   validateIdeReleaseLatest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v16";
+  validateIdeReleaseTruthManifest,
+} from "./ide-release-core.mjs?v=galaxy-stark-v17";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 1;
 
@@ -184,7 +189,7 @@ const COMMAND_CYCLE_STEPS = Object.freeze([
   {
     stage: "SEE · SOURCE BOUND",
     title: "See the living body.",
-    copy: "The atlas opens on a validated Hive-AI commit. Geometry stays stable while current facts update.",
+    copy: "The atlas opens on a validated Hive-AI commit. Geometry stays stable as validated snapshot facts load; updates require a newly published snapshot.",
     proof: "READ ONLY",
   },
   {
@@ -548,7 +553,7 @@ const LENSES = Object.freeze({
     labelA: "chat boundary",
     statB: "NONE",
     labelB: "prompt relay",
-    boundary: "Start and authenticate Hive-AI locally before treating any runtime surface as available.",
+    boundary: "Start Hive-AI locally before treating either read-only body surface as available. Authority-bearing Mission Control mutations are credential-gated when configured.",
   },
   product: {
     index: "05",
@@ -628,6 +633,533 @@ function setSourceBadge(state, label, title) {
   if (textNode) textNode.textContent = ` ${label}`;
 }
 
+const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v1";
+const PRODUCT_TRUTH_PROJECTION_DIGEST = "91c4a598413d269f9970032e76a5b3078810c8a9cf8195d2083e899a600808d1";
+const PRODUCT_TRUTH_MAX_BYTES = 128 * 1024;
+const PRODUCT_TRUTH_SUBJECTS = Object.freeze({
+  target_architecture: { label: "Target architecture", kind: "ARCHITECTURE_TARGET", status: "SOURCE_BOUND_DOCTRINE", plane: "TARGET" },
+  source_atlas: { label: "Source atlas", kind: "SOURCE_TOPOLOGY", status: "SOURCE_PRESENT_AT_PIN", plane: "SOURCE_PRESENT" },
+  tip_influence: { label: "Source-governed influence rows", kind: "SOURCE_GOVERNED_INFLUENCE_ACCOUNTING", status: "SOURCE_GOVERNED_HOLD", plane: "SOURCE_DERIVED" },
+  fleet_halos: { label: "Fleet halos", kind: "NEURON_LOCAL_RETRIEVAL_CONTEXT", status: "DECLARED_HARD_OFF", plane: "SOURCE_PRESENT" },
+  released_tester_5: { label: "Tester.5 remote outer bytes", kind: "PUBLIC_RELEASE_REMOTE_ARTIFACT_BYTES", status: "PUBLIC_REMOTE_BYTES_VERIFIED_OLDER_SOURCE_SUBJECT", plane: "PUBLIC_REMOTE_BYTES_VERIFIED" },
+  candidate_tester_6_publication: { label: "Tester.6 publication", kind: "PUBLICATION_CANDIDATE", status: "HELD_NOT_PUBLIC", plane: "HELD" },
+  windows_wsl_candidate_design: { label: "Windows + WSL candidate design", kind: "CROSS_REPOSITORY_CANDIDATE_DESIGN", status: "DECLARED_AT_PIN_BY_NON_DURABLE_EXTERNAL_OBSERVATION", plane: "EXTERNAL_SOURCE_OBSERVATION" },
+  linux_hive_ide_publication: { label: "Linux Hive IDE publication", kind: "PLATFORM_PUBLICATION", status: "UNKNOWN_NO_ADMISSIBLE_PUBLICATION_OBSERVATION", plane: "UNKNOWN" },
+  macos_hive_ide_publication: { label: "macOS Hive IDE publication", kind: "PLATFORM_PUBLICATION", status: "HELD_MISSING_ADMISSIBLE_PUBLICATION_OBSERVATION", plane: "HELD" },
+  installed_runtime: { label: "Installed runtime", kind: "LOCAL_INSTALLED_RUNTIME", status: "UNKNOWN", plane: "UNKNOWN" },
+  observed_behavior: { label: "Observed behavior", kind: "LIVE_BEHAVIOR_OBSERVATION", status: "UNKNOWN", plane: "UNKNOWN" },
+});
+const PRODUCT_TRUTH_SUBJECT_BASE_KEYS = Object.freeze([
+  "subject_id", "subject_kind", "subject_status", "claim_plane", "evidence", "evidenceRef", "verifiedAt", "validUntil",
+  "freshness", "invalidators", "claim", "doesNotProve", "recertification",
+]);
+// The atlas advances with main; the evidence baseline is where the doctrine files were
+// hashed. They are separate planes and may legitimately differ, so each is pinned against
+// its own producer rather than being forced equal to the other.
+const EVIDENCE_BASELINE_COMMIT = "472131baa2bc212a043966773bd92477c3a8a16c";
+const ATLAS_SOURCE_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
+const CANONICAL_MANIFEST_SHA256 = "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056";
+const CANONICAL_MANIFEST_BYTES = 49342;
+const CANONICAL_MANIFEST_BLOB = "c1036d2fc877e058965688fe8da5097576a37826";
+const CANONICAL_LANDED_COMMIT = "0ab04f6c19ffd41bb162bea674e77853fb27cc0e";
+const CANONICAL_LANDED_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
+const TARGET_SERVING_BOUNDARY = "The source-bound target path is hive-runtime: a constellation-local in-process deterministic scaffold. The doctrine has no BYOM product lane, no implicit external-checkpoint fallback, and no local-model product serve path. An explicitly user-directed external agent may be the inbound caller; that is not a hidden Hive-selected backend fallback. None of this attests an installed runtime or observed behavior.";
+const ARCHITECTURE_LIVE_BOUNDARY = "The public atlas and this projection describe source-bound architecture. Local presentation and operator bodies are anonymous read-only GET surfaces when separately available; authority-bearing Mission Control mutations are credential-gated when configured. Installed runtime, route availability, and observed behavior require independent evidence.";
+const CURRENT_LEGACY_BOUNDARY = "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron removal is EXTERNAL_REPO_PROOF_REQUIRED and Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held.";
+const NO_LLM_BOUNDARY = "At the evidence baseline, doctrine permits an authorized external agent such as Codex or Claude to supply fluent generation as the explicit inbound caller while Hive is assigned local retrieval, routing, verification, and proof gating. The declared route is not an implicit outbound fallback selected by Hive, and it is not current runtime or network-egress proof.";
+let productTruthManifest = null;
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function parseJsonStrict(source, label = "JSON document") {
+  if (typeof source !== "string") throw new Error(`${label} must be UTF-8 text`);
+  let cursor = 0;
+
+  const fail = (message) => {
+    const byte = new TextEncoder().encode(source.slice(0, cursor)).byteLength;
+    throw new Error(`${label} ${message} at byte ${byte}`);
+  };
+  const skipWhitespace = () => {
+    while (cursor < source.length && /\s/.test(source[cursor])) cursor += 1;
+  };
+  const parseString = () => {
+    if (source[cursor] !== '"') fail("expected string");
+    const start = cursor;
+    cursor += 1;
+    let escaped = false;
+    while (cursor < source.length) {
+      const character = source[cursor];
+      cursor += 1;
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (character === "\\") {
+        escaped = true;
+        continue;
+      }
+      if (character === '"') {
+        try {
+          return JSON.parse(source.slice(start, cursor));
+        } catch {
+          fail("contains an invalid string escape");
+        }
+      }
+      if (character.charCodeAt(0) < 0x20) fail("contains an unescaped control character");
+    }
+    fail("contains an unterminated string");
+  };
+  const parseValue = () => {
+    skipWhitespace();
+    if (cursor >= source.length) fail("ended before a value");
+    if (source[cursor] === '"') return parseString();
+    if (source[cursor] === "{") return parseObject();
+    if (source[cursor] === "[") return parseArray();
+    for (const [token, value] of [["true", true], ["false", false], ["null", null]]) {
+      if (source.startsWith(token, cursor)) {
+        cursor += token.length;
+        return value;
+      }
+    }
+    const number = source.slice(cursor).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
+    if (number) {
+      cursor += number[0].length;
+      const value = Number(number[0]);
+      if (!Number.isFinite(value)) fail("contains a non-finite number");
+      return value;
+    }
+    fail("contains an invalid value");
+  };
+  const parseObject = () => {
+    const result = Object.create(null);
+    const keys = new Set();
+    cursor += 1;
+    skipWhitespace();
+    if (source[cursor] === "}") {
+      cursor += 1;
+      return result;
+    }
+    while (cursor < source.length) {
+      skipWhitespace();
+      const key = parseString();
+      if (keys.has(key)) fail(`contains duplicate object key ${JSON.stringify(key)}`);
+      keys.add(key);
+      skipWhitespace();
+      if (source[cursor] !== ":") fail("expected colon after object key");
+      cursor += 1;
+      result[key] = parseValue();
+      skipWhitespace();
+      if (source[cursor] === "}") {
+        cursor += 1;
+        return result;
+      }
+      if (source[cursor] !== ",") fail("expected comma between object entries");
+      cursor += 1;
+    }
+    fail("contains an unterminated object");
+  };
+  const parseArray = () => {
+    const result = [];
+    cursor += 1;
+    skipWhitespace();
+    if (source[cursor] === "]") {
+      cursor += 1;
+      return result;
+    }
+    while (cursor < source.length) {
+      result.push(parseValue());
+      skipWhitespace();
+      if (source[cursor] === "]") {
+        cursor += 1;
+        return result;
+      }
+      if (source[cursor] !== ",") fail("expected comma between array entries");
+      cursor += 1;
+    }
+    fail("contains an unterminated array");
+  };
+
+  const result = parseValue();
+  skipWhitespace();
+  if (cursor !== source.length) fail("contains trailing content");
+  return result;
+}
+
+function parseProductTruthJsonStrict(source) {
+  return parseJsonStrict(source, "product truth");
+}
+
+async function sha256Text(value) {
+  if (!globalThis.crypto?.subtle) throw new Error("Web Crypto unavailable");
+  const bytes = new TextEncoder().encode(value);
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function assertProductTruth(condition, reason) {
+  if (!condition) throw new Error(reason);
+}
+
+function assertProductTruthKeys(value, expected, label) {
+  assertProductTruth(value && typeof value === "object" && !Array.isArray(value), `${label} must be an object`);
+  const actual = Object.keys(value).sort();
+  const wanted = [...expected].sort();
+  assertProductTruth(actual.length === wanted.length && actual.every((key, index) => key === wanted[index]), `${label} keys rejected`);
+}
+
+async function validateProductTruthManifest(manifest, snapshot) {
+  assertProductTruth(manifest && typeof manifest === "object" && !Array.isArray(manifest), "manifest root rejected");
+  assertProductTruthKeys(manifest, [
+    "schema", "version", "status", "canonicalManifest", "what_architecture_am_i", "source", "architecture", "boundaries",
+    "truth_subjects", "atlasTesterMatch", "relations", "definitions", "registryClaimCut", "platforms", "integrityBoundary", "bindingDigest",
+  ], "manifest root");
+  assertProductTruth(manifest.schema === PRODUCT_TRUTH_SCHEMA && manifest.version === "1.0.0", "manifest identity rejected");
+  assertProductTruth(manifest.status === "SOURCE_BOUND_TRUTH_WITH_SUBJECT_SCOPED_RUNTIME_UNKNOWNS", "manifest status rejected");
+
+  assertProductTruthKeys(manifest.source, ["projectionRole", "sourceCommit", "graphHash", "snapshotHash", "capturedAt"], "manifest source");
+  assertProductTruth(manifest.source.sourceCommit === snapshot.hiveAi.sourceCommit, "source commit mismatch");
+  assertProductTruth(manifest.source.graphHash === snapshot.hiveAi.graphHash && manifest.source.snapshotHash === snapshot.snapshotHash, "source graph binding mismatch");
+  assertProductTruth(manifest.source.capturedAt === snapshot.capturedAt, "source capture mismatch");
+  assertProductTruth(manifest.source.projectionRole === "bounded public projection of a source candidate; not the canonical manifest at evidence pin, a served/main receipt, runtime telemetry, behavior evidence, or authority", "projection role rejected");
+
+  const canonicalManifest = manifest.canonicalManifest;
+  assertProductTruthKeys(canonicalManifest, [
+    "status", "repository", "path", "evidenceSourceCommit", "evidenceSourceTree", "candidateSha256", "candidateBytes",
+    "candidateGitBlobOid", "landedCommit", "landedTree", "landedSha256", "landedBytes", "landedGitBlobOid", "audit",
+  ], "canonical manifest custody");
+  assertProductTruthKeys(canonicalManifest.audit, ["status", "bindingStatus", "authorityConferred"], "canonical candidate audit");
+  // Identity of the manifest content is fixed and independent of whether it has landed.
+  assertProductTruth(
+    canonicalManifest.repository === "Dhenz14/Hive-AI"
+      && canonicalManifest.path === "configs/public/constellation_architecture_v1.json"
+      && canonicalManifest.evidenceSourceCommit === EVIDENCE_BASELINE_COMMIT
+      && canonicalManifest.evidenceSourceTree === "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00"
+      && canonicalManifest.candidateSha256 === CANONICAL_MANIFEST_SHA256
+      && canonicalManifest.candidateBytes === CANONICAL_MANIFEST_BYTES
+      && canonicalManifest.candidateGitBlobOid === CANONICAL_MANIFEST_BLOB
+      && canonicalManifest.audit.status === "PASS"
+      && canonicalManifest.audit.bindingStatus === canonicalManifest.status
+      && canonicalManifest.audit.authorityConferred === false,
+    "canonical candidate custody or authority rejected",
+  );
+  // Custody has exactly two admissible shapes. The landed shape is pinned here in the
+  // browser, so a tampered manifest cannot assert a landing this page has not been
+  // built to expect; and landing never confers authority.
+  if (canonicalManifest.status === "CANDIDATE_NOT_LANDED") {
+    assertProductTruth(
+      canonicalManifest.landedCommit === null
+        && canonicalManifest.landedTree === null
+        && canonicalManifest.landedSha256 === null
+        && canonicalManifest.landedBytes === null
+        && canonicalManifest.landedGitBlobOid === null,
+      "unlanded canonical manifest claimed landing evidence",
+    );
+  } else {
+    assertProductTruth(
+      canonicalManifest.status === "LANDED_HASH_VERIFIED"
+        && canonicalManifest.landedCommit === CANONICAL_LANDED_COMMIT
+        && canonicalManifest.landedTree === CANONICAL_LANDED_TREE
+        && canonicalManifest.landedSha256 === CANONICAL_MANIFEST_SHA256
+        && canonicalManifest.landedBytes === CANONICAL_MANIFEST_BYTES
+        && canonicalManifest.landedGitBlobOid === CANONICAL_MANIFEST_BLOB,
+      "landed canonical manifest custody rejected",
+    );
+  }
+
+  const identity = manifest.what_architecture_am_i;
+  assertProductTruthKeys(identity, ["question", "answer", "architecture_id", "architecture_version", "identity_material", "identity_sha256", "subject_id", "claim_plane"], "architecture identity");
+  assertProductTruth(
+    identity.question === "WHAT_ARCHITECTURE_AM_I?"
+      && identity.answer === "SOVEREIGN_HIVEBRAIN_CONSTELLATION"
+      && identity.architecture_id === "hiveai.sovereign_hivebrain_constellation.v1"
+      && identity.architecture_version === "1.0.0"
+      && identity.identity_material === "hiveai.sovereign_hivebrain_constellation.v1|1.0.0|472131baa2bc212a043966773bd92477c3a8a16c|1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00"
+      && identity.identity_sha256 === "971437dd8d1474262627881e6c2d4baef9b0d705424d7eb4abd09a5d2baf5b61"
+      && identity.subject_id === "target_architecture"
+      && identity.claim_plane === "TARGET",
+    "architecture identity rejected",
+  );
+
+  assertProductTruthKeys(manifest.architecture, ["label", "status", "servingBoundary"], "architecture display");
+  assertProductTruth(manifest.architecture.label === "HiveBrain Constellation" && manifest.architecture.status === "SOURCE_BOUND_DOCTRINE" && manifest.architecture.servingBoundary === TARGET_SERVING_BOUNDARY, "architecture boundary rejected");
+  assertProductTruthKeys(manifest.boundaries, ["architectureVsLive", "currentVsLegacy", "noLlmClaim"], "claim boundaries");
+  assertProductTruthKeys(manifest.boundaries.architectureVsLive, ["status", "claim"], "architecture/live boundary");
+  assertProductTruthKeys(manifest.boundaries.currentVsLegacy, ["status", "claim"], "current/legacy boundary");
+  assertProductTruthKeys(manifest.boundaries.noLlmClaim, ["status", "claim", "exactBoundary"], "no-LLM boundary");
+  assertProductTruth(manifest.boundaries.architectureVsLive.status === "SEPARATE_PLANES" && manifest.boundaries.architectureVsLive.claim === ARCHITECTURE_LIVE_BOUNDARY, "architecture/live boundary rejected");
+  assertProductTruth(manifest.boundaries.currentVsLegacy.status === "SUBJECT_SCOPED_DISPOSITIONS" && manifest.boundaries.currentVsLegacy.claim === CURRENT_LEGACY_BOUNDARY, "legacy boundary rejected");
+  assertProductTruth(manifest.boundaries.noLlmClaim.status === "HOLD" && manifest.boundaries.noLlmClaim.claim === "This site does not publish a bare 'no LLM' claim." && manifest.boundaries.noLlmClaim.exactBoundary === NO_LLM_BOUNDARY, "no-LLM boundary rejected");
+
+  const subjects = manifest.truth_subjects;
+  assertProductTruthKeys(subjects, Object.keys(PRODUCT_TRUTH_SUBJECTS), "truth subject set");
+  const subjectSpecificKeys = {
+    target_architecture: ["productLaneByom", "legacyApiNamesPresent", "implicitExternalFallback", "outboundCentralizedModelDependency", "externalCheckpointFallback", "localModelProductServePath", "externalAgentIsClientNotBackend", "directPersonClientsSupported", "customNeuralArtifactsExist", "bareNoLlmClaimAllowed", "defaultPath", "inboundGenerationDoctrineAtPin", "publicGenerationExplanation"],
+    source_atlas: ["sourceCommit", "sourceTree", "graphHash", "snapshotHash", "neurons", "trainable", "deterministic", "divisions", "families", "rowBackedTwitchProofs"],
+    tip_influence: ["runtimeEnabled", "servedInfluenceEnabled", "productLiveClaimAllowed", "executeAuthorized", "permanentProductTurnWire", "safeToClaim100PercentProductLive", "reason"],
+    fleet_halos: ["declared", "admitted", "indexed", "runtime", "served", "productLive"],
+    released_tester_5: ["tag", "url", "releaseId", "assetId", "assetState", "responseChain", "tlsVerified", "bytes", "sha256", "artifactBytesIndependentlyVerified", "artifactSha256IndependentlyVerified", "authenticodeStatus", "publisherAuthenticated", "signedPublicRelease", "smartScreenWarningExpected", "artifactExecuted", "packageContentsStatus", "sourceCommit", "embeddedHiveAiCommit", "representsCurrentSourceAtlas", "verificationReceiptSha256"],
+    candidate_tester_6_publication: ["tag", "githubReleaseApiStatus", "url", "bytes", "sha256", "signatureStatus", "readbackReceiptSha256"],
+    windows_wsl_candidate_design: ["ownerRepository", "repositoryRef", "repositoryCommit", "designTopology", "evidencePersistence"],
+    linux_hive_ide_publication: ["platform", "url", "bytes", "sha256", "signatureStatus", "unknownReason"],
+    macos_hive_ide_publication: ["platform", "url", "bytes", "sha256", "signatureStatus", "notarizationStatus", "holdReason"],
+    installed_runtime: ["runtimeSourceCommit", "installPath", "healthStatus", "attestationRef", "unknownReason"],
+    observed_behavior: ["observationId", "runtimeIdentityRef", "behaviorStatus", "receiptRef", "unknownReason"],
+  };
+  const rfc3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/;
+  Object.entries(PRODUCT_TRUTH_SUBJECTS).forEach(([key, expected]) => {
+    const subject = subjects[key];
+    assertProductTruthKeys(subject, [...PRODUCT_TRUTH_SUBJECT_BASE_KEYS, ...subjectSpecificKeys[key]], `${key} subject`);
+    assertProductTruth(subject.subject_id === key && subject.subject_kind === expected.kind && subject.subject_status === expected.status && subject.claim_plane === expected.plane, `${key} identity/status/plane rejected`);
+    assertProductTruth(typeof subject.evidence === "string" && typeof subject.claim === "string" && Array.isArray(subject.invalidators) && subject.invalidators.length > 0 && Array.isArray(subject.doesNotProve) && subject.doesNotProve.length > 0, `${key} evidence ceiling rejected`);
+    assertProductTruth(subject.verifiedAt === null || rfc3339.test(subject.verifiedAt), `${key} verified time rejected`);
+    assertProductTruth(subject.validUntil === null || rfc3339.test(subject.validUntil), `${key} validity time rejected`);
+    if (subject.validUntil) assertProductTruth(subject.verifiedAt && Date.parse(subject.validUntil) > Date.parse(subject.verifiedAt), `${key} validity window rejected`);
+    if (expected.plane === "UNKNOWN") assertProductTruth(subject.evidenceRef === null && subject.verifiedAt === null && subject.validUntil === null && subject.freshness === "UNKNOWN", `${key} UNKNOWN plane rejected`);
+    if (subject.recertification !== null) {
+      assertProductTruthKeys(subject.recertification, ["ownerId", "procedureId", "trigger", "expiryAction"], `${key} recertification`);
+      assertProductTruth(Object.values(subject.recertification).every((value) => typeof value === "string" && value.length > 0), `${key} recertification rejected`);
+    }
+  });
+
+  const target = subjects.target_architecture;
+  assertProductTruth(
+    target.productLaneByom === false && target.legacyApiNamesPresent === true && target.implicitExternalFallback === false
+      && target.outboundCentralizedModelDependency === false && target.externalCheckpointFallback === false
+      && target.localModelProductServePath === false && target.externalAgentIsClientNotBackend === true
+      && target.directPersonClientsSupported === true && target.customNeuralArtifactsExist === true
+      && target.bareNoLlmClaimAllowed === false
+      && target.defaultPath === "hive-runtime (constellation-local in-process deterministic scaffold)"
+      && /Source doctrine at the evidence baseline/.test(target.inboundGenerationDoctrineAtPin)
+      && /explicit inbound caller/.test(target.publicGenerationExplanation),
+    "target doctrine predicates rejected",
+  );
+  const source = subjects.source_atlas;
+  assertProductTruth(source.sourceCommit === snapshot.hiveAi.sourceCommit && source.sourceTree === ATLAS_SOURCE_TREE && source.graphHash === snapshot.hiveAi.graphHash && source.snapshotHash === snapshot.snapshotHash, "atlas binding rejected");
+  assertProductTruth(source.neurons === 640 && source.trainable === 448 && source.deterministic === 192 && source.divisions === 16 && source.families === 64 && source.rowBackedTwitchProofs === 636, "atlas counts rejected");
+  const tip = subjects.tip_influence;
+  assertProductTruth(tip.runtimeEnabled === 37 && tip.servedInfluenceEnabled === 37 && tip.productLiveClaimAllowed === 37 && tip.executeAuthorized === false && tip.permanentProductTurnWire === false && tip.safeToClaim100PercentProductLive === false && tip.reason === "TIP_FUSE_CODE_BINDING_BYTES_MISMATCH_FAIL_CLOSED", "TIP influence ceiling rejected");
+  const halos = subjects.fleet_halos;
+  assertProductTruth(halos.declared === 640 && halos.admitted === 0 && halos.indexed === 0 && halos.runtime === false && halos.served === false && halos.productLive === false, "halo hard-off ceiling rejected");
+  assertProductTruth(/9fd9d11b2cf595b51e80b05ba4ec76d7d07a55023159756127f6cf61a17d3e49/.test(halos.evidenceRef) && /ef804428576068626aa85230821633daf04371ec23f4e4540aa5aff0d408396c/.test(halos.evidenceRef), "halo evidence refs rejected");
+
+  const tester5 = subjects.released_tester_5;
+  assertProductTruth(
+    tester5.tag === "hive-ide-v0.3.0-tester.5" && tester5.releaseId === 366980498 && tester5.assetId === 505603161
+      && tester5.bytes === 924864317 && tester5.sha256 === "be1795640763e99315b426757c76d655f6f07f92701d040c62f6126c1401b000"
+      && tester5.artifactBytesIndependentlyVerified === true && tester5.artifactSha256IndependentlyVerified === true
+      && tester5.authenticodeStatus === "NotSigned" && tester5.publisherAuthenticated === false && tester5.signedPublicRelease === false
+      && tester5.smartScreenWarningExpected === true && tester5.artifactExecuted === false && tester5.packageContentsStatus === "UNKNOWN_NOT_INSPECTED"
+      && tester5.sourceCommit === "6f7fd8a9a18c8921aa0fad1fe5b0b901bacd3383"
+      && tester5.embeddedHiveAiCommit === "a0fe64832edb801c9944c0923e222a64ef14e498"
+      && tester5.representsCurrentSourceAtlas === false
+      && tester5.verificationReceiptSha256 === "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56"
+      && tester5.verifiedAt === "2026-08-23T19:20:09.7630961Z" && tester5.validUntil === "2026-08-24T19:20:09.7630961Z",
+    "tester.5 remote-byte plane rejected",
+  );
+  const tester6 = subjects.candidate_tester_6_publication;
+  assertProductTruth(tester6.tag === "hive-ide-v0.3.0-tester.6" && tester6.githubReleaseApiStatus === 404 && tester6.url === null && tester6.bytes === null && tester6.sha256 === null && tester6.signatureStatus === "UNKNOWN" && tester6.readbackReceiptSha256 === "cf4101d607fbcfce8a9173311cb1d45c9fc6c81d82514d013df30c4a5bec97b0" && tester6.verifiedAt === "2026-08-23T19:37:31.6497275Z" && tester6.validUntil === "2026-08-24T19:37:31.6497275Z", "tester.6 publication HOLD rejected");
+  const wsl = subjects.windows_wsl_candidate_design;
+  assertProductTruth(wsl.repositoryCommit === "f459e85cc71801afbed4a8579b31133b9ff58edd" && wsl.evidencePersistence === "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT" && /Windows x64 NSIS host/.test(wsl.designTopology), "Windows+WSL candidate observation rejected");
+  assertProductTruth(subjects.linux_hive_ide_publication.url === null && /UNKNOWN/.test(subjects.linux_hive_ide_publication.claim), "Linux publication UNKNOWN rejected");
+  assertProductTruth(subjects.macos_hive_ide_publication.url === null && subjects.macos_hive_ide_publication.notarizationStatus === null && /held/i.test(subjects.macos_hive_ide_publication.claim), "macOS publication HOLD rejected");
+  assertProductTruth(subjects.installed_runtime.runtimeSourceCommit === null && /neither probes nor claims/.test(subjects.installed_runtime.claim), "installed runtime UNKNOWN rejected");
+  assertProductTruth(subjects.observed_behavior.observationId === null && /do not prove/.test(subjects.observed_behavior.claim), "observed behavior UNKNOWN rejected");
+
+  assertProductTruth(manifest.atlasTesterMatch === "MISMATCH", "atlas/tester mismatch rejected");
+  assertProductTruthKeys(manifest.relations, ["atlasTester", "testerSubjects", "candidateServed"], "truth relations");
+  assertProductTruthKeys(manifest.relations.atlasTester, ["status", "atlasSourceCommit", "testerEmbeddedHiveAiCommit", "claim"], "atlas/tester relation");
+  assertProductTruthKeys(manifest.relations.testerSubjects, ["status", "tester5Subject", "tester6Subject", "claim"], "tester subject relation");
+  assertProductTruthKeys(manifest.relations.candidateServed, ["status", "claim"], "candidate/served relation");
+  assertProductTruth(manifest.relations.atlasTester.status === "MISMATCH" && manifest.relations.atlasTester.atlasSourceCommit === source.sourceCommit && manifest.relations.atlasTester.testerEmbeddedHiveAiCommit === tester5.embeddedHiveAiCommit && /must not be presented as realizing/.test(manifest.relations.atlasTester.claim), "atlas/tester relation rejected");
+  assertProductTruth(manifest.relations.testerSubjects.status === "SEPARATE_SUBJECTS" && manifest.relations.testerSubjects.tester5Subject === "released_tester_5" && manifest.relations.testerSubjects.tester6Subject === "candidate_tester_6_publication", "tester subject separation rejected");
+  // Mirrors custody, and must keep disclaiming runtime/behaviour/authority/product-live
+  // on both sides of a landing. Landing may only retire the landing/main disclaimer.
+  assertProductTruth(manifest.relations.candidateServed.status === canonicalManifest.status
+    && /installed-runtime, behavior, authority, or product-live claim is allowed/i.test(manifest.relations.candidateServed.claim), "candidate/served HOLD rejected");
+
+  assertProductTruth(Array.isArray(manifest.definitions) && manifest.definitions.map((item) => item.id).join("|") === "neuron|halo|division-family|hivebrain|twitch|living-anatomy", "definition set rejected");
+  manifest.definitions.forEach((definition) => assertProductTruthKeys(definition, ["id", "label", "definition", "boundary"], `${definition.id} definition`));
+  const definitions = Object.fromEntries(manifest.definitions.map((definition) => [definition.id, definition]));
+  assertProductTruth(/catalog presence never means active/.test(definitions.neuron.boundary), "neuron definition rejected");
+  assertProductTruth(/zero admitted sections and zero materialized indexes/.test(definitions.halo.boundary), "halo definition rejected");
+  assertProductTruth(/never a retrieval halo/.test(definitions["division-family"].boundary), "division/halo collision rejected");
+  assertProductTruth(/not automatic execution/.test(definitions.twitch.boundary), "Twitch definition rejected");
+  assertProductTruth(/not brain authority/.test(definitions["living-anatomy"].boundary), "Living Anatomy boundary rejected");
+
+  const registry = manifest.registryClaimCut;
+  assertProductTruthKeys(registry, ["status", "sourceCommit", "derivedAt", "authority", "runtimeEnabled", "servedInfluenceEnabled", "productLiveClaimAllowed", "executeAuthorized", "permanentProductTurnWire", "safeToClaim100PercentProductLive", "reason", "boundary"], "registry claim cut");
+  assertProductTruth(registry.status === "HOLD" && registry.sourceCommit === source.sourceCommit && registry.derivedAt === "2026-08-23T18:46:30Z" && registry.authority === "full_catalog_grant_bound_influence_accounting_via_agent_query" && registry.runtimeEnabled === 37 && registry.servedInfluenceEnabled === 37 && registry.productLiveClaimAllowed === 37 && registry.executeAuthorized === false && registry.permanentProductTurnWire === false && registry.safeToClaim100PercentProductLive === false && registry.reason === tip.reason, "registry fixed cut rejected");
+
+  const platformIds = "windows-x64-remote|windows-wsl-design|linux-source|linux-publication|macos-publication";
+  assertProductTruth(Array.isArray(manifest.platforms) && manifest.platforms.map((item) => item.id).join("|") === platformIds, "platform set rejected");
+  const platformKeys = ["id", "label", "subjectId", "subjectKind", "claimPlane", "scope", "supportStatus", "testStatus", "packageStatus", "signingStatus", "evidence", "evidenceRef", "verifiedAt", "validUntil", "freshness"];
+  manifest.platforms.forEach((platform) => assertProductTruthKeys(platform, platformKeys, `${platform.id} platform`));
+  const platformById = Object.fromEntries(manifest.platforms.map((platform) => [platform.id, platform]));
+  const windows = platformById["windows-x64-remote"];
+  assertProductTruth(windows.subjectId === "released_tester_5" && windows.claimPlane === "PUBLIC_REMOTE_BYTES_VERIFIED" && windows.supportStatus === "PUBLIC_RELEASE_AVAILABLE_UNSIGNED" && windows.testStatus === "REMOTE_BYTES_VERIFIED_NOT_EXECUTED" && windows.packageStatus === "TESTER_5_PUBLIC_REMOTE_BYTES_VERIFIED" && windows.signingStatus === "AUTHENTICODE_NOT_SIGNED" && windows.verifiedAt === tester5.verifiedAt && windows.validUntil === tester5.validUntil, "Windows remote-byte platform rejected");
+  const wslPlatform = platformById["windows-wsl-design"];
+  assertProductTruth(wslPlatform.subjectId === "windows_wsl_candidate_design" && wslPlatform.claimPlane === "EXTERNAL_SOURCE_OBSERVATION" && wslPlatform.validUntil === null, "Windows+WSL platform boundary rejected");
+  assertProductTruth(platformById["linux-source"].subjectId === "source_atlas" && platformById["linux-source"].claimPlane === "SOURCE_PRESENT", "Linux source row rejected");
+  assertProductTruth(platformById["linux-publication"].subjectId === "linux_hive_ide_publication" && platformById["linux-publication"].evidenceRef === null && platformById["linux-publication"].freshness === "UNKNOWN", "Linux publication row rejected");
+  assertProductTruth(platformById["macos-publication"].subjectId === "macos_hive_ide_publication" && platformById["macos-publication"].evidenceRef === null && platformById["macos-publication"].claimPlane === "HELD", "macOS publication row rejected");
+
+  assertProductTruthKeys(manifest.integrityBoundary, ["manifestSelfHashProvesSemanticTruth", "authorityConferred", "sourceCandidateNotLanded", "claim"], "integrity boundary");
+  assertProductTruth(manifest.integrityBoundary.manifestSelfHashProvesSemanticTruth === false && manifest.integrityBoundary.authorityConferred === false && manifest.integrityBoundary.sourceCandidateNotLanded === (canonicalManifest.status === "CANDIDATE_NOT_LANDED") && /not a detached signature/.test(manifest.integrityBoundary.claim), "integrity authority ceiling rejected");
+  assertProductTruthKeys(manifest.bindingDigest, ["algorithm", "canonicalization", "excluded", "value"], "binding digest");
+  assertProductTruth(manifest.bindingDigest.algorithm === "sha256" && manifest.bindingDigest.canonicalization === "recursive-key-sort-json-utf8" && Array.isArray(manifest.bindingDigest.excluded) && manifest.bindingDigest.excluded.length === 1 && manifest.bindingDigest.excluded[0] === "bindingDigest", "projection digest recipe rejected");
+  const projection = { ...manifest };
+  delete projection.bindingDigest;
+  const actualDigest = await sha256Text(canonicalJson(projection));
+  assertProductTruth(manifest.bindingDigest.value === PRODUCT_TRUTH_PROJECTION_DIGEST, "projection digest is not independently pinned by the browser consumer");
+  assertProductTruth(actualDigest === manifest.bindingDigest.value, "projection digest mismatch");
+  return true;
+}
+
+function createTruthElement(tag, className, value) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.textContent = value;
+  return node;
+}
+
+function readableManifestState(value) {
+  return String(value || "unknown").replaceAll("_", " ");
+}
+
+function blockProductTruth(reason) {
+  const root = $("[data-product-truth]");
+  if (!root) return;
+  root.dataset.state = "blocked";
+  setText("[data-product-truth-status]", `Product truth blocked — ${reason}`);
+  setText("[data-product-truth-architecture]", "Unavailable until binding validates");
+  setText("[data-product-truth-source]", "blocked");
+  setText("[data-product-truth-captured]", "blocked");
+  setText("[data-product-truth-canonical]", "blocked");
+  setText("[data-product-truth-state-label]", "FAIL CLOSED");
+}
+
+async function renderProductTruthManifest(manifest, snapshot) {
+  const root = $("[data-product-truth]");
+  if (!root) return;
+  try {
+    await validateProductTruthManifest(manifest, snapshot);
+    const canonicalLanded = manifest.canonicalManifest.status === "LANDED_HASH_VERIFIED";
+    root.dataset.state = canonicalLanded ? "ready" : "held";
+    setText("[data-product-truth-status]", canonicalLanded
+      ? "SOURCE SNAPSHOT + FULL PROJECTION BYTE INTEGRITY VERIFIED"
+      : "SOURCE SNAPSHOT BOUND · CANONICAL CONTRACT CANDIDATE NOT LANDED");
+    setText("[data-product-truth-integrity]", manifest.integrityBoundary.claim);
+    setText("[data-product-truth-architecture]", `${manifest.architecture.label} · ${readableManifestState(manifest.architecture.status)}`);
+    setText("[data-product-truth-source]", manifest.source.sourceCommit);
+    setText("[data-product-truth-captured]", `${manifest.source.capturedAt} · immutable cut`);
+    setText("[data-product-truth-canonical]", canonicalLanded
+      ? `${manifest.canonicalManifest.landedCommit.slice(0, 12)} · landed hash verified`
+      : `${manifest.canonicalManifest.candidateSha256.slice(0, 12)} · candidate only · not present at 472131baa`);
+    setText("[data-product-truth-state-label]", canonicalLanded ? "SOURCE BOUND" : "CANDIDATE HOLD");
+
+    const claimsRoot = $("[data-product-truth-claims]", root);
+    if (claimsRoot) {
+      claimsRoot.replaceChildren();
+      Object.entries(PRODUCT_TRUTH_SUBJECTS).forEach(([key, expected]) => {
+        const subject = manifest.truth_subjects[key];
+        const evidenceExpired = Boolean(subject.validUntil) && Date.now() >= Date.parse(subject.validUntil);
+        const displayStatus = evidenceExpired ? "EVIDENCE FRESHNESS EXPIRED · HELD" : readableManifestState(subject.subject_status);
+        const displayClaim = evidenceExpired
+          ? `${subject.claim} This external observation was not freshly reverified by ${subject.validUntil}; immutable historical identity remains visible, but every current claim is HELD.`
+          : subject.claim;
+        const card = createTruthElement("article", "truth-plane-card", "");
+        card.dataset.subject = key;
+        if (evidenceExpired) card.dataset.state = "held";
+        card.append(
+          createTruthElement("span", "truth-plane-status", `${readableManifestState(subject.claim_plane)} · ${displayStatus}`),
+          createTruthElement("strong", "", expected.label),
+          createTruthElement("p", "", displayClaim),
+          createTruthElement("small", "", `Evidence: ${subject.evidenceRef || "required but absent"} · Verified: ${subject.verifiedAt || "UNKNOWN"}${subject.validUntil ? ` · Valid until: ${subject.validUntil}` : ""}`),
+        );
+        const ceiling = document.createElement("details");
+        ceiling.className = "truth-plane-ceiling";
+        ceiling.append(
+          createTruthElement("summary", "", "Evidence ceiling"),
+          createTruthElement("p", "", `${subject.evidence} Freshness: ${readableManifestState(subject.freshness)}.`),
+          createTruthElement("p", "", `Invalidated by: ${subject.invalidators.join("; ")}. This subject does not prove any other truth subject.`),
+        );
+        card.append(ceiling);
+        claimsRoot.append(card);
+      });
+    }
+
+    const platformRoot = $("[data-platform-matrix]", root);
+    if (platformRoot) {
+      platformRoot.replaceChildren();
+      manifest.platforms.forEach((platform) => {
+        const row = document.createElement("tr");
+        const evidenceExpired = Boolean(platform.validUntil) && Date.now() >= Date.parse(platform.validUntil);
+        if (evidenceExpired) row.dataset.state = "held";
+        const name = createTruthElement("th", "", evidenceExpired ? `${platform.label} · HELD` : platform.label);
+        name.scope = "row";
+        row.append(name);
+        const platformStates = evidenceExpired
+          ? [`${platform.supportStatus} · HISTORICAL`, "EVIDENCE EXPIRED · HELD", "EVIDENCE EXPIRED · HELD", `${platform.signingStatus} · LAST READBACK`]
+          : [platform.supportStatus, platform.testStatus, platform.packageStatus, platform.signingStatus];
+        platformStates.forEach((value) => {
+          row.append(createTruthElement("td", "", readableManifestState(value)));
+        });
+        row.append(createTruthElement("td", "", `${platform.evidence} Source: ${platform.evidenceRef}. Verified: ${platform.verifiedAt || "UNKNOWN"}. Valid until: ${platform.validUntil || "not time-bounded by this evidence set"}.${evidenceExpired ? " Current publication claims are HELD pending a fresh readback." : ""}`));
+        platformRoot.append(row);
+      });
+    }
+
+    const cut = manifest.registryClaimCut;
+    const cutRoot = $("[data-registry-claim-cut]", root);
+    if (cutRoot) cutRoot.hidden = false;
+    setText("[data-registry-product-live]", String(cut.productLiveClaimAllowed));
+    setText("[data-registry-source]", cut.sourceCommit);
+    setText("[data-registry-derived]", cut.derivedAt);
+    setText("[data-registry-status]", cut.status);
+    setText("[data-registry-reason]", cut.reason);
+  } catch (error) {
+    blockProductTruth(error instanceof Error ? error.message : "validation rejected");
+    console.warn("Product truth projection was rejected safely:", error);
+  }
+}
+
+function wireProductTruthManifest() {
+  const root = $("[data-product-truth]");
+  if (!root) return;
+  window.addEventListener("hive:snapshot", (event) => {
+    if (productTruthManifest) void renderProductTruthManifest(productTruthManifest, event.detail.snapshot);
+  });
+  window.addEventListener("hive:snapshot-error", () => blockProductTruth("source snapshot unavailable"));
+  void fetch("/hub-assets/product-truth.json", { cache: "no-store", headers: { Accept: "application/json" } })
+    .then((response) => {
+      if (!response.ok) throw new Error(`manifest HTTP ${response.status}`);
+      const declaredBytes = Number(response.headers.get("content-length"));
+      if (Number.isFinite(declaredBytes) && declaredBytes > PRODUCT_TRUTH_MAX_BYTES) throw new Error("manifest exceeded declared byte ceiling");
+      return response.text();
+    })
+    .then((body) => {
+      if (body.includes("\uFFFD")) throw new Error("manifest contains invalid UTF-8 replacement bytes");
+      if (new TextEncoder().encode(body).byteLength > PRODUCT_TRUTH_MAX_BYTES) throw new Error("manifest exceeded body byte ceiling");
+      return parseProductTruthJsonStrict(body);
+    })
+    .then((manifest) => {
+      productTruthManifest = manifest;
+      if (window.hivePublicSnapshot) return renderProductTruthManifest(manifest, window.hivePublicSnapshot);
+      setText("[data-product-truth-status]", "Manifest loaded · waiting for source snapshot");
+      return null;
+    })
+    .catch((error) => {
+      blockProductTruth(error instanceof Error ? error.message : "manifest unavailable");
+      console.warn("Product truth projection could not be loaded:", error);
+    });
+}
+
 async function loadSourceSnapshot() {
   const requestGeneration = ++snapshotRequestGeneration;
   snapshotRequestController?.abort();
@@ -702,7 +1234,7 @@ async function loadSourceSnapshot() {
     const bridgeTruth = presentation.bridge === "configured"
       ? "Automatic publication is configured; the exact published source snapshot validated successfully in this browser."
       : "This is a manual source-bound snapshot; the last validated source facts remain visible.";
-    const sourceBadgeLabel = `${facts.sourceCommit.slice(0, 7)} · verified`;
+    const sourceBadgeLabel = `SOURCE SNAPSHOT ${facts.sourceCommit.slice(0, 7).toUpperCase()} · VERIFIED`;
     setText("[data-galaxy-snapshot-state]", "verified");
     setSourceBadge(
       presentation.badgeState,
@@ -761,38 +1293,29 @@ function startSnapshotRefresh() {
   scheduleSnapshotRefresh();
 }
 
-function humanBytes(value) {
-  const bytes = Number(value);
-  if (!Number.isSafeInteger(bytes) || bytes < 1) return "—";
-  return `${(bytes / 1_000_000).toFixed(1)} MB`;
-}
-
-function platformLabel(platform, architecture) {
-  const labels = { linux: "Linux", windows: "Windows", darwin: "macOS" };
-  return `${labels[platform] || platform} / ${architecture}`;
-}
-
-function quorumLabel(value) {
-  const match = /^(\d+)-of-(\d+)-hive-api$/.exec(value || "");
-  return match ? `${match[1]} of ${match[2]} endpoints` : value;
-}
-
-function blockedRelease(reason) {
+function renderHivePoaQuarantine() {
+  if (!$("[data-release-console]")) return;
   const consoleNode = $("[data-release-console]");
-  if (consoleNode) consoleNode.dataset.state = "blocked";
-  setText("[data-release-status]", `No package authorized — ${reason}`);
-  setText("[data-poa-mini-state]", "Signed index unavailable");
+  if (consoleNode) consoleNode.dataset.state = "held";
+  setText("[data-release-status]", "Historical HivePoA metadata quarantined · delivery/network held");
+  setText("[data-release-sequence]", "Historical metadata only");
+  setText("[data-release-version]", "No current package or network authorization");
+  setText("[data-release-artifact]", "Preserved provenance is quarantined. This page executes no HivePoA verifier and fetches no HivePoA release surface.");
+  setText("[data-poa-mini-state]", "Historical metadata quarantined · all actions held");
+  setText("[data-poa-credit-mini]", "no live award claim");
   setText("[data-policy-credit]", "—");
   setText("[data-policy-quorum]", "—");
+  setText("[data-release-path-workers]", "Coordinator + enrollment held");
+  setText("[data-release-path-credit]", "No execution or award is authorized by preserved metadata.");
   const firstStep = $("[data-release-path-index]");
   if (firstStep) {
     firstStep.dataset.state = "blocked";
-    setText("small", "Index verification failed; no package is authorized.", firstStep);
+    setText("small", "Preserved metadata is quarantined; no verifier module is loaded.", firstStep);
   }
   const indexEvidence = $("[data-release-evidence-index]");
   if (indexEvidence) {
     indexEvidence.dataset.state = "blocked";
-    setText("strong", "Unavailable", indexEvidence);
+    setText("strong", "Quarantined", indexEvidence);
   }
   const download = $("[data-release-download]");
   if (download) {
@@ -801,100 +1324,13 @@ function blockedRelease(reason) {
     download.setAttribute("tabindex", "-1");
     download.removeAttribute("href");
   }
-}
-
-function renderRelease(authorization) {
-  const release = authorization.release;
-  const policy = release.testerNetwork;
-  const digest = release.artifactDigests?.[release.primaryArtifact];
-  const consoleNode = $("[data-release-console]");
-  if (consoleNode) consoleNode.dataset.state = "verified";
-  setText("[data-release-status]", "Signed release index verified");
-  setText("[data-release-sequence]", `Release sequence ${release.releaseSequence}`);
-  setText("[data-release-version]", release.version);
-  setText("[data-release-artifact]", release.primaryArtifact);
-  setText("[data-release-platform]", platformLabel(release.platform, release.architecture));
-  setText("[data-release-bytes]", humanBytes(release.bytes));
-  setText("[data-release-workers]", `${policy.bootstrap.minimumWorkers} distinct`);
-  setText("[data-release-entropy]", quorumLabel(policy.proofPolicy.irreversibleEntropyQuorum));
-  setText("[data-release-credit]", `${policy.creditPolicy.amountPerAcceptedProof} test credits`);
-  setText("[data-release-replay]", `${policy.creditPolicy.replayAward} credits`);
-  setText("[data-release-sha]", digest);
-  setText("[data-release-cid]", release.primaryArtifactCid);
-  setText("[data-poa-mini-state]", `Index verified · release ${release.releaseSequence}`);
-  setText("[data-poa-credit-mini]", `${policy.creditPolicy.amountPerAcceptedProof} test credits`);
-  setText("[data-policy-credit]", String(policy.creditPolicy.amountPerAcceptedProof));
-  const quorum = /^(\d+)-of-(\d+)-hive-api$/.exec(policy.proofPolicy.irreversibleEntropyQuorum || "");
-  setText("[data-policy-quorum]", quorum ? `${quorum[1]} / ${quorum[2]}` : "Verified");
-  setText("[data-release-path-workers]", `Run ${policy.bootstrap.minimumWorkers} enrolled workers`);
-  setText(
-    "[data-release-path-credit]",
-    `Expected: ${policy.creditPolicy.amountPerAcceptedProof} test-only credits; replay: ${policy.creditPolicy.replayAward}.`,
-  );
-  const firstStep = $("[data-release-path-index]");
-  if (firstStep) {
-    firstStep.dataset.state = "verified";
-    setText("small", "Pinned signature and fixed policy verified.", firstStep);
-  }
-  const indexEvidence = $("[data-release-evidence-index]");
-  if (indexEvidence) {
-    indexEvidence.dataset.state = "verified";
-    setText("strong", "Verified", indexEvidence);
-  }
-
-  const download = $("[data-release-download]");
-  if (download) {
-    download.classList.remove("is-disabled");
-    download.removeAttribute("aria-disabled");
-    download.removeAttribute("tabindex");
-    download.setAttribute("href", "/HivePoA/download/");
-  }
-
-  const values = { sha: digest, cid: release.primaryArtifactCid };
   $$('[data-copy-release]').forEach((button) => {
-    const kind = button.dataset.copyRelease;
-    button.disabled = !values[kind];
-    button.dataset.copyValue = values[kind] || "";
+    button.disabled = true;
+    button.dataset.copyValue = "";
   });
 }
 
-async function loadAuthorizedRelease() {
-  if (!$("[data-release-console]")) return;
-  try {
-    const [{ verifyAuthorizedTesterNetworkIndex, PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256 }, response] = await Promise.all([
-      import("/HivePoA/distribution-assets/tester-network-authorization.js"),
-      fetch("/HivePoA/", { cache: "no-store", headers: { Accept: "text/html" } }),
-    ]);
-    setText("[data-release-key-fingerprint]", PINNED_CHANNEL_INDEX_PUBLIC_KEY_SHA256);
-    if (!response.ok) throw new Error(`HivePoA HTTP ${response.status}`);
-    const html = await response.text();
-    const parsed = new DOMParser().parseFromString(html, "text/html");
-    const fixture = parsed.getElementById("release-index-fixture");
-    if (!fixture?.textContent) throw new Error("signed index fixture missing");
-    const index = JSON.parse(fixture.textContent);
-    const authorization = await verifyAuthorizedTesterNetworkIndex(index);
-    if (!authorization.ok) throw new Error(authorization.reason || "authorization rejected");
-    renderRelease(authorization);
-  } catch (error) {
-    blockedRelease(error instanceof Error ? error.message : "verification failed");
-  }
-}
-
-function blockIdeRelease(reason = "release feed unavailable") {
-  const root = $("[data-ide-release]");
-  if (!root) return;
-  root.dataset.state = "blocked";
-  setText("[data-ide-status]", "Download not published");
-  setText("[data-ide-version]", "Hive IDE public tester");
-  setText("[data-ide-channel]", "Fail-closed");
-  setText("[data-ide-size]", "Unavailable");
-  setText("[data-ide-source]", "Unavailable");
-  setText("[data-ide-sha]", "Unavailable until the release feed validates");
-  const detail = $("[data-ide-status-detail]");
-  if (detail) {
-    detail.textContent = "The page did not authorize a download. Try again later or inspect the source repository.";
-    detail.title = reason;
-  }
+function holdIdeReleaseActions() {
   for (const selector of ["[data-ide-download]", "[data-ide-start-here]", "[data-ide-manifest]", "[data-ide-release-page]"]) {
     for (const link of $$(selector)) {
       link.classList.add("is-disabled");
@@ -903,6 +1339,28 @@ function blockIdeRelease(reason = "release feed unavailable") {
       link.removeAttribute("href");
     }
   }
+}
+
+function blockIdeRelease(reason = "release evidence unavailable") {
+  const root = $("[data-ide-release]");
+  if (!root) return;
+  root.dataset.state = "blocked";
+  setText("[data-ide-status]", "Evidence unavailable · every action held");
+  setText("[data-ide-version]", "Hive IDE tester.5 · evidence not admitted");
+  setText("[data-ide-channel]", "HOLD");
+  setText("[data-ide-size]", "Unavailable");
+  setText("[data-ide-source]", "Unavailable");
+  setText("[data-ide-evidence-until]", "Unavailable");
+  setText("[data-ide-package-state]", "UNKNOWN");
+  setText("[data-ide-runtime-state]", "UNKNOWN");
+  setText("[data-ide-sha]", "Unavailable until both frozen v2 evidence files validate");
+  const detail = $("[data-ide-status-detail]");
+  if (detail) {
+    detail.textContent = "The browser could not validate the frozen v2 feed and truth manifest. No download, install, or testing action is authorized.";
+    detail.title = reason;
+  }
+  setText("[data-ide-warning]", "Fail-closed: evidence could not be validated. Do not infer remote byte identity, installation readiness, runtime behavior, or product-live state.");
+  holdIdeReleaseActions();
   const copy = $("[data-copy-ide-sha]");
   if (copy) {
     copy.disabled = true;
@@ -910,56 +1368,43 @@ function blockIdeRelease(reason = "release feed unavailable") {
   }
 }
 
-function renderIdeRelease(latest) {
+function renderIdeRelease(latest, truthResult) {
   const root = $("[data-ide-release]");
   if (!root) return;
-  root.dataset.state = "ready";
-  const signed = latest.publisherAuthenticated;
-  setText("[data-ide-status]", signed ? "Publisher-authenticated tester ready" : "Unsigned public tester ready");
-  setText("[data-ide-status-detail]", signed
-    ? "The exact Windows installer is published with a verified publisher signature."
-    : "The exact Windows installer is published over HTTPS and bound to the SHA-256 below. Windows may show a warning.");
-  setText("[data-ide-version]", `Hive IDE ${latest.version}`);
-  setText("[data-ide-channel]", signed ? "Publisher authenticated" : "Unsigned tester");
+  const evidenceCurrent = truthResult.evidenceCurrent && Date.now() < Date.parse(truthResult.validUntilUtc);
+  root.dataset.state = "held";
+  setText("[data-ide-status]", evidenceCurrent
+    ? "Remote outer EXE bytes verified · unsigned · every action held"
+    : "Remote-byte evidence expired · every action held");
+  setText("[data-ide-status-detail]", evidenceCurrent
+    ? "An independent verifier downloaded the full remote EXE and matched its exact byte count and SHA-256. Authenticode is NotSigned; package contents, installation, and runtime remain UNKNOWN; public functional testing is HOLD. This page does not authorize a download."
+    : "The immutable tester.5 identity remains historical, but its 24-hour remote-byte observation has expired. Authenticode remains NotSigned; package contents, installation, runtime, and functional testing stay held or unknown.");
+  setText("[data-ide-version]", `Hive IDE ${latest.version} tester.5 · different Hive-AI generation`);
+  setText("[data-ide-channel]", "Unsigned · functional testing HOLD");
   setText("[data-ide-size]", humanInstallerBytes(latest.installerSizeBytes));
   setText("[data-ide-source]", latest.sourceCommit.slice(0, 12));
+  setText("[data-ide-evidence-until]", truthResult.validUntilUtc);
+  setText("[data-ide-package-state]", latest.claimPlanes.packageContents.status);
+  setText("[data-ide-runtime-state]", latest.claimPlanes.runtime.status);
   setText("[data-ide-sha]", latest.installerSha256);
-  setText("[data-ide-warning]", signed
-    ? "Publisher signature verified by the release contract. SmartScreen reputation can still take time."
-    : "Windows may say “Windows protected your PC.” Choose More info → Run anyway only after matching this SHA-256.");
-
-  const download = $("[data-ide-download]");
-  if (download) {
-    download.href = latest.installerUrl;
-    download.classList.remove("is-disabled");
-    download.removeAttribute("aria-disabled");
-    download.removeAttribute("tabindex");
-  }
-  const startHereUrl = new URL("START-HERE.txt", latest.installerUrl).href;
-  for (const startHere of $$("[data-ide-start-here]")) {
-    startHere.href = startHereUrl;
-    startHere.classList.remove("is-disabled");
-    startHere.removeAttribute("aria-disabled");
-    startHere.removeAttribute("tabindex");
-  }
-  const manifest = $("[data-ide-manifest]");
-  if (manifest) {
-    manifest.href = latest.manifestUrl;
-    manifest.classList.remove("is-disabled");
-    manifest.removeAttribute("aria-disabled");
-    manifest.removeAttribute("tabindex");
-  }
-  const releasePage = $("[data-ide-release-page]");
-  if (releasePage) {
-    releasePage.href = `https://github.com/Dhenz14/Dhenz14.github.io/releases/tag/${latest.releaseTag}`;
-    releasePage.classList.remove("is-disabled");
-    releasePage.removeAttribute("aria-disabled");
-    releasePage.removeAttribute("tabindex");
-  }
+  setText("[data-ide-warning]", evidenceCurrent
+    ? "Evidence receipt is SOURCE_CANDIDATE_NOT_LANDED and the EXE is Authenticode NotSigned. The verified SHA-256 proves only the observed remote outer bytes—not package contents, safety, installability, runtime, or testing authority."
+    : "The remote-byte observation is expired. No action is authorized; refresh the evidence contract before relying on availability or byte identity.");
+  setText("[data-ide-download]", "Download held · unsigned + runtime unknown");
+  setText("[data-ide-start-here]", "START HERE held");
+  setText("[data-ide-manifest]", "Truth contract validated · action held");
+  setText("[data-ide-release-page]", "Release action held");
+  holdIdeReleaseActions();
   const copy = $("[data-copy-ide-sha]");
   if (copy) {
     copy.disabled = false;
     copy.dataset.copyValue = latest.installerSha256;
+  }
+  const untilExpiry = Date.parse(truthResult.validUntilUtc) - Date.now();
+  if (evidenceCurrent && untilExpiry > 0) {
+    window.setTimeout(() => {
+      renderIdeRelease(latest, { ...truthResult, evidenceCurrent: false });
+    }, Math.min(untilExpiry + 50, 2_147_483_647));
   }
 }
 
@@ -975,14 +1420,37 @@ async function loadIdeRelease() {
     });
     if (!response.ok) throw new Error(`Hive IDE feed HTTP ${response.status}`);
     const declaredBytes = Number(response.headers.get("content-length"));
-    if (Number.isFinite(declaredBytes) && declaredBytes > 64 * 1024) {
+    if (Number.isFinite(declaredBytes) && declaredBytes > IDE_RELEASE_LATEST_MAX_BYTES) {
       throw new Error("Hive IDE feed exceeded its declared size bound");
     }
     const body = await response.text();
-    if (new TextEncoder().encode(body).byteLength > 64 * 1024) {
+    if (body.includes("\uFFFD") || new TextEncoder().encode(body).byteLength > IDE_RELEASE_LATEST_MAX_BYTES) {
       throw new Error("Hive IDE feed exceeded its body size bound");
     }
-    renderIdeRelease(validateIdeReleaseLatest(JSON.parse(body)));
+    if (await sha256Text(body) !== IDE_RELEASE_LATEST_SHA256) throw new Error("Hive IDE feed bytes drifted from the frozen v2 candidate");
+    const latest = validateIdeReleaseLatest(parseJsonStrict(body, "Hive IDE release feed"));
+
+    const truthPath = new URL(latest.truthManifestUrl).pathname;
+    const truthResponse = await fetch(truthPath, {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!truthResponse.ok) throw new Error(`Hive IDE truth manifest HTTP ${truthResponse.status}`);
+    const truthDeclaredBytes = Number(truthResponse.headers.get("content-length"));
+    if (Number.isFinite(truthDeclaredBytes) && truthDeclaredBytes > IDE_RELEASE_TRUTH_MAX_BYTES) {
+      throw new Error("Hive IDE truth manifest exceeded its declared size bound");
+    }
+    const truthBody = await truthResponse.text();
+    if (truthBody.includes("\uFFFD") || new TextEncoder().encode(truthBody).byteLength > IDE_RELEASE_TRUTH_MAX_BYTES) {
+      throw new Error("Hive IDE truth manifest exceeded its body size bound");
+    }
+    const truthSha256 = await sha256Text(truthBody);
+    if (truthSha256 !== IDE_RELEASE_TRUTH_MANIFEST_SHA256 || truthSha256 !== latest.truthManifestSha256) {
+      throw new Error("Hive IDE truth manifest bytes drifted from the frozen v2 candidate");
+    }
+    const truthResult = validateIdeReleaseTruthManifest(parseJsonStrict(truthBody, "Hive IDE truth manifest"), latest);
+    renderIdeRelease(latest, truthResult);
   } catch (error) {
     blockIdeRelease(error instanceof Error ? error.message : "release feed unavailable");
   } finally {
@@ -1739,9 +2207,9 @@ class GalaxyAtlas {
       { lens: "mastery", division: 0, zoom: 1.08, title: "Evidence enters", copy: "A source-bound input reaches the public body. This demonstration dispatches nothing." },
       { lens: "evidence", division: 3, zoom: 1.32, title: "Hive-AI reasons", copy: "Purpose, dependencies, and proof routes become visible without publishing private evidence." },
       { lens: "artifact", neuron: "N121", zoom: 2.2, title: "A candidate resolves", copy: "The camera keeps its district and family context while one stable neuron identity comes forward." },
-      { lens: "runtime", neuron: "N401", zoom: 2.35, title: "HivePoA verifies", copy: "The proof plane is explained here; real challenges and receipts stay on authenticated surfaces." },
+      { lens: "runtime", neuron: "N401", zoom: 2.35, title: "HivePoA verifies", copy: "The proof plane is explained here; real challenges and receipts stay on their local guarded surfaces." },
       { lens: "evidence", neuron: "N561", zoom: 2.25, title: "The proof gate holds", copy: "No visual packet grants authority. A real change still requires accepted, mission-bound evidence." },
-      { lens: "product", division: 15, zoom: 1.24, title: "The organism changes", copy: "Only a newly validated source snapshot may produce the separate green absorption pulse." },
+      { lens: "product", division: 15, zoom: 1.24, title: "Approved change lands", copy: "Only explicit authority, a validated landing, and a newly published source snapshot may produce the separate green absorption pulse." },
     ];
     const scene = scenes[index];
     if (!scene) return;
@@ -3074,12 +3542,12 @@ class GalaxyAtlas {
         context.shadowColor = `rgba(${color.join(",")}, 0.62)`;
         context.shadowBlur = 12;
       }
-      const halo = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
-      halo.addColorStop(0, `rgba(${color.join(",")}, ${(active ? 0.2 : 0.065) * profile.divisions})`);
-      halo.addColorStop(0.5, `rgba(${color.join(",")}, ${(active ? 0.07 : 0.024) * profile.divisions})`);
-      halo.addColorStop(0.78, `rgba(${color.join(",")}, ${(active ? 0.025 : 0.008) * profile.divisions})`);
-      halo.addColorStop(1, `rgba(${color.join(",")}, 0)`);
-      context.fillStyle = halo;
+      const divisionGlow = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
+      divisionGlow.addColorStop(0, `rgba(${color.join(",")}, ${(active ? 0.2 : 0.065) * profile.divisions})`);
+      divisionGlow.addColorStop(0.5, `rgba(${color.join(",")}, ${(active ? 0.07 : 0.024) * profile.divisions})`);
+      divisionGlow.addColorStop(0.78, `rgba(${color.join(",")}, ${(active ? 0.025 : 0.008) * profile.divisions})`);
+      divisionGlow.addColorStop(1, `rgba(${color.join(",")}, 0)`);
+      context.fillStyle = divisionGlow;
       context.beginPath();
       context.arc(point.x, point.y, radius, 0, Math.PI * 2);
       context.fill();
@@ -3125,10 +3593,10 @@ class GalaxyAtlas {
         else context.lineTo(family.x, family.y);
         context.stroke();
         const radius = clamp((selected ? 17 : 11) * family.perspective * Math.sqrt(this.zoom) * profile.families, 7, selected ? 34 : 22);
-        const familyHalo = context.createRadialGradient(family.x, family.y, 0, family.x, family.y, radius);
-        familyHalo.addColorStop(0, `rgba(${color.join(",")}, ${selected ? 0.31 : supporting ? 0.055 : 0.12})`);
-        familyHalo.addColorStop(1, `rgba(${color.join(",")}, 0)`);
-        context.fillStyle = familyHalo;
+        const familyGlow = context.createRadialGradient(family.x, family.y, 0, family.x, family.y, radius);
+        familyGlow.addColorStop(0, `rgba(${color.join(",")}, ${selected ? 0.31 : supporting ? 0.055 : 0.12})`);
+        familyGlow.addColorStop(1, `rgba(${color.join(",")}, 0)`);
+        context.fillStyle = familyGlow;
         context.beginPath();
         context.arc(family.x, family.y, radius, 0, Math.PI * 2);
         context.fill();
@@ -3581,10 +4049,11 @@ runAfterFirstPaint("Living command cycle", wireCommandCycle, 120);
 runAfterFirstPaint("Release copy controls", wireCopyButtons, 140);
 runAfterFirstPaint("Hive IDE release copy", wireIdeReleaseCopy, 160);
 runAfterFirstPaint("Local runtime handoff guidance", wireLocalHandoffGate, 180);
+runAfterFirstPaint("Product truth manifest", wireProductTruthManifest, 190);
 runAfterFirstPaint("Source snapshot", () => {
   if ($("[data-source-stamp], [data-galaxy-canvas]")) {
     void loadSourceSnapshot().finally(startSnapshotRefresh);
   }
 }, 50);
-runAfterFirstPaint("Authorized release", () => { void loadAuthorizedRelease(); }, 200);
+runAfterFirstPaint("HivePoA quarantine", () => { renderHivePoaQuarantine(); }, 200);
 runAfterFirstPaint("Hive IDE release", () => { void loadIdeRelease(); }, 220);

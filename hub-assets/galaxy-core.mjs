@@ -115,8 +115,8 @@ export function sourceSnapshotPresentation(capturedAt, automaticBridgeEnabled, n
   return Object.freeze({
     freshness: freshness.state,
     bridge,
-    badgeState: freshness.state === "recent" && bridge === "configured" ? "" : "stale",
-    label: `${ageLabel} · ${bridge === "configured" ? "auto-sync configured" : "manual snapshot"}`,
+    badgeState: freshness.state !== "invalid" && bridge === "configured" ? "" : "stale",
+    label: `${freshness.state === "invalid" ? ageLabel : "Verified source snapshot"} · ${bridge === "configured" ? "auto-sync configured" : "manual snapshot"}`,
   });
 }
 

@@ -101,7 +101,11 @@ publishes the identical allowlisted artifact and grants no additional source or
 runtime authority. The page evaluates `capturedAt` on every 60-second poll: a
 capture older than 15 minutes is aged, and one older than one hour is
 historical. Both states retain the last-good counts and describe source age
-only—not publisher delay or runtime health.
+only—not publisher delay or runtime health. Once the browser validates the
+strict snapshot contract, the compact header reports that validation as
+`verified`; the exact capture time and age classification remain in the public
+truth rail and detailed badge text. A refresh failure still reports
+`Last-good snapshot` instead of verified.
 
 `capturedAt` records the time of a validated observation, not the source commit
 timestamp. Rechecking the same source-bound observation is byte-idempotent and

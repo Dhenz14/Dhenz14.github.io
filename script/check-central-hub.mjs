@@ -532,6 +532,7 @@ requireMatch(js, /const COMMAND_CYCLE_STEPS = Object\.freeze\(\[[\s\S]*SEE · SO
 requireMatch(js, /function wireCommandCycle\(\)[\s\S]*data-command-cycle[\s\S]*setInterval[\s\S]*1500/, "command cycle controller");
 requireMatch(js, /reduceMotion\.matches \|\| document\.body\.classList\.contains\("motion-paused"\)/, "manual reduced-motion command cycle");
 requireMatch(js, /detail: \{ snapshot, previous \}/, "previous source snapshot propagation");
+requireMatch(js, /const applyCommandSnapshot = \(snapshot, previous = null\)[\s\S]*hive:snapshot[\s\S]*window\.hivePublicSnapshot[\s\S]*applyCommandSnapshot\(window\.hivePublicSnapshot\)/, "late command-cycle snapshot initialization");
 requireMatch(js, /previous\.hiveAi\?\.sourceCommit === sourceCommit[\s\S]*New source truth absorbed\.[\s\S]*no runtime state was inferred/, "truth-bound source absorption");
 requireMatch(js, /const paintEcho = \(\) =>[\s\S]*drawImage\(sourceCanvas/, "source-bound organism echo renderer");
 requireMatch(js, /const setFlightdeck = \(active, announce = true\)[\s\S]*command-flightdeck-open[\s\S]*Projector flightdeck online/, "projector flightdeck controller");
@@ -588,7 +589,8 @@ requireMatch(js, /AbortController/, "snapshot request cancellation");
 requireMatch(js, /snapshotRequestGeneration/, "snapshot response generation gate");
 requireMatch(js, /snapshotResponseCanCommit\([\s\S]*aborted:/, "behavioral snapshot response gate integration");
 requireMatch(js, /sourceSnapshotPresentation\([\s\S]*automaticBridgeEnabled === true[\s\S]*presentation\.freshness === "historical"[\s\S]*presentation\.freshness === "aged"[\s\S]*presentation\.bridge === "configured"/, "source-age and bridge-configuration separation");
-requireMatch(js, /sourceBadgeLabel = `\$\{facts\.sourceCommit\.slice\(0, 7\)\} · \$\{presentation\.freshness\}`/, "compact truthful header source badge");
+requireMatch(galaxyCore, /badgeState: freshness\.state !== "invalid" && bridge === "configured" \? "" : "stale"/, "validated snapshot badge independent from source age");
+requireMatch(js, /sourceBadgeLabel = `\$\{facts\.sourceCommit\.slice\(0, 7\)\} · verified`[\s\S]*data-galaxy-snapshot-state[\s\S]*"verified"/, "compact browser-verified source badge");
 requireMatch(forcedColorsWiring, /const onForcedColorsChange = \(event\) => this\.applyRenderAvailability\(Boolean\(event\.matches\)\);/, "live forced-colors transition callback");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addEventListener\("change", onForcedColorsChange\)/, "live forced-colors transition listener");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addListener\(onForcedColorsChange\)/, "legacy forced-colors transition listener");

@@ -97,11 +97,12 @@ Cloud runs remain explicitly gated by the `LIVING_GALAXY_CLOUD_SYNC_ENABLED`
 repository variable. Until a dedicated read-only cloud key is authorized, an
 authenticated operator can run the same compiler in local publisher mode with
 `GALAXY_AUTOMATIC_BRIDGE=true GALAXY_BRIDGE_MODE=local`. The public badge labels
-automatic publication as configured rather than claiming the next runner is
-healthy; capture age and later successful publications remain the evidence. It labels
-the represented capture aged after 15 minutes and historical after one hour;
-that is source age, not publisher delay or local-runtime health. It never
-converts unavailable or older truth into zeroes.
+an exact snapshot as verified only after the browser validates its strict
+schema, hash, and source bindings. The capture timestamp remains visible as
+provenance and is still classified as aged after 15 minutes and historical
+after one hour in the detailed status text; it is not presented as publisher
+or local-runtime health. A failed same-origin refresh still changes the badge
+to `Last-good snapshot`, and unavailable or older truth never becomes zeroes.
 
 `HivePoA/` remains generated output. Publish it with the canonical HivePoA
 workflow; do not hand-edit those mirrored bytes. The publisher intentionally

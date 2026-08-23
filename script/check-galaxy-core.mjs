@@ -205,7 +205,10 @@ for (const automaticBridgeEnabled of [true, false]) {
   const expectedBridge = automaticBridgeEnabled ? "configured" : "manual";
   const expectedSuffix = automaticBridgeEnabled ? "auto-sync configured" : "manual snapshot";
   assert([recent, aged, historical].every((value) => value.bridge === expectedBridge && value.label.endsWith(expectedSuffix)), `bridge=${automaticBridgeEnabled} was not reported separately`);
+  const expectedBadgeState = automaticBridgeEnabled ? "" : "stale";
+  assert([recent, aged, historical].every((value) => value.badgeState === expectedBadgeState && value.label.startsWith("Verified source snapshot")), `validated snapshot status was coupled to source age for bridge=${automaticBridgeEnabled}`);
 }
+assert(sourceSnapshotPresentation("not-a-date", true, freshnessNow).badgeState === "stale", "invalid source capture received a verified badge");
 
 const handoffCommit = "a".repeat(40);
 const handoffGraph = "b".repeat(64);

@@ -462,9 +462,7 @@ function wireCommandCycle() {
     root.dataset.commandState = "manual";
   });
 
-  window.addEventListener("hive:snapshot", (event) => {
-    const snapshot = event.detail?.snapshot;
-    const previous = event.detail?.previous;
+  const applyCommandSnapshot = (snapshot, previous = null) => {
     const sourceCommit = snapshot?.hiveAi?.sourceCommit;
     if (sourceCommit) setText("[data-command-source]", sourceCommit.slice(0, 8), root);
     scheduleEcho();
@@ -480,7 +478,13 @@ function wireCommandCycle() {
     absorbedTimer = window.setTimeout(() => {
       if (root.dataset.commandState === "absorbed") root.dataset.commandState = "idle";
     }, 8000);
+  };
+
+  window.addEventListener("hive:snapshot", (event) => {
+    applyCommandSnapshot(event.detail?.snapshot, event.detail?.previous);
   });
+
+  if (window.hivePublicSnapshot) applyCommandSnapshot(window.hivePublicSnapshot);
 
   window.addEventListener("hive:snapshot-error", () => {
     setText("[data-command-source]", "unavailable", root);
@@ -696,14 +700,14 @@ async function loadSourceSnapshot() {
         ? `The represented source capture is more than fifteen minutes old (${snapshot.capturedAt}).`
         : `The represented source capture is recent (${snapshot.capturedAt}).`;
     const bridgeTruth = presentation.bridge === "configured"
-      ? "Automatic publication is configured; source age and future successful runs remain the health evidence."
+      ? "Automatic publication is configured; the exact published source snapshot validated successfully in this browser."
       : "This is a manual source-bound snapshot; the last validated source facts remain visible.";
-    const sourceBadgeLabel = `${facts.sourceCommit.slice(0, 7)} · ${presentation.freshness}`;
-    setText("[data-galaxy-snapshot-state]", presentation.freshness);
+    const sourceBadgeLabel = `${facts.sourceCommit.slice(0, 7)} · verified`;
+    setText("[data-galaxy-snapshot-state]", "verified");
     setSourceBadge(
       presentation.badgeState,
       sourceBadgeLabel,
-      `${ageTruth} ${bridgeTruth} Browser validation succeeded now; source age is not runtime health.`,
+      `${ageTruth} ${bridgeTruth} Capture age is provenance, not runtime or publisher health.`,
     );
     if (!previous
       || previous.hiveAi?.sourceCommit !== snapshot.hiveAi.sourceCommit

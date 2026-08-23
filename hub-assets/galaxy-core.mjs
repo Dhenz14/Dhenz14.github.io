@@ -604,7 +604,8 @@ export async function validGalaxyProjection(galaxy, facts) {
     || galaxy.sourceGraphHash !== facts?.graphHash
     || galaxy.representedNeurons !== GALAXY_PUBLIC_CONTRACT.neurons
     || typeof galaxy.claimBoundary !== "string"
-    || !galaxy.claimBoundary.includes("authenticated local")
+    || !galaxy.claimBoundary.includes("local read-only Living Anatomy surface")
+    || !galaxy.claimBoundary.includes("authority-bearing Mission Control mutations are credential-gated when configured")
     || !HEX64.test(galaxy.projectionHash || "")
     || !Array.isArray(galaxy.divisions)
     || galaxy.divisions.length !== GALAXY_PUBLIC_CONTRACT.divisions

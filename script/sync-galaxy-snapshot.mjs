@@ -437,7 +437,7 @@ const galaxyWithoutHash = {
   geometry: publicGeometry,
   statusProjection: "none",
   claimBoundary:
-    "The public atlas shows topology and family purpose only. Gold Twitch, mastery, runtime, work-lane, mission, and urgency states remain on the authenticated local Living Anatomy surface.",
+    "The public atlas shows topology and family purpose only. Per-neuron Twitch proof, mastery, runtime, work-lane, mission, and urgency projections remain on the local read-only Living Anatomy surface; authority-bearing Mission Control mutations are credential-gated when configured.",
 };
 const galaxy = {
   ...galaxyWithoutHash,

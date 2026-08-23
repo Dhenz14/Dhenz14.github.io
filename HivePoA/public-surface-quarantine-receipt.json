@@ -1,0 +1,124 @@
+{
+  "schema": "hivepoa.public_surface_quarantine.v1",
+  "createdAtUtc": "2026-08-23T19:57:05.9237200Z",
+  "status": "ACTIVE_CANDIDATE_NOT_DEPLOYED",
+  "mode": "REVERSIBLE_PUBLIC_SITE_QUARANTINE",
+  "targetRepository": "Dhenz14/Dhenz14.github.io",
+  "targetBaseCommit": "6826152c63e05c4c77fcaf5941ca1e2c27bd47f8",
+  "sourceProvenance": {
+    "mirrorPublishReceiptPath": "HivePoA/.distribution-publish-receipt.json",
+    "mirrorPublishReceiptBytes": 2364,
+    "mirrorPublishReceiptSha256": "c912157e54f8097197aa07f3df2526f4c07f5c3eb20f73e198d556a4dd7643f6",
+    "mirrorPublishReceiptGitBlobOid": "df38ee04e834af0e50eff2151c5e363ad7dbc81d",
+    "generatedBundleId": "dist-distribution",
+    "generatedBundleSourceCommit": "f72189a7d29525f223e7b9f4488494eec3d812c3",
+    "claim": "The quarantined entry bytes came from the preserved generated mirror. This site receipt does not replace or repair its canonical source."
+  },
+  "reasonCodes": [
+    "GENERATED_BUNDLE_RECEIPT_JS_SHA256_MISMATCH",
+    "AUTHORIZATION_MODULE_NOT_BOUND_BY_BUILD_RECEIPT",
+    "SIGNED_METADATA_PROMOTED_TO_UNOBSERVED_DELIVERY",
+    "RUNTIME_ACCEPTANCE_AND_PUBLICATION_PROOF_POINTERS_NOT_BROWSER_VERIFIED",
+    "NO_CURRENT_PUBLIC_COORDINATOR_OR_ENROLLMENT_PROOF",
+    "CANONICAL_REGENERATION_BLOCKED_BY_CUSTODY_GATE"
+  ],
+  "sharedReplacement": {
+    "bytes": 9138,
+    "sha256": "568d50cb18499b975f4584b3c9b8b490c6e4ae9d44becec38078a23988472d78",
+    "gitBlobOid": "5b24c91992413d92781508bdd042e7030dea1e17",
+    "robots": "noindex, nofollow, noarchive, noimageindex",
+    "contentSecurityPolicy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
+    "scriptsLoaded": [],
+    "externalAssetsLoaded": [],
+    "onlyLink": "/#product-truth"
+  },
+  "quarantinedEntries": [
+    {
+      "path": "HivePoA/index.html",
+      "originalBytes": 19354,
+      "originalSha256": "78c1353fa32410062eb4585ff4a606b02578697faad1023910ed3d50b71c9397",
+      "originalGitBlobOid": "1a607c451406eb81c5e838fbcb2237ed3d057d3c"
+    },
+    {
+      "path": "HivePoA/distribution/index.html",
+      "originalBytes": 528,
+      "originalSha256": "45158a9de319210b92383e6a0fd5ceab23c5ab03a9f218c6724218461621c84b",
+      "originalGitBlobOid": "8ad5b269b35b4cabe53f4dfb6973fd797899d3a3"
+    },
+    {
+      "path": "HivePoA/download/index.html",
+      "originalBytes": 22546,
+      "originalSha256": "71d6f96e3942ce965e60945b1e84b67a5244bbbf80b67a71a15e63ab91420aba",
+      "originalGitBlobOid": "efe6e990d0c2c2f04c0abcd68f853a89fd8783e0"
+    },
+    {
+      "path": "HivePoA/verify/index.html",
+      "originalBytes": 20551,
+      "originalSha256": "2cdaaab9a6bfb975634ad457f8645d899f6c42b400c6a3ee3bf0d8ea245a6439",
+      "originalGitBlobOid": "b17d10ca585f0ad2c37acfa35fdc0c98228c547c"
+    },
+    {
+      "path": "HivePoA/releases/index.html",
+      "originalBytes": 19300,
+      "originalSha256": "80fe10f5d540b58995344e3de0406b77c995139581bebeca2976e814a011b001",
+      "originalGitBlobOid": "ad5a883335f0f1717d9b06c8366c760df25438f2"
+    },
+    {
+      "path": "HivePoA/get-started/index.html",
+      "originalBytes": 22809,
+      "originalSha256": "a3bb6ee07ea20af1ebb64bd6dd95b570e61edb08e3d56a3684249812a9766f33",
+      "originalGitBlobOid": "1d6f9a5709db218e3b058f075363fca4bf8074d5"
+    },
+    {
+      "path": "HivePoA/tester-network/index.html",
+      "originalBytes": 21157,
+      "originalSha256": "d40214e01d5aa618f0e421a6686dda970bc1e5668a9edfddf67db1223aacc528",
+      "originalGitBlobOid": "49f7cfd7521c984b8b228b449a9aea5997860f6a"
+    }
+  ],
+  "preservedGeneratedAssets": {
+    "distributionScript": {
+      "path": "HivePoA/distribution-assets/distribution.js",
+      "bytes": 35950,
+      "sha256": "6ad9d3a1814b3e1cbca0f2eb62ca03c415d4b6b5fc50a8150ed9fac981fd5815",
+      "gitBlobOid": "681a32fab4067111835b43c0f408e25d1c24091d",
+      "buildReceiptRecordedSha256": "41b5175eb10038c99018d1074bd4873a4f2bb152f1d8be6a48681802605f90f3",
+      "servedByQuarantineEntries": false
+    },
+    "authorizationModule": {
+      "path": "HivePoA/distribution-assets/tester-network-authorization.js",
+      "bytes": 13971,
+      "sha256": "75c02a84f91f9fce72672427b6865d80c09118ad3ad9c4be758aa6cfc3d4282a",
+      "gitBlobOid": "3f397e3bc3a6a3a4ee83b9c54f11c1b8bc55daf0",
+      "boundByBuildReceipt": false,
+      "servedByQuarantineEntries": false
+    },
+    "buildReceipt": {
+      "path": "HivePoA/build-receipt.json",
+      "bytes": 1047,
+      "sha256": "5dc84de6e8427efffa3a494afbec0298231e254960ee4155f450498c5836f47e",
+      "gitBlobOid": "46615bf2d3011dd560cbdf190d48918e9b4f679f",
+      "status": "PRESERVED_MISMATCHED_NOT_REWRITTEN"
+    }
+  },
+  "publicClaimBoundary": {
+    "historicalOperatorKeyMetadata": "PRESERVED_PROVENANCE_ONLY",
+    "packageDelivery": "HOLD",
+    "liveCoordinator": "NOT_PROVEN",
+    "publicEnrollment": "NOT_PUBLISHED",
+    "execution": "NOT_PROVEN",
+    "runtimeAcceptance": "HISTORICAL_POINTER_NOT_BROWSER_VERIFIED",
+    "publicNetworkAvailability": "NOT_PROVEN",
+    "productLive": false,
+    "downloadAction": false,
+    "verificationAction": false,
+    "enrollmentAction": false,
+    "networkAction": false
+  },
+  "canonicalSourceRepairPerformed": false,
+  "authorityConferred": false,
+  "commitCreated": false,
+  "pushed": false,
+  "deployed": false,
+  "cleanupPerformed": false
+}

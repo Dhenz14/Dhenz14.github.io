@@ -7647,8 +7647,8 @@
       "geometryHash": "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314"
     },
     "statusProjection": "none",
-    "claimBoundary": "The public atlas shows topology and family purpose only. Gold Twitch, mastery, runtime, work-lane, mission, and urgency states remain on the authenticated local Living Anatomy surface.",
-    "projectionHash": "09066a0db9abc1f01d8fc14f5c495bcdadfe9dd0918e1de2cacdcabb32f9fdf7"
+    "claimBoundary": "The public atlas shows topology and family purpose only. Per-neuron Twitch proof, mastery, runtime, work-lane, mission, and urgency projections remain on the local read-only Living Anatomy surface; authority-bearing Mission Control mutations are credential-gated when configured.",
+    "projectionHash": "f9e4fd92a0d815f5b15b4ce7f6f986b03befeed550073a4089b20e35e97cf799"
   },
   "ecosystem": {
     "schema": "hive.ecosystem.public-organ-map.v1",
@@ -7707,5 +7707,5 @@
     "localGalaxyUrl": "http://127.0.0.1:5002/constellation/body?presentation=1"
   },
   "capturedAt": "2026-08-23T04:59:30Z",
-  "snapshotHash": "b0a3ed0938590f1db63a94f363c2505fe598d1419e850321d6c112d6cb7a9641"
+  "snapshotHash": "e0a426d6ced76f6f4217ec814d1781b72f3cadcf3b617313f8912639c5621273"
 }

@@ -14,9 +14,11 @@ The public Living Anatomy galaxy renders all 640 neuron identities in the exact
 authored 16-division / 64-family coordinates projected by Hive-AI. The shared
 `hive.galaxy.renderer-contract.v1` contract binds those coordinates to the graph
 hash and source commit inside `hub-assets/hub-facts.json`; there is no synthetic
-geometry fallback. Aggregate Twitch and PM-only counts are source facts, while
-gold status, evidence, blockers, urgency, work lanes, missions, and runtime
-state remain on the authenticated local map.
+geometry fallback. Aggregate Twitch and PM-only counts are row-backed source
+proofs, not current execution, served influence, or product-live telemetry.
+Per-neuron status, evidence, blockers, urgency, work lanes, missions, and runtime
+projections remain on the local read-only Living Anatomy surface; authority-
+bearing Mission Control mutations are credential-gated when configured.
 
 Pages retains one progressively enhanced Canvas2D renderer. It shares geometry,
 camera, event, status-language, and fallback semantics with the local renderer

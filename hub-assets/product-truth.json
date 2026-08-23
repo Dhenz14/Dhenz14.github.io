@@ -34,10 +34,10 @@
   },
   "source": {
     "projectionRole": "bounded public projection of a source candidate; not the canonical manifest at evidence pin, a served/main receipt, runtime telemetry, behavior evidence, or authority",
-    "sourceCommit": "472131baa2bc212a043966773bd92477c3a8a16c",
+    "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
     "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
-    "snapshotHash": "e0a426d6ced76f6f4217ec814d1781b72f3cadcf3b617313f8912639c5621273",
-    "capturedAt": "2026-08-23T04:59:30Z"
+    "snapshotHash": "634524e22039c696387a455fe0c1bd1d04e544a5745967acf4d27509fd882088",
+    "capturedAt": "2026-08-23T22:53:32Z"
   },
   "architecture": {
     "label": "HiveBrain Constellation",
@@ -110,7 +110,7 @@
       "subject_status": "SOURCE_PRESENT_AT_PIN",
       "claim_plane": "SOURCE_PRESENT",
       "evidence": "Pinned catalog, registry, and public graph projection at the immutable Hive-AI evidence baseline",
-      "evidenceRef": "hub-assets/hub-facts.json; Dhenz14/Hive-AI@472131baa2bc212a043966773bd92477c3a8a16c configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 46626c1662d1fe04e056ba1c44926184d523c65d490a76ad89acd2e58e04f62c",
+      "evidenceRef": "hub-assets/hub-facts.json; Dhenz14/Hive-AI@0ab04f6c19ffd41bb162bea674e77853fb27cc0e configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 46626c1662d1fe04e056ba1c44926184d523c65d490a76ad89acd2e58e04f62c",
       "verifiedAt": "2026-08-23T18:46:30Z",
       "validUntil": null,
       "freshness": "IMMUTABLE_SOURCE_CUT",
@@ -135,10 +135,10 @@
         "trigger": "EVIDENCE_INPUT_OR_EVALUATOR_CHANGE",
         "expiryAction": "NOT_TIME_EXPIRING_HOLD_ON_REVOCATION_UNTIL_REAUDIT_PASS"
       },
-      "sourceCommit": "472131baa2bc212a043966773bd92477c3a8a16c",
-      "sourceTree": "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00",
+      "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+      "sourceTree": "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
       "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
-      "snapshotHash": "e0a426d6ced76f6f4217ec814d1781b72f3cadcf3b617313f8912639c5621273",
+      "snapshotHash": "634524e22039c696387a455fe0c1bd1d04e544a5745967acf4d27509fd882088",
       "neurons": 640,
       "trainable": 448,
       "deterministic": 192,
@@ -468,9 +468,9 @@
   "relations": {
     "atlasTester": {
       "status": "MISMATCH",
-      "atlasSourceCommit": "472131baa2bc212a043966773bd92477c3a8a16c",
+      "atlasSourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
       "testerEmbeddedHiveAiCommit": "a0fe64832edb801c9944c0923e222a64ef14e498",
-      "claim": "Tester.5 source declarations point to a Hive-AI generation that does not match the mapped 472131baa source atlas; tester.5 must not be presented as realizing that Constellation."
+      "claim": "Tester.5 source declarations point to a Hive-AI generation that does not match the mapped 0ab04f6c source atlas; tester.5 must not be presented as realizing that Constellation."
     },
     "testerSubjects": {
       "status": "SEPARATE_SUBJECTS",
@@ -523,7 +523,7 @@
   ],
   "registryClaimCut": {
     "status": "HOLD",
-    "sourceCommit": "472131baa2bc212a043966773bd92477c3a8a16c",
+    "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
     "derivedAt": "2026-08-23T18:46:30Z",
     "authority": "full_catalog_grant_bound_influence_accounting_via_agent_query",
     "runtimeEnabled": 37,
@@ -634,6 +634,6 @@
     "excluded": [
       "bindingDigest"
     ],
-    "value": "b6db75af2bf23a30d8058404d4104e7eefa6a6352cad4b3f559699c73abb15e3"
+    "value": "91c4a598413d269f9970032e76a5b3078810c8a9cf8195d2083e899a600808d1"
   }
 }

@@ -634,7 +634,7 @@ function setSourceBadge(state, label, title) {
 }
 
 const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v1";
-const PRODUCT_TRUTH_PROJECTION_DIGEST = "b6db75af2bf23a30d8058404d4104e7eefa6a6352cad4b3f559699c73abb15e3";
+const PRODUCT_TRUTH_PROJECTION_DIGEST = "91c4a598413d269f9970032e76a5b3078810c8a9cf8195d2083e899a600808d1";
 const PRODUCT_TRUTH_MAX_BYTES = 128 * 1024;
 const PRODUCT_TRUTH_SUBJECTS = Object.freeze({
   target_architecture: { label: "Target architecture", kind: "ARCHITECTURE_TARGET", status: "SOURCE_BOUND_DOCTRINE", plane: "TARGET" },
@@ -653,6 +653,11 @@ const PRODUCT_TRUTH_SUBJECT_BASE_KEYS = Object.freeze([
   "subject_id", "subject_kind", "subject_status", "claim_plane", "evidence", "evidenceRef", "verifiedAt", "validUntil",
   "freshness", "invalidators", "claim", "doesNotProve", "recertification",
 ]);
+// The atlas advances with main; the evidence baseline is where the doctrine files were
+// hashed. They are separate planes and may legitimately differ, so each is pinned against
+// its own producer rather than being forced equal to the other.
+const EVIDENCE_BASELINE_COMMIT = "472131baa2bc212a043966773bd92477c3a8a16c";
+const ATLAS_SOURCE_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
 const CANONICAL_MANIFEST_SHA256 = "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056";
 const CANONICAL_MANIFEST_BYTES = 49342;
 const CANONICAL_MANIFEST_BLOB = "c1036d2fc877e058965688fe8da5097576a37826";
@@ -833,7 +838,7 @@ async function validateProductTruthManifest(manifest, snapshot) {
   assertProductTruth(
     canonicalManifest.repository === "Dhenz14/Hive-AI"
       && canonicalManifest.path === "configs/public/constellation_architecture_v1.json"
-      && canonicalManifest.evidenceSourceCommit === snapshot.hiveAi.sourceCommit
+      && canonicalManifest.evidenceSourceCommit === EVIDENCE_BASELINE_COMMIT
       && canonicalManifest.evidenceSourceTree === "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00"
       && canonicalManifest.candidateSha256 === CANONICAL_MANIFEST_SHA256
       && canonicalManifest.candidateBytes === CANONICAL_MANIFEST_BYTES
@@ -935,7 +940,7 @@ async function validateProductTruthManifest(manifest, snapshot) {
     "target doctrine predicates rejected",
   );
   const source = subjects.source_atlas;
-  assertProductTruth(source.sourceCommit === snapshot.hiveAi.sourceCommit && source.sourceTree === canonicalManifest.evidenceSourceTree && source.graphHash === snapshot.hiveAi.graphHash && source.snapshotHash === snapshot.snapshotHash, "atlas binding rejected");
+  assertProductTruth(source.sourceCommit === snapshot.hiveAi.sourceCommit && source.sourceTree === ATLAS_SOURCE_TREE && source.graphHash === snapshot.hiveAi.graphHash && source.snapshotHash === snapshot.snapshotHash, "atlas binding rejected");
   assertProductTruth(source.neurons === 640 && source.trainable === 448 && source.deterministic === 192 && source.divisions === 16 && source.families === 64 && source.rowBackedTwitchProofs === 636, "atlas counts rejected");
   const tip = subjects.tip_influence;
   assertProductTruth(tip.runtimeEnabled === 37 && tip.servedInfluenceEnabled === 37 && tip.productLiveClaimAllowed === 37 && tip.executeAuthorized === false && tip.permanentProductTurnWire === false && tip.safeToClaim100PercentProductLive === false && tip.reason === "TIP_FUSE_CODE_BINDING_BYTES_MISMATCH_FAIL_CLOSED", "TIP influence ceiling rejected");

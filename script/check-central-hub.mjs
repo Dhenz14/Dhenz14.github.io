@@ -736,7 +736,7 @@ requireMatch(html, /id="ide-download"[^>]+data-ide-release data-state="checking"
 requireMatch(html, /Tester\.5 outer bytes verified\. Download authority still HOLD\./, "held tester download headline");
 requireMatch(html, /matched exactly[\s\S]{0,40}924864317[\s\S]{0,40}bytes and its SHA-256[\s\S]{0,80}Authenticode is[\s\S]{0,20}NotSigned[\s\S]{0,120}package contents, installation, and runtime remain[\s\S]{0,20}UNKNOWN/, "outer-byte verification scoped to bytes only");
 requireMatch(html, /This page exposes evidence but authorizes no download\./, "evidence-only download boundary");
-requireMatch(html, /DIFFERENT GENERATION[\s\S]*Tester\.5 must not be presented as realizing the mapped HiveBrain Constellation[\s\S]*472131baa[\s\S]*a0fe6483/, "tester/atlas generation mismatch disclosed at the download surface");
+requireMatch(html, /DIFFERENT GENERATION[\s\S]*Tester\.5 must not be presented as realizing the mapped HiveBrain Constellation[\s\S]*0ab04f6c[\s\S]*a0fe6483/, "tester/atlas generation mismatch disclosed at the download surface");
 requireMatch(html, /Tester\.6 publication remains a separate HOLD\./, "tester.6 held separately from tester.5");
 requireMatch(html, /EVIDENCE LADDER[\s\S]*Remote outer bytes[\s\S]*VERIFIED[\s\S]*Publisher authentication[\s\S]*NOT SIGNED[\s\S]*Package contents[\s\S]*UNKNOWN[\s\S]*Installation \+ runtime[\s\S]*UNKNOWN[\s\S]*Public functional testing[\s\S]*HOLD/, "five-plane evidence ladder");
 requireMatch(html, /A separate, unexpired operator authorization is required before this truth contract can expose an active download\./, "download requires separate operator authority");

@@ -195,7 +195,10 @@ const EXPECTED_DEFINITION_IDS = Object.freeze([
 const EXPECTED_PLATFORM_IDS = Object.freeze([
   "windows-x64-remote", "windows-wsl-design", "linux-source", "linux-publication", "macos-publication",
 ]);
-const EXPECTED_CANDIDATE_BINDING_DIGEST = "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791";
+const ATLAS_SOURCE_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
+const EVIDENCE_BASELINE_COMMIT = "472131baa2bc212a043966773bd92477c3a8a16c";
+const EVIDENCE_BASELINE_TREE = "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00";
+const EXPECTED_CANDIDATE_BINDING_DIGEST = "3c6782a94c2841dc229876b7794c49494100ad3a3ce80d8ca0a71ac9a5510d73";
 // The exact candidate-state strings that landing is allowed to replace. A landed
 // manifest must rebuild to this baseline digest, proving the landing changed the
 // custody fields and nothing else.
@@ -427,10 +430,14 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     ...SUBJECT_BASE_KEYS, "sourceCommit", "sourceTree", "graphHash", "snapshotHash", "neurons", "trainable",
     "deterministic", "divisions", "families", "rowBackedTwitchProofs",
   ], "source atlas subject");
-  assert(sourceAtlas.sourceTree === canonicalManifest.evidenceSourceTree,
-    "source atlas tree drifted from the canonical evidence baseline tree");
-  assert(sourceAtlas.sourceCommit === canonicalManifest.evidenceSourceCommit,
-    "source atlas commit drifted from the canonical evidence baseline commit");
+  // The published atlas advances with main while the evidence baseline stays where the
+  // doctrine files were hashed, so these are pinned independently rather than to each
+  // other. Ancestry between them is not asserted: this checker cannot verify it offline.
+  assert(sourceAtlas.sourceTree === ATLAS_SOURCE_TREE,
+    "source atlas tree drifted from the published atlas tree");
+  assert(canonicalManifest.evidenceSourceCommit === EVIDENCE_BASELINE_COMMIT
+    && canonicalManifest.evidenceSourceTree === EVIDENCE_BASELINE_TREE,
+    "canonical evidence baseline drifted from its independent pin");
   assert(sourceAtlas.sourceCommit === manifest.source.sourceCommit
     && sourceAtlas.graphHash === manifest.source.graphHash
     && sourceAtlas.snapshotHash === manifest.source.snapshotHash

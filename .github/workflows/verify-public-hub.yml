@@ -32,8 +32,10 @@ jobs:
           node --check hub-assets/galaxy-core.mjs
           node --check hub-assets/ide-release-core.mjs
           node --check hub-assets/strict-json.mjs
+          node --check hub-assets/strict-json-fetch.mjs
           node --check script/build-public-pages.mjs
           node --check script/hub-facts-custody.mjs
+          node --check script/check-browser-json-acquisition.mjs
           node --check script/check-central-hub.mjs
           node --check script/check-product-truth.mjs
           node --check script/check-ide-release.mjs
@@ -67,6 +69,7 @@ jobs:
           node script/check-central-hub.mjs
           node script/check-product-truth.mjs --self-test
           node script/check-ide-release.mjs --self-test
+          node script/check-browser-json-acquisition.mjs
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
           node script/hub-facts-custody.mjs --self-test
@@ -77,3 +80,12 @@ jobs:
           node script/check-signed-release.mjs --verify-git-provenance
           node script/check-signed-release.mjs --self-test
           node script/check-signed-release-portability.mjs --git-archive
+      - name: Verify exact staged HTTP surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="${RUNNER_TEMP}/hive-pages-reviewed-pr"
+          test ! -e "$stage"
+          node script/build-public-pages.mjs build --output "$stage"
+          node script/build-public-pages.mjs check --output "$stage"
+          node script/check-http-surface.mjs --root "$stage"

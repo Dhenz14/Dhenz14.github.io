@@ -1,9 +1,10 @@
-# Public galaxy synchronization
+# Public Constellation Atlas synchronization
 
 ## Current guarantee
 
-`script/sync-galaxy-snapshot.mjs` is the only path that can activate and
-recompile the root galaxy snapshot. It refuses to publish unless the selected
+`script/sync-galaxy-snapshot.mjs` is the only path that can recompile the public
+source-topology snapshot. It cannot activate a runtime or rewrite the stable
+reviewed Product Truth baseline. It refuses to emit a candidate unless the selected
 Hive-AI commit is current remote `main`, the entire checkout is clean and
 commit-bound, checkout `HEAD` equals that exact commit, the generated graph
 passes Living Anatomy validation, and every source-manifest and tracked evidence
@@ -14,27 +15,38 @@ never a mixed-era artifact. A shallow clone is accepted only when the newest
 truth-input commit is proven before the shallow boundary. The write is atomic
 and `--check` is idempotent.
 
-The v3 output schema is an explicit public allowlist: aggregate source facts,
+The v3.1 output schema is an explicit public allowlist: aggregate source facts,
 six public organ descriptions, stable topology, and exact authored geometry.
 The source-graph-bound `hive.galaxy.renderer-contract.v1` projection closes,
 orders, cardinality-checks, and hashes 16 division, 64 family, and 640 neuron
 tuples. It does not contain paths, evidence, blockers, owners, missions,
 urgency, prompts, credentials, or per-neuron status. The public renderer
-therefore cannot color Twitches gold or imply runtime health; those facts belong
-to the authenticated local Living Anatomy surface.
+therefore cannot color Twitches gold or imply runtime health; any such facts
+require a future local Living Anatomy surface with separate attestation.
 
-The public adapter consumes that projection through the one existing Canvas2D
-atlas; the authenticated local adapter retains its Three.js machinery. They
-converge on geometry, camera, event, status-language, and fallback semantics,
-not private data or copied renderer bundles. A future local handoff may carry
-only its version, source commit, graph hash, lens, node, and level. The current
-public candidate keeps that action disabled until the strict local runtime is
-separately attested. Pages never probes, starts, or claims availability of a
+The public adapter consumes that projection through the existing Canvas2D
+atlas. A future local adapter may converge on geometry, camera, event,
+status-language, and fallback semantics, but no current local adapter or runtime
+is attested here. A future local context may carry only its version, source
+commit, graph hash, lens, node, and level as an inert tuple. The public candidate
+keeps every action disabled unless an exact strict-runtime receipt supplies
+separate attestation. Pages never probes, starts, or claims availability of a
 local surface.
 
 `script/mark-galaxy-bridge-inactive.mjs` has one narrow fail-closed authority:
 it can retain all source facts while changing only the refresh boundary from
 active to credential-missing. It cannot enable automation or alter source facts.
+
+Product Truth evaluates every admitted snapshot against its frozen reviewed
+baseline. An exact match yields `EXACT_REVIEWED_BASELINE_MATCH`; a valid newer
+source observation yields `NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD`; a
+credential-missing or checkout-failed last-good projection yields
+`BRIDGE_INACTIVE_LAST_GOOD_SOURCE`; and invalid structure yields
+`SNAPSHOT_INVALID_BLOCKED`. Only the topology from a valid new snapshot may be
+displayed. Semantic, runtime, product, and authority claims remain held until a
+separate review updates the baseline deliberately. This separation makes living
+source convergence possible without letting an unreviewed sync rewrite public
+meaning.
 
 ## Living-main publisher
 
@@ -81,8 +93,10 @@ cloud publication:
    from the reviewed public allowlist and deploys only that exact artifact.
 9. `GITHUB_TOKEN` pushes do not emit another push workflow, so a guarded
    `workflow_run` route follows a successful `Sync living galaxy` completion.
-   It binds to exact current Pages `main`, refuses a stale artifact, and uses the
-   same staged membership and HTTP-surface checks without a PAT.
+   It binds to exact current Pages `main`, skips no-change completions, admits
+   only a sole-parent facts-only update from the workflow-start commit, refuses
+   a stale artifact, and uses the same staged membership and HTTP-surface checks
+   without a PAT.
 10. Any source, validation, Actions, push, or deployment failure leaves the
     last-good public snapshot untouched. The page identifies the exact
     represented commit and continues polling the deployed same-origin snapshot
@@ -94,16 +108,15 @@ would additionally require a narrowly scoped GitHub App installed on exactly
 Hive-AI and Pages. The scheduled publisher needs no personal token, broad
 cross-repository token, private runtime proxy, or write access to Hive-AI; its
 single private credential is the repository-specific read-only deploy key.
-The public badge therefore says auto-sync is configured, never that a future
-runner is guaranteed healthy. When `LIVING_GALAXY_CLOUD_SYNC_ENABLED` is false,
-even a manually dispatched workflow publishes only a manual source-bound
-snapshot and does not claim automatic convergence.
+The public badge reports the validated snapshot identity and its freshness
+disposition, never that a future runner is healthy. When
+`LIVING_GALAXY_CLOUD_SYNC_ENABLED` is false, a manually dispatched workflow may
+only retain or publish the bounded source snapshot and does not claim automatic
+convergence.
 
-When cloud credentials are intentionally absent, the same strict compiler may
-run from a clean authenticated operator checkout with
-`GALAXY_AUTOMATIC_BRIDGE=true GALAXY_BRIDGE_MODE=local`. This local fallback
-publishes the identical allowlisted artifact and grants no additional source or
-runtime authority. The page evaluates `capturedAt` on every 60-second poll: a
+When cloud credentials are intentionally absent, the workflow publishes the
+last-good topology with an inactive bridge boundary. This grants no additional
+source, semantic, or runtime authority. The page evaluates `capturedAt` on every 60-second poll: a
 capture older than 15 minutes is aged, and one older than one hour is
 historical. Both states retain the last-good counts and describe source age
 only—not publisher delay or runtime health. Once the browser validates the
@@ -128,10 +141,12 @@ node script/sync-galaxy-snapshot.mjs --check \
 node script/check-central-hub.mjs
 node script/check-galaxy-bridge.mjs
 node script/check-galaxy-core.mjs
+node script/check-browser-json-acquisition.mjs
 node script/check-public-pages-artifact.mjs
 node script/check-signed-release.mjs
 node --check hub-assets/hub.js
 node --check hub-assets/galaxy-core.mjs
+node --check hub-assets/strict-json-fetch.mjs
 node --check script/sync-galaxy-snapshot.mjs
 node --check script/mark-galaxy-bridge-inactive.mjs
 node script/check-live-parity.mjs --origin https://dhenz14.github.io

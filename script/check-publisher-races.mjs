@@ -47,9 +47,15 @@ assert(/committed_candidate_sha[\s\S]*candidate_sha/.test(workflow), "committed 
 assert(/changed_paths[\s\S]*hub-assets\/hub-facts\.json/.test(workflow), "rebuilt commit lacks an exact path proof");
 assert(!/pages\/builds/.test(workflow), "snapshot publisher still requests a legacy branch-root Pages build");
 assert(/workflow_run:[\s\S]*workflows: \["Sync living galaxy"\][\s\S]*conclusion == 'success'[\s\S]*head_branch == 'main'/.test(pagesWorkflow), "token-originated snapshot pushes lack a guarded deployment route");
-assert(/git fetch --no-tags origin refs\/heads\/main:refs\/remotes\/origin\/main[\s\S]*git checkout --detach refs\/remotes\/origin\/main/.test(pagesWorkflow), "workflow-run publication is not bound to exact current main");
+assert(/Check out current main with exact history[\s\S]*ref: main[\s\S]*fetch-depth: 0[\s\S]*persist-credentials: false/.test(pagesWorkflow), "workflow-run resolver does not start from current main");
+assert(/target_sha="\$\(git rev-parse HEAD\)"[\s\S]*base_sha="\$\{\{ github\.event\.workflow_run\.head_sha \}\}"[\s\S]*HEAD\^[\s\S]{0,40}\$base_sha/.test(pagesWorkflow), "workflow-run publication is not bound to one exact current-main child");
+assert(/git diff --name-only "\$base_sha"\.\.HEAD[\s\S]{0,80}hub-assets\/hub-facts\.json/.test(pagesWorkflow), "workflow-run child is not restricted to the admitted facts path");
+assert(/target_sha" == "\$base_sha"[\s\S]*should_publish=false[\s\S]*exit 0/.test(pagesWorkflow), "successful no-change sync can still cause a Pages redeploy");
+assert(/ref: \$\{\{ needs\.resolve-publication\.outputs\.target-sha \}\}[\s\S]*test "\$\(git rev-parse HEAD\)" = "\$\{\{ needs\.resolve-publication\.outputs\.target-sha \}\}"[\s\S]*refs\/remotes\/origin\/main/.test(pagesWorkflow), "Pages build is not bound to the exact resolved main target");
 assert(/Refuse a stale main artifact[\s\S]*git rev-parse HEAD[\s\S]*refs\/remotes\/origin\/main/.test(pagesWorkflow), "Pages builder can upload a stale main artifact");
 assert(/cancel-in-progress: true/.test(pagesWorkflow), "newer main publication cannot cancel stale in-flight work");
+assert(/compile:[\s\S]*if: github\.repository == 'Dhenz14\/Dhenz14\.github\.io' && github\.ref == 'refs\/heads\/main'/.test(workflow), "secret-bearing compile path is not main-bound");
+assert(/publish:[\s\S]*if: needs\.compile\.result == 'success' && github\.ref == 'refs\/heads\/main'/.test(workflow), "contents-write publisher is not main-bound");
 assert(workflow.includes("/hiveai/static/living-anatomy/src/galaxy-contract.json"), "sparse source checkout omits the canonical renderer contract");
 assert(workflow.includes("node script/check-galaxy-core.mjs"), "publisher does not revalidate authored geometry on current Pages main");
 assert(facts.schema === "hive.ecosystem.public-source-snapshot.v3"

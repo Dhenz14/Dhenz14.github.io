@@ -50,11 +50,25 @@
     "claim_plane": "TARGET"
   },
   "source": {
-    "projectionRole": "bounded public projection of LANDED SOURCE at 0ab04f6c and its PUBLISHED SNAPSHOT captured 2026-08-23T22:53:32Z, derived from an EVIDENCE BASELINE at 472131baa; FRESHNESS is separate and HOLD; not a public served/main receipt, runtime telemetry, behavior evidence, public retrievability, or authority",
+    "projectionRole": "stable reviewed semantic baseline for the published source atlas; mutable source snapshots may display topology but cannot rewrite reviewed semantic, runtime, product, or authority claims without a fresh review",
     "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
     "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
-    "snapshotHash": "634524e22039c696387a455fe0c1bd1d04e544a5745967acf4d27509fd882088",
-    "capturedAt": "2026-08-23T22:53:32Z"
+    "snapshotHash": "81fee0f0b751c5c17ace278cf17fe7f373041f6a239957e7e9b22b9cdc409602",
+    "capturedAt": "2026-08-23T22:53:32Z",
+    "reviewedBaseline": {
+      "snapshotVersion": "3.1.0",
+      "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+      "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
+      "sourceFingerprint": "f177f665aceb2689d69f7bbb283e9165380c306edced348312cd16fb47d4c8bb",
+      "projectionHash": "58f8aa20d200bb4ec1bb6d13810bda85b6e1b7c189f8c070b3d9070d67b9d80b",
+      "geometryHash": "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314"
+    },
+    "allowedSnapshotRelations": [
+      "EXACT_REVIEWED_BASELINE_MATCH",
+      "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD",
+      "BRIDGE_INACTIVE_LAST_GOOD_SOURCE",
+      "SNAPSHOT_INVALID_BLOCKED"
+    ]
   },
   "architecture": {
     "label": "HiveBrain Constellation",
@@ -68,7 +82,7 @@
     },
     "currentVsLegacy": {
       "status": "SUBJECT_SCOPED_DISPOSITIONS",
-      "claim": "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron-removal and Tauri/WebView2 source were observed only on the unprotected Hive IDE candidate branch hive/wt/theyc/ide-electron-final-20260822 at f459e85; that candidate is not landed on the default branch. Tester.5 exact package contents are UNKNOWN_NOT_INSPECTED. The prior claim that tester.5 still bundles Electron is SUPERSEDED_REVOKED_UNSUPPORTED. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST; tester.6 publication is held."
+      "claim": "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. At 2026-08-23T18:46:30Z, Electron-removal and Tauri/WebView2 source were observed on the unprotected Hive IDE candidate branch hive/wt/theyc/ide-electron-final-20260822 at f459e85. Current landing is UNKNOWN/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK. Tester.5 exact package contents are UNKNOWN_NOT_INSPECTED. The prior claim that tester.5 still bundles Electron is SUPERSEDED_REVOKED_UNSUPPORTED. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST; tester.6 publication is held."
     },
     "noLlmClaim": {
       "status": "HOLD",
@@ -155,7 +169,7 @@
       "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
       "sourceTree": "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
       "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
-      "snapshotHash": "634524e22039c696387a455fe0c1bd1d04e544a5745967acf4d27509fd882088",
+      "snapshotHash": "81fee0f0b751c5c17ace278cf17fe7f373041f6a239957e7e9b22b9cdc409602",
       "neurons": 640,
       "trainable": 448,
       "deterministic": 192,
@@ -179,7 +193,7 @@
         "TIP fuse binding changes",
         "evaluator bytes change"
       ],
-      "claim": "Thirty-seven rows are source-governed claim-permitted at the evidence baseline; execute authority and a permanent product-turn wire remain false.",
+      "claim": "Thirty-seven rows match a source predicate at the evidence baseline. Their effective disposition is HOLD; execute authority and a permanent product-turn wire are false.",
       "doesNotProve": [
         "installed runtime",
         "successful execution",
@@ -193,12 +207,10 @@
         "trigger": "EVIDENCE_INPUT_OR_EVALUATOR_CHANGE",
         "expiryAction": "NOT_TIME_EXPIRING_HOLD_ON_REVOCATION_UNTIL_REAUDIT_PASS"
       },
-      "runtimeEnabled": 37,
-      "servedInfluenceEnabled": 37,
-      "productLiveClaimAllowed": 37,
+      "matchingRows": 37,
+      "effectiveDisposition": "HOLD",
       "executeAuthorized": false,
       "permanentProductTurnWire": false,
-      "safeToClaim100PercentProductLive": false,
       "reason": "TIP_FUSE_CODE_BINDING_BYTES_MISMATCH_FAIL_CLOSED"
     },
     "fleet_halos": {
@@ -241,13 +253,13 @@
     "released_tester_5": {
       "subject_id": "released_tester_5",
       "subject_kind": "PUBLIC_RELEASE_REMOTE_ARTIFACT_BYTES",
-      "subject_status": "PUBLIC_REMOTE_BYTES_VERIFIED_OLDER_SOURCE_SUBJECT",
-      "claim_plane": "PUBLIC_REMOTE_BYTES_VERIFIED",
-      "evidence": "Independent bounded GitHub API, TLS, full-body remote download, byte-count, SHA-256, and Authenticode observation; raw HTTP bytes were not retained",
-      "evidenceRef": "tests/fixtures/constellation_public_truth/tester5_remote_bytes_observation_v1.json sha256 6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56",
+      "subject_status": "EVIDENCE_EXPIRED_HELD",
+      "claim_plane": "HISTORICAL_EVIDENCE",
+      "evidence": "Historical independent bounded GitHub API, TLS, full-body remote download, byte-count, SHA-256, and Authenticode observation; its validity window has expired and raw HTTP bytes were not retained",
+      "evidenceRef": "historicalEvidence; tests/fixtures/constellation_public_truth/tester5_remote_bytes_observation_v1.json sha256 6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56",
       "verifiedAt": "2026-08-23T19:20:09.7630961Z",
       "validUntil": "2026-08-24T19:20:09.7630961Z",
-      "freshness": "EXTERNAL_REMOTE_BYTES_READBACK_WINDOW",
+      "freshness": "EVIDENCE_EXPIRED_HELD",
       "invalidators": [
         "validity expiry",
         "release or asset identity change",
@@ -255,7 +267,7 @@
         "remote SHA-256 mismatch",
         "contradictory Authenticode observation"
       ],
-      "claim": "Tester.5 remote outer EXE bytes independently match 924864317 bytes and SHA-256 be1795…b000. Authenticode is NotSigned. Package contents, installation, execution, runtime, and behavior remain unproven, and the declared embedded Hive-AI source is older than the atlas.",
+      "claim": "At 2026-08-23T19:20:09.7630961Z, tester.5 remote outer EXE bytes matched 924864317 bytes and SHA-256 be1795…b000, and Authenticode read NotSigned. That observation expired; current package identity, retrievability, installation, execution, runtime, and behavior are UNKNOWN or HOLD.",
       "doesNotProve": [
         "archive or package contents",
         "software safety",
@@ -272,38 +284,46 @@
         "trigger": "VALID_UNTIL_OR_REMOTE_IDENTITY_CHANGE",
         "expiryAction": "HOLD_SUBJECT_AND_ARCHITECTURE_ROUTE_UNTIL_FRESH_RECEIPT"
       },
-      "tag": "hive-ide-v0.3.0-tester.5",
-      "url": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/Hive-IDE-OneClick-Windows-x64.exe",
-      "releaseId": 366980498,
-      "assetId": 505603161,
-      "assetState": "uploaded",
-      "responseChain": "302_TO_200",
-      "tlsVerified": true,
-      "bytes": 924864317,
-      "sha256": "be1795640763e99315b426757c76d655f6f07f92701d040c62f6126c1401b000",
-      "artifactBytesIndependentlyVerified": true,
-      "artifactSha256IndependentlyVerified": true,
-      "authenticodeStatus": "NotSigned",
-      "publisherAuthenticated": false,
-      "signedPublicRelease": false,
-      "smartScreenWarningExpected": true,
-      "artifactExecuted": false,
-      "packageContentsStatus": "UNKNOWN_NOT_INSPECTED",
-      "sourceCommit": "6f7fd8a9a18c8921aa0fad1fe5b0b901bacd3383",
-      "embeddedHiveAiCommit": "a0fe64832edb801c9944c0923e222a64ef14e498",
-      "representsCurrentSourceAtlas": false,
-      "verificationReceiptSha256": "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56"
+      "effectiveStatus": "EVIDENCE_EXPIRED_HELD",
+      "activeDownloadAuthorized": false,
+      "currentPackageStatus": "UNKNOWN",
+      "currentPublicRetrievability": "UNKNOWN",
+      "currentInstallerUrl": null,
+      "currentRuntimeStatus": "UNKNOWN",
+      "historicalEvidence": {
+        "tag": "hive-ide-v0.3.0-tester.5",
+        "url": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/Hive-IDE-OneClick-Windows-x64.exe",
+        "releaseId": 366980498,
+        "assetId": 505603161,
+        "assetState": "uploaded",
+        "responseChain": "302_TO_200",
+        "tlsVerified": true,
+        "bytes": 924864317,
+        "sha256": "be1795640763e99315b426757c76d655f6f07f92701d040c62f6126c1401b000",
+        "artifactBytesIndependentlyVerified": true,
+        "artifactSha256IndependentlyVerified": true,
+        "authenticodeStatus": "NotSigned",
+        "publisherAuthenticated": false,
+        "signedPublicRelease": false,
+        "smartScreenWarningExpected": true,
+        "artifactExecuted": false,
+        "packageContentsStatus": "UNKNOWN_NOT_INSPECTED",
+        "sourceCommit": "6f7fd8a9a18c8921aa0fad1fe5b0b901bacd3383",
+        "embeddedHiveAiCommit": "a0fe64832edb801c9944c0923e222a64ef14e498",
+        "representsReviewedSourceAtlas": false,
+        "verificationReceiptSha256": "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56"
+      }
     },
     "candidate_tester_6_publication": {
       "subject_id": "candidate_tester_6_publication",
       "subject_kind": "PUBLICATION_CANDIDATE",
-      "subject_status": "HELD_NOT_PUBLIC",
-      "claim_plane": "HELD",
+      "subject_status": "EVIDENCE_EXPIRED_HELD",
+      "claim_plane": "HISTORICAL_EVIDENCE",
       "evidence": "Independent bounded five-URL tester.6 publication readback plus source-controlled derived observation receipt; raw HTTP bodies were not retained",
       "evidenceRef": "tests/fixtures/constellation_public_truth/tester6_publication_readback_v1.json sha256 cf4101d607fbcfce8a9173311cb1d45c9fc6c81d82514d013df30c4a5bec97b0",
       "verifiedAt": "2026-08-23T19:37:31.6497275Z",
       "validUntil": "2026-08-24T19:37:31.6497275Z",
-      "freshness": "EXTERNAL_PUBLICATION_READBACK_WINDOW",
+      "freshness": "EVIDENCE_EXPIRED_HELD",
       "invalidators": [
         "validity expiry",
         "tester.6 tag appears",
@@ -311,7 +331,7 @@
         "version manifest appears",
         "latest feed changes"
       ],
-      "claim": "Tester.6 is held and not public at this readback: its tag API, intended installer, and version-specific Pages manifest returned 404 while canonical mirrors continued to name tester.5.",
+      "claim": "At 2026-08-23T19:37:31.6497275Z, a bounded tester.6 readback observed 404 responses for its tag API, intended installer, and version-specific Pages manifest. That observation expired; current publication and absence are UNKNOWN and held pending fresh readback.",
       "doesNotProve": [
         "future publication state",
         "tester.6 artifact identity",
@@ -349,7 +369,7 @@
         "contradictory owner-repository observation",
         "durable receipt supersedes this observation"
       ],
-      "claim": "A bounded external source observation found Electron-removal and Tauri/WebView2 on the unprotected Hive IDE candidate branch at f459e85, 92 commits ahead and 0 behind default tip 41df9be. The change is not landed on the default branch. This is source-candidate evidence, not tester.5 package contents, installation, or runtime proof.",
+      "claim": "At 2026-08-23T18:46:30Z, a bounded external source observation found Electron-removal and Tauri/WebView2 on the unprotected Hive IDE candidate branch at f459e85, then 92 commits ahead and 0 behind default tip 41df9be. Current landing is UNKNOWN and HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK. This historical source observation is not tester.5 package, installation, or runtime proof.",
       "doesNotProve": [
         "a second platform package",
         "landing",
@@ -359,11 +379,16 @@
         "runtime behavior",
         "product-live"
       ],
-      "recertification": null,
+      "recertification": {
+        "ownerId": "HIVE_IDE_OWNER_REPOSITORY_READBACK_VERIFIER",
+        "procedureId": "FRESH_BRANCH_AND_DEFAULT_RELATION_READBACK_V1",
+        "trigger": "BEFORE_ANY_CURRENT_LANDING_OR_PACKAGE_CLAIM",
+        "expiryAction": "HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK"
+      },
       "ownerRepository": "Dhenz14/hive-ide",
       "repositoryRef": "hive/wt/theyc/ide-electron-final-20260822",
       "repositoryCommit": "f459e85cc71801afbed4a8579b31133b9ff58edd",
-      "designTopology": "Tauri/WebView2 source observed on an unprotected candidate branch; default branch landing not proven.",
+      "designTopology": "Historical Tauri/WebView2 candidate-source observation; current default-branch landing UNKNOWN/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK.",
       "evidencePersistence": "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT"
     },
     "linux_hive_ide_publication": {
@@ -493,7 +518,7 @@
       "status": "SEPARATE_SUBJECTS",
       "tester5Subject": "released_tester_5",
       "tester6Subject": "candidate_tester_6_publication",
-      "claim": "Tester.5 remote-byte verification and tester.6 publication HOLD have independent identities, evidence planes, observations, and expiry clocks."
+      "claim": "Tester.5 and tester.6 expired historical observations have independent identities, evidence planes, observations, and expiry clocks; neither establishes a current package or publication state."
     },
     "candidateServed": {
       "status": "LANDED_HASH_VERIFIED",
@@ -528,14 +553,14 @@
     {
       "id": "twitch",
       "label": "Twitch",
-      "definition": "A formal row-backed physiology or purpose-mastery evidence object represented in Living Anatomy.",
+      "definition": "A formal row-backed physiology or purpose evidence object represented in the source atlas and eligible for a future Living Anatomy overlay only after separate attestation.",
       "boundary": "A Twitch proof row is not automatic execution, runtime availability, served influence, or product-live authority."
     },
     {
       "id": "living-anatomy",
       "label": "Living Anatomy",
-      "definition": "A stable source topology with bounded local overlays for separately proven status, work, and causal observations.",
-      "boundary": "The visualization is not brain authority, and its authored geometry does not become runtime proof or relayout in response to live state."
+      "definition": "A reserved future local surface for status, work, and causal overlays that requires separate runtime attestation.",
+      "boundary": "No Living Anatomy runtime is attested by this public candidate; the visualization is not brain authority and authored geometry is not runtime proof."
     }
   ],
   "registryClaimCut": {
@@ -543,14 +568,12 @@
     "sourceCommit": "472131baa2bc212a043966773bd92477c3a8a16c",
     "derivedAt": "2026-08-23T18:46:30Z",
     "authority": "full_catalog_grant_bound_influence_accounting_via_agent_query",
-    "runtimeEnabled": 37,
-    "servedInfluenceEnabled": 37,
-    "productLiveClaimAllowed": 37,
+    "matchingRows": 37,
+    "effectiveDisposition": "HOLD",
     "executeAuthorized": false,
     "permanentProductTurnWire": false,
-    "safeToClaim100PercentProductLive": false,
     "reason": "TIP_FUSE_CODE_BINDING_BYTES_MISMATCH_FAIL_CLOSED",
-    "boundary": "Source registry and claim-permission truth at the evidence baseline; not observation of an installed or running process."
+    "boundary": "Source predicate matches at the evidence baseline; not enabled state and not observation of an installed or running process."
   },
   "platforms": [
     {
@@ -558,17 +581,17 @@
       "label": "Windows x64 · tester.5 remote EXE",
       "subjectId": "released_tester_5",
       "subjectKind": "PUBLIC_RELEASE_REMOTE_ARTIFACT_BYTES",
-      "claimPlane": "PUBLIC_REMOTE_BYTES_VERIFIED",
-      "scope": "PUBLIC_TESTER_REMOTE_BYTES",
-      "supportStatus": "PUBLIC_RELEASE_AVAILABLE_UNSIGNED",
-      "testStatus": "REMOTE_BYTES_VERIFIED_NOT_EXECUTED",
-      "packageStatus": "TESTER_5_PUBLIC_REMOTE_BYTES_VERIFIED",
-      "signingStatus": "AUTHENTICODE_NOT_SIGNED",
-      "evidence": "Remote tester.5 outer EXE bytes independently matched the declared byte count and SHA-256. Contents, install, execution, runtime, and behavior remain unproven; the declared embedded Hive-AI source is older than the atlas.",
+      "claimPlane": "HISTORICAL_EVIDENCE",
+      "scope": "EXPIRED_TESTER_REMOTE_BYTE_OBSERVATION",
+      "supportStatus": "EVIDENCE_EXPIRED_HELD",
+      "testStatus": "HOLD_NOT_AUTHORIZED",
+      "packageStatus": "UNKNOWN",
+      "signingStatus": "HISTORICAL_AUTHENTICODE_NOT_SIGNED",
+      "evidence": "At the historical observation time, tester.5 outer EXE bytes matched the recorded count and SHA-256. That evidence expired; current retrievability, contents, install, execution, runtime, and behavior are UNKNOWN or HOLD.",
       "evidenceRef": "truth_subjects.released_tester_5; tests/fixtures/constellation_public_truth/tester5_remote_bytes_observation_v1.json",
       "verifiedAt": "2026-08-23T19:20:09.7630961Z",
       "validUntil": "2026-08-24T19:20:09.7630961Z",
-      "freshness": "EXTERNAL_REMOTE_BYTES_READBACK_WINDOW"
+      "freshness": "EVIDENCE_EXPIRED_HELD"
     },
     {
       "id": "windows-wsl-design",
@@ -577,11 +600,11 @@
       "subjectKind": "CROSS_REPOSITORY_CANDIDATE_DESIGN",
       "claimPlane": "EXTERNAL_SOURCE_OBSERVATION",
       "scope": "UNPROTECTED_SOURCE_CANDIDATE",
-      "supportStatus": "CANDIDATE_BRANCH_NOT_LANDED",
+      "supportStatus": "HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK",
       "testStatus": "SOURCE_OBSERVED_NOT_PACKAGE_INSPECTED",
       "packageStatus": "TESTER5_UNKNOWN_NOT_INSPECTED",
       "signingStatus": "NOT_APPLICABLE",
-      "evidence": "A bounded external source observation found Electron-removal and Tauri/WebView2 at candidate commit f459e85 on an unprotected branch. Default tip 41df9be does not contain that candidate. Tester.5 package contents remain UNKNOWN_NOT_INSPECTED; this is not landing, installation, or runtime proof.",
+      "evidence": "At 2026-08-23T18:46:30Z, a bounded external source observation found Electron-removal and Tauri/WebView2 at candidate commit f459e85 on an unprotected branch and did not find it at then-default tip 41df9be. Current landing is UNKNOWN/HOLD pending fresh owner-repository readback. Tester.5 contents are UNKNOWN_NOT_INSPECTED.",
       "evidenceRef": "truth_subjects.windows_wsl_candidate_design",
       "verifiedAt": "2026-08-23T18:46:30Z",
       "validUntil": null,
@@ -653,6 +676,6 @@
     "excluded": [
       "bindingDigest"
     ],
-    "value": "4a6f343f344a2dc1015d039dd2201a5014ee04719cc0167ac69c74459ec46558"
+    "value": "b0734b021b63c0c74289af6f3c1c2509450f85fc47e8f094acec0e09e62d44f7"
   }
 }

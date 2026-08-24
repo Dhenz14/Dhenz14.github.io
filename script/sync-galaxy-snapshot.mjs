@@ -11,8 +11,8 @@ import { readHubFactsSync } from "./hub-facts-custody.mjs";
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputPath = path.join(siteRoot, "hub-assets", "hub-facts.json");
-const GENERATOR_VERSION = "3.0.0";
-const SNAPSHOT_VERSION = "3.0.0";
+const GENERATOR_VERSION = "3.1.0";
+const SNAPSHOT_VERSION = "3.1.0";
 const RENDERER_CONTRACT_PATH = "hiveai/static/living-anatomy/src/galaxy-contract.json";
 const RENDERER_CONTRACT_HASH = "698d9c371ebe98b47cffbf10643080cb06ccb2c06267d580349063fb992230ad";
 const CANONICAL_GEOMETRY_HASH = "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314";
@@ -453,7 +453,7 @@ const galaxyWithoutHash = {
   geometry: publicGeometry,
   statusProjection: "none",
   claimBoundary:
-    "The public atlas shows topology and family purpose only. Per-neuron Twitch proof, mastery, runtime, work-lane, mission, and urgency projections remain on the local read-only Living Anatomy surface; authority-bearing Mission Control mutations are credential-gated when configured.",
+    "The public atlas shows topology and family purpose only. Per-neuron Twitch proof, mastery, runtime, work-lane, mission, and urgency projections require a future Living Anatomy surface with separate attestation; no local runtime or authority is inferred.",
 };
 const galaxy = {
   ...galaxyWithoutHash,
@@ -488,14 +488,14 @@ const base = {
   },
   galaxy,
   ecosystem: {
-    schema: "hive.ecosystem.public-organ-map.v1",
+    schema: "hive.ecosystem.public-organ-map.v2",
     primaryOrgans: [
-      { id: "hive-ai", label: "Hive-AI", role: "reasoning brain", exposure: "private-source-local-runtime" },
-      { id: "hivepoa", label: "HivePoA", role: "proof and storage plane", exposure: "signed-public-distribution" },
-      { id: "neurachain", label: "NeuraChain", role: "durable coordination and settlement", exposure: "private-source-chain-surface" },
-      { id: "hive-ide", label: "Hive IDE", role: "operator hands", exposure: "private-tester-surface" },
-      { id: "second-brain", label: "Second Brain", role: "operator-owned knowledge memory", exposure: "local-private" },
-      { id: "compute-pool", label: "Compute Pool", role: "guarded CPU and GPU capacity", exposure: "contract-routed" }
+      { id: "hive-ai", label: "Hive-AI", targetRole: "reasoning brain", targetExposure: "private-source-local-runtime", effectivePublicDisposition: "SOURCE_ATLAS_PUBLIC_RUNTIME_NOT_ATTESTED" },
+      { id: "hivepoa", label: "HivePoA", targetRole: "proof and storage plane", targetExposure: "signed-public-distribution", effectivePublicDisposition: "HISTORICAL_QUARANTINE_PUBLIC_ACTIONS_HOLD" },
+      { id: "neurachain", label: "NeuraChain", targetRole: "durable coordination and settlement", targetExposure: "private-source-chain-surface", effectivePublicDisposition: "SOURCE_RELATION_ONLY_RUNTIME_NOT_ATTESTED" },
+      { id: "hive-ide", label: "Hive IDE", targetRole: "operator hands", targetExposure: "private-tester-surface", effectivePublicDisposition: "INTEGRATION_WAIT_NO_CURRENT_PACKAGE_OR_RUNTIME_CLAIM" },
+      { id: "second-brain", label: "Second Brain", targetRole: "operator-owned knowledge memory", targetExposure: "local-private", effectivePublicDisposition: "NOT_PUBLIC_RUNTIME_NOT_ATTESTED" },
+      { id: "compute-pool", label: "Compute Pool", targetRole: "guarded CPU and GPU capacity", targetExposure: "contract-routed", effectivePublicDisposition: "SOURCE_ROLE_ONLY_RUNTIME_NOT_ATTESTED" }
     ],
     federationRepositories: graph.edges.filter((edge) => edge.relationship_type === "federation_member").length,
   },
@@ -514,8 +514,20 @@ const base = {
     runtimeTelemetry: false,
     grantsAuthority: false,
     privateEvidencePublished: false,
-    localChatUrl: "http://127.0.0.1:5002/chat",
-    localGalaxyUrl: "http://127.0.0.1:5002/constellation/body?presentation=1",
+    localPresentationContext: {
+      protocol: "http",
+      hostname: "127.0.0.1",
+      port: 5002,
+      pathname: "/constellation/body",
+      presentation: "1",
+      effectiveDisposition: "INERT_HOLD_REQUIRES_STRICT_RUNTIME_RECEIPT",
+    },
+    operatorServiceContext: {
+      hostname: "127.0.0.1",
+      port: 5003,
+      effectiveDisposition: "HOLD_REQUIRES_DISTINCT_RUNTIME_ATTESTATION",
+    },
+    chatEffectiveDisposition: "WAIT_NOT_AVAILABLE",
   },
 };
 

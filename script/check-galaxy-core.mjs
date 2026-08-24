@@ -13,7 +13,7 @@ import {
   GALAXY_RENDERER_CONTRACT,
   GALAXY_RENDERER_CONTRACT_HASH,
   adaptiveGalaxyDpr,
-  buildPublicHandoffUrl,
+  buildPublicHandoffContext,
   buildGalaxyGeometry,
   canonicalJson,
   depthSortGalaxyPoints,
@@ -216,33 +216,39 @@ const handoffGraph = "b".repeat(64);
 const handoffMatrix = [
   {
     input: { presentation: "1", lens: "mastery", node: "division:A", level: "division" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=mastery&node=division%3AA&level=district`,
+    expected: { lens: "mastery", node: "division:A", level: "district" },
   },
   {
     input: { presentation: "1", lens: "artifact", node: "neuron:N640", level: "neuron" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=build&node=N640&level=neuron`,
+    expected: { lens: "build", node: "N640", level: "neuron" },
   },
   {
     input: { presentation: "1", lens: "evidence", node: "family:P4", level: "family" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=evidence&node=family%3AP4&level=family`,
+    expected: { lens: "evidence", node: "family:P4", level: "family" },
   },
   {
     input: { presentation: "1", lens: "runtime", node: "N001", level: "interior" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=runtime&node=N001&level=interior`,
+    expected: { lens: "runtime", node: "N001", level: "interior" },
   },
   {
     input: { presentation: "1", lens: "product", node: "", level: "body" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=product&node=&level=body`,
+    expected: { lens: "product", node: "", level: "body" },
   },
 ];
 for (const row of handoffMatrix) {
-  const actual = buildPublicHandoffUrl({ ...row.input, sourceCommit: handoffCommit, graphHash: handoffGraph });
-  assert(actual === row.expected, `canonical handoff URL drifted: ${actual}`);
-  const keys = [...new URL(actual).searchParams.keys()];
-  assert(keys.join(",") === "presentation,publicContextVersion,sourceCommit,graphHash,lens,node,level", "handoff query allowlist/order drifted");
+  const actual = buildPublicHandoffContext({ ...row.input, sourceCommit: handoffCommit, graphHash: handoffGraph });
+  assert(JSON.stringify(actual) === JSON.stringify({
+    publicContextVersion: 1,
+    presentation: "1",
+    sourceCommit: handoffCommit,
+    graphHash: handoffGraph,
+    ...row.expected,
+    effectiveDisposition: "INERT_HOLD_REQUIRES_STRICT_RUNTIME_RECEIPT",
+  }), `canonical inert handoff context drifted: ${JSON.stringify(actual)}`);
+  assert(!JSON.stringify(actual).includes("127.0.0.1") && !JSON.stringify(actual).includes("http"), "inert context constructed a loopback URL");
 }
-assert(buildPublicHandoffUrl({ ...handoffMatrix[0].input, sourceCommit: "main", graphHash: handoffGraph }) === null, "unbound source handoff was emitted");
-assert(buildPublicHandoffUrl({ ...handoffMatrix[0].input, presentation: "0", sourceCommit: handoffCommit, graphHash: handoffGraph }) === null, "operator mode was aliased onto the presentation service");
+assert(buildPublicHandoffContext({ ...handoffMatrix[0].input, sourceCommit: "main", graphHash: handoffGraph }) === null, "unbound source handoff was emitted");
+assert(buildPublicHandoffContext({ ...handoffMatrix[0].input, presentation: "0", sourceCommit: handoffCommit, graphHash: handoffGraph }) === null, "operator mode was aliased onto the presentation service");
 
 const directorState = {
   lens: "evidence", activeDivision: 7, activeFamily: 29, activeNeuron: 298,
@@ -630,4 +636,4 @@ const normalHaloOutside = selectGalaxyHit({ pointer: { x: normalDivisionRadius +
 const selectedHaloInside = selectGalaxyHit({ pointer: { x: selectedDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery", projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0 });
 assert(normalHaloInside.divisionIndex === 0 && normalHaloOutside.divisionIndex === -1 && selectedHaloInside.divisionIndex === 0, "division hit radius diverged from its rendered halo");
 
-console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 division_nav_options=${divisionNavigatorLabels.length} division_nav_selections=${divisionNavigatorSelectionCases} overview_camera_cases=${overviewCameraCases} integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} safe_frame_label_cases=${safeFrameLabelCases} exact_exit_fixture=1 pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6 bundled_membership_cases=${bundledMembershipCases}`);
+console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 division_nav_options=${divisionNavigatorLabels.length} division_nav_selections=${divisionNavigatorSelectionCases} overview_camera_cases=${overviewCameraCases} integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 inert_handoff_contexts=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} safe_frame_label_cases=${safeFrameLabelCases} exact_exit_fixture=1 pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6 bundled_membership_cases=${bundledMembershipCases}`);

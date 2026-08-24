@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import { webcrypto } from "node:crypto";
+import crypto, { webcrypto } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { validSnapshot } from "../hub-assets/galaxy-core.mjs";
+import { canonicalJson, productTruthSnapshotRelation, validSnapshot } from "../hub-assets/galaxy-core.mjs";
 import { readHubFactsSync } from "./hub-facts-custody.mjs";
 
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
@@ -14,6 +14,14 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const marker = path.join(root, "script", "mark-galaxy-bridge-inactive.mjs");
 const fixture = readHubFactsSync(path.join(root, "hub-assets", "hub-facts.json"), "galaxy bridge fixture");
+const reviewedBaseline = Object.freeze({
+  snapshotVersion: fixture.snapshotVersion,
+  sourceCommit: fixture.hiveAi.sourceCommit,
+  graphHash: fixture.hiveAi.graphHash,
+  sourceFingerprint: fixture.hiveAi.sourceFingerprint,
+  projectionHash: fixture.galaxy.projectionHash,
+  geometryHash: fixture.galaxy.geometry.geometryHash,
+});
 fixture.refresh = {
   privateSourceMode: "scheduled-living-main-publisher",
   automaticBridgeEnabled: true,
@@ -35,6 +43,13 @@ const assertRefresh = (actual, expected) => {
 };
 
 try {
+  assert.equal(await productTruthSnapshotRelation(fixture, reviewedBaseline), "EXACT_REVIEWED_BASELINE_MATCH");
+  const newSource = structuredClone(fixture);
+  newSource.hiveAi.sourceCommit = "1".repeat(40);
+  const { snapshotHash: _newIgnored, ...newSourceBody } = newSource;
+  newSource.snapshotHash = crypto.createHash("sha256").update(canonicalJson(newSourceBody)).digest("hex");
+  assert.equal(await validSnapshot(newSource), true, "new-source integration fixture is not structurally valid");
+  assert.equal(await productTruthSnapshotRelation(newSource, reviewedBaseline), "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD");
   fs.writeFileSync(factsPath, `${JSON.stringify(fixture, null, 2)}\n`, "utf8");
   const before = readHubFactsSync(factsPath, "galaxy bridge before state");
 
@@ -56,6 +71,8 @@ try {
     lastGoodBehavior: "retain_previous_snapshot",
   });
   assert.equal(await validSnapshot(after), true, "inactive bridge marker left an invalid snapshot hash");
+  assert.equal(await productTruthSnapshotRelation(after, reviewedBaseline), "BRIDGE_INACTIVE_LAST_GOOD_SOURCE");
+  assert.equal(await productTruthSnapshotRelation({}, reviewedBaseline), "SNAPSHOT_INVALID_BLOCKED");
 
   const stableBytes = fs.readFileSync(factsPath, "utf8");
   const idempotent = run("--credential-missing");
@@ -71,7 +88,7 @@ try {
   assert.deepEqual(sourceBound(failedCheckoutFacts), sourceBound(fixture), "checkout failure marker changed source-bound fields");
   assert.equal(await validSnapshot(failedCheckoutFacts), true, "checkout failure marker left an invalid snapshot hash");
 
-  console.log("GALAXY_BRIDGE_OK unauthorized=refused ambiguous=refused inactive_reasons=2 source_fields=preserved idempotent=true");
+  console.log("GALAXY_BRIDGE_OK relations=exact,new_unreviewed,inactive_last_good,invalid_blocked unauthorized=refused ambiguous=refused inactive_reasons=2 source_fields=preserved idempotent=true");
 } finally {
   fs.rmSync(temporaryRoot, { recursive: true, force: true });
 }

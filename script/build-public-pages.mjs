@@ -20,6 +20,8 @@ const REQUIRED_FORBIDDEN_PREFIXES = Object.freeze([
   "tests/",
 ]);
 const REQUIRED_PRIVATE_SOURCE_PATHS = Object.freeze([
+  "HivePoA/.distribution-publish-receipt.json",
+  "HivePoA/.nojekyll",
   "HivePoA/build-receipt.json",
   "HivePoA/hivepoa-distribution-boundary.json",
   "HivePoA/public-surface-quarantine-receipt.json",
@@ -31,6 +33,8 @@ const REQUIRED_FORBIDDEN_EXACT = Object.freeze([
   ".github/test-fixtures/hivepoa/historical-index-1a607c451406.html",
   ".github/test-fixtures/hivepoa/portable-signed-release-fixture.v1.json",
   ".github/test-fixtures/hivepoa/tester-network-authorization-3f397e3bc3a6.js",
+  "HivePoA/.distribution-publish-receipt.json",
+  "HivePoA/.nojekyll",
   "HivePoA/cid-mirrors/bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge.json",
   "HivePoA/cid-mirrors/bafkreibdvxhdmkxbnf6iqnvmloc3q3t2ngq34psakn5ys26yddn3z7xr5q.json",
   "HivePoA/cid-mirrors/bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y.json",
@@ -131,9 +135,9 @@ function validateManifest(value) {
   const forbiddenExactPaths = exactSortedUnique(value.forbiddenExactPaths, "forbiddenExactPaths");
   exactSequence(forbiddenPrefixes, REQUIRED_FORBIDDEN_PREFIXES, "PUBLIC_ALLOWLIST_REQUIRED_PREFIX_MISSING", "required forbidden prefixes");
   exactSequence(privateSourceOnlyPaths, REQUIRED_PRIVATE_SOURCE_PATHS, "PUBLIC_ALLOWLIST_PRIVATE_PATH_MISSING", "private source-only paths");
-  exactSequence(forbiddenExactPaths, REQUIRED_FORBIDDEN_EXACT, "PUBLIC_ALLOWLIST_FORBIDDEN_PATH_MISSING", "23 exact forbidden publication paths");
+  exactSequence(forbiddenExactPaths, REQUIRED_FORBIDDEN_EXACT, "PUBLIC_ALLOWLIST_FORBIDDEN_PATH_MISSING", "25 exact forbidden publication paths");
   exactSequence(generatedQuarantineRoutes, REQUIRED_QUARANTINE_ROUTES, "PUBLIC_ALLOWLIST_QUARANTINE_ROUTE_DRIFT", "generated HivePoA quarantine routes");
-  if (forbiddenExactPaths.length !== 23) reject("PUBLIC_ALLOWLIST_FORBIDDEN_PATH_MISSING", "exactly 23 retired/fixture paths must remain forbidden");
+  if (forbiddenExactPaths.length !== 25) reject("PUBLIC_ALLOWLIST_FORBIDDEN_PATH_MISSING", "the original 23 retired/fixture paths plus two private HivePoA control files must remain forbidden");
   if (!Array.isArray(value.generatedFiles) || value.generatedFiles.length !== 1) reject("PUBLIC_ALLOWLIST_SCHEMA_INVALID", "generatedFiles must contain only .nojekyll");
   exactKeys(value.generatedFiles[0], ["path", "content"], "generatedFiles[0]");
   if (canonicalPublicPath(value.generatedFiles[0].path, "generatedFiles[0].path") !== ".nojekyll" || value.generatedFiles[0].content !== "") {
@@ -180,7 +184,7 @@ async function assertRegularSingleLink(filePath, label) {
   return metadata;
 }
 
-async function walkArtifact(directory, relative = "") {
+async function walkArtifact(directory, relative = "", directories = []) {
   const entries = await fs.readdir(directory, { withFileTypes: true });
   const files = [];
   for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name, "en"))) {
@@ -189,13 +193,25 @@ async function walkArtifact(directory, relative = "") {
     const memberPath = path.join(directory, entry.name);
     const metadata = await fs.lstat(memberPath);
     if (metadata.isSymbolicLink()) reject("PUBLIC_ARTIFACT_SYMLINK_FORBIDDEN", `artifact member is a symlink: ${member}`);
-    if (metadata.isDirectory()) files.push(...await walkArtifact(memberPath, member));
+    if (metadata.isDirectory()) {
+      directories.push(member);
+      files.push(...await walkArtifact(memberPath, member, directories));
+    }
     else if (metadata.isFile()) {
       if (Number.isInteger(metadata.nlink) && metadata.nlink !== 1) reject("PUBLIC_ARTIFACT_HARDLINK_FORBIDDEN", `artifact member has link count ${metadata.nlink}: ${member}`);
       files.push(member);
     } else reject("PUBLIC_ARTIFACT_MEMBER_TYPE_INVALID", `unsupported artifact member: ${member}`);
   }
   return files;
+}
+
+function exactAncestorDirectories(members) {
+  const directories = new Set();
+  for (const member of members) {
+    const segments = member.split("/");
+    for (let index = 1; index < segments.length; index += 1) directories.add(segments.slice(0, index).join("/"));
+  }
+  return [...directories].sort((left, right) => left.localeCompare(right, "en"));
 }
 
 function resolveOutput(rawOutput) {
@@ -213,8 +229,14 @@ async function checkArtifact(output, admittedManifest = null) {
     throw error;
   });
   if (!metadata.isDirectory() || metadata.isSymbolicLink()) reject("PUBLIC_ARTIFACT_ROOT_INVALID", "staged artifact root must be a real directory");
-  const actual = (await walkArtifact(outputRoot)).sort((left, right) => left.localeCompare(right, "en"));
   const expected = [...manifest.publicFiles, ...manifest.generatedFiles.map((entry) => entry.path), ...manifest.generatedQuarantineRoutes].sort((left, right) => left.localeCompare(right, "en"));
+  const actualDirectories = [];
+  const actual = (await walkArtifact(outputRoot, "", actualDirectories)).sort((left, right) => left.localeCompare(right, "en"));
+  actualDirectories.sort((left, right) => left.localeCompare(right, "en"));
+  const expectedDirectories = exactAncestorDirectories(expected);
+  if (actualDirectories.length !== expectedDirectories.length || actualDirectories.some((entry, index) => entry !== expectedDirectories[index])) {
+    reject("PUBLIC_ARTIFACT_DIRECTORY_MEMBERSHIP_MISMATCH", `staged directory membership drifted\nactual=${JSON.stringify(actualDirectories)}\nexpected=${JSON.stringify(expectedDirectories)}`);
+  }
   if (actual.length !== expected.length || actual.some((entry, index) => entry !== expected[index])) {
     reject("PUBLIC_ARTIFACT_MEMBERSHIP_MISMATCH", `staged membership drifted\nactual=${JSON.stringify(actual)}\nexpected=${JSON.stringify(expected)}`);
   }
@@ -286,6 +308,12 @@ async function selfTest() {
     await fs.writeFile(path.join(stage, "unexpected.txt"), "not public", "utf8");
     await expectError("unlisted member refused", "PUBLIC_ARTIFACT_MEMBERSHIP_MISMATCH", async () => checkArtifact(stage));
     await fs.unlink(path.join(stage, "unexpected.txt"));
+    await fs.mkdir(path.join(stage, "unexpected-empty"));
+    await expectError("unlisted empty directory refused", "PUBLIC_ARTIFACT_DIRECTORY_MEMBERSHIP_MISMATCH", async () => checkArtifact(stage));
+    await fs.rmdir(path.join(stage, "unexpected-empty"));
+    await fs.mkdir(path.join(stage, ".github"));
+    await expectError("forbidden-prefix empty directory refused", "PUBLIC_ARTIFACT_DIRECTORY_MEMBERSHIP_MISMATCH", async () => checkArtifact(stage));
+    await fs.rmdir(path.join(stage, ".github"));
     await fs.link(path.join(stage, "index.html"), path.join(stage, "hard-link.html"));
     await expectError("hard link refused", "PUBLIC_ARTIFACT_HARDLINK_FORBIDDEN", async () => checkArtifact(stage));
     await fs.unlink(path.join(stage, "hard-link.html"));

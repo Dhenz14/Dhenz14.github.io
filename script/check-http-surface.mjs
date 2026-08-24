@@ -73,8 +73,8 @@ const contentTypes = new Map([
 const allowlistBytes = await fs.readFile(path.join(repositoryRoot, ".github", "pages-public-allowlist.v1.json"));
 if (allowlistBytes.byteLength > 64 * 1024) throw new Error("Pages allowlist exceeds its HTTP-check byte ceiling");
 const allowlist = parseJsonBytesStrict(allowlistBytes, "Pages public allowlist for HTTP negatives");
-if (!Array.isArray(allowlist.forbiddenExactPaths) || allowlist.forbiddenExactPaths.length !== 23) {
-  throw new Error("Pages allowlist must retain exactly 23 explicit fixture/retired-path negatives");
+if (!Array.isArray(allowlist.forbiddenExactPaths) || allowlist.forbiddenExactPaths.length !== 25) {
+  throw new Error("Pages allowlist must retain the original 23 fixture/retired-path negatives plus two private HivePoA control-file negatives");
 }
 const forbiddenExactRoutes = allowlist.forbiddenExactPaths.map((relative) => `/${relative}`);
 const negativeRoutes = [
@@ -195,7 +195,7 @@ try {
 
   const snapshot = await strictJsonFromHttp(origin, "/hub-assets/hub-facts.json", 512 * 1024, "HTTP hub-facts snapshot");
   if (snapshot?.schema !== "hive.ecosystem.public-source-snapshot.v3"
-    || snapshot?.snapshotVersion !== "3.0.0"
+    || snapshot?.snapshotVersion !== "3.1.0"
     || !/^[a-f0-9]{64}$/.test(snapshot?.snapshotHash || "")
     || snapshot?.galaxy?.geometry?.schema !== "hive.galaxy.public-geometry.v1") {
     throw new Error("HTTP snapshot or authored-geometry schema drifted");
@@ -206,8 +206,8 @@ try {
   const ideTruth = await strictJsonFromHttp(origin, "/downloads/hive-ide/hive-ide-release-manifest.json", 128 * 1024, "HTTP Hive IDE historical truth");
   if (productTruth.schema !== "hive.ecosystem.product-truth.public-projection.v2"
     || productLedger.schema !== "hive.ecosystem.product-truth.evidence-ledger.v1"
-    || ideLatest.schema !== "hive.ide.public_release_latest.v2"
-    || ideTruth.schema !== "hive.ide.public_release_truth_manifest.v2") {
+    || ideLatest.schema !== "hive.ide.public_release_latest.v3"
+    || ideTruth.schema !== "hive.ide.public_release_truth_manifest.v3") {
     throw new Error("strict HTTP JSON schema identities drifted");
   }
 

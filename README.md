@@ -1,4 +1,4 @@
-# Hive Ecosystem public hub
+# Hive AI public hub
 
 This repository contains the source for the Hive ecosystem GitHub Pages hub.
 The public experience is a cinematic, source-bound **Constellation Atlas**. It
@@ -7,21 +7,31 @@ runtime, a product-live claim, or an authority surface.
 
 The homepage separates these planes deliberately:
 
-- **Published source snapshot** — the exact `hub-assets/hub-facts.json` source
-  projection and authored geometry.
+- **Reviewed Product Truth baseline** — stable semantic claims that a routine
+  source refresh cannot rewrite. The browser admits only the closed relation
+  set `EXACT_REVIEWED_BASELINE_MATCH`, `NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD`,
+  `BRIDGE_INACTIVE_LAST_GOOD_SOURCE`, or `SNAPSHOT_INVALID_BLOCKED`.
+- **Published source snapshot** — the exact mutable `hub-assets/hub-facts.json`
+  topology and authored geometry. A valid new source snapshot may be displayed,
+  but its semantic, runtime, product, and authority claims remain `HOLD` until a
+  new reviewed baseline is deliberately published.
 - **Freshness** — evaluated from the capture time. A structurally valid aged or
   historical capture stays source-bound but renders `FRESHNESS HOLD`; automatic
   sync configuration cannot make old evidence current.
-- **Local Living Anatomy** — a separately attested presentation overlay whose
-  intended `127.0.0.1:5002` handoff is disabled until the strict runtime is
-  independently observed.
+- **Local Living Anatomy** — a future reserved presentation overlay that
+  requires separate attestation. Its inert context tuple cannot become an
+  active `:5002` handoff until an exact strict-runtime receipt exists.
 - **Operator Body** — a distinct intended `127.0.0.1:5003` service. It is never
   aliased to the Local Body and remains `HOLD` until separately deployed and
   observed.
-- **Chat** — `WAIT`; it is not presented as available.
-- **Hive IDE** — `WAIT` while the current integration is completed. Expired
-  tester.5/tester.6 observations remain historical evidence only and authorize
-  no download, install, testing, or runtime claim.
+- **Chat** — not available from this public presentation. Status: `WAIT`.
+- **Hive IDE** — not available from this public candidate. Status: `WAIT`.
+  Expired tester.5/tester.6 observations remain historical evidence only;
+  current package identity and retrievability are `UNKNOWN`, and no download,
+  install, testing, runtime, or product claim is authorized.
+  The manual GitHub workflow validates that HOLD only; it fetches and executes
+  no installer. The retained Windows smoke harness is dormant until fresh
+  package evidence and separate operator authorization exist.
 - **HivePoA** — one actionless quarantine/history boundary. Historical immutable
   observations are preserved, while current delivery, coordinator, runtime,
   product-live state, and publication authority remain `UNKNOWN`/`HOLD`.
@@ -48,7 +58,9 @@ The published artifact intentionally excludes:
 - `script/**`, `docs/**`, `README.md`, tests, receipts, and runbooks;
 - retired `HivePoA/cid-mirrors/**` and
   `HivePoA/distribution-assets/**` delivery/authorization files; and
-- every exact forbidden fixture and retired raw path frozen in the allowlist.
+- the original 23 exact forbidden fixture/retired raw paths plus
+  `HivePoA/.distribution-publish-receipt.json` and `HivePoA/.nojekyll`, all
+  frozen as negative routes in the allowlist.
 
 Seven legacy HivePoA routes remain as byte-identical, scriptless, CSP-bound
 quarantine pages so old links fail safely. They expose no download, verification,
@@ -69,13 +81,20 @@ paths, and pushes only the facts file. It never requests a legacy Pages build.
 Because a push made with `GITHUB_TOKEN` does not trigger another push workflow,
 the Pages workflow also listens for the successful completion of `Sync living
 galaxy`. That route checks out exact current `main`, refuses a stale artifact,
-and uses the same allowlisted build. This is a source design contract, not proof
-that a scheduled run, deployment, or public readback succeeded.
+proves the workflow-start commit is the sole parent of an admitted facts-only
+update, skips a no-change completion, and uses the same allowlisted build. This
+is a source design contract, not proof that a scheduled run, deployment, or
+public readback succeeded.
 
-Every browser and validator reads `hub-facts.json` through a 512 KiB raw-byte
-ceiling, fatal UTF-8 decoding, and the shared strict JSON parser. BOMs, duplicate
-keys, NFC-colliding keys, non-RFC8259 whitespace, unpaired surrogates, trailing
-content, invalid UTF-8, empty bodies, and oversized bodies fail closed.
+The browser acquires `hub-facts.json`, Product Truth, its evidence ledger, and
+both Hive IDE evidence documents through one shared streaming primitive. It
+requires a canonical `Content-Length`, enforces declared and actual byte counts,
+cancels at the supplied limit plus one byte, uses an eight-second request/body
+deadline, performs fatal UTF-8 decoding, and then invokes the shared strict JSON
+parser. Missing, malformed, or lying lengths; early disconnects; stalls; BOMs;
+duplicate keys; NFC-colliding keys; non-RFC8259 whitespace; unpaired surrogates;
+trailing content; invalid UTF-8; empty bodies; and oversized bodies fail closed.
+Snapshot retries are scheduled independently of the first request settling.
 
 ## Dependency-free verification
 
@@ -86,11 +105,14 @@ node --check hub-assets/hub.js
 node --check hub-assets/galaxy-core.mjs
 node --check hub-assets/ide-release-core.mjs
 node --check hub-assets/strict-json.mjs
+node --check hub-assets/strict-json-fetch.mjs
+node --check script/check-browser-json-acquisition.mjs
 node --check script/hub-facts-custody.mjs
 node script/hub-facts-custody.mjs --self-test
 node script/check-central-hub.mjs
 node script/check-product-truth.mjs --self-test
 node script/check-ide-release.mjs --self-test
+node script/check-browser-json-acquisition.mjs
 node script/check-galaxy-bridge.mjs
 node script/check-galaxy-core.mjs
 node script/check-publisher-races.mjs

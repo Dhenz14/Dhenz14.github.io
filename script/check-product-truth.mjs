@@ -61,8 +61,8 @@ const SUBJECT_STATUSES = Object.freeze({
   source_atlas: "SOURCE_PRESENT_AT_PIN",
   tip_influence: "SOURCE_GOVERNED_HOLD",
   fleet_halos: "DECLARED_HARD_OFF",
-  released_tester_5: "PUBLIC_REMOTE_BYTES_VERIFIED_OLDER_SOURCE_SUBJECT",
-  candidate_tester_6_publication: "HELD_NOT_PUBLIC",
+  released_tester_5: "EVIDENCE_EXPIRED_HELD",
+  candidate_tester_6_publication: "EVIDENCE_EXPIRED_HELD",
   windows_wsl_candidate_design: "DECLARED_AT_PIN_BY_NON_DURABLE_EXTERNAL_OBSERVATION",
   linux_hive_ide_publication: "UNKNOWN_NO_ADMISSIBLE_PUBLICATION_OBSERVATION",
   macos_hive_ide_publication: "HELD_MISSING_ADMISSIBLE_PUBLICATION_OBSERVATION",
@@ -112,6 +112,19 @@ export function releasedTesterAvailability(manifest, now = Date.now()) {
   const validUntil = Date.parse(manifest?.truth_subjects?.released_tester_5?.validUntil ?? "");
   if (!Number.isFinite(validUntil) || now >= validUntil) return "PUBLICATION_FRESHNESS_EXPIRED_HELD";
   return "PUBLICATION_READBACK_WITHIN_VALIDITY_WINDOW";
+}
+
+export function classifyProductTruthSnapshot(snapshot, reviewedBaseline, { snapshotValid = true } = {}) {
+  if (!snapshotValid || !isPlainObject(snapshot) || !isPlainObject(reviewedBaseline)
+    || !isPlainObject(snapshot.hiveAi) || !isPlainObject(snapshot.galaxy) || !isPlainObject(snapshot.refresh)) return "SNAPSHOT_INVALID_BLOCKED";
+  if (snapshot.refresh.automaticBridgeEnabled === false) return "BRIDGE_INACTIVE_LAST_GOOD_SOURCE";
+  const exact = reviewedBaseline.snapshotVersion === snapshot.snapshotVersion
+    && reviewedBaseline.sourceCommit === snapshot.hiveAi.sourceCommit
+    && reviewedBaseline.graphHash === snapshot.hiveAi.graphHash
+    && reviewedBaseline.sourceFingerprint === snapshot.hiveAi.sourceFingerprint
+    && reviewedBaseline.projectionHash === snapshot.galaxy.projectionHash
+    && reviewedBaseline.geometryHash === snapshot.galaxy.geometry?.geometryHash;
+  return exact ? "EXACT_REVIEWED_BASELINE_MATCH" : "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD";
 }
 
 export function validateProductTruth(manifest, { facts, latest, releaseManifest, ledger, expectedLanding } = {}) {
@@ -227,26 +240,38 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && architectureIdentity.subject_id === "target_architecture"
     && architectureIdentity.claim_plane === "TARGET", "canonical architecture answer or identity material drifted");
 
-  exactKeys(manifest.source, ["projectionRole", "sourceCommit", "graphHash", "snapshotHash", "capturedAt"], "product truth source");
-  assert(/LANDED SOURCE at 0ab04f6c/i.test(manifest.source.projectionRole)
-    && /PUBLISHED SNAPSHOT captured 2026-08-23T22:53:32Z/i.test(manifest.source.projectionRole)
-    && /FRESHNESS is separate and HOLD/i.test(manifest.source.projectionRole)
-    && /EVIDENCE BASELINE at 472131baa/i.test(manifest.source.projectionRole)
-    && /served\/main receipt/i.test(manifest.source.projectionRole)
-    && /runtime telemetry/i.test(manifest.source.projectionRole)
-    && /behaviou?r evidence/i.test(manifest.source.projectionRole)
-    && /public retrievability/i.test(manifest.source.projectionRole)
-    && /authority/i.test(manifest.source.projectionRole), "public projection role is not fail-closed");
+  exactKeys(manifest.source, ["projectionRole", "sourceCommit", "graphHash", "snapshotHash", "capturedAt", "reviewedBaseline", "allowedSnapshotRelations"], "product truth source");
+  exactKeys(manifest.source.reviewedBaseline, ["snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash"], "reviewed source baseline");
+  assert(/stable reviewed semantic baseline/i.test(manifest.source.projectionRole)
+    && /mutable source snapshots may display topology/i.test(manifest.source.projectionRole)
+    && /cannot rewrite reviewed semantic, runtime, product, or authority claims/i.test(manifest.source.projectionRole), "public projection role is not fail-closed");
   assert(HEX40.test(manifest.source.sourceCommit), "product truth source commit is not exact");
   assert(HEX64.test(manifest.source.graphHash), "product truth graph hash is not exact");
   assert(HEX64.test(manifest.source.snapshotHash), "product truth snapshot hash is not exact");
   assert(UTC_SECONDS.test(manifest.source.capturedAt), "product truth capture time is not canonical UTC seconds");
+  assert(manifest.source.sourceCommit === manifest.source.reviewedBaseline.sourceCommit
+    && manifest.source.graphHash === manifest.source.reviewedBaseline.graphHash
+    && manifest.source.snapshotHash === "81fee0f0b751c5c17ace278cf17fe7f373041f6a239957e7e9b22b9cdc409602"
+    && manifest.source.capturedAt === "2026-08-23T22:53:32Z"
+    && manifest.source.reviewedBaseline.snapshotVersion === "3.1.0"
+    && manifest.source.reviewedBaseline.sourceCommit === "0ab04f6c19ffd41bb162bea674e77853fb27cc0e"
+    && manifest.source.reviewedBaseline.graphHash === "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac"
+    && manifest.source.reviewedBaseline.sourceFingerprint === "f177f665aceb2689d69f7bbb283e9165380c306edced348312cd16fb47d4c8bb"
+    && manifest.source.reviewedBaseline.projectionHash === "58f8aa20d200bb4ec1bb6d13810bda85b6e1b7c189f8c070b3d9070d67b9d80b"
+    && manifest.source.reviewedBaseline.geometryHash === "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314"
+    && HEX64.test(manifest.source.reviewedBaseline.sourceFingerprint)
+    && HEX64.test(manifest.source.reviewedBaseline.projectionHash)
+    && HEX64.test(manifest.source.reviewedBaseline.geometryHash), "reviewed source baseline drifted");
+  assert(JSON.stringify(manifest.source.allowedSnapshotRelations) === JSON.stringify([
+    "EXACT_REVIEWED_BASELINE_MATCH", "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD", "BRIDGE_INACTIVE_LAST_GOOD_SOURCE", "SNAPSHOT_INVALID_BLOCKED",
+  ]), "closed snapshot relation set drifted");
   if (facts) {
-    assert(manifest.source.sourceCommit === facts.hiveAi?.sourceCommit, "product truth source commit is stale or mismatched");
-    assert(manifest.source.graphHash === facts.hiveAi?.graphHash, "product truth graph hash is stale or mismatched");
-    assert(manifest.source.snapshotHash === facts.snapshotHash, "product truth snapshot hash is stale or mismatched");
-    assert(manifest.source.capturedAt === facts.capturedAt, "product truth capture time is stale or mismatched");
+    const relation = classifyProductTruthSnapshot(facts, manifest.source.reviewedBaseline);
+    assert(manifest.source.allowedSnapshotRelations.includes(relation) && relation !== "SNAPSHOT_INVALID_BLOCKED", "source snapshot relation is invalid or unclassified");
     assert(facts.boundaries?.runtimeTelemetry === false && facts.galaxy?.statusProjection === "none", "source snapshot must remain non-runtime and status-neutral");
+    const organs = Object.fromEntries((facts.ecosystem?.primaryOrgans || []).map((organ) => [organ.id, organ]));
+    assert(organs.hivepoa?.effectivePublicDisposition === "HISTORICAL_QUARANTINE_PUBLIC_ACTIONS_HOLD"
+      && organs["hive-ide"]?.effectivePublicDisposition === "INTEGRATION_WAIT_NO_CURRENT_PACKAGE_OR_RUNTIME_CLAIM", "organ effective public dispositions contradict product truth");
   }
 
   exactKeys(manifest.architecture, ["label", "status", "servingBoundary"], "architecture display projection");
@@ -273,8 +298,8 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && /Chat is WAIT/i.test(manifest.boundaries.architectureVsLive.claim)
     && /require independent evidence/i.test(manifest.boundaries.architectureVsLive.claim), "architecture and local live truth were conflated");
   assert(manifest.boundaries.currentVsLegacy.status === "SUBJECT_SCOPED_DISPOSITIONS"
-    && /Tauri\/WebView2 source were observed only on the unprotected Hive IDE candidate branch/i.test(manifest.boundaries.currentVsLegacy.claim)
-    && /candidate is not landed on the default branch/i.test(manifest.boundaries.currentVsLegacy.claim)
+    && /At 2026-08-23T18:46:30Z, Electron-removal and Tauri\/WebView2 source were observed on the unprotected Hive IDE candidate branch/i.test(manifest.boundaries.currentVsLegacy.claim)
+    && /Current landing is UNKNOWN\/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK/i.test(manifest.boundaries.currentVsLegacy.claim)
     && /Tester\.5 exact package contents are UNKNOWN_NOT_INSPECTED/i.test(manifest.boundaries.currentVsLegacy.claim)
     && /SUPERSEDED_REVOKED_UNSUPPORTED/i.test(manifest.boundaries.currentVsLegacy.claim),
   "current and legacy subject dispositions drifted");
@@ -305,7 +330,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     // A recertification promise is only meaningful for a subject that was durably
     // certified: one holding a bounded validity window, or an immutable source-pinned
     // claim. Non-durable observations and no-observation subjects must NOT promise one.
-    const recertificationRequired = subject.validUntil !== null || /^IMMUTABLE_/.test(subject.freshness);
+    const recertificationRequired = subject.validUntil !== null || /^IMMUTABLE_/.test(subject.freshness) || subjectId === "windows_wsl_candidate_design";
     if (recertificationRequired) {
       assert(isPlainObject(subject.recertification), `${subjectId} is durably certified and must carry a recertification contract`);
       exactKeys(subject.recertification, ["ownerId", "procedureId", "trigger", "expiryAction"], `${subjectId} recertification`);
@@ -421,15 +446,12 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
 
   const tip = manifest.truth_subjects.tip_influence;
   exactKeys(tip, [
-    ...SUBJECT_BASE_KEYS, "runtimeEnabled", "servedInfluenceEnabled", "productLiveClaimAllowed",
-    "executeAuthorized", "permanentProductTurnWire", "safeToClaim100PercentProductLive", "reason",
+    ...SUBJECT_BASE_KEYS, "matchingRows", "effectiveDisposition", "executeAuthorized", "permanentProductTurnWire", "reason",
   ], "tip influence subject");
-  assert(tip.runtimeEnabled === 37
-    && tip.servedInfluenceEnabled === 37
-    && tip.productLiveClaimAllowed === 37
+  assert(tip.matchingRows === 37
+    && tip.effectiveDisposition === "HOLD"
     && tip.executeAuthorized === false
     && tip.permanentProductTurnWire === false
-    && tip.safeToClaim100PercentProductLive === false
     && tip.reason === "TIP_FUSE_CODE_BINDING_BYTES_MISMATCH_FAIL_CLOSED", "tip influence HOLD predicates drifted");
 
   const halos = manifest.truth_subjects.fleet_halos;
@@ -447,86 +469,64 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
 
   const released = manifest.truth_subjects.released_tester_5;
   exactKeys(released, [
-    ...SUBJECT_BASE_KEYS, "tag", "url", "releaseId", "assetId", "assetState", "responseChain", "tlsVerified",
-    "bytes", "sha256", "artifactBytesIndependentlyVerified", "artifactSha256IndependentlyVerified",
-    "authenticodeStatus", "publisherAuthenticated", "signedPublicRelease", "smartScreenWarningExpected",
-    "artifactExecuted", "packageContentsStatus", "sourceCommit", "embeddedHiveAiCommit",
-    "representsCurrentSourceAtlas", "verificationReceiptSha256",
+    ...SUBJECT_BASE_KEYS, "effectiveStatus", "activeDownloadAuthorized", "currentPackageStatus", "currentPublicRetrievability",
+    "currentInstallerUrl", "currentRuntimeStatus", "historicalEvidence",
   ], "released tester subject");
-  // Remote outer bytes are now independently verified. That upgrade is confined to the
-  // byte plane: contents, installation, execution, runtime and behavior stay unproven,
-  // and the packaged Hive-AI generation stays explicitly older than the mapped atlas.
-  assert(released.tag === "hive-ide-v0.3.0-tester.5"
+  const releasedHistorical = released.historicalEvidence;
+  exactKeys(releasedHistorical, [
+    "tag", "url", "releaseId", "assetId", "assetState", "responseChain", "tlsVerified", "bytes", "sha256",
+    "artifactBytesIndependentlyVerified", "artifactSha256IndependentlyVerified", "authenticodeStatus", "publisherAuthenticated",
+    "signedPublicRelease", "smartScreenWarningExpected", "artifactExecuted", "packageContentsStatus", "sourceCommit",
+    "embeddedHiveAiCommit", "representsReviewedSourceAtlas", "verificationReceiptSha256",
+  ], "released tester historical evidence");
+  assert(released.effectiveStatus === "EVIDENCE_EXPIRED_HELD"
+    && released.activeDownloadAuthorized === false
+    && released.currentPackageStatus === "UNKNOWN"
+    && released.currentPublicRetrievability === "UNKNOWN"
+    && released.currentInstallerUrl === null
+    && released.currentRuntimeStatus === "UNKNOWN"
     && released.subject_kind === "PUBLIC_RELEASE_REMOTE_ARTIFACT_BYTES"
-    && released.claim_plane === "PUBLIC_REMOTE_BYTES_VERIFIED"
-    && released.url === "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/Hive-IDE-OneClick-Windows-x64.exe"
-    && !/tester\.6/.test(released.url)
-    && Number.isSafeInteger(released.releaseId) && released.releaseId > 0
-    && Number.isSafeInteger(released.assetId) && released.assetId > 0
-    && released.assetState === "uploaded"
-    && released.responseChain === "302_TO_200"
-    && released.tlsVerified === true
-    && released.bytes === 924864317
-    && released.sha256 === "be1795640763e99315b426757c76d655f6f07f92701d040c62f6126c1401b000", "released tester artifact identity drifted");
-  assert(released.artifactBytesIndependentlyVerified === true
-    && released.artifactSha256IndependentlyVerified === true
-    && HEX64.test(released.verificationReceiptSha256)
-    && released.evidenceRef.includes(released.verificationReceiptSha256), "independent byte verification is not bound to an exact observation receipt");
-  assert(released.authenticodeStatus === "NotSigned"
-    && released.publisherAuthenticated === false
-    && released.signedPublicRelease === false
-    && released.smartScreenWarningExpected === true, "unsigned publisher disclosure drifted");
-  assert(released.artifactExecuted === false
-    && released.packageContentsStatus === "UNKNOWN_NOT_INSPECTED", "verified outer bytes were promoted into contents or execution proof");
-  assert(released.sourceCommit === "6f7fd8a9a18c8921aa0fad1fe5b0b901bacd3383"
-    && released.embeddedHiveAiCommit === "a0fe64832edb801c9944c0923e222a64ef14e498"
-    && released.embeddedHiveAiCommit !== manifest.source.sourceCommit
-    && released.representsCurrentSourceAtlas === false, "the downloadable tester was joined to the current atlas generation");
+    && released.claim_plane === "HISTORICAL_EVIDENCE", "released tester effective disposition drifted");
+  assert(releasedHistorical.tag === "hive-ide-v0.3.0-tester.5"
+    && releasedHistorical.url === "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/Hive-IDE-OneClick-Windows-x64.exe"
+    && releasedHistorical.releaseId === 366980498 && releasedHistorical.assetId === 505603161
+    && releasedHistorical.assetState === "uploaded" && releasedHistorical.responseChain === "302_TO_200"
+    && releasedHistorical.tlsVerified === true && releasedHistorical.bytes === 924864317
+    && releasedHistorical.sha256 === "be1795640763e99315b426757c76d655f6f07f92701d040c62f6126c1401b000"
+    && releasedHistorical.artifactBytesIndependentlyVerified === true && releasedHistorical.artifactSha256IndependentlyVerified === true
+    && releasedHistorical.authenticodeStatus === "NotSigned" && releasedHistorical.publisherAuthenticated === false
+    && releasedHistorical.signedPublicRelease === false && releasedHistorical.smartScreenWarningExpected === true
+    && releasedHistorical.artifactExecuted === false && releasedHistorical.packageContentsStatus === "UNKNOWN_NOT_INSPECTED"
+    && releasedHistorical.sourceCommit === "6f7fd8a9a18c8921aa0fad1fe5b0b901bacd3383"
+    && releasedHistorical.embeddedHiveAiCommit === "a0fe64832edb801c9944c0923e222a64ef14e498"
+    && releasedHistorical.representsReviewedSourceAtlas === false
+    && HEX64.test(releasedHistorical.verificationReceiptSha256)
+    && released.evidenceRef.includes(releasedHistorical.verificationReceiptSha256), "released tester historical identity drifted");
   assert(Date.parse(released.validUntil) > Date.parse(released.verifiedAt)
     && /raw HTTP bytes were not retained/i.test(released.evidence)
-    && /independent bounded GitHub API, TLS, full-body remote download/i.test(released.evidence)
-    && /Authenticode is NotSigned/i.test(released.claim)
-    && /Package contents, installation, execution, runtime, and behavior remain unproven/i.test(released.claim)
-    && /declared embedded Hive-AI source is older than the atlas/i.test(released.claim), "released tester byte verification lost its non-proof boundary");
+    && /historical independent bounded GitHub API, TLS, full-body remote download/i.test(released.evidence)
+    && /That observation expired/i.test(released.claim)
+    && /current package identity, retrievability, installation, execution, runtime, and behavior are UNKNOWN or HOLD/i.test(released.claim), "released tester expired boundary drifted");
   if (latest) {
-    // v2 feed: publisher and byte-observation facts moved into their own planes.
-    assert(released.url === latest.installerUrl
-      && released.bytes === latest.installerSizeBytes
-      && released.sha256 === latest.installerSha256
-      && released.sourceCommit === latest.sourceCommit
-      && released.embeddedHiveAiCommit === latest.embeddedHiveAiCommit
-      && released.tag === latest.releaseTag, "released tester subject is stale against latest.json");
-    assert(released.publisherAuthenticated === latest.publisherAuthentication?.publisherAuthenticated
-      && released.smartScreenWarningExpected === latest.publisherAuthentication?.smartScreenWarningExpected
-      && released.authenticodeStatus === latest.publisherAuthentication?.authenticodeStatus, "released tester publisher disclosure disagrees with latest.json");
-    const observation = latest.outerExecutableObservation;
-    assert(isPlainObject(observation)
-      && observation.status === "PUBLIC_REMOTE_BYTES_VERIFIED"
-      && observation.releaseId === released.releaseId
-      && observation.assetId === released.assetId
-      && observation.assetState === released.assetState
-      && observation.responseChain === released.responseChain
-      && observation.tlsVerified === released.tlsVerified
-      && observation.fullBodyDownloaded === true
-      && observation.exactByteCountMatched === released.artifactBytesIndependentlyVerified
-      && observation.exactSha256Matched === released.artifactSha256IndependentlyVerified
-      && observation.evidenceReceiptSha256 === released.verificationReceiptSha256
-      && observation.validUntilUtc === released.validUntil, "released tester byte observation disagrees with latest.json");
-    // Landing custody and public retrievability are independent evidence planes.
-    assert(observation.landingStatus === "LANDED_HASH_VERIFIED"
-      && observation.publicRetrievability === "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
-      && HEX40.test(observation.evidenceReceiptGitBlobOid ?? "")
-      && observation.rawHttpRetained === false
-      && observation.independentlySigned === false, "byte-observation receipt custody was overstated");
-    assert(latest.downloadDisposition?.status === "HOLD"
-      && latest.downloadDisposition?.activeDownloadAuthorized === false, "verified bytes were promoted into an authorized download");
+    assert(latest.schema === "hive.ide.public_release_latest.v3"
+      && latest.effectiveDisposition?.effectiveStatus === released.effectiveStatus
+      && latest.effectiveDisposition?.activeDownloadAuthorized === false
+      && latest.effectiveDisposition?.currentPackageStatus === "UNKNOWN"
+      && latest.effectiveDisposition?.currentPublicRetrievability === "UNKNOWN"
+      && latest.effectiveDisposition?.currentInstallerUrl === null
+      && latest.historicalEvidence?.outerExecutable?.sha256 === releasedHistorical.sha256
+      && latest.historicalEvidence?.release?.sourceCommit === releasedHistorical.sourceCommit
+      && latest.historicalEvidence?.release?.embeddedHiveAiCommit === releasedHistorical.embeddedHiveAiCommit,
+    "released tester subject disagrees with latest v3 effective/historical planes");
   }
   if (releaseManifest) {
-    // v2 truth manifest: source identities moved under sourceDeclarations.
-    assert(releaseManifest.schema === "hive.ide.public_release_truth_manifest.v2", "release truth manifest schema drifted");
-    assert(released.embeddedHiveAiCommit === releaseManifest.sourceDeclarations?.hiveAi?.commit
-      && released.sourceCommit === releaseManifest.sourceDeclarations?.hiveIde?.commit, "released tester embedded Hive-AI identity drifted");
-    assert(releaseManifest.downloadDisposition?.status === "HOLD", "release truth manifest authorized a held download");
+    assert(releaseManifest.schema === "hive.ide.public_release_truth_manifest.v3"
+      && releaseManifest.effectiveDisposition?.effectiveStatus === "EVIDENCE_EXPIRED_HELD"
+      && releaseManifest.effectiveDisposition?.currentInstallerUrl === null
+      && releaseManifest.historicalEvidence?.sourceDeclarations?.embeddedHiveAiCommit === releasedHistorical.embeddedHiveAiCommit
+      && releaseManifest.historicalEvidence?.sourceDeclarations?.hiveIdeCommit === releasedHistorical.sourceCommit
+      && releaseManifest.downloadDisposition?.status === "HOLD"
+      && releaseManifest.downloadDisposition?.activeDownloadAuthorized === false, "release truth manifest effective/historical planes drifted");
   }
 
   // ---- tester.6: held after a real readback, never presented as public ----
@@ -542,9 +542,10 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && tester6.signatureStatus === "UNKNOWN"
     && HEX64.test(tester6.readbackReceiptSha256)
     && tester6.evidenceRef.includes(tester6.readbackReceiptSha256)
-    && /held and not public at this readback/i.test(tester6.claim)
-    && /canonical mirrors continued to name tester\.5/i.test(tester6.claim), "tester.6 was promoted out of its held, unpublished state");
-  assert(tester6.readbackReceiptSha256 !== released.verificationReceiptSha256,
+    && /At 2026-08-23T19:37:31\.6497275Z/i.test(tester6.claim)
+    && /That observation expired/i.test(tester6.claim)
+    && /current publication and absence are UNKNOWN/i.test(tester6.claim), "tester.6 expired readback was promoted into a current claim");
+  assert(tester6.readbackReceiptSha256 !== releasedHistorical.verificationReceiptSha256,
     "tester.5 and tester.6 must not share one observation receipt");
 
   // ---- Hive IDE Tauri source: candidate branch only, explicitly non-durable ----
@@ -556,9 +557,10 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && typeof wsl.repositoryRef === "string" && wsl.repositoryRef.trim()
     && wsl.repositoryCommit === "f459e85cc71801afbed4a8579b31133b9ff58edd"
     && wsl.evidencePersistence === "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT"
-    && /candidate branch at f459e85/i.test(wsl.claim)
-    && /not landed on the default branch/i.test(wsl.claim)
-    && /not tester\.5 package contents, installation, or runtime proof/i.test(wsl.claim),
+    && /^At 2026-08-23T18:46:30Z,/.test(wsl.claim)
+    && /Current landing is UNKNOWN and HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK/i.test(wsl.claim)
+    && /not tester\.5 package, installation, or runtime proof/i.test(wsl.claim)
+    && wsl.recertification?.expiryAction === "HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK",
   "Hive IDE candidate source observation was promoted beyond its evidence");
 
   // ---- platform publications with no admissible observation ----
@@ -600,7 +602,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   exactKeys(manifest.relations.atlasTester, ["status", "atlasSourceCommit", "testerEmbeddedHiveAiCommit", "claim"], "atlas-tester relation");
   assert(manifest.relations.atlasTester.status === "MISMATCH"
     && manifest.relations.atlasTester.atlasSourceCommit === sourceAtlas.sourceCommit
-    && manifest.relations.atlasTester.testerEmbeddedHiveAiCommit === released.embeddedHiveAiCommit
+    && manifest.relations.atlasTester.testerEmbeddedHiveAiCommit === releasedHistorical.embeddedHiveAiCommit
     && manifest.relations.atlasTester.atlasSourceCommit !== manifest.relations.atlasTester.testerEmbeddedHiveAiCommit
     && /(?:must|may) not be presented as realizing (?:it|that Constellation)/i.test(manifest.relations.atlasTester.claim), "atlas-tester generation mismatch was hidden or misclassified");
 
@@ -645,23 +647,22 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && /not.*product-live authority/i.test(definitions.twitch.boundary), "Twitch definition was conflated with current liveness");
   assert(/not one monolithic general model/i.test(definitions.hivebrain.boundary)
     && /not proof that an installed runtime performed the target path/i.test(definitions.hivebrain.boundary), "HiveBrain definition was collapsed into a single model or an installed-runtime claim");
-  assert(/(?:is )?not brain authority/i.test(definitions["living-anatomy"].boundary)
-    && /authored geometry does not become runtime proof/i.test(definitions["living-anatomy"].boundary), "Living Anatomy was granted brain authority");
+  assert(/No Living Anatomy runtime is attested/i.test(definitions["living-anatomy"].boundary)
+    && /(?:is )?not brain authority/i.test(definitions["living-anatomy"].boundary)
+    && /authored geometry is not runtime proof/i.test(definitions["living-anatomy"].boundary), "Living Anatomy was granted present runtime or brain authority");
 
   const registry = manifest.registryClaimCut;
   exactKeys(registry, [
-    "status", "sourceCommit", "derivedAt", "authority", "runtimeEnabled", "servedInfluenceEnabled", "productLiveClaimAllowed",
-    "executeAuthorized", "permanentProductTurnWire", "safeToClaim100PercentProductLive", "reason", "boundary",
+    "status", "sourceCommit", "derivedAt", "authority", "matchingRows", "effectiveDisposition",
+    "executeAuthorized", "permanentProductTurnWire", "reason", "boundary",
   ], "registry claim cut");
   assert(registry.status === "HOLD"
     && registry.sourceCommit === EVIDENCE_BASELINE_COMMIT
     && registry.derivedAt === "2026-08-23T18:46:30Z"
-    && registry.runtimeEnabled === tip.runtimeEnabled
-    && registry.servedInfluenceEnabled === tip.servedInfluenceEnabled
-    && registry.productLiveClaimAllowed === tip.productLiveClaimAllowed
+    && registry.matchingRows === tip.matchingRows
+    && registry.effectiveDisposition === "HOLD"
     && registry.executeAuthorized === false
     && registry.permanentProductTurnWire === false
-    && registry.safeToClaim100PercentProductLive === false
     && registry.reason === tip.reason
     && /not observation of an installed or running process/i.test(registry.boundary), "registry fixed-cut HOLD was promoted or mismatched");
 
@@ -701,19 +702,21 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   const platforms = Object.fromEntries(manifest.platforms.map((entry) => [entry.id, entry]));
 
   assert(platforms["windows-x64-remote"].subjectId === "released_tester_5"
-    && platforms["windows-x64-remote"].supportStatus === "PUBLIC_RELEASE_AVAILABLE_UNSIGNED"
-    && platforms["windows-x64-remote"].testStatus === "REMOTE_BYTES_VERIFIED_NOT_EXECUTED"
-    && platforms["windows-x64-remote"].signingStatus === "AUTHENTICODE_NOT_SIGNED"
-    && /Contents, install, execution, runtime, and behavior remain unproven/i.test(platforms["windows-x64-remote"].evidence)
-    && /embedded Hive-AI source is older than the atlas/i.test(platforms["windows-x64-remote"].evidence), "Windows tester row was promoted past verified outer bytes");
+    && platforms["windows-x64-remote"].supportStatus === "EVIDENCE_EXPIRED_HELD"
+    && platforms["windows-x64-remote"].testStatus === "HOLD_NOT_AUTHORIZED"
+    && platforms["windows-x64-remote"].packageStatus === "UNKNOWN"
+    && platforms["windows-x64-remote"].signingStatus === "HISTORICAL_AUTHENTICODE_NOT_SIGNED"
+    && /That evidence expired/i.test(platforms["windows-x64-remote"].evidence)
+    && /current retrievability, contents, install, execution, runtime, and behavior are UNKNOWN or HOLD/i.test(platforms["windows-x64-remote"].evidence), "Windows tester row was promoted past expired historical evidence");
 
   assert(platforms["windows-wsl-design"].subjectId === "windows_wsl_candidate_design"
-    && platforms["windows-wsl-design"].supportStatus === "CANDIDATE_BRANCH_NOT_LANDED"
+    && platforms["windows-wsl-design"].supportStatus === "HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK"
     && platforms["windows-wsl-design"].testStatus === "SOURCE_OBSERVED_NOT_PACKAGE_INSPECTED"
     && platforms["windows-wsl-design"].packageStatus === "TESTER5_UNKNOWN_NOT_INSPECTED"
     && platforms["windows-wsl-design"].signingStatus === "NOT_APPLICABLE"
-    && /Default tip 41df9be does not contain that candidate/i.test(platforms["windows-wsl-design"].evidence)
-    && /Tester\.5 package contents remain UNKNOWN_NOT_INSPECTED/i.test(platforms["windows-wsl-design"].evidence),
+    && /At 2026-08-23T18:46:30Z/i.test(platforms["windows-wsl-design"].evidence)
+    && /Current landing is UNKNOWN\/HOLD pending fresh owner-repository readback/i.test(platforms["windows-wsl-design"].evidence)
+    && /Tester\.5 contents are UNKNOWN_NOT_INSPECTED/i.test(platforms["windows-wsl-design"].evidence),
   "Hive IDE candidate source observation was promoted into default landing or package contents");
 
   // The two Linux rows are the whole point of the split: a source path is not a package.
@@ -851,6 +854,18 @@ function expectStrictJsonReject(label, source, expectedCode) {
 
 export function runProductTruthSelfTests(manifest, context) {
   validateProductTruth(manifest, context);
+  const exactRelation = classifyProductTruthSnapshot(context.facts, manifest.source.reviewedBaseline);
+  const newSourceSnapshot = structuredClone(context.facts);
+  newSourceSnapshot.hiveAi.sourceCommit = "1".repeat(40);
+  const newRelation = classifyProductTruthSnapshot(newSourceSnapshot, manifest.source.reviewedBaseline);
+  const inactiveSnapshot = structuredClone(context.facts);
+  inactiveSnapshot.refresh = {
+    privateSourceMode: "manual-source-bound-snapshot",
+    automaticBridgeEnabled: false,
+    reasonCode: "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
+    lastGoodBehavior: "retain_previous_snapshot",
+  };
+  const inactiveRelation = classifyProductTruthSnapshot(inactiveSnapshot, manifest.source.reviewedBaseline);
   const simulatedLandingExpectation = { commit: "1".repeat(40), tree: "3".repeat(40), sha256: "2".repeat(64), bytes: manifest.canonicalManifest.candidateBytes + 12, blobOid: "4".repeat(40) };
   let simulatedLandingPassed = false;
   if (manifest.canonicalManifest.status === "CANDIDATE_NOT_LANDED") {
@@ -866,6 +881,10 @@ export function runProductTruthSelfTests(manifest, context) {
   }
   const tests = [
     { label: "valid_full_projection", passed: true },
+    { label: "exact_reviewed_baseline_relation", passed: exactRelation === "EXACT_REVIEWED_BASELINE_MATCH" },
+    { label: "new_source_snapshot_unreviewed_hold_relation", passed: newRelation === "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD" },
+    { label: "inactive_bridge_last_good_relation", passed: inactiveRelation === "BRIDGE_INACTIVE_LAST_GOOD_SOURCE" },
+    { label: "invalid_snapshot_blocked_relation", passed: classifyProductTruthSnapshot({}, manifest.source.reviewedBaseline) === "SNAPSHOT_INVALID_BLOCKED" },
     { label: "externally_expected_landing_projection", passed: simulatedLandingPassed },
     expectReject("full_digest_claim_tamper_refused", manifest, context, (value) => { value.truth_subjects.target_architecture.claim += " tampered"; }),
     expectReject("full_digest_platform_tamper_refused", manifest, context, (value) => { value.platforms.find((entry) => entry.id === "linux-source").evidence += " tampered"; }),
@@ -908,11 +927,11 @@ export function runProductTruthSelfTests(manifest, context) {
       value.truth_subjects.candidate_tester_6_publication.githubReleaseApiStatus = 200;
       value.truth_subjects.candidate_tester_6_publication.url = "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.6/Hive-IDE-OneClick-Windows-x64.exe";
     }),
-    expectRejectRebound("tester6_url_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.url = value.truth_subjects.released_tester_5.url.replace("tester.5", "tester.6"); }),
-    expectRejectRebound("tester6_receipt_reuse_refused", manifest, context, (value) => { value.truth_subjects.candidate_tester_6_publication.readbackReceiptSha256 = value.truth_subjects.released_tester_5.verificationReceiptSha256; }),
-    expectRejectRebound("tester5_execution_promotion_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.artifactExecuted = true; }),
-    expectRejectRebound("tester5_contents_promotion_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.packageContentsStatus = "VERIFIED"; }),
-    expectRejectRebound("tester5_atlas_join_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.representsCurrentSourceAtlas = true; }),
+    expectRejectRebound("tester6_url_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.url = value.truth_subjects.released_tester_5.historicalEvidence.url.replace("tester.5", "tester.6"); }),
+    expectRejectRebound("tester6_receipt_reuse_refused", manifest, context, (value) => { value.truth_subjects.candidate_tester_6_publication.readbackReceiptSha256 = value.truth_subjects.released_tester_5.historicalEvidence.verificationReceiptSha256; }),
+    expectRejectRebound("tester5_execution_promotion_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.artifactExecuted = true; }),
+    expectRejectRebound("tester5_contents_promotion_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.currentPackageStatus = "VERIFIED"; }),
+    expectRejectRebound("tester5_atlas_join_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.representsReviewedSourceAtlas = true; }),
     expectRejectRebound("macos_nonexistence_claim_refused", manifest, context, (value) => { value.truth_subjects.macos_hive_ide_publication.claim = "macOS is not supported and no package exists."; }),
     expectRejectRebound("linux_publication_invention_refused", manifest, context, (value) => {
       const row = value.platforms.find((entry) => entry.id === "linux-publication");
@@ -937,14 +956,14 @@ export function runProductTruthSelfTests(manifest, context) {
     }),
     expectRejectRebound("malformed_release_expiry_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.validUntil = "never"; }),
     expectRejectRebound("non_advancing_release_expiry_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.validUntil = value.truth_subjects.released_tester_5.verifiedAt; }),
-    expectRejectRebound("signed_replay_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.publisherAuthenticated = true; }),
-    expectRejectRebound("release_byte_count_mismatch_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.bytes += 1; }),
-    expectRejectRebound("release_digest_mismatch_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.sha256 = "0".repeat(64); }),
+    expectRejectRebound("signed_replay_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.publisherAuthenticated = true; }),
+    expectRejectRebound("release_byte_count_mismatch_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.bytes += 1; }),
+    expectRejectRebound("release_digest_mismatch_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.sha256 = "0".repeat(64); }),
     expectRejectRebound("metadata_promoted_to_remote_byte_verification_refused", manifest, context, (value) => {
       value.truth_subjects.released_tester_5.evidence = "Remote executable independently downloaded and hashed; PASS.";
       value.truth_subjects.released_tester_5.claim = "Public tester.5 executable bytes are verified and functionally certified.";
-      value.truth_subjects.released_tester_5.artifact_bytes_independently_verified = true;
-      value.truth_subjects.released_tester_5.artifact_sha256_independently_verified = true;
+      value.truth_subjects.released_tester_5.historicalEvidence.artifact_bytes_independently_verified = true;
+      value.truth_subjects.released_tester_5.historicalEvidence.artifact_sha256_independently_verified = true;
     }),
     expectRejectRebound("windows_metadata_promoted_to_verified_artifact_refused", manifest, context, (value) => {
       const windows = value.platforms.find((entry) => entry.id === "windows-x64-remote");

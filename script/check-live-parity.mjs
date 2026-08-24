@@ -25,7 +25,7 @@ if (!Array.isArray(allowlist.publicFiles)
   || !Array.isArray(allowlist.generatedQuarantineRoutes)
   || !Array.isArray(allowlist.deliberatePublicJson)
   || !Array.isArray(allowlist.forbiddenExactPaths)
-  || allowlist.forbiddenExactPaths.length !== 23
+  || allowlist.forbiddenExactPaths.length !== 25
   || !Array.isArray(allowlist.forbiddenPrefixes)
   || !Array.isArray(allowlist.privateSourceOnlyPaths)) {
   throw new Error("Pages allowlist is incomplete for live parity");

@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   compile:
-    if: github.repository == 'Dhenz14/Dhenz14.github.io' && (github.event_name == 'workflow_dispatch' || vars.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true')
+    if: github.repository == 'Dhenz14/Dhenz14.github.io' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -168,6 +168,8 @@ jobs:
           set -euo pipefail
           node --check hub-assets/hub.js
           node --check hub-assets/galaxy-core.mjs
+          node --check hub-assets/strict-json-fetch.mjs
+          node --check script/check-browser-json-acquisition.mjs
           node --check script/sync-galaxy-snapshot.mjs
           node --check script/mark-galaxy-bridge-inactive.mjs
           node --check script/hub-facts-custody.mjs
@@ -175,6 +177,7 @@ jobs:
           node script/check-central-hub.mjs
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
+          node script/check-browser-json-acquisition.mjs
           node script/check-public-pages-artifact.mjs
           node script/check-publisher-races.mjs
           node script/check-signed-release.mjs
@@ -194,7 +197,7 @@ jobs:
 
   publish:
     needs: compile
-    if: needs.compile.result == 'success'
+    if: needs.compile.result == 'success' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -261,6 +264,7 @@ jobs:
           set -euo pipefail
           node --check hub-assets/hub.js
           node --check hub-assets/galaxy-core.mjs
+          node --check hub-assets/strict-json-fetch.mjs
           node --check script/sync-galaxy-snapshot.mjs
           node --check script/mark-galaxy-bridge-inactive.mjs
           node --check script/hub-facts-custody.mjs
@@ -268,6 +272,7 @@ jobs:
           node script/check-central-hub.mjs
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
+          node script/check-browser-json-acquisition.mjs
           node script/check-public-pages-artifact.mjs
           node script/check-publisher-races.mjs
           node script/check-signed-release.mjs
@@ -328,6 +333,7 @@ jobs:
             node script/check-central-hub.mjs
             node script/check-galaxy-bridge.mjs
             node script/check-galaxy-core.mjs
+            node script/check-browser-json-acquisition.mjs
             node script/check-public-pages-artifact.mjs
             node script/check-publisher-races.mjs
             node script/check-signed-release.mjs

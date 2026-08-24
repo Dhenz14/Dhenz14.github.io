@@ -198,7 +198,7 @@ const EXPECTED_PLATFORM_IDS = Object.freeze([
 const ATLAS_SOURCE_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
 const EVIDENCE_BASELINE_COMMIT = "472131baa2bc212a043966773bd92477c3a8a16c";
 const EVIDENCE_BASELINE_TREE = "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00";
-const EXPECTED_CANDIDATE_BINDING_DIGEST = "3c6782a94c2841dc229876b7794c49494100ad3a3ce80d8ca0a71ac9a5510d73";
+const EXPECTED_CANDIDATE_BINDING_DIGEST = "cbdb6184d09984b0635c6bf48bb28afe8954963cf2e75838dcf3eda7379b4f13";
 // The exact candidate-state strings that landing is allowed to replace. A landed
 // manifest must rebuild to this baseline digest, proving the landing changed the
 // custody fields and nothing else.
@@ -317,7 +317,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && /authority-bearing Mission Control mutations are credential-gated when configured/i.test(manifest.boundaries.architectureVsLive.claim)
     && /require independent evidence/i.test(manifest.boundaries.architectureVsLive.claim), "architecture and local live truth were conflated");
   assert(manifest.boundaries.currentVsLegacy.status === "SUBJECT_SCOPED_DISPOSITIONS"
-    && manifest.boundaries.currentVsLegacy.claim === "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron removal is EXTERNAL_REPO_PROOF_REQUIRED and Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held.", "current and legacy subject dispositions drifted");
+    && manifest.boundaries.currentVsLegacy.claim === "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron is REMOVED in the current Hive IDE build, observed at an exact candidate commit that is neither landed on that repository's main nor published; tester.5 predates that removal and still bundles Electron. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held.", "current and legacy subject dispositions drifted");
   assert(manifest.boundaries.noLlmClaim.status === "HOLD"
     && /does not publish a bare ['\u2018\u2019\"]no LLM/i.test(manifest.boundaries.noLlmClaim.claim)
     && /authorized external agent/i.test(manifest.boundaries.noLlmClaim.exactBoundary)

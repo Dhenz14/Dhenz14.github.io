@@ -634,7 +634,7 @@ function setSourceBadge(state, label, title) {
 }
 
 const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v1";
-const PRODUCT_TRUTH_PROJECTION_DIGEST = "91c4a598413d269f9970032e76a5b3078810c8a9cf8195d2083e899a600808d1";
+const PRODUCT_TRUTH_PROJECTION_DIGEST = "530e551a78ee23435618570587ace2e0ba9fe4e8f2f3dd5ae1402c2a27be3d92";
 const PRODUCT_TRUTH_MAX_BYTES = 128 * 1024;
 const PRODUCT_TRUTH_SUBJECTS = Object.freeze({
   target_architecture: { label: "Target architecture", kind: "ARCHITECTURE_TARGET", status: "SOURCE_BOUND_DOCTRINE", plane: "TARGET" },
@@ -665,7 +665,7 @@ const CANONICAL_LANDED_COMMIT = "0ab04f6c19ffd41bb162bea674e77853fb27cc0e";
 const CANONICAL_LANDED_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
 const TARGET_SERVING_BOUNDARY = "The source-bound target path is hive-runtime: a constellation-local in-process deterministic scaffold. The doctrine has no BYOM product lane, no implicit external-checkpoint fallback, and no local-model product serve path. An explicitly user-directed external agent may be the inbound caller; that is not a hidden Hive-selected backend fallback. None of this attests an installed runtime or observed behavior.";
 const ARCHITECTURE_LIVE_BOUNDARY = "The public atlas and this projection describe source-bound architecture. Local presentation and operator bodies are anonymous read-only GET surfaces when separately available; authority-bearing Mission Control mutations are credential-gated when configured. Installed runtime, route availability, and observed behavior require independent evidence.";
-const CURRENT_LEGACY_BOUNDARY = "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron removal is EXTERNAL_REPO_PROOF_REQUIRED and Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held.";
+const CURRENT_LEGACY_BOUNDARY = "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron is REMOVED in the current Hive IDE build, observed at an exact candidate commit that is neither landed on that repository's main nor published; tester.5 predates that removal and still bundles Electron. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held.";
 const NO_LLM_BOUNDARY = "At the evidence baseline, doctrine permits an authorized external agent such as Codex or Claude to supply fluent generation as the explicit inbound caller while Hive is assigned local retrieval, routing, verification, and proof gating. The declared route is not an implicit outbound fallback selected by Hive, and it is not current runtime or network-egress proof.";
 let productTruthManifest = null;
 

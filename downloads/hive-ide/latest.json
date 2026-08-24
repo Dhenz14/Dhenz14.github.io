@@ -14,7 +14,7 @@
   "historicalManifestUrl": "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/hive-ide-release-manifest.json",
   "historicalManifestSha256": "880df343aa2d2344f4e14547de72e0362afd5067e70d96821230b5fd46e463d9",
   "truthManifestUrl": "https://dhenz14.github.io/downloads/hive-ide/hive-ide-release-manifest.json",
-  "truthManifestSha256": "ed4fb1fe43dc17ccc81886e2e8dfcded89b1a4e864ff05fd49247681295a18cb",
+  "truthManifestSha256": "9032328c7de85a750ae0f945ca29094782d2d20444737cbc39724a50b4603622",
   "outerExecutableObservation": {
     "status": "PUBLIC_REMOTE_BYTES_VERIFIED",
     "observer": "independent-public-artifact-verifier",
@@ -40,7 +40,8 @@
     "evidenceReceiptSha256": "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56",
     "evidenceReceiptSelfZeroSha256": "8bf78ee21940a064daf51a621ecca7a4bbb9431f5cf7292a29b233a40f3da15b",
     "evidenceReceiptGitBlobOid": "3703036fc42ab35413462ff343b5357a7dae9f05",
-    "evidenceReceiptAvailability": "SOURCE_CANDIDATE_NOT_LANDED"
+    "landingStatus": "LANDED_HASH_VERIFIED",
+    "publicRetrievability": "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
   },
   "publisherAuthentication": {
     "status": "NOT_SIGNED",
@@ -80,7 +81,7 @@
       "evidenceRef": "truthManifestUrl#claimPlanes.runtime"
     },
     "productLive": {
-      "status": "FALSE",
+      "status": "UNKNOWN",
       "observedAtUtc": null,
       "validUntilUtc": null,
       "evidenceRef": "truthManifestUrl#claimPlanes.productLive"
@@ -98,5 +99,5 @@
     "reason": "UNSIGNED_AND_INSTALL_RUNTIME_UNVERIFIED",
     "requires": "SEPARATE_UNEXPIRED_OPERATOR_AUTHORIZATION"
   },
-  "claimBoundary": "PUBLIC_REMOTE_OUTER_EXE_BYTES_VERIFIED_UNTIL_2026-08-24T19:20:09.7630961Z; AUTHENTICODE_NOT_SIGNED; PACKAGE_CONTENTS_INSTALLATION_RUNTIME_UNKNOWN; PRODUCT_LIVE_FALSE; PUBLIC_FUNCTIONAL_TESTING_HOLD"
+  "claimBoundary": "PUBLIC_REMOTE_OUTER_EXE_BYTES_VERIFIED_UNTIL_2026-08-24T19:20:09.7630961Z; AUTHENTICODE_NOT_SIGNED; PACKAGE_CONTENTS_INSTALLATION_RUNTIME_PRODUCT_LIVE_UNKNOWN; RECEIPT_LANDED_PRIVATE_NOT_PUBLICLY_RETRIEVABLE; PUBLIC_FUNCTIONAL_TESTING_HOLD"
 }

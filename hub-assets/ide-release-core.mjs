@@ -5,8 +5,8 @@ const MAX_INSTALLER_BYTES = 2 * 1024 * 1024 * 1024;
 
 export const IDE_RELEASE_LATEST_MAX_BYTES = 64 * 1024;
 export const IDE_RELEASE_TRUTH_MAX_BYTES = 128 * 1024;
-export const IDE_RELEASE_LATEST_SHA256 = "8398740abf77ea67ff5288c69ab1805f1987a5f0b0259b935d1d6cc4462e2e51";
-export const IDE_RELEASE_TRUTH_MANIFEST_SHA256 = "ed4fb1fe43dc17ccc81886e2e8dfcded89b1a4e864ff05fd49247681295a18cb";
+export const IDE_RELEASE_LATEST_SHA256 = "ea379e56f119f4f1e7f57befb1d7314aa3daefb8a97bcb28b6c811526a7de9f1";
+export const IDE_RELEASE_TRUTH_MANIFEST_SHA256 = "9032328c7de85a750ae0f945ca29094782d2d20444737cbc39724a50b4603622";
 
 const INSTALLER_URL = "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/Hive-IDE-OneClick-Windows-x64.exe";
 const HISTORICAL_MANIFEST_URL = "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/hive-ide-release-manifest.json";
@@ -18,7 +18,7 @@ const INSTALLER_SIZE_BYTES = 924864317;
 const OBSERVED_AT = "2026-08-23T19:20:09.7630961Z";
 const HASH_OBSERVED_AT = "2026-08-23T19:19:54.1841621Z";
 const VALID_UNTIL = "2026-08-24T19:20:09.7630961Z";
-const CLAIM_BOUNDARY = `PUBLIC_REMOTE_OUTER_EXE_BYTES_VERIFIED_UNTIL_${VALID_UNTIL}; AUTHENTICODE_NOT_SIGNED; PACKAGE_CONTENTS_INSTALLATION_RUNTIME_UNKNOWN; PRODUCT_LIVE_FALSE; PUBLIC_FUNCTIONAL_TESTING_HOLD`;
+const CLAIM_BOUNDARY = `PUBLIC_REMOTE_OUTER_EXE_BYTES_VERIFIED_UNTIL_${VALID_UNTIL}; AUTHENTICODE_NOT_SIGNED; PACKAGE_CONTENTS_INSTALLATION_RUNTIME_PRODUCT_LIVE_UNKNOWN; RECEIPT_LANDED_PRIVATE_NOT_PUBLICLY_RETRIEVABLE; PUBLIC_FUNCTIONAL_TESTING_HOLD`;
 const PUBLISHER_CLAIM = "The SHA-256 identifies the observed outer EXE bytes. It is not a publisher signature, identity proof, software-safety verdict, or runtime attestation.";
 
 const LATEST_KEYS = Object.freeze([
@@ -32,7 +32,7 @@ const OBSERVATION_KEYS = Object.freeze([
   "method", "releaseId", "assetId", "assetState", "responseChain", "tlsVerified", "fullBodyDownloaded",
   "exactByteCountMatched", "exactSha256Matched", "rawHttpRetained", "independentlySigned", "evidenceRef",
   "evidenceReceiptSchema", "evidenceReceiptId", "evidenceReceiptBytes", "evidenceReceiptSha256",
-  "evidenceReceiptSelfZeroSha256", "evidenceReceiptGitBlobOid", "evidenceReceiptAvailability",
+  "evidenceReceiptSelfZeroSha256", "evidenceReceiptGitBlobOid", "landingStatus", "publicRetrievability",
 ]);
 const PUBLISHER_KEYS = Object.freeze([
   "status", "publisherAuthenticated", "authenticodeStatus", "signerCertificate", "timestampCertificate",
@@ -46,42 +46,54 @@ const CLAIM_PLANE_NAMES = Object.freeze([
 const LATEST_DOWNLOAD_KEYS = Object.freeze(["status", "activeDownloadAuthorized", "reason", "requires"]);
 const TRUTH_DOWNLOAD_KEYS = Object.freeze([...LATEST_DOWNLOAD_KEYS, "claim"]);
 
+export class IdeReleaseContractError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "IdeReleaseContractError";
+    this.code = code;
+  }
+}
+
+function reject(message, code = "IDE_RELEASE_CONTRACT_VIOLATION") {
+  throw new IdeReleaseContractError(code, message);
+}
+
 function requireExactKeys(value, expected, label) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`${label} must be an object`);
+  if (!value || typeof value !== "object" || Array.isArray(value)) reject(`${label} must be an object`);
   const actual = Object.keys(value).sort();
   const wanted = [...expected].sort();
   if (actual.length !== wanted.length || actual.some((key, index) => key !== wanted[index])) {
-    throw new Error(`${label} fields are not exact`);
+    reject(`${label} fields are not exact`);
   }
 }
 
 function requireString(value, label) {
   if (typeof value !== "string" || !value.trim() || value !== value.trim()) {
-    throw new Error(`${label} must be a canonical non-empty string`);
+    reject(`${label} must be a canonical non-empty string`);
   }
   return value;
 }
 
 function requireExact(value, expected, label) {
-  if (value !== expected) throw new Error(`${label} is not the frozen release value`);
+  if (value !== expected) reject(`${label} is not the frozen release value`);
   return value;
 }
 
 function requireHex(value, pattern, label) {
   const canonical = requireString(value, label);
-  if (!pattern.test(canonical)) throw new Error(`${label} is malformed`);
+  if (!pattern.test(canonical)) reject(`${label} is malformed`);
   return canonical;
 }
 
 function requireRfc3339Utc(value, label) {
   const canonical = requireString(value, label);
-  if (!RFC3339_UTC.test(canonical) || !Number.isFinite(Date.parse(canonical))) throw new Error(`${label} is not RFC3339 UTC`);
+  if (!RFC3339_UTC.test(canonical) || !Number.isFinite(Date.parse(canonical))) reject(`${label} is not RFC3339 UTC`);
   return canonical;
 }
 
 function requireNullableUtc(value, expected, label) {
   if (expected === null) {
-    if (value !== null) throw new Error(`${label} must remain null`);
+    if (value !== null) reject(`${label} must remain null`);
     return null;
   }
   requireExact(value, expected, label);
@@ -92,7 +104,7 @@ function requireHttpsUrl(value, expected, label) {
   requireExact(value, expected, label);
   const parsed = new URL(value);
   if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.port || parsed.search || parsed.hash) {
-    throw new Error(`${label} escaped the frozen HTTPS origin/path`);
+    reject(`${label} escaped the frozen HTTPS origin/path`);
   }
   return parsed.href;
 }
@@ -124,7 +136,8 @@ function requireObservation(value, label) {
     evidenceReceiptSha256: "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56",
     evidenceReceiptSelfZeroSha256: "8bf78ee21940a064daf51a621ecca7a4bbb9431f5cf7292a29b233a40f3da15b",
     evidenceReceiptGitBlobOid: "3703036fc42ab35413462ff343b5357a7dae9f05",
-    evidenceReceiptAvailability: "SOURCE_CANDIDATE_NOT_LANDED",
+    landingStatus: "LANDED_HASH_VERIFIED",
+    publicRetrievability: "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE",
   };
   for (const [key, expected] of Object.entries(exact)) requireExact(value[key], expected, `${label}.${key}`);
   requireRfc3339Utc(value.apiObservedAtUtc, `${label}.apiObservedAtUtc`);
@@ -134,7 +147,7 @@ function requireObservation(value, label) {
   requireHex(value.evidenceReceiptSelfZeroSha256, HEX_64, `${label}.evidenceReceiptSelfZeroSha256`);
   requireHex(value.evidenceReceiptGitBlobOid, HEX_40, `${label}.evidenceReceiptGitBlobOid`);
   if (Date.parse(value.downloadHashObservedAtUtc) > Date.parse(value.apiObservedAtUtc) || Date.parse(value.apiObservedAtUtc) >= Date.parse(value.validUntilUtc)) {
-    throw new Error(`${label} evidence clock is invalid`);
+    reject(`${label} evidence clock is invalid`);
   }
   return value;
 }
@@ -168,7 +181,7 @@ function requireClaimPlanes(value, label, { withClaims }) {
     packageContents: ["UNKNOWN", null, null],
     installation: ["UNKNOWN", null, null],
     runtime: ["UNKNOWN", null, null],
-    productLive: ["FALSE", null, null],
+    productLive: ["UNKNOWN", null, null],
     publicFunctionalTesting: ["HOLD", OBSERVED_AT, VALID_UNTIL],
   };
   const latestRefs = {
@@ -246,7 +259,7 @@ export function validateIdeReleaseLatest(value) {
   requireHttpsUrl(value.historicalManifestUrl, HISTORICAL_MANIFEST_URL, "latest.historicalManifestUrl");
   requireHttpsUrl(value.truthManifestUrl, TRUTH_MANIFEST_URL, "latest.truthManifestUrl");
   if (!Number.isSafeInteger(value.installerSizeBytes) || value.installerSizeBytes <= 0 || value.installerSizeBytes > MAX_INSTALLER_BYTES) {
-    throw new Error("latest.installerSizeBytes is outside the bounded package range");
+    reject("latest.installerSizeBytes is outside the bounded package range");
   }
   requireObservation(value.outerExecutableObservation, "latest.outerExecutableObservation");
   requirePublisher(value.publisherAuthentication, "latest.publisherAuthentication", { smartScreenKey: true });

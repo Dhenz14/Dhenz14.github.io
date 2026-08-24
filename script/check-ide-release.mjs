@@ -8,18 +8,19 @@ import {
   IDE_RELEASE_LATEST_SHA256,
   IDE_RELEASE_TRUTH_MANIFEST_SHA256,
   IDE_RELEASE_TRUTH_MAX_BYTES,
+  IdeReleaseContractError,
   validateIdeReleaseLatest,
   validateIdeReleaseTruthManifest,
 } from "../hub-assets/ide-release-core.mjs";
-import { parseJsonStrict } from "./check-product-truth.mjs";
+import { parseJsonBytesStrict, parseJsonStrict, StrictJsonError } from "../hub-assets/strict-json.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const feedPath = path.join(root, "downloads", "hive-ide", "latest.json");
 const manifestPath = path.join(root, "downloads", "hive-ide", "hive-ide-release-manifest.json");
-const LATEST_BYTES = 4718;
-const TRUTH_MANIFEST_BYTES = 8861;
-const LATEST_GIT_BLOB = "9a616c35b0fd6b677dcac69846fdc90ec4efafd7";
-const TRUTH_MANIFEST_GIT_BLOB = "3affe5f01028f26fea9dd06ed9a4d07c25cf764a";
+const LATEST_BYTES = 4812;
+const TRUTH_MANIFEST_BYTES = 8957;
+const LATEST_GIT_BLOB = "493300e1f5b6848af1c3163b1228a062b859b2f8";
+const TRUTH_MANIFEST_GIT_BLOB = "db07ae1a613a37d57cab957b36b7e461c1e2c97c";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -49,8 +50,8 @@ function readPublishedSources() {
     manifestBytes,
     feedSource,
     manifestSource,
-    latest: parseJsonStrict(feedSource, "Hive IDE latest v2 feed"),
-    manifest: parseJsonStrict(manifestSource, "Hive IDE truth manifest v2"),
+    latest: parseJsonBytesStrict(feedBytes, "Hive IDE latest v2 feed"),
+    manifest: parseJsonBytesStrict(manifestBytes, "Hive IDE truth manifest v2"),
   };
 }
 
@@ -65,8 +66,8 @@ function expectLatestReject(label, fixtures, mutation) {
   mutation(latest);
   try {
     validateIdeReleaseLatest(latest);
-  } catch {
-    return { label, passed: true };
+  } catch (error) {
+    return { label, passed: error instanceof IdeReleaseContractError && error.code === "IDE_RELEASE_CONTRACT_VIOLATION", observedCode: error?.code ?? error?.name };
   }
   return { label, passed: false };
 }
@@ -77,17 +78,17 @@ function expectPairReject(label, fixtures, mutation) {
   mutation(latest, manifest);
   try {
     validatePair(latest, manifest, Date.parse(fixtures.latest.outerExecutableObservation.apiObservedAtUtc) + 1);
-  } catch {
-    return { label, passed: true };
+  } catch (error) {
+    return { label, passed: error instanceof IdeReleaseContractError && error.code === "IDE_RELEASE_CONTRACT_VIOLATION", observedCode: error?.code ?? error?.name };
   }
   return { label, passed: false };
 }
 
-function expectStrictJsonReject(label, source) {
+function expectStrictJsonReject(label, source, expectedCode) {
   try {
     parseJsonStrict(source, label);
-  } catch {
-    return { label, passed: true };
+  } catch (error) {
+    return { label, passed: error instanceof StrictJsonError && error.code === expectedCode, observedCode: error?.code ?? error?.name };
   }
   return { label, passed: false };
 }
@@ -122,7 +123,8 @@ function selfTest() {
     expectLatestReject("receipt_physical_digest_mismatch_refused", fixtures, (value) => { value.outerExecutableObservation.evidenceReceiptSha256 = "0".repeat(64); }),
     expectLatestReject("receipt_self_zero_digest_mismatch_refused", fixtures, (value) => { value.outerExecutableObservation.evidenceReceiptSelfZeroSha256 = "0".repeat(64); }),
     expectLatestReject("receipt_git_blob_mismatch_refused", fixtures, (value) => { value.outerExecutableObservation.evidenceReceiptGitBlobOid = "0".repeat(40); }),
-    expectLatestReject("receipt_availability_promotion_refused", fixtures, (value) => { value.outerExecutableObservation.evidenceReceiptAvailability = "LANDED_HASH_VERIFIED"; }),
+    expectLatestReject("receipt_landing_downgrade_refused", fixtures, (value) => { value.outerExecutableObservation.landingStatus = "SOURCE_CANDIDATE_NOT_LANDED"; }),
+    expectLatestReject("receipt_public_retrievability_promotion_refused", fixtures, (value) => { value.outerExecutableObservation.publicRetrievability = "PUBLICLY_RETRIEVABLE"; }),
     expectLatestReject("observation_future_rewrite_refused", fixtures, (value) => { value.outerExecutableObservation.apiObservedAtUtc = "2027-08-23T19:20:09Z"; }),
     expectLatestReject("observation_inverted_window_refused", fixtures, (value) => { value.outerExecutableObservation.validUntilUtc = value.outerExecutableObservation.downloadHashObservedAtUtc; }),
     expectLatestReject("raw_http_retention_promotion_refused", fixtures, (value) => { value.outerExecutableObservation.rawHttpRetained = true; }),
@@ -145,40 +147,42 @@ function selfTest() {
     expectPairReject("historical_clean_worktree_promotion_refused", fixtures, (_latest, manifest) => { manifest.historicalBuildDeclarations.sourceWorktrees = true; }),
     expectPairReject("historical_offline_bundle_promotion_refused", fixtures, (_latest, manifest) => { manifest.historicalBuildDeclarations.offlineBundledDependencies = true; }),
     expectPairReject("installed_application_field_refused", fixtures, (_latest, manifest) => { manifest.historicalBuildDeclarations.installedApplication = true; }),
-    expectStrictJsonReject("duplicate_root_json_key_refused", '{"schema":"first","schema":"second"}'),
-    expectStrictJsonReject("duplicate_nested_json_key_refused", '{"outerExecutableObservation":{"status":"first","status":"second"}}'),
-    expectStrictJsonReject("non_finite_json_number_refused", '{"installerSizeBytes":1e999}'),
-    expectStrictJsonReject("malformed_json_refused", '{"schema":'),
-    expectStrictJsonReject("invalid_utf8_replacement_refused", '{"schema":"\uFFFD"}'),
+    expectStrictJsonReject("duplicate_root_json_key_refused", '{"schema":"first","schema":"second"}', "JSON_DUPLICATE_KEY"),
+    expectStrictJsonReject("duplicate_nested_json_key_refused", '{"outerExecutableObservation":{"status":"first","status":"second"}}', "JSON_DUPLICATE_KEY"),
+    expectStrictJsonReject("non_finite_json_number_refused", '{"installerSizeBytes":1e999}', "JSON_NON_FINITE_NUMBER"),
+    expectStrictJsonReject("malformed_json_refused", '{"schema":', "JSON_MISSING_VALUE"),
+    expectStrictJsonReject("invalid_utf8_replacement_refused", '{"schema":"\uFFFD"}', "JSON_INVALID_UTF8"),
+    expectStrictJsonReject("bom_refused", "\uFEFF{}", "JSON_BOM_FORBIDDEN"),
+    expectStrictJsonReject("unpaired_surrogate_refused", '{"x":"\\ud800"}', "JSON_UNPAIRED_SURROGATE"),
+    expectStrictJsonReject("normalization_collision_refused", '{"é":1,"e\\u0301":2}', "JSON_NORMALIZATION_COLLISION"),
+    expectStrictJsonReject("non_rfc8259_whitespace_refused", '{\u00a0"x":1}', "JSON_EXPECTED_STRING"),
   ];
   const ok = tests.every((test) => test.passed);
   console.log(JSON.stringify({ schema: "hive.ide.public_hub_release_self_test.v2", ok, testCount: tests.length, tests }, null, 2));
   if (!ok) process.exitCode = 1;
 }
 
-function validatePublishedFeed() {
+function validatePublishedFeed(trustedNow = Date.now()) {
   const fixtures = readPublishedSources();
-  const observedAt = Date.parse(fixtures.latest.outerExecutableObservation.apiObservedAtUtc);
-  const validUntil = Date.parse(fixtures.latest.outerExecutableObservation.validUntilUtc);
-  const admitted = validatePair(fixtures.latest, fixtures.manifest, observedAt + 1);
-  assert(admitted.evidenceCurrent === true, "frozen within-window Hive IDE observation was not admitted");
-  const expired = validatePair(fixtures.latest, fixtures.manifest, validUntil);
-  assert(expired.evidenceCurrent === false, "Hive IDE observation remained current at its exact expiry boundary");
+  const admitted = validatePair(fixtures.latest, fixtures.manifest, trustedNow);
   assert(fixtures.latest.truthManifestSha256 === sha256(fixtures.manifestBytes), "latest v2 does not bind the exact local truth-manifest bytes");
   assert(fixtures.latest.downloadDisposition.status === "HOLD"
     && fixtures.latest.downloadDisposition.activeDownloadAuthorized === false
     && fixtures.latest.claimPlanes.packageContents.status === "UNKNOWN"
     && fixtures.latest.claimPlanes.installation.status === "UNKNOWN"
     && fixtures.latest.claimPlanes.runtime.status === "UNKNOWN"
-    && fixtures.latest.claimPlanes.productLive.status === "FALSE"
+    && fixtures.latest.claimPlanes.productLive.status === "UNKNOWN"
     && fixtures.latest.claimPlanes.publicFunctionalTesting.status === "HOLD", "published Hive IDE v2 exceeded its evidence or authorization ceiling");
   console.log(
-    `IDE_RELEASE_V2_OK version=${fixtures.latest.version} tag=${fixtures.latest.releaseTag} outer_bytes=${fixtures.latest.outerExecutableObservation.status} authenticode=${fixtures.latest.publisherAuthentication.authenticodeStatus} package=${fixtures.latest.claimPlanes.packageContents.status} runtime=${fixtures.latest.claimPlanes.runtime.status} functional_testing=${fixtures.latest.claimPlanes.publicFunctionalTesting.status} download=${fixtures.latest.downloadDisposition.status} latest=${IDE_RELEASE_LATEST_SHA256.slice(0, 12)} truth=${IDE_RELEASE_TRUTH_MANIFEST_SHA256.slice(0, 12)}`,
+    `IDE_RELEASE_V2_OK structural=STRUCTURAL_SCHEMA_OK current=${admitted.evidenceCurrent ? "CURRENT_EVIDENCE_OK" : "CURRENT_EVIDENCE_EXPIRED_HOLD"} version=${fixtures.latest.version} tag=${fixtures.latest.releaseTag} receipt_landing=${fixtures.latest.outerExecutableObservation.landingStatus} retrievability=${fixtures.latest.outerExecutableObservation.publicRetrievability} outer_bytes=${fixtures.latest.outerExecutableObservation.status} authenticode=${fixtures.latest.publisherAuthentication.authenticodeStatus} package=${fixtures.latest.claimPlanes.packageContents.status} runtime=${fixtures.latest.claimPlanes.runtime.status} product_live=${fixtures.latest.claimPlanes.productLive.status} functional_testing=${fixtures.latest.claimPlanes.publicFunctionalTesting.status} download=${fixtures.latest.downloadDisposition.status} latest=${IDE_RELEASE_LATEST_SHA256.slice(0, 12)} truth=${IDE_RELEASE_TRUTH_MANIFEST_SHA256.slice(0, 12)}`,
   );
 }
 
 if (process.argv.includes("--self-test")) {
   selfTest();
 } else {
-  validatePublishedFeed();
+  const nowArgument = process.argv.find((value) => value.startsWith("--now="));
+  const trustedNow = nowArgument ? Date.parse(nowArgument.slice("--now=".length)) : Date.now();
+  assert(Number.isFinite(trustedNow), "--now must be an RFC3339 timestamp");
+  validatePublishedFeed(trustedNow);
 }

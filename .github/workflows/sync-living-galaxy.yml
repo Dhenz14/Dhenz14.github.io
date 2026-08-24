@@ -25,7 +25,9 @@ jobs:
         with:
           ref: main
           path: site
-          fetch-depth: 1
+          # Default signed-release verification is archive-portable. Full history is
+          # fetched independently to verify the same fixture against historical OIDs.
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Check private-source credential availability
@@ -168,12 +170,17 @@ jobs:
           node --check hub-assets/galaxy-core.mjs
           node --check script/sync-galaxy-snapshot.mjs
           node --check script/mark-galaxy-bridge-inactive.mjs
+          node --check script/hub-facts-custody.mjs
+          node script/hub-facts-custody.mjs --self-test
           node script/check-central-hub.mjs
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
-          node script/check-http-surface.mjs
+          node script/check-public-pages-artifact.mjs
           node script/check-publisher-races.mjs
           node script/check-signed-release.mjs
+          node script/check-signed-release.mjs --verify-git-provenance
+          node script/check-signed-release.mjs --self-test
+          node script/check-signed-release-portability.mjs --git-archive
           git diff --check
 
       - name: Upload only the inert snapshot candidate
@@ -192,7 +199,6 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
-      pages: write
     steps:
       - name: Check out current Pages main
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -257,12 +263,17 @@ jobs:
           node --check hub-assets/galaxy-core.mjs
           node --check script/sync-galaxy-snapshot.mjs
           node --check script/mark-galaxy-bridge-inactive.mjs
+          node --check script/hub-facts-custody.mjs
+          node script/hub-facts-custody.mjs --self-test
           node script/check-central-hub.mjs
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
-          node script/check-http-surface.mjs
+          node script/check-public-pages-artifact.mjs
           node script/check-publisher-races.mjs
           node script/check-signed-release.mjs
+          node script/check-signed-release.mjs --verify-git-provenance
+          node script/check-signed-release.mjs --self-test
+          node script/check-signed-release-portability.mjs --git-archive
           git diff --check
 
       - name: Publish one exact snapshot commit onto living Pages main
@@ -274,8 +285,8 @@ jobs:
           candidate_path="$GITHUB_WORKSPACE/candidate/hub-facts.json"
           candidate_sha="$(sha256sum "$candidate_path" | cut -d' ' -f1)"
           base_sha="$(git show HEAD:hub-assets/hub-facts.json | sha256sum | cut -d' ' -f1)"
-          observed_sha="$(node -p 'require(process.argv[1]).hiveAi.sourceCommit' "$candidate_path")"
-          bridge_enabled="$(node -p 'require(process.argv[1]).refresh.automaticBridgeEnabled' "$candidate_path")"
+          observed_sha="$(node script/hub-facts-custody.mjs --file "$candidate_path" --field hiveAi.sourceCommit)"
+          bridge_enabled="$(node script/hub-facts-custody.mjs --file "$candidate_path" --field refresh.automaticBridgeEnabled)"
           if [[ "$bridge_enabled" == "true" ]]; then
             commit_subject="chore(galaxy): absorb Hive-AI ${observed_sha:0:12}"
           else
@@ -317,9 +328,12 @@ jobs:
             node script/check-central-hub.mjs
             node script/check-galaxy-bridge.mjs
             node script/check-galaxy-core.mjs
-            node script/check-http-surface.mjs
+            node script/check-public-pages-artifact.mjs
             node script/check-publisher-races.mjs
             node script/check-signed-release.mjs
+            node script/check-signed-release.mjs --verify-git-provenance
+            node script/check-signed-release.mjs --self-test
+            node script/check-signed-release-portability.mjs --git-archive
             git diff --check
             git add hub-assets/hub-facts.json
             git commit -m "$commit_subject"
@@ -340,25 +354,3 @@ jobs:
           done
           echo "Pages main moved through all bounded pushes; the next scheduled run will reconcile again."
           exit 1
-
-      - name: Ensure current Pages main has a build or retry
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          landed_sha="$(git -C site rev-parse HEAD)"
-          latest_commit=""
-          latest_status=""
-          if latest_commit="$(gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest" --jq '.commit // ""')" \
-            && latest_status="$(gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest" --jq '.status // ""')"; then
-            echo "Latest Pages build commit=${latest_commit:-missing} status=${latest_status:-missing}"
-          else
-            echo "Latest Pages build could not be read; requesting a recovery build."
-          fi
-          if [[ "$latest_commit" != "$landed_sha" \
-            || ( "$latest_status" != "built" && "$latest_status" != "building" ) ]]; then
-            gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
-          else
-            echo "Pages already has a built or building deployment for current main."
-          fi

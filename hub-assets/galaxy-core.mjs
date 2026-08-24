@@ -83,7 +83,7 @@ export function buildPublicHandoffUrl({ presentation, sourceCommit, graphHash, l
   const canonicalLevel = PUBLIC_HANDOFF_LEVELS[String(level || "").toLowerCase()];
   const rawNode = String(node || "");
   const canonicalNode = /^neuron:N\d{3}$/.test(rawNode) ? rawNode.slice("neuron:".length) : rawNode;
-  if (!["0", "1"].includes(route)
+  if (route !== "1"
     || !HEX40.test(String(sourceCommit || ""))
     || !HEX64.test(String(graphHash || ""))
     || !canonicalLens
@@ -115,8 +115,9 @@ export function sourceSnapshotPresentation(capturedAt, automaticBridgeEnabled, n
   return Object.freeze({
     freshness: freshness.state,
     bridge,
-    badgeState: freshness.state !== "invalid" && bridge === "configured" ? "" : "stale",
-    label: `${freshness.state === "invalid" ? ageLabel : "Verified source snapshot"} · ${bridge === "configured" ? "auto-sync configured" : "manual snapshot"}`,
+    freshnessDisposition: freshness.state === "recent" ? "CURRENT_EVIDENCE_OK" : "FRESHNESS_HOLD",
+    badgeState: freshness.state === "recent" ? "" : "stale",
+    label: `${ageLabel} · ${freshness.state === "invalid" ? "source binding held" : "source binding verified"} · ${freshness.state === "recent" ? "freshness recent" : "freshness HOLD"} · ${bridge === "configured" ? "auto-sync configured" : "manual snapshot"}`,
   });
 }
 

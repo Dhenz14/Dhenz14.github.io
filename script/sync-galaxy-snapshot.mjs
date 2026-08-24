@@ -6,6 +6,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { parseJsonBytesStrict } from "../hub-assets/strict-json.mjs";
+import { readHubFactsSync } from "./hub-facts-custody.mjs";
+
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputPath = path.join(siteRoot, "hub-assets", "hub-facts.json");
 const GENERATOR_VERSION = "3.0.0";
@@ -13,6 +16,7 @@ const SNAPSHOT_VERSION = "3.0.0";
 const RENDERER_CONTRACT_PATH = "hiveai/static/living-anatomy/src/galaxy-contract.json";
 const RENDERER_CONTRACT_HASH = "698d9c371ebe98b47cffbf10643080cb06ccb2c06267d580349063fb992230ad";
 const CANONICAL_GEOMETRY_HASH = "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314";
+const COMPILED_SNAPSHOT_MAX_BYTES = 512 * 1024;
 const REQUIRED_PUBLISHER_EVIDENCE_PATHS = Object.freeze([
   "data/neuron_swarm/portable_green_evidence_membership_20260722.json",
   "tests/fixtures/physiology/formal_l3_e01_v2/RATIFY_L3_E01_V2.json",
@@ -104,6 +108,18 @@ function runBytes(command, args) {
     maxBuffer: 128 * 1024 * 1024,
     stdio: ["ignore", "pipe", "pipe"],
   });
+}
+
+function runCompiledJson(command, args) {
+  const bytes = execFileSync(command, args, {
+    encoding: null,
+    maxBuffer: COMPILED_SNAPSHOT_MAX_BYTES,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  if (bytes.length === 0 || bytes.length > COMPILED_SNAPSHOT_MAX_BYTES) {
+    fail(`compiled JSON escaped the 1..${COMPILED_SNAPSHOT_MAX_BYTES} byte envelope`);
+  }
+  return parseJsonBytesStrict(bytes, "compiled source snapshot");
 }
 
 function sha256(value) {
@@ -253,14 +269,14 @@ for (const repositoryPath of REQUIRED_PUBLISHER_EVIDENCE_PATHS) {
 }
 verifyMaterializedSource(RENDERER_CONTRACT_PATH);
 
-const compiled = JSON.parse(run("env", [
+const compiled = runCompiledJson("env", [
   "PYTHONDONTWRITEBYTECODE=1",
   "python3",
   "-B",
   "-c",
   PYTHON_BUILD,
   hiveAiRepo,
-]));
+]);
 const graph = compiled.graph;
 const publicGeometry = compiled.public_geometry;
 const rendererContract = compiled.renderer_contract;
@@ -503,7 +519,7 @@ const base = {
   },
 };
 
-const previous = fs.existsSync(outputPath) ? JSON.parse(fs.readFileSync(outputPath, "utf8")) : null;
+const previous = fs.existsSync(outputPath) ? readHubFactsSync(outputPath, "previous hub-facts snapshot") : null;
 const previousBase = previous ? { ...previous } : null;
 if (previousBase) {
   delete previousBase.capturedAt;

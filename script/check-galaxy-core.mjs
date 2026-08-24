@@ -39,11 +39,12 @@ import {
   validPublicGeometryProjection,
   validSnapshot,
 } from "../hub-assets/galaxy-core.mjs";
+import { readHubFactsSync } from "./hub-facts-custody.mjs";
 
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const facts = JSON.parse(fs.readFileSync(path.join(root, "hub-assets", "hub-facts.json"), "utf8"));
+const facts = readHubFactsSync(path.join(root, "hub-assets", "hub-facts.json"), "galaxy core fixture");
 const clone = (value) => structuredClone(value);
 const TITLE_MINOR_WORDS = new Set(["a", "an", "and", "as", "at", "but", "by", "for", "in", "nor", "of", "on", "or", "per", "the", "to", "via", "with"]);
 const titleCase = (value) => String(value || "").toLowerCase().replace(/\b[a-z0-9']+/g, (word, offset) =>
@@ -205,8 +206,8 @@ for (const automaticBridgeEnabled of [true, false]) {
   const expectedBridge = automaticBridgeEnabled ? "configured" : "manual";
   const expectedSuffix = automaticBridgeEnabled ? "auto-sync configured" : "manual snapshot";
   assert([recent, aged, historical].every((value) => value.bridge === expectedBridge && value.label.endsWith(expectedSuffix)), `bridge=${automaticBridgeEnabled} was not reported separately`);
-  const expectedBadgeState = automaticBridgeEnabled ? "" : "stale";
-  assert([recent, aged, historical].every((value) => value.badgeState === expectedBadgeState && value.label.startsWith("Verified source snapshot")), `validated snapshot status was coupled to source age for bridge=${automaticBridgeEnabled}`);
+  assert(recent.badgeState === "" && recent.freshnessDisposition === "CURRENT_EVIDENCE_OK", `recent source capture was not current for bridge=${automaticBridgeEnabled}`);
+  assert([aged, historical].every((value) => value.badgeState === "stale" && value.freshnessDisposition === "FRESHNESS_HOLD" && value.label.includes("freshness HOLD")), `aged source capture escaped freshness HOLD for bridge=${automaticBridgeEnabled}`);
 }
 assert(sourceSnapshotPresentation("not-a-date", true, freshnessNow).badgeState === "stale", "invalid source capture received a verified badge");
 
@@ -218,16 +219,16 @@ const handoffMatrix = [
     expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=mastery&node=division%3AA&level=district`,
   },
   {
-    input: { presentation: "0", lens: "artifact", node: "neuron:N640", level: "neuron" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=build&node=N640&level=neuron`,
+    input: { presentation: "1", lens: "artifact", node: "neuron:N640", level: "neuron" },
+    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=build&node=N640&level=neuron`,
   },
   {
     input: { presentation: "1", lens: "evidence", node: "family:P4", level: "family" },
     expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=evidence&node=family%3AP4&level=family`,
   },
   {
-    input: { presentation: "0", lens: "runtime", node: "N001", level: "interior" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=runtime&node=N001&level=interior`,
+    input: { presentation: "1", lens: "runtime", node: "N001", level: "interior" },
+    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=runtime&node=N001&level=interior`,
   },
   {
     input: { presentation: "1", lens: "product", node: "", level: "body" },
@@ -241,6 +242,7 @@ for (const row of handoffMatrix) {
   assert(keys.join(",") === "presentation,publicContextVersion,sourceCommit,graphHash,lens,node,level", "handoff query allowlist/order drifted");
 }
 assert(buildPublicHandoffUrl({ ...handoffMatrix[0].input, sourceCommit: "main", graphHash: handoffGraph }) === null, "unbound source handoff was emitted");
+assert(buildPublicHandoffUrl({ ...handoffMatrix[0].input, presentation: "0", sourceCommit: handoffCommit, graphHash: handoffGraph }) === null, "operator mode was aliased onto the presentation service");
 
 const directorState = {
   lens: "evidence", activeDivision: 7, activeFamily: 29, activeNeuron: 298,

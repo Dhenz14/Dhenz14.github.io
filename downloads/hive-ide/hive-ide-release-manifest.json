@@ -57,7 +57,8 @@
       "evidenceReceiptSha256": "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56",
       "evidenceReceiptSelfZeroSha256": "8bf78ee21940a064daf51a621ecca7a4bbb9431f5cf7292a29b233a40f3da15b",
       "evidenceReceiptGitBlobOid": "3703036fc42ab35413462ff343b5357a7dae9f05",
-      "evidenceReceiptAvailability": "SOURCE_CANDIDATE_NOT_LANDED"
+      "landingStatus": "LANDED_HASH_VERIFIED",
+      "publicRetrievability": "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
     },
     "publisherAuthentication": {
       "status": "NOT_SIGNED",
@@ -152,7 +153,7 @@
       "claim": "No current process, listener, behavior, restart, rollback, or operator-control attestation exists."
     },
     "productLive": {
-      "status": "FALSE",
+      "status": "UNKNOWN",
       "observedAtUtc": null,
       "validUntilUtc": null,
       "evidenceRef": "claimPlanes.runtime",
@@ -182,5 +183,5 @@
     "testCreditsRedeemable": false,
     "evidenceRef": "outerExecutable.publisherAuthentication + claimPlanes.publicFunctionalTesting"
   },
-  "claimBoundary": "PUBLIC_REMOTE_OUTER_EXE_BYTES_VERIFIED_UNTIL_2026-08-24T19:20:09.7630961Z; AUTHENTICODE_NOT_SIGNED; PACKAGE_CONTENTS_INSTALLATION_RUNTIME_UNKNOWN; PRODUCT_LIVE_FALSE; PUBLIC_FUNCTIONAL_TESTING_HOLD"
+  "claimBoundary": "PUBLIC_REMOTE_OUTER_EXE_BYTES_VERIFIED_UNTIL_2026-08-24T19:20:09.7630961Z; AUTHENTICODE_NOT_SIGNED; PACKAGE_CONTENTS_INSTALLATION_RUNTIME_PRODUCT_LIVE_UNKNOWN; RECEIPT_LANDED_PRIVATE_NOT_PUBLICLY_RETRIEVABLE; PUBLIC_FUNCTIONAL_TESTING_HOLD"
 }

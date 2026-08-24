@@ -7,12 +7,13 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { validSnapshot } from "../hub-assets/galaxy-core.mjs";
+import { readHubFactsSync } from "./hub-facts-custody.mjs";
 
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const marker = path.join(root, "script", "mark-galaxy-bridge-inactive.mjs");
-const fixture = JSON.parse(fs.readFileSync(path.join(root, "hub-assets", "hub-facts.json"), "utf8"));
+const fixture = readHubFactsSync(path.join(root, "hub-assets", "hub-facts.json"), "galaxy bridge fixture");
 fixture.refresh = {
   privateSourceMode: "scheduled-living-main-publisher",
   automaticBridgeEnabled: true,
@@ -26,23 +27,29 @@ const run = (...args) => spawnSync(process.execPath, [marker, ...args, "--facts-
   encoding: "utf8",
 });
 const sourceBound = ({ refresh: _refresh, snapshotHash: _snapshotHash, ...value }) => value;
+const assertRefresh = (actual, expected) => {
+  assert.deepEqual(Object.keys(actual).sort(), Object.keys(expected).sort(), "bridge refresh keys drifted");
+  for (const [key, value] of Object.entries(expected)) {
+    assert.equal(actual[key], value, `bridge refresh ${key} drifted`);
+  }
+};
 
 try {
   fs.writeFileSync(factsPath, `${JSON.stringify(fixture, null, 2)}\n`, "utf8");
-  const before = JSON.parse(fs.readFileSync(factsPath, "utf8"));
+  const before = readHubFactsSync(factsPath, "galaxy bridge before state");
 
   const unauthorized = run();
   assert.notEqual(unauthorized.status, 0, "marker must refuse missing fail-closed authority flag");
-  assert.deepEqual(JSON.parse(fs.readFileSync(factsPath, "utf8")), before, "refused invocation changed facts");
+  assert.deepEqual(readHubFactsSync(factsPath, "refused galaxy bridge state"), before, "refused invocation changed facts");
   const ambiguous = run("--credential-missing", "--checkout-failed");
   assert.notEqual(ambiguous.status, 0, "marker must refuse ambiguous fail-closed authority flags");
-  assert.deepEqual(JSON.parse(fs.readFileSync(factsPath, "utf8")), before, "ambiguous invocation changed facts");
+  assert.deepEqual(readHubFactsSync(factsPath, "ambiguous galaxy bridge state"), before, "ambiguous invocation changed facts");
 
   const disabled = run("--credential-missing");
   assert.equal(disabled.status, 0, disabled.stderr);
-  const after = JSON.parse(fs.readFileSync(factsPath, "utf8"));
+  const after = readHubFactsSync(factsPath, "inactive galaxy bridge state");
   assert.deepEqual(sourceBound(after), sourceBound(before), "marker changed source-bound fields");
-  assert.deepEqual(after.refresh, {
+  assertRefresh(after.refresh, {
     privateSourceMode: "manual-source-bound-snapshot",
     automaticBridgeEnabled: false,
     reasonCode: "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
@@ -58,7 +65,7 @@ try {
   fs.writeFileSync(factsPath, `${JSON.stringify(fixture, null, 2)}\n`, "utf8");
   const checkoutFailed = run("--checkout-failed");
   assert.equal(checkoutFailed.status, 0, checkoutFailed.stderr);
-  const failedCheckoutFacts = JSON.parse(fs.readFileSync(factsPath, "utf8"));
+  const failedCheckoutFacts = readHubFactsSync(factsPath, "failed-checkout galaxy bridge state");
   assert.equal(failedCheckoutFacts.refresh.automaticBridgeEnabled, false);
   assert.equal(failedCheckoutFacts.refresh.reasonCode, "PRIVATE_SOURCE_CHECKOUT_FAILED");
   assert.deepEqual(sourceBound(failedCheckoutFacts), sourceBound(fixture), "checkout failure marker changed source-bound fields");

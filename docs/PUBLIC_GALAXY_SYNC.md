@@ -26,9 +26,11 @@ to the authenticated local Living Anatomy surface.
 The public adapter consumes that projection through the one existing Canvas2D
 atlas; the authenticated local adapter retains its Three.js machinery. They
 converge on geometry, camera, event, status-language, and fallback semantics,
-not private data or copied renderer bundles. After an explicit click, a local
-handoff may carry only its version, source commit, graph hash, lens, node, and
-level. Pages never probes, starts, or claims availability of a local surface.
+not private data or copied renderer bundles. A future local handoff may carry
+only its version, source commit, graph hash, lens, node, and level. The current
+public candidate keeps that action disabled until the strict local runtime is
+separately attested. Pages never probes, starts, or claims availability of a
+local surface.
 
 `script/mark-galaxy-bridge-inactive.mjs` has one narrow fail-closed authority:
 it can retain all source facts while changing only the refresh boundary from
@@ -74,14 +76,17 @@ cloud publication:
    the committed hash and one-path diff, and retries up to three times. If a
    concurrent writer changed the facts, that writer wins and the next scheduled
    run recompiles from fresh source truth.
-8. GitHub intentionally does not start branch-based Pages builds for commits
-   authored with `GITHUB_TOKEN`, so the publisher compares the latest Pages
-   build to current `main` and explicitly requests or retries the legacy build
-   whenever the commit is absent or its prior build failed.
-9. Any source, validation, Actions, push, or deployment-request failure leaves
-   the last-good public snapshot untouched. The page identifies the exact
-   represented commit and continues polling the deployed same-origin snapshot
-   while visible.
+8. The snapshot publisher never requests a legacy branch-root Pages build.
+   `.github/workflows/publish-reviewed-pages.yml` builds a brand-new empty stage
+   from the reviewed public allowlist and deploys only that exact artifact.
+9. `GITHUB_TOKEN` pushes do not emit another push workflow, so a guarded
+   `workflow_run` route follows a successful `Sync living galaxy` completion.
+   It binds to exact current Pages `main`, refuses a stale artifact, and uses the
+   same staged membership and HTTP-surface checks without a PAT.
+10. Any source, validation, Actions, push, or deployment failure leaves the
+    last-good public snapshot untouched. The page identifies the exact
+    represented commit and continues polling the deployed same-origin snapshot
+    while visible.
 
 GitHub's five-minute schedule is a convergence target, not a real-time SLA;
 scheduled runs can be delayed by the service. Seconds-level push triggering
@@ -123,7 +128,7 @@ node script/sync-galaxy-snapshot.mjs --check \
 node script/check-central-hub.mjs
 node script/check-galaxy-bridge.mjs
 node script/check-galaxy-core.mjs
-node script/check-http-surface.mjs
+node script/check-public-pages-artifact.mjs
 node script/check-signed-release.mjs
 node --check hub-assets/hub.js
 node --check hub-assets/galaxy-core.mjs
@@ -133,5 +138,6 @@ node script/check-live-parity.mjs --origin https://dhenz14.github.io
 ```
 
 Run the live-parity command only after the reviewed Pages commit has deployed;
-it compares the public bytes of the hub, snapshot, code, and root discovery
-assets against the landed checkout.
+it compares every allowlisted public byte against the landed checkout, parses
+the deliberate public JSON with the strict parser, and requires every private,
+fixture, and retired raw-path probe to return 404 or 410.

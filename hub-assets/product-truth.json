@@ -1,16 +1,33 @@
 {
-  "schema": "hive.ecosystem.product-truth.public-projection.v1",
-  "version": "1.0.0",
+  "schema": "hive.ecosystem.product-truth.public-projection.v2",
+  "version": "2.0.0",
   "status": "SOURCE_BOUND_TRUTH_WITH_SUBJECT_SCOPED_RUNTIME_UNKNOWNS",
+  "evidenceLedger": {
+    "schema": "hive.ecosystem.product-truth.evidence-ledger.ref.v1",
+    "path": "hub-assets/product-truth-ledger.v1.json",
+    "version": 1,
+    "integrityClass": "SELF_BOUND_INTEGRITY",
+    "independentTrustRoot": false,
+    "authorizedPublicationAttested": false,
+    "bytes": 4653,
+    "sha256": "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259",
+    "gitBlobOid": "943db0a4b30bb4dba38de3db62c5898fd9785e5c",
+    "headEntryId": "local-body-handoff-boundary-v1"
+  },
   "canonicalManifest": {
     "status": "LANDED_HASH_VERIFIED",
+    "landingStatus": "LANDED_HASH_VERIFIED",
+    "publicRetrievability": "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE",
     "repository": "Dhenz14/Hive-AI",
     "path": "configs/public/constellation_architecture_v1.json",
     "evidenceSourceCommit": "472131baa2bc212a043966773bd92477c3a8a16c",
     "evidenceSourceTree": "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00",
-    "candidateSha256": "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056",
-    "candidateBytes": 49342,
-    "candidateGitBlobOid": "c1036d2fc877e058965688fe8da5097576a37826",
+    "candidateSemanticSha256": "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791",
+    "candidateSha256": "9e324cae2a6b8975d0451a1343166d5c802397595fd4b89a8d4af091574b0948",
+    "candidateBytes": 31198,
+    "candidateGitBlobOid": "3cc7a08282dedaeb7c07a193dd3cc8a4a34124d6",
+    "candidateFirstGreenCommit": "5e3f974c8a80064d2388ea81cb151117555ff6b4",
+    "candidateLastPrelandingCommit": "ade641d988e933be5441d7f5ec15bea616d2bda7",
     "landedCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
     "landedTree": "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
     "landedSha256": "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056",
@@ -18,7 +35,7 @@
     "landedGitBlobOid": "c1036d2fc877e058965688fe8da5097576a37826",
     "audit": {
       "status": "PASS",
-      "bindingStatus": "LANDED_HASH_VERIFIED",
+      "bindingStatus": "SOURCE_BOUND_MATCH",
       "authorityConferred": false
     }
   },
@@ -33,7 +50,7 @@
     "claim_plane": "TARGET"
   },
   "source": {
-    "projectionRole": "bounded public projection of a source candidate; not the canonical manifest at evidence pin, a served/main receipt, runtime telemetry, behavior evidence, or authority",
+    "projectionRole": "bounded public projection of LANDED SOURCE at 0ab04f6c and its PUBLISHED SNAPSHOT captured 2026-08-23T22:53:32Z, derived from an EVIDENCE BASELINE at 472131baa; FRESHNESS is separate and HOLD; not a public served/main receipt, runtime telemetry, behavior evidence, public retrievability, or authority",
     "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
     "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
     "snapshotHash": "634524e22039c696387a455fe0c1bd1d04e544a5745967acf4d27509fd882088",
@@ -47,11 +64,11 @@
   "boundaries": {
     "architectureVsLive": {
       "status": "SEPARATE_PLANES",
-      "claim": "The public atlas and this projection describe source-bound architecture. Local presentation and operator bodies are anonymous read-only GET surfaces when separately available; authority-bearing Mission Control mutations are credential-gated when configured. Installed runtime, route availability, and observed behavior require independent evidence."
+      "claim": "The public atlas and this projection describe source-bound architecture. The explicit local presentation handoff at 127.0.0.1:5002 is UNKNOWN_UNPROBED_HOLD. A dedicated Operator Body is expected as a distinct 127.0.0.1:5003 service but is HOLD_NOT_INDEPENDENTLY_OBSERVED and disabled here; it is never aliased to the presentation route. Chat is WAIT. Installed runtime, route availability, observed behavior, and product-live state require independent evidence."
     },
     "currentVsLegacy": {
       "status": "SUBJECT_SCOPED_DISPOSITIONS",
-      "claim": "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron is REMOVED on the current Hive IDE trunk; the published tester.5 build predates that removal by 302 commits and still bundles Electron. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held."
+      "claim": "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron-removal and Tauri/WebView2 source were observed only on the unprotected Hive IDE candidate branch hive/wt/theyc/ide-electron-final-20260822 at f459e85; that candidate is not landed on the default branch. Tester.5 exact package contents are UNKNOWN_NOT_INSPECTED. The prior claim that tester.5 still bundles Electron is SUPERSEDED_REVOKED_UNSUPPORTED. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST; tester.6 publication is held."
     },
     "noLlmClaim": {
       "status": "HOLD",
@@ -67,7 +84,7 @@
       "claim_plane": "TARGET",
       "evidence": "Exact source-doctrine files and the strict canonical candidate audit at the evidence baseline; landing readback hash verified",
       "evidenceRef": "Dhenz14/Hive-AI source baseline 472131baa2bc212a043966773bd92477c3a8a16c: AGENTS.md sha256 ceb29594ec3948243924c2c6529e19a341d0bed6f14702347a793a3d1b0a0ef6; README.md sha256 7f31169a6aa6ce05bc130b9c595688f6dba27f0cd5c397d712f3223a90d1f827; configs/external_agent_first_policy.json sha256 b142036b547c0a0b5800e428af7cb0bfa0957ecd467bf20e7c1a52847bbd258c; later landing readback Dhenz14/Hive-AI@0ab04f6c19ffd41bb162bea674e77853fb27cc0e: configs/public/constellation_architecture_v1.json sha256 a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056; 49342 bytes",
-      "verifiedAt": "2026-08-23T18:46:30Z",
+      "verifiedAt": "2026-08-23T22:53:32Z",
       "validUntil": null,
       "freshness": "IMMUTABLE_SOURCE_BOUND_DOCTRINE_AT_EVIDENCE_BASELINE",
       "invalidators": [
@@ -111,7 +128,7 @@
       "claim_plane": "SOURCE_PRESENT",
       "evidence": "Pinned catalog, registry, and public graph projection at the immutable Hive-AI evidence baseline",
       "evidenceRef": "hub-assets/hub-facts.json; Dhenz14/Hive-AI@0ab04f6c19ffd41bb162bea674e77853fb27cc0e configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 46626c1662d1fe04e056ba1c44926184d523c65d490a76ad89acd2e58e04f62c",
-      "verifiedAt": "2026-08-23T18:46:30Z",
+      "verifiedAt": "2026-08-23T22:53:32Z",
       "validUntil": null,
       "freshness": "IMMUTABLE_SOURCE_CUT",
       "invalidators": [
@@ -245,7 +262,7 @@
         "installation",
         "execution",
         "installed runtime",
-        "current source atlas",
+        "published atlas snapshot identity",
         "runtime behavior",
         "product-live"
       ],
@@ -332,7 +349,7 @@
         "contradictory owner-repository observation",
         "durable receipt supersedes this observation"
       ],
-      "claim": "A non-durable external observation reports a Windows x64 NSIS host with a packaged Linux x86_64 runtime used inside Ubuntu WSL. This is candidate design, not landing, installation, or runtime proof.",
+      "claim": "A bounded external source observation found Electron-removal and Tauri/WebView2 on the unprotected Hive IDE candidate branch at f459e85, 92 commits ahead and 0 behind default tip 41df9be. The change is not landed on the default branch. This is source-candidate evidence, not tester.5 package contents, installation, or runtime proof.",
       "doesNotProve": [
         "a second platform package",
         "landing",
@@ -343,10 +360,10 @@
         "product-live"
       ],
       "recertification": null,
-      "ownerRepository": "Hive IDE",
+      "ownerRepository": "Dhenz14/hive-ide",
       "repositoryRef": "hive/wt/theyc/ide-electron-final-20260822",
       "repositoryCommit": "f459e85cc71801afbed4a8579b31133b9ff58edd",
-      "designTopology": "Windows x64 NSIS host with a packaged Linux x86_64 runtime used inside Ubuntu WSL.",
+      "designTopology": "Tauri/WebView2 source observed on an unprotected candidate branch; default branch landing not proven.",
       "evidencePersistence": "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT"
     },
     "linux_hive_ide_publication": {
@@ -523,7 +540,7 @@
   ],
   "registryClaimCut": {
     "status": "HOLD",
-    "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+    "sourceCommit": "472131baa2bc212a043966773bd92477c3a8a16c",
     "derivedAt": "2026-08-23T18:46:30Z",
     "authority": "full_catalog_grant_bound_influence_accounting_via_agent_query",
     "runtimeEnabled": 37,
@@ -555,16 +572,16 @@
     },
     {
       "id": "windows-wsl-design",
-      "label": "Windows + WSL · candidate design",
+      "label": "Hive IDE · Tauri candidate source",
       "subjectId": "windows_wsl_candidate_design",
       "subjectKind": "CROSS_REPOSITORY_CANDIDATE_DESIGN",
       "claimPlane": "EXTERNAL_SOURCE_OBSERVATION",
-      "scope": "TESTER_DESIGN_TOPOLOGY",
-      "supportStatus": "DECLARED_INSIDE_WINDOWS_TESTER_PATH",
-      "testStatus": "NOT_A_SEPARATE_PUBLIC_PACKAGE",
-      "packageStatus": "BUNDLED_TOPOLOGY_NOT_PLATFORM_ARTIFACT",
+      "scope": "UNPROTECTED_SOURCE_CANDIDATE",
+      "supportStatus": "CANDIDATE_BRANCH_NOT_LANDED",
+      "testStatus": "SOURCE_OBSERVED_NOT_PACKAGE_INSPECTED",
+      "packageStatus": "TESTER5_UNKNOWN_NOT_INSPECTED",
       "signingStatus": "NOT_APPLICABLE",
-      "evidence": "A non-durable external observation reports Windows plus WSL candidate design at one exact Hive IDE ref and commit. This is not durable custody, a second package, landing, installation, or runtime proof.",
+      "evidence": "A bounded external source observation found Electron-removal and Tauri/WebView2 at candidate commit f459e85 on an unprotected branch. Default tip 41df9be does not contain that candidate. Tester.5 package contents remain UNKNOWN_NOT_INSPECTED; this is not landing, installation, or runtime proof.",
       "evidenceRef": "truth_subjects.windows_wsl_candidate_design",
       "verifiedAt": "2026-08-23T18:46:30Z",
       "validUntil": null,
@@ -583,7 +600,7 @@
       "signingStatus": "NOT_APPLICABLE",
       "evidence": "Linux core source and development paths exist at the evidence baseline. This row makes no native public Hive IDE package claim.",
       "evidenceRef": "truth_subjects.source_atlas; Dhenz14/Hive-AI@472131baa2bc212a043966773bd92477c3a8a16c README.md",
-      "verifiedAt": "2026-08-23T18:46:30Z",
+      "verifiedAt": "2026-08-23T22:53:32Z",
       "validUntil": null,
       "freshness": "IMMUTABLE_SOURCE_CUT"
     },
@@ -623,10 +640,12 @@
     }
   ],
   "integrityBoundary": {
+    "integrityClass": "SELF_BOUND_INTEGRITY",
+    "independentTrustRoot": false,
+    "authorizedPublicationAttested": false,
     "manifestSelfHashProvesSemanticTruth": false,
     "authorityConferred": false,
-    "sourceCandidateNotLanded": false,
-    "claim": "The projection digest verifies canonicalized same-origin bytes and source binding only. It is not a detached signature, served/main receipt, runtime attestation, behavior observation, operator grant, or product-live authority."
+    "claim": "The projection digest and versioned append-only ledger model provide SELF_BOUND_INTEGRITY for canonicalized same-origin bytes and source binding. This mutable Pages branch does not establish an INDEPENDENT_TRUST_ROOT or attest authorized publication. It is not a detached signature, served/main receipt, runtime attestation, behavior observation, operator grant, or product-live authority."
   },
   "bindingDigest": {
     "algorithm": "sha256",
@@ -634,6 +653,6 @@
     "excluded": [
       "bindingDigest"
     ],
-    "value": "8f4b8cb598be24aef974e4f685bb92dd49e4b58958d4d44caf33d952e1e44b53"
+    "value": "4a6f343f344a2dc1015d039dd2201a5014ee04719cc0167ac69c74459ec46558"
   }
 }

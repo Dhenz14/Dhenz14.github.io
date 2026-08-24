@@ -12,12 +12,15 @@ import {
   validSnapshot,
 } from "../hub-assets/galaxy-core.mjs";
 import { validateIdeReleaseLatest, validateIdeReleaseTruthManifest } from "../hub-assets/ide-release-core.mjs";
-import { parseJsonStrict, validatePublishedProductTruth } from "./check-product-truth.mjs";
+import { parseJsonBytesStrict, parseJsonStrict, StrictJsonError } from "../hub-assets/strict-json.mjs";
+import { validatePublishedProductTruth } from "./check-product-truth.mjs";
+import { readHubFactsSync, selfTestHubFactsCustody } from "./hub-facts-custody.mjs";
 
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
+const readBytes = (relative) => fs.readFileSync(path.join(root, relative));
 const TITLE_MINOR_WORDS = new Set(["a", "an", "and", "as", "at", "but", "by", "for", "in", "nor", "of", "on", "or", "per", "the", "to", "via", "with"]);
 const titleCase = (value) => String(value || "").toLowerCase().replace(/\b[a-z0-9']+/g, (word, offset) =>
   (offset > 0 && TITLE_MINOR_WORDS.has(word)) ? word : word.charAt(0).toUpperCase() + word.slice(1));
@@ -66,7 +69,10 @@ const required = [
   ".gitattributes",
   ".github/workflows/sync-living-galaxy.yml",
   ".github/workflows/verify-public-hub.yml",
+  ".github/workflows/publish-reviewed-pages.yml",
   ".github/workflows/hive-ide-public-windows-smoke.yml",
+  ".github/pages-public-allowlist.v1.json",
+  ".github/pages-templates/hivepoa-quarantine.html",
   "docs/PUBLIC_GALAXY_SYNC.md",
   "favicon.svg",
   "favicon.ico",
@@ -76,8 +82,11 @@ const required = [
   "hub-assets/ide-release-core.mjs",
   "hub-assets/hub-facts.json",
   "hub-assets/product-truth.json",
+  "hub-assets/product-truth-ledger.v1.json",
+  "hub-assets/strict-json.mjs",
   "hub-assets/og.png",
   "downloads/hive-ide/latest.json",
+  "downloads/hive-ide/hive-ide-release-manifest.json",
   "script/sync-galaxy-snapshot.mjs",
   "script/mark-galaxy-bridge-inactive.mjs",
   "script/check-galaxy-bridge.mjs",
@@ -86,9 +95,13 @@ const required = [
   "script/check-ide-release.mjs",
   "script/run-ide-public-windows-smoke.ps1",
   "script/check-signed-release.mjs",
+  "script/check-signed-release-portability.mjs",
   "script/check-live-parity.mjs",
   "script/check-publisher-races.mjs",
   "script/check-product-truth.mjs",
+  "script/build-public-pages.mjs",
+  "script/check-public-pages-artifact.mjs",
+  "script/hub-facts-custody.mjs",
   "script/publisher-candidate-policy.mjs",
   "script/requirements-galaxy-sync.txt",
   "HivePoA/index.html",
@@ -99,10 +112,38 @@ const required = [
   "HivePoA/tester-network/index.html",
   "HivePoA/distribution/index.html",
   "HivePoA/public-surface-quarantine-receipt.json",
-  "HivePoA/distribution-assets/tester-network-authorization.js",
+  ".github/test-fixtures/hivepoa/portable-signed-release-fixture.v1.json",
+  ".github/test-fixtures/hivepoa/historical-index-1a607c451406.html",
+  ".github/test-fixtures/hivepoa/tester-network-authorization-3f397e3bc3a6.js",
 ];
 for (const relative of required) {
   if (!fs.existsSync(path.join(root, relative))) throw new Error(`required hub path missing: ${relative}`);
+}
+
+const retiredRawPublicPaths = Object.freeze([
+  "HivePoA/distribution-assets/distribution.css",
+  "HivePoA/distribution-assets/distribution.js",
+  "HivePoA/distribution-assets/tester-network-authorization.d.ts",
+  "HivePoA/distribution-assets/tester-network-authorization.js",
+  "HivePoA/cid-mirrors/bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge.json",
+  "HivePoA/cid-mirrors/bafkreibdvxhdmkxbnf6iqnvmloc3q3t2ngq34psakn5ys26yddn3z7xr5q.json",
+  "HivePoA/cid-mirrors/bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y.json",
+  "HivePoA/cid-mirrors/bafkreicglv7rvpweykprefu72z742ynj6by3p6vmwtnnqzti553njjvg24.json",
+  "HivePoA/cid-mirrors/bafkreicnn2esivmzvtaqucmjcyysqixqaff2z32glicfs6ifsuckwvdc2a.json",
+  "HivePoA/cid-mirrors/bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4.json",
+  "HivePoA/cid-mirrors/bafkreiepwx7dxa4ljdfr2ygtclzfex7qhmwjpxdbgl54v6pcmdtjenpdaq.json",
+  "HivePoA/cid-mirrors/bafkreifzenpkcb4pcu7ih5j3eb4jf6ooki6vnunxqg3bjd5a4tmrwwguly.json",
+  "HivePoA/cid-mirrors/bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy.json",
+  "HivePoA/cid-mirrors/bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu.json",
+  "HivePoA/cid-mirrors/bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka.json",
+  "HivePoA/cid-mirrors/bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki.json",
+  "HivePoA/cid-mirrors/bafkreihdfh5a2tig56aobhfmfjp5njxiguijg7ni2umy2bwxxigftaqeo4.json",
+  "HivePoA/cid-mirrors/bafkreihhvomr6ncawwsg6fd4ma5rkrtkpsqgqzdyu4w6yd7egdzh7rqqte.json",
+  "HivePoA/cid-mirrors/bafkreihnwn65vtnyrohj5vbi6efzv3vvlfholk7pz2nqirutic63qcevea.json",
+  "HivePoA/cid-mirrors/bafkreihsrbx7h4sycmuf5mkmogpbvhqtbbhp7lajwxulrvjslsslzmjjky.json",
+]);
+for (const relative of retiredRawPublicPaths) {
+  if (fs.existsSync(path.join(root, relative))) throw new Error(`retired raw public asset is still present: ${relative}`);
 }
 
 const hivePoaQuarantineRoutes = Object.freeze([
@@ -141,7 +182,7 @@ if (quarantineReceiptBytes.length !== 5310
   || quarantineReceiptBlob !== "a4ff709e53106fd932224c6d7a6f2e48ee13e7e0") {
   throw new Error("HivePoA quarantine receipt physical identity drifted");
 }
-const quarantineReceipt = parseJsonStrict(quarantineReceiptBytes.toString("utf8"), "HivePoA quarantine receipt");
+const quarantineReceipt = parseJsonBytesStrict(quarantineReceiptBytes, "HivePoA quarantine receipt");
 const quarantinedReceiptPaths = quarantineReceipt.quarantinedEntries?.map((entry) => entry.path).sort();
 if (quarantineReceipt.schema !== "hivepoa.public_surface_quarantine.v1"
   || quarantineReceipt.status !== "ACTIVE_CANDIDATE_NOT_DEPLOYED"
@@ -173,10 +214,26 @@ if (quarantineReceipt.schema !== "hivepoa.public_surface_quarantine.v1"
   throw new Error("HivePoA quarantine receipt exceeded or diverged from the frozen seven-route HOLD");
 }
 
+const portableFixtureBytes = fs.readFileSync(path.join(root, ".github", "test-fixtures", "hivepoa", "portable-signed-release-fixture.v1.json"));
+const portableFixture = parseJsonBytesStrict(portableFixtureBytes, "portable signed-release fixture");
+if (portableFixture.currentDeployment?.status !== "UNKNOWN_NOT_OBSERVED"
+  || portableFixture.currentDeployment?.observedAt !== null
+  || portableFixture.currentDeployment?.receiptRef !== null
+  || portableFixture.currentDeployment?.reasonCode !== "NO_CURRENT_DEPLOYMENT_READBACK_IN_CANDIDATE") {
+  throw new Error("portable signed-release fixture invented current deployment truth");
+}
+
 const html = read("index.html");
 const gitAttributes = read(".gitattributes");
 const notFound = read("404.html");
 const css = read("hub-assets/hub.css");
+for (const [label, source] of [
+  ["root", html],
+  ["404", notFound],
+  ...hivePoaQuarantineRoutes.map((relative) => [relative, read(relative)]),
+]) {
+  requireNoMatch(source, /(?:cid-mirrors|distribution-assets|\.github\/test-fixtures)/i, `${label} retired raw-asset dependency`);
+}
 const zeroSquintCopyBlock = boundedBlock(css, "/* ZERO_SQUINT_COPY_START */", "/* ZERO_SQUINT_COPY_END */", "zero-squint copy");
 const zeroSquintMetaBlock = boundedBlock(css, "/* ZERO_SQUINT_META_START */", "/* ZERO_SQUINT_META_END */", "zero-squint metadata");
 const expectedZeroSquintCopySelectors = [
@@ -346,7 +403,8 @@ const galaxyCore = read("hub-assets/galaxy-core.mjs");
 const ideReleaseCore = read("hub-assets/ide-release-core.mjs");
 const generator = read("script/sync-galaxy-snapshot.mjs");
 const bridgeFailClosed = read("script/mark-galaxy-bridge-inactive.mjs");
-const facts = JSON.parse(read("hub-assets/hub-facts.json"));
+const facts = readHubFactsSync(path.join(root, "hub-assets", "hub-facts.json"), "checked-in hub-facts snapshot");
+const hubFactsHostileCases = selfTestHubFactsCustody();
 const valueAfter = (flag) => {
   const index = process.argv.indexOf(flag);
   return index >= 0 ? process.argv[index + 1] : undefined;
@@ -376,15 +434,16 @@ const expectedLanding = landingFlagCount
   }
   : PINNED_LANDING;
 const productTruthVerification = validatePublishedProductTruth({ selfTest: true, expectedLanding });
-const browserTruthStart = js.indexOf('const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v1";');
+const browserTruthStart = js.indexOf('const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v2";');
 const browserTruthEnd = js.indexOf("function createTruthElement", browserTruthStart);
 if (browserTruthStart < 0 || browserTruthEnd <= browserTruthStart) {
   throw new Error("browser Product Truth validator implementation block missing");
 }
 const browserTruthValidatorFactory = new Function(
-  `${js.slice(browserTruthStart, browserTruthEnd)}\nreturn { canonicalJson, parseProductTruthJsonStrict, validateProductTruthManifest };`,
+  "parseJsonStrict",
+  `${js.slice(browserTruthStart, browserTruthEnd)}\nreturn { canonicalJson, parseProductTruthJsonStrict, validateProductTruthManifest, ProductTruthBrowserError };`,
 );
-const browserTruthApi = browserTruthValidatorFactory();
+const browserTruthApi = browserTruthValidatorFactory(parseJsonStrict);
 const rebindBrowserTruthFixture = (fixture) => {
   const projection = structuredClone(fixture);
   delete projection.bindingDigest;
@@ -395,21 +454,41 @@ const expectBrowserTruthReject = async (label, mutate) => {
   mutate(fixture);
   rebindBrowserTruthFixture(fixture);
   try {
-    await browserTruthApi.validateProductTruthManifest(fixture, facts);
-  } catch {
-    return { label, passed: true };
+    await browserTruthApi.validateProductTruthManifest(fixture, facts, productTruthVerification.ledger);
+  } catch (error) {
+    return {
+      label,
+      passed: error instanceof browserTruthApi.ProductTruthBrowserError && error.code === "PRODUCT_TRUTH_BROWSER_CONTRACT_VIOLATION",
+      observedCode: error?.code ?? error?.name ?? typeof error,
+    };
   }
   return { label, passed: false };
 };
-const expectBrowserTruthJsonReject = (label, source) => {
+const expectBrowserTruthJsonReject = (label, source, expectedCode) => {
   try {
     browserTruthApi.parseProductTruthJsonStrict(source);
-  } catch {
-    return { label, passed: true };
+  } catch (error) {
+    return {
+      label,
+      passed: error instanceof StrictJsonError && error.code === expectedCode,
+      observedCode: error?.code ?? error?.name ?? typeof error,
+    };
   }
   return { label, passed: false };
 };
-await browserTruthApi.validateProductTruthManifest(productTruthVerification.manifest, facts);
+const expectBrowserTruthBytesReject = (label, bytes, expectedCode) => {
+  try {
+    parseJsonBytesStrict(bytes, `${label} fixture`);
+  } catch (error) {
+    return {
+      label,
+      passed: error instanceof StrictJsonError && error.code === expectedCode,
+      observedCode: error?.code ?? error?.name ?? typeof error,
+    };
+  }
+  return { label, passed: false };
+};
+await browserTruthApi.validateProductTruthManifest(productTruthVerification.manifest, facts, productTruthVerification.ledger);
 const browserTruthSelfTests = await Promise.all([
   expectBrowserTruthReject("browser_rehashed_identity_answer_refused", (value) => { value.what_architecture_am_i.answer = "GENERIC_HIVE"; }),
   expectBrowserTruthReject("browser_rehashed_installed_runtime_promotion_refused", (value) => { value.truth_subjects.installed_runtime.subject_status = "PRODUCT_LIVE"; }),
@@ -437,23 +516,31 @@ const browserTruthSelfTests = await Promise.all([
     windows.testStatus = "FUNCTIONALLY_CERTIFIED";
     windows.packageStatus = "PUBLIC_HTTPS_ARTIFACT_BYTES_VERIFIED";
   }),
-  expectBrowserTruthJsonReject("browser_duplicate_manifest_key_refused", '{"schema":"first","schema":"second"}'),
-  expectBrowserTruthJsonReject("browser_nested_duplicate_manifest_key_refused", '{"truth_subjects":{"released_tester_5":{"claim":"first","claim":"second"}}}'),
-  expectBrowserTruthJsonReject("browser_malformed_manifest_refused", '{"schema":'),
+  expectBrowserTruthJsonReject("browser_duplicate_manifest_key_refused", '{"schema":"first","schema":"second"}', "JSON_DUPLICATE_KEY"),
+  expectBrowserTruthJsonReject("browser_nested_duplicate_manifest_key_refused", '{"truth_subjects":{"released_tester_5":{"claim":"first","claim":"second"}}}', "JSON_DUPLICATE_KEY"),
+  expectBrowserTruthJsonReject("browser_malformed_manifest_refused", '{"schema":', "JSON_MISSING_VALUE"),
+  expectBrowserTruthJsonReject("browser_bom_refused", '\uFEFF{"schema":1}', "JSON_BOM_FORBIDDEN"),
+  expectBrowserTruthJsonReject("browser_unpaired_surrogate_refused", '{"value":"\\ud800"}', "JSON_UNPAIRED_SURROGATE"),
+  expectBrowserTruthJsonReject("browser_normalization_collision_refused", '{"e\\u0301":1,"é":2}', "JSON_NORMALIZATION_COLLISION"),
+  expectBrowserTruthJsonReject("browser_non_rfc8259_whitespace_refused", '{\u00a0"schema":1}', "JSON_EXPECTED_STRING"),
+  expectBrowserTruthJsonReject("browser_non_finite_number_refused", '{"value":1e999}', "JSON_NON_FINITE_NUMBER"),
+  expectBrowserTruthBytesReject("browser_invalid_utf8_refused", new Uint8Array([0x7b, 0x22, 0xc3, 0x28, 0x22, 0x3a, 0x31, 0x7d]), "JSON_INVALID_UTF8"),
 ]);
 if (browserTruthSelfTests.some((test) => !test.passed)) {
   throw new Error(`browser Product Truth hostile self-test failed: ${browserTruthSelfTests.filter((test) => !test.passed).map((test) => test.label).join(",")}`);
 }
-const ideLatestSource = read("downloads/hive-ide/latest.json");
-const ideTruthManifestSource = read("downloads/hive-ide/hive-ide-release-manifest.json");
-if (sha256(ideLatestSource) !== "8398740abf77ea67ff5288c69ab1805f1987a5f0b0259b935d1d6cc4462e2e51"
-  || Buffer.byteLength(ideLatestSource, "utf8") !== 4718
-  || sha256(ideTruthManifestSource) !== "ed4fb1fe43dc17ccc81886e2e8dfcded89b1a4e864ff05fd49247681295a18cb"
-  || Buffer.byteLength(ideTruthManifestSource, "utf8") !== 8861) {
+const ideLatestBytes = readBytes("downloads/hive-ide/latest.json");
+const ideTruthManifestBytes = readBytes("downloads/hive-ide/hive-ide-release-manifest.json");
+const ideLatestSource = ideLatestBytes.toString("utf8");
+const ideTruthManifestSource = ideTruthManifestBytes.toString("utf8");
+if (sha256(ideLatestBytes) !== "ea379e56f119f4f1e7f57befb1d7314aa3daefb8a97bcb28b6c811526a7de9f1"
+  || ideLatestBytes.byteLength !== 4812
+  || sha256(ideTruthManifestBytes) !== "9032328c7de85a750ae0f945ca29094782d2d20444737cbc39724a50b4603622"
+  || ideTruthManifestBytes.byteLength !== 8957) {
   throw new Error("Hive IDE v2 public truth bytes drifted from the frozen candidate");
 }
-const ideLatest = parseJsonStrict(ideLatestSource, "Hive IDE latest v2 feed");
-const ideTruthManifest = parseJsonStrict(ideTruthManifestSource, "Hive IDE release truth manifest v2");
+const ideLatest = parseJsonBytesStrict(ideLatestBytes, "Hive IDE latest v2 feed");
+const ideTruthManifest = parseJsonBytesStrict(ideTruthManifestBytes, "Hive IDE release truth manifest v2");
 const validatedIdeLatest = validateIdeReleaseLatest(ideLatest);
 const validatedIdeTruth = validateIdeReleaseTruthManifest(ideTruthManifest, validatedIdeLatest, {
   now: Date.parse(ideLatest.outerExecutableObservation.apiObservedAtUtc) + 1,
@@ -472,7 +559,7 @@ exactKeys(ideLatest.outerExecutableObservation, [
   "status", "observer", "apiObservedAtUtc", "downloadHashObservedAtUtc", "validUntilUtc", "validityPolicy", "method", "releaseId",
   "assetId", "assetState", "responseChain", "tlsVerified", "fullBodyDownloaded", "exactByteCountMatched", "exactSha256Matched",
   "rawHttpRetained", "independentlySigned", "evidenceRef", "evidenceReceiptSchema", "evidenceReceiptId", "evidenceReceiptBytes",
-  "evidenceReceiptSha256", "evidenceReceiptSelfZeroSha256", "evidenceReceiptGitBlobOid", "evidenceReceiptAvailability",
+  "evidenceReceiptSha256", "evidenceReceiptSelfZeroSha256", "evidenceReceiptGitBlobOid", "landingStatus", "publicRetrievability",
 ], "Hive IDE outer executable observation");
 exactKeys(ideLatest.publisherAuthentication, [
   "status", "publisherAuthenticated", "authenticodeStatus", "signerCertificate", "timestampCertificate", "observedAtUtc", "validUntilUtc",
@@ -533,7 +620,8 @@ if (outerObservation.status !== "PUBLIC_REMOTE_BYTES_VERIFIED"
   || outerObservation.evidenceReceiptSha256 !== "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56"
   || outerObservation.evidenceReceiptSelfZeroSha256 !== "8bf78ee21940a064daf51a621ecca7a4bbb9431f5cf7292a29b233a40f3da15b"
   || outerObservation.evidenceReceiptGitBlobOid !== "3703036fc42ab35413462ff343b5357a7dae9f05"
-  || outerObservation.evidenceReceiptAvailability !== "SOURCE_CANDIDATE_NOT_LANDED"
+  || outerObservation.landingStatus !== "LANDED_HASH_VERIFIED"
+  || outerObservation.publicRetrievability !== "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
   || Date.parse(outerObservation.validUntilUtc) <= Date.parse(outerObservation.apiObservedAtUtc)) {
   throw new Error("tester.5 remote outer-byte observation or receipt custody drifted");
 }
@@ -551,7 +639,7 @@ if (ideLatest.claimPlanes.outerExecutableBytes.status !== "VERIFIED"
   || ideLatest.claimPlanes.packageContents.status !== "UNKNOWN"
   || ideLatest.claimPlanes.installation.status !== "UNKNOWN"
   || ideLatest.claimPlanes.runtime.status !== "UNKNOWN"
-  || ideLatest.claimPlanes.productLive.status !== "FALSE"
+  || ideLatest.claimPlanes.productLive.status !== "UNKNOWN"
   || ideLatest.claimPlanes.publicFunctionalTesting.status !== "HOLD"
   || ideLatest.downloadDisposition.status !== "HOLD"
   || ideLatest.downloadDisposition.activeDownloadAuthorized !== false
@@ -569,7 +657,7 @@ if (ideTruthManifest.schema !== "hive.ide.public_release_truth_manifest.v2"
   || ideTruthManifest.claimPlanes?.packageContents?.status !== "UNKNOWN"
   || ideTruthManifest.claimPlanes?.installation?.status !== "UNKNOWN"
   || ideTruthManifest.claimPlanes?.runtime?.status !== "UNKNOWN"
-  || ideTruthManifest.claimPlanes?.productLive?.status !== "FALSE"
+  || ideTruthManifest.claimPlanes?.productLive?.status !== "UNKNOWN"
   || ideTruthManifest.claimPlanes?.publicFunctionalTesting?.status !== "HOLD"
   || ideTruthManifest.downloadDisposition?.activeDownloadAuthorized !== false) {
   throw new Error("Hive IDE latest and truth manifest evidence planes diverged");
@@ -611,12 +699,6 @@ const forcedColorsWiring = boundedBlock(
   "this.applyRenderAvailability(this.forcedColors.matches);",
   "forced-colors wiring",
 );
-const localHandoffWiring = boundedBlock(
-  js,
-  "function wireLocalHandoffGate()",
-  "class FieldRenderer",
-  "local-runtime handoff wiring",
-);
 const wheelWiring = boundedBlock(
   js,
   'this.canvas.addEventListener("wheel"',
@@ -636,25 +718,41 @@ for (const [name, source] of [["index.html", html], ["404.html", notFound]]) {
 }
 
 requireMatch(html, /One Constellation Brain\.[\s\S]*Every system in orbit\./, "hero Constellation identity");
-requireMatch(html, /Reasoning layer[\s\S]*Hive-AI[\s\S]*Proof layer[\s\S]*HivePoA/, "system boundary");
+requireMatch(html, /Reasoning layer[\s\S]*Hive-AI[\s\S]*Historical boundary · HOLD[\s\S]*HivePoA[\s\S]*No public actions · runtime unknown/, "held HivePoA system boundary");
+requireMatch(html, /Held proof boundary[\s\S]*Boundary[\s\S]*HivePoA · HOLD/, "held HivePoA hero readout");
 requireMatch(html, /source-badge[^>]+title="JavaScript verifies[^>]*>[\s\S]*Snapshot verification pending/, "truthful no-JS source state");
 requireMatch(html, /data-motion-toggle[^>]+aria-disabled="true"[^>]+disabled[^>]*>[\s\S]*Motion control pending/, "inert no-JS motion control");
 requireMatch(html, /<noscript>[\s\S]*no package or live-source claim is authorized/, "explicit no-JS truth boundary");
+const noScriptBlock = boundedBlock(html, "<noscript>", "</noscript>", "no-script truth boundary");
+requireMatch(noScriptBlock, /Source freshness, manifest validation, and motion controls need JavaScript/, "no-script source and manifest boundary");
+requireNoMatch(noScriptBlock, /signed-index|HivePoA verifier/i, "no-script quarantined HivePoA action claim");
+requireMatch(html, /data-command-step="0"[\s\S]*Constellation Atlas[\s\S]*Observe source-authored topology/, "Mission begins from the public Atlas rather than unobserved Living Anatomy");
 requireMatch(html, /id="galaxy"/, "public galaxy section");
-requireMatch(html, /Evidence enters[\s\S]*HiveBrain routes[\s\S]*Evidence gates[\s\S]*Approved change lands[\s\S]*After authority \+ validation/, "immediate causal hero story");
+requireMatch(html, /class="hero-outcomes"[\s\S]*Ask Hive[\s\S]*Ground answers in visible evidence[\s\S]*Build with Hive[\s\S]*Shape changes you can inspect[\s\S]*Improve Hive[\s\S]*Promote only after proof/, "immediate outcome-first hero story");
 requireMatch(html, /class="button button-primary hero-enter" href="#pipeline"[\s\S]*Watch one request travel through Hive[\s\S]*Target path · proof gates · zero effects/, "dominant causal-trace hero entry");
-requireMatch(html, /data-hero-atlas-cta[^>]+data-galaxy-open[^>]+href="#galaxy"/, "dominant full-atlas hero entry");
-requireMatch(html, /data-hero-atlas-cta[\s\S]*Enter the living galaxy[\s\S]*Explore all 640 neurons/, "explicit secondary atlas CTA");
-requireMatch(html, /data-hero-source[\s\S]*data-hero-freshness[\s\S]*data-fact="twitches"[\s\S]*data-fact="pmOnly"[\s\S]*Runtime/, "compact public truth rail");
+requireMatch(html, /data-hero-atlas-cta[^>]+href="#galaxy"/, "semantic Atlas anchor hero entry");
+requireNoMatch(html, /data-hero-atlas-cta[^>]+data-galaxy-open/, "hero anchor intercepted as a dialog opener");
+requireMatch(html, /data-hero-atlas-cta[\s\S]*Explore the Constellation Atlas[\s\S]*640 source-authored capabilities/, "explicit source-atlas CTA");
+const heroCopyStart = html.indexOf('<div class="hero-copy"');
+const heroCopyEnd = html.indexOf('<div class="hero-system"', heroCopyStart);
+if (heroCopyStart < 0 || heroCopyEnd <= heroCopyStart) throw new Error("bounded opening hero copy is missing");
+const openingHeroCopy = html.slice(heroCopyStart, heroCopyEnd);
+requireNoMatch(openingHeroCopy, /\b(?:H10|BYOM|tester\.\d+|SHA-256|workflow history)\b|472131baa|0ab04f6c/i, "plain-language opening before forensic detail");
+requireMatch(html, /class="semantic-roadmap[\s\S]*TARGET EXPERIENCE[\s\S]*Ask Hive[\s\S]*Designed to turn[\s\S]*TARGET EXPERIENCE[\s\S]*Build with Hive[\s\S]*Designed to route[\s\S]*TARGET EXPERIENCE[\s\S]*Improve Hive[\s\S]*blind evaluation, causal ablation, independent verification, and rollback-safe promotion/i, "three target-experience outcomes");
+requireMatch(html, /class="roadmap-rail"[\s\S]*SOURCE-PRESENT[\s\S]*source-authored Constellation Atlas[\s\S]*NEXT PROOF GATES[\s\S]*installed-process evidence[\s\S]*LONG-TERM TARGET[\s\S]*Hive-native generation[\s\S]*explicitly operator-invoked caller/i, "source-present proof-gates long-term roadmap");
 const constellationIdentityIndex = html.indexOf("HiveBrain Constellation");
 const publicGalaxyIndex = html.indexOf('id="galaxy"');
 if (constellationIdentityIndex < 0 || publicGalaxyIndex < 0 || constellationIdentityIndex > publicGalaxyIndex) {
   throw new Error("HiveBrain Constellation identity must be explained before the public galaxy");
 }
 requireMatch(html, /id="architecture"[^>]+data-current-legacy-boundary/, "current-versus-legacy architecture section");
-requireMatch(html, /data-metaphor-definitions[\s\S]*<h3>Neuron<\/h3>[\s\S]*448 trainable[\s\S]*192 deterministic[\s\S]*<h3>Halo<\/h3>[\s\S]*zero admitted or indexed items/i, "visible neuron and halo definitions with exact source ceilings");
-requireMatch(html, /data-architecture-live-boundary[\s\S]*Source architecture[\s\S]*Presentation body[\s\S]*Operator body[\s\S]*read-only local GET surface[\s\S]*credential-gated when configured/i, "architecture-versus-local surfaces boundary");
-requireMatch(html, /TARGET @ PINNED CUT[\s\S]*Constellation-native[\s\S]*SUBJECT-SCOPED DISPOSITIONS[\s\S]*BYOM and Electron retired[\s\S]*Electron is removed on the current Hive IDE trunk[\s\S]*tester\.5 predates that removal[\s\S]*Docker client requirements are not adjudicated[\s\S]*NO-LLM CLAIM · HOLD[\s\S]*centralized AI-as-user traffic until H10/i, "subject-scoped legacy and no-LLM HOLD translation");
+requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ 0ab04f6c · captured 2026-08-23 22:53:32 UTC[\s\S]*640[\s\S]*cataloged capabilities[\s\S]*636[\s\S]*unique row-backed Twitch records[\s\S]*448[\s\S]*trainable-classified identities/i, "published source snapshot metrics");
+requireMatch(html, /data-metaphor-definitions[\s\S]*<h3>Neuron<\/h3>[\s\S]*448 trainable-classified[\s\S]*192 deterministic-classified[\s\S]*<h3>Halo<\/h3>[\s\S]*EVIDENCE BASELINE @ 472131baa:[\s\S]*zero populated Halo sections and zero indexes/i, "separately cut neuron and Halo evidence ceilings");
+const publishedSnapshotSummary = boundedBlock(html, '<article class="constellation-core"', '<div class="doctrine-grid"', "published-snapshot summary");
+requireNoMatch(publishedSnapshotSummary, /\b37\b/, "misleading baseline influence count in published-snapshot summary");
+requireMatch(html, /data-architecture-live-boundary[\s\S]*Source architecture[\s\S]*Presentation body[\s\S]*No local runtime PASS is claimed[\s\S]*Dedicated Operator body[\s\S]*127\.0\.0\.1:5003[\s\S]*not been independently observed or deployed/i, "architecture-versus-local surfaces boundary");
+requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ 0ab04f6c · HISTORICAL CAPTURE[\s\S]*freshness HOLD[\s\S]*SUBJECT-SCOPED DISPOSITIONS[\s\S]*Electron removal remains an unlanded IDE candidate[\s\S]*hive\/wt\/theyc\/ide-electron-final-20260822[\s\S]*41df9be[\s\S]*UNKNOWN_NOT_INSPECTED[\s\S]*GENERATION BOUNDARY · HOLD[\s\S]*blind evaluation, causal ablation, independent verification, and rollback-safe promotion[\s\S]*Full source-doctrine term[\s\S]*centralized AI-as-user traffic until H10/i, "subject-scoped IDE and generation boundary translation");
+requireNoMatch(html, /current Hive IDE trunk uses Tauri|Electron is removed on the current Hive IDE trunk|tester\.5[^<]{0,120}bundles Electron/i, "unsupported current-trunk or package-content claim");
 requireMatch(html, /id="product-truth"[^>]+data-product-truth[^>]+data-state="checking"/, "fail-closed Product Truth root");
 requireMatch(html, /data-product-truth-status[^>]+role="status"[^>]+aria-live="polite"/, "Product Truth live validation status");
 requireMatch(html, /id="product-truth"[\s\S]*target brain,[\s\S]*source atlas,[\s\S]*released tester metadata,[\s\S]*installed runtime,[\s\S]*observed behavior[\s\S]*data-product-truth-claims/i, "subject-scoped Product Truth fallback");
@@ -662,8 +760,8 @@ requireMatch(html, /data-platform-matrix/, "platform artifact matrix");
 const heroCtaIndex = html.indexOf("data-hero-atlas-cta");
 const heroOrganismIndex = html.indexOf("data-hero-organism-preview");
 const heroSupportIndex = html.indexOf('class="hero-support"');
-if (heroCtaIndex === -1 || heroOrganismIndex <= heroCtaIndex || heroSupportIndex <= heroOrganismIndex) {
-  throw new Error("first-frame hero ordering must remain CTA, recognizable organism, then support detail");
+if (heroCtaIndex === -1 || heroOrganismIndex <= heroCtaIndex || heroSupportIndex !== -1) {
+  throw new Error("first-frame hero must remain outcome copy, semantic CTA, then recognizable organism without forensic support clutter");
 }
 const rootButtonTags = [...html.matchAll(/<button\b[^>]*>/g)].map((match) => match[0]);
 const startupLensButtons = rootButtonTags.filter((tag) => /\sdata-lens=/.test(tag));
@@ -705,40 +803,43 @@ requireMatch(html, /<\/label>\s*<\/div>\s*<\/div>\s*<p class="galaxy-atlas-statu
 requireMatch(html, /data-galaxy-division-nav-current[^>]*>A · Route, Hold, and Activation Budget<\//, "full initial compact division name");
 requireMatch(html, /<select[^>]+data-galaxy-division-nav-select[^>]+disabled[^>]+aria-disabled="true"[^>]*><\/select>/, "fail-closed native division select");
 requireMatch(html, /<select[^>]+data-galaxy-division-nav-select[^>]+aria-label="Jump to division"/, "explicit short-mode native division label");
-requireMatch(html, /data-galaxy-context-summary>Context unavailable · source not yet bound<[\s\S]*data-galaxy-context-copy>Context parameters remain unavailable until this browser validates/, "unbound local-context truth");
+requireMatch(html, /data-galaxy-context-summary>Context unavailable · source not yet bound<[\s\S]*data-galaxy-context-copy>Future context parameters remain unavailable until this browser validates/, "unbound future local-context truth");
 const directorButtons = rootButtonTags.filter((tag) => /\sdata-galaxy-director(?:\s|>)/.test(tag));
 if (directorButtons.length !== 1 || !directorButtons[0].includes('aria-pressed="false"')) {
   throw new Error(`exactly one startup Director control is required, found ${directorButtons.length}`);
 }
 requireMatch(html, /galaxy-inspector[\s\S]*galaxy-atlas-toolbar[\s\S]*data-galaxy-fit-selected[\s\S]*data-galaxy-director[\s\S]*data-galaxy-reset-modal/, "dominant focus action plus Director and recovery tools");
 requireMatch(html, /id="galaxy-director-motion-note"[^>]+data-galaxy-director-motion-note[^>]+hidden/, "adjacent reduced-motion Director explanation");
-requireMatch(html, /Gold means verified mastered Twitch\.[\s\S]*formal row-backed Twitch proof[\s\S]*does not by itself claim current execution, served influence, or product-live behavior[\s\S]*public atlas points stay neutral/i, "plain gold Twitch proof legend and public privacy boundary");
-requireMatch(html, /data-galaxy-division-name[^>]+aria-live="polite"[^>]+aria-atomic="true"/, "accessible full selected division stage label");
+requireMatch(html, /Gold marks a row-backed Twitch record\.[\s\S]*formal row-backed Twitch record[\s\S]*separately attested local Living Anatomy overlay[\s\S]*does not by itself claim current execution, served influence, or product-live behavior[\s\S]*public Atlas points stay neutral/i, "plain row-backed Twitch legend and public privacy boundary");
+requireMatch(html, /data-galaxy-division-name[^>]*>Focus · A · 40 neurons · 4 families/, "accessible full selected division stage label");
+requireNoMatch(html, /data-galaxy-division-name[^>]+aria-live|data-galaxy-director-caption[^>]+aria-live|data-galaxy-division-nav-current[^>]+aria-live/, "duplicate Atlas live regions");
 requireMatch(html, /16 DIVISIONS[\s\S]*64 FAMILIES[\s\S]*640 NEURONS/, "projector-readable atlas hierarchy key");
 requireMatch(html, /galaxy-mark-key[\s\S]*Body[\s\S]*Ring[\s\S]*division[\s\S]*Hub[\s\S]*family[\s\S]*Point[\s\S]*neuron[\s\S]*Route[\s\S]*authored membership/, "explicit atlas visual grammar without Halo collision");
 requireNoMatch(html, /galaxy-mark-key[\s\S]{0,500}<b>Halo<\/b>\s*division/i, "visual division ring named as neuron Halo");
 requireMatch(html, /galaxy-mobile-context[\s\S]*BODY[\s\S]*DIVISION[\s\S]*FAMILY[\s\S]*NEURON[\s\S]*data-fact="twitches"[\s\S]*PROVEN/, "mobile hierarchy and source-proof context");
 requireMatch(html, /galaxy-state-rail[\s\S]*data-fact="neurons"[\s\S]*data-fact="twitches"[\s\S]*data-fact="pmOnly"[\s\S]*data-galaxy-snapshot-state/, "aggregate public command state rail");
-requireMatch(html, /class="inspector-topline"[\s\S]*class="galaxy-family-list"[\s\S]*<details class="galaxy-gold-legend"[\s\S]*<summary>[\s\S]*Gold means verified mastered Twitch\.[\s\S]*<\/details>/, "selected context before collapsible public truth disclosure");
+requireMatch(html, /class="inspector-topline"[\s\S]*class="galaxy-family-list"[\s\S]*<details class="galaxy-gold-legend"[\s\S]*<summary>[\s\S]*Gold marks a row-backed Twitch record\.[\s\S]*<\/details>/, "selected context before collapsible public truth disclosure");
 if (facts.boundaries?.runtimeTelemetry === false) {
   requireNoMatch(html, /data-fact="twitches"[^>]*>[\s\S]{0,120}(?:\bLIVE\b|live Twitches|active live work|mastered-and-alive)/i, "source Twitch proof rendered as current runtime liveness");
   requireMatch(html, /data-fact="twitches"[^>]*>[\s\S]{0,120}(?:TWITCH-PROVEN|Twitch proofs|PROVEN)/i, "source Twitch proof language");
 }
-requireMatch(html, /Historical surface · availability held/, "historical HivePoA hero availability HOLD");
-requireMatch(html, /HivePoA \/ operator-key-signed index metadata[\s\S]*That validation does not prove current package delivery, a live coordinator, public enrollment, or execution\./, "HivePoA signed-index metadata ceiling");
-requireMatch(html, /Historical HivePoA tester-network metadata/, "historical HivePoA tester metadata label");
-requireMatch(html, /Package delivery[\s\S]*Not observed[\s\S]*Local byte hash[\s\S]*Not verified here[\s\S]*Local execution[\s\S]*Not observed/, "separate HivePoA delivery, local-byte, and execution evidence planes");
-requireMatch(html, /Prove package delivery separately[\s\S]*signed index alone does not fetch or verify transport[\s\S]*Live coordinator \+ enrollment held[\s\S]*No current coordinator or public-enrollment proof is carried here/i, "held HivePoA delivery, coordinator, and enrollment path");
+const hivePoaPanel = boundedBlock(html, '<section class="tester', '<section class="access', "HivePoA quarantine panel");
+requireMatch(hivePoaPanel, /actionless historical boundary[\s\S]*One quarantine panel\. No implied action\.[\s\S]*public actions quarantined · HOLD/i, "actionless HivePoA quarantine identity");
+requireMatch(hivePoaPanel, /Immutable observation[\s\S]*Historical metadata preserved[\s\S]*Current deployment[\s\S]*UNKNOWN · NOT OBSERVED[\s\S]*Runtime \+ behavior[\s\S]*UNKNOWN[\s\S]*Public actions[\s\S]*HOLD/i, "HivePoA observation and effective-disposition planes");
+requireMatch(hivePoaPanel, /executes no HivePoA verifier and publishes none of the retired delivery or authorization assets/i, "HivePoA staged-publication boundary");
+const hivePoaLinks = [...hivePoaPanel.matchAll(/<a\b[^>]+href=/g)];
+if (hivePoaLinks.length !== 1 || !/href="\/HivePoA\/"/.test(hivePoaPanel)) throw new Error("HivePoA quarantine must expose exactly one honest boundary link");
+requireNoMatch(hivePoaPanel, /<button\b|href="[^"]*(?:download|release|verify|tester|enroll)/i, "HivePoA quarantine action affordance");
 requireMatch(html, /id="ide-download"[^>]+data-ide-release data-state="checking"/, "inert Hive IDE release section");
-// The tester surface is now evidence-only: outer bytes are verified, but the download
-// itself is HELD. These gates enforce that stricter contract and, critically, that the
-// old "download then run anyway" onboarding has NOT come back.
-requireMatch(html, /Tester\.5 outer bytes verified\. Download authority still HOLD\./, "held tester download headline");
-requireMatch(html, /matched exactly[\s\S]{0,40}924864317[\s\S]{0,40}bytes and its SHA-256[\s\S]{0,80}Authenticode is[\s\S]{0,20}NotSigned[\s\S]{0,120}package contents, installation, and runtime remain[\s\S]{0,20}UNKNOWN/, "outer-byte verification scoped to bytes only");
-requireMatch(html, /This page exposes evidence but authorizes no download\./, "evidence-only download boundary");
-requireMatch(html, /DIFFERENT GENERATION[\s\S]*Tester\.5 must not be presented as realizing the mapped HiveBrain Constellation[\s\S]*0ab04f6c[\s\S]*a0fe6483/, "tester/atlas generation mismatch disclosed at the download surface");
-requireMatch(html, /Tester\.6 publication remains a separate HOLD\./, "tester.6 held separately from tester.5");
-requireMatch(html, /EVIDENCE LADDER[\s\S]*Remote outer bytes[\s\S]*VERIFIED[\s\S]*Publisher authentication[\s\S]*NOT SIGNED[\s\S]*Package contents[\s\S]*UNKNOWN[\s\S]*Installation \+ runtime[\s\S]*UNKNOWN[\s\S]*Public functional testing[\s\S]*HOLD/, "five-plane evidence ladder");
+const ideDownloadBlock = boundedBlock(html, '<section class="ide-release', '<section class="anatomy', "Hive IDE evidence section");
+// The tester surface is historical evidence only: both time-bounded public readbacks
+// are expired and every download/install/test action remains HELD.
+requireMatch(ideDownloadBlock, /Hive IDE integration \/ WAIT[\s\S]*The IDE is still being finished\. Integration remains WAIT\./, "IDE future integration headline");
+requireMatch(ideDownloadBlock, /not presented as available, installed, tested, or live[\s\S]*historical independent observation[\s\S]*outer bytes[\s\S]*evidence window has expired[\s\S]*NotSigned[\s\S]*package contents, installation, and runtime remain[\s\S]*UNKNOWN/i, "expired outer-byte observation scoped to historical bytes only");
+requireMatch(ideDownloadBlock, /authorizes no download\./, "evidence-only download boundary");
+requireMatch(ideDownloadBlock, /DIFFERENT GENERATION[\s\S]*Tester\.5 must not be presented as realizing the mapped HiveBrain Constellation[\s\S]*0ab04f6c[\s\S]*a0fe6483/, "tester/atlas generation mismatch disclosed at the download surface");
+requireMatch(ideDownloadBlock, /tester\.6 absence\/readback evidence is also expired[\s\S]*publication remains a separate HOLD pending fresh evidence and authority/i, "expired tester.6 readback remains visible and held");
+requireMatch(ideDownloadBlock, /EVIDENCE LADDER[\s\S]*Remote outer bytes[\s\S]*HISTORICAL \/ EXPIRED[\s\S]*Publisher authentication[\s\S]*NOT SIGNED[\s\S]*Package contents[\s\S]*UNKNOWN[\s\S]*Installation \+ runtime[\s\S]*UNKNOWN[\s\S]*Public functional testing[\s\S]*HOLD/, "five-plane expired evidence ladder");
 requireMatch(html, /A separate, unexpired operator authorization is required before this truth contract can expose an active download\./, "download requires separate operator authority");
 // "Run anyway" may appear exactly once, and only inside the sentence that refuses it.
 // Any second occurrence means the retired install-and-run onboarding has come back.
@@ -750,35 +851,26 @@ requireMatch(html, /No\s*[\u201c"]Run anyway[\u201d"]\s*guidance, install promis
   }
 }
 requireNoMatch(html, /One download\. Five calm steps\./, "retired one-download onboarding must not return while the download is held");
-requireMatch(html, /non-transferable, non-redeemable counter per accepted proof/, "non-transferable tester credit counter");
-requireMatch(html, /policy metadata, not evidence of a live award/, "credit policy is not an award receipt");
-requireMatch(html, /Credits have no monetary value\./, "valueless IDE tester credits");
 // The ecosystem diagram must not imply that a normal local prompt reaches chain,
 // IPFS, or pooled compute.
 requireMatch(html, /Ecosystem map[\s\S]{0,20}not a default prompt route/, "ecosystem map is not a prompt route");
 requireMatch(html, /does not claim that chain, IPFS, or pooled compute receives a normal local prompt; every handoff needs its own authorized route\./, "IDE versus HivePoA handoff boundary");
-requireMatch(html, /Local links never probe or start your machine\./, "public page never probes the visitor machine");
-requireMatch(html, /Not verified here/, "local-byte boundary");
+requireMatch(html, /public page never probes, starts, or aliases either service/i, "public page never probes the visitor machine");
 const localChatLinks = [...html.matchAll(/<a\b[^>]*\bhref=["'][^"']*\/chat(?:[/?#][^"']*)?["'][^>]*>/gi)];
 if (localChatLinks.length) {
   throw new Error(`presentation-safe hub must not expose a clickable local chat route, found ${localChatLinks.length}`);
 }
 requireNoMatch(js, /localChatUrl|127\.0\.0\.1:5002\/chat/, "browser-created local chat presentation route");
-requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1/, "local presentation body route");
-requireMatch(html, /http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=0/, "single-service local operator body route");
-requireMatch(html, /class="button button-quiet" data-hero-body-cta href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1" target="hive-local-body" rel="noreferrer"/, "direct hero Living Anatomy entry");
-requireMatch(html, /class="button button-quiet" href="#ide-download"/, "subordinate Hive IDE download handoff");
-requireMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1"[^>]*target="hive-local-body"[^>]*rel="noreferrer"/, "safe presentation body navigation");
-requireMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=0"[^>]*target="hive-local-body"[^>]*rel="noreferrer"/, "safe single-service operator body navigation");
+requireNoMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1/, "unattested local presentation navigation");
+requireMatch(html, /Local Body · HOLD[\s\S]{0,180}Intended :5002 handoff not attested/, "held future Local Body handoff");
+requireNoMatch(html, /presentation=0/, "operator alias to the presentation service");
+requireNoMatch(html, /href="http:\/\/127\.0\.0\.1:5003/, "unobserved Operator service navigation");
+requireMatch(html, /Operator body · HOLD[\s\S]{0,180}Distinct :5003 service not observed/, "disabled distinct Operator handoff");
 requireNoMatch(html, /127\.0\.0\.1:8791/, "retired split-port Living Anatomy route");
-requireMatch(html, /data-local-handoff-dialog[\s\S]*availability and cause are UNKNOWN[\s\S]*intended local Hive runtime is installed and running[\s\S]*generation exposes the Living Anatomy body route[\s\S]*never probes, starts, or claims anything on your computer[\s\S]*Availability is not checked or claimed\.[\s\S]*DRIFTED is a truth gate/, "persistent no-probe local recovery guidance");
-requireMatch(html, /data-local-handoff-confirm[^>]+target="hive-local-body"[^>]+rel="noreferrer"/, "local handoff reuses one named local tab");
+requireNoMatch(html, /data-local-handoff-dialog|data-local-handoff-confirm/, "obsolete active local-handoff dialog");
 requireNoMatch(html, /href="http:\/\/127\.0\.0\.1:[^"]*"[^>]*target="_blank"/, "local links never scatter into unnamed tabs");
-requireMatch(html, /data-body-surface="atlas"[\s\S]*data-body-surface="presentation"[\s\S]*data-body-surface="operator"/, "three-surface Living Anatomy bridge");
-requireMatch(html, /public page never claims or probes local availability/, "truthful local availability boundary");
-// Prompt privacy is now stated positively: the local app owns prompts, and the public
-// page separately disclaims relaying any prompt to chain, IPFS, or pooled compute.
-requireMatch(html, /Local app[\s\S]{0,60}Owns execution, prompts, and state\./, "prompt privacy");
+requireMatch(html, /data-body-surface="atlas"[\s\S]*data-body-surface="presentation"[\s\S]*data-body-surface="operator"[^>]+aria-disabled="true"/, "public Atlas plus presentation and held Operator bridge");
+requireMatch(html, /No local handoff is enabled in this public candidate[\s\S]*Local Body awaits exact :5002 runtime evidence[\s\S]*Operator remains a separate intended :5003 service[\s\S]*Chat remains WAIT/i, "truthful local availability boundary");
 requireMatch(html, /class="pipeline-rail"[\s\S]*Intent[\s\S]*Route[\s\S]*Halo[\s\S]*Trust[\s\S]*Compose[\s\S]*Gate[\s\S]*Witness[\s\S]*Record outcome or HOLD/, "constellation causal flight path");
 requireNoMatch(html, /class="pipeline-rail"[\s\S]{0,2000}<strong>Generate<\/strong>/, "retired conventional Generate endpoint");
 const commandStepIds = [...html.matchAll(/data-command-step="(\d+)"/g)].map((match) => Number(match[1]));
@@ -789,7 +881,7 @@ requireMatch(html, /See[\s\S]*Understand[\s\S]*Select[\s\S]*Dispatch[\s\S]*Verif
 requireMatch(html, /data-command-cycle data-command-state="idle"/, "inert command cycle startup");
 requireMatch(html, /The walkthrough narrates the lifecycle; it performs zero effects\./, "zero-effect public command boundary");
 requireMatch(html, /data-command-walkthrough aria-pressed="false"/, "explicit walkthrough state");
-requireMatch(html, /Open command body[\s\S]*Real scan · missions · receipts/, "operator command handoff");
+requireMatch(html, /Operator body · HOLD[\s\S]*Distinct :5003 service not observed/, "held operator command handoff");
 requireMatch(html, /canvas data-command-echo/, "command organism echo");
 requireMatch(html, /data-command-climax[\s\S]*DEMONSTRATION · ZERO EFFECTS[\s\S]*body absorbs source[\s\S]*changes only after authority, validated landing, and snapshot absorption/, "truth-bound WATCH climax");
 requireMatch(html, /data-command-prev[\s\S]*data-command-next[\s\S]*data-command-reset/, "presenter recovery navigation");
@@ -798,14 +890,7 @@ if (html.indexOf("galaxy-commandbar") > html.indexOf("body-bridge-dock")) {
   throw new Error("galaxy spectacle must precede the expanded local-surface dock");
 }
 requireNoMatch(html, /href=["']#anatomy["']/, "obsolete anatomy anchor");
-const disabledDownload = html.match(/<a\b[^>]*data-release-download[^>]*>/)?.[0] || "";
-if (!disabledDownload
-  || /\shref=/.test(disabledDownload)
-  || !/class="[^"]*\bis-disabled\b/.test(disabledDownload)
-  || !/aria-disabled="true"/.test(disabledDownload)
-  || !/tabindex="-1"/.test(disabledDownload)) {
-  throw new Error("unverified release download must be inert and unfocusable");
-}
+requireNoMatch(html, /data-release-download|data-release-manifest|data-release-index|data-release-page/, "retired HivePoA action controls");
 for (const [attribute, expectedCount] of [["data-ide-download", 1], ["data-ide-start-here", 2], ["data-ide-manifest", 1], ["data-ide-release-page", 1]]) {
   const inertLinks = [...html.matchAll(new RegExp(`<a\\b[^>]*${attribute}[^>]*>`, "g"))].map((match) => match[0]);
   if (inertLinks.length !== expectedCount || inertLinks.some((link) => (
@@ -815,7 +900,7 @@ for (const [attribute, expectedCount] of [["data-ide-download", 1], ["data-ide-s
   }
 }
 requireNoMatch(html, /galaxy-inspector["'][^>]*aria-live/, "hover-driven live-region noise");
-requireMatch(js, /PRODUCT_TRUTH_SCHEMA = "hive\.ecosystem\.product-truth\.public-projection\.v1"/, "browser Product Truth schema gate");
+requireMatch(js, /PRODUCT_TRUTH_SCHEMA = "hive\.ecosystem\.product-truth\.public-projection\.v2"/, "browser Product Truth schema gate");
 requireMatch(js, /PRODUCT_TRUTH_SUBJECTS[\s\S]*target_architecture:[\s\S]*SOURCE_BOUND_DOCTRINE[\s\S]*source_atlas:[\s\S]*SOURCE_PRESENT_AT_PIN[\s\S]*tip_influence:[\s\S]*SOURCE_GOVERNED_HOLD[\s\S]*fleet_halos:[\s\S]*DECLARED_HARD_OFF[\s\S]*released_tester_5:[\s\S]*PUBLIC_REMOTE_BYTES_VERIFIED_OLDER_SOURCE_SUBJECT[\s\S]*candidate_tester_6_publication:[\s\S]*HELD_NOT_PUBLIC[\s\S]*windows_wsl_candidate_design:[\s\S]*DECLARED_AT_PIN_BY_NON_DURABLE_EXTERNAL_OBSERVATION[\s\S]*linux_hive_ide_publication:[\s\S]*UNKNOWN_NO_ADMISSIBLE_PUBLICATION_OBSERVATION[\s\S]*macos_hive_ide_publication:[\s\S]*HELD_MISSING_ADMISSIBLE_PUBLICATION_OBSERVATION[\s\S]*installed_runtime:[\s\S]*UNKNOWN[\s\S]*observed_behavior:[\s\S]*UNKNOWN/, "browser subject-scoped truth status gate");
 requireMatch(js, /WHAT_ARCHITECTURE_AM_I\?[\s\S]*SOVEREIGN_HIVEBRAIN_CONSTELLATION[\s\S]*hiveai\.sovereign_hivebrain_constellation\.v1[\s\S]*971437dd8d1474262627881e6c2d4baef9b0d705424d7eb4abd09a5d2baf5b61/, "browser canonical architecture identity gate");
 // Order-free: the browser must independently gate every piece of subject evidence
@@ -843,7 +928,7 @@ requireMatch(js, /No action is authorized; refresh the evidence contract before 
 requireMatch(js, /evidenceExpired[\s\S]*EVIDENCE EXPIRED · HELD[\s\S]*Current publication claims are HELD pending a fresh readback/, "expired platform evidence rendering");
 requireMatch(js, /function renderIdeRelease\(latest, truthResult\)[\s\S]*truthResult\.evidenceCurrent[\s\S]*Date\.now\(\) < Date\.parse\(truthResult\.validUntilUtc\)[\s\S]*Remote-byte evidence expired · every action held[\s\S]*window\.setTimeout[\s\S]*evidenceCurrent: false/, "wall-clock tester evidence expiry HOLD");
 requireMatch(js, /bindingDigest[\s\S]*recursive-key-sort-json-utf8[\s\S]*delete projection\.bindingDigest[\s\S]*sha256Text\(canonicalJson\(projection\)\)[\s\S]*projection digest mismatch/, "browser full-projection digest gate");
-requireMatch(js, /PRODUCT_TRUTH_MAX_BYTES = 128 \* 1024[\s\S]*fetch\("\/hub-assets\/product-truth\.json", \{ cache: "no-store"[\s\S]*response\.text\(\)[\s\S]*invalid UTF-8 replacement bytes[\s\S]*body byte ceiling[\s\S]*parseProductTruthJsonStrict\(body\)[\s\S]*blockProductTruth/, "strict fail-closed Product Truth fetch");
+requireMatch(js, /PRODUCT_TRUTH_MAX_BYTES = 128 \* 1024[\s\S]*readBoundJson = async[\s\S]*response\.arrayBuffer\(\)[\s\S]*expectedBytes[\s\S]*expectedSha256[\s\S]*parseJsonBytesStrict\(bytes, label\)[\s\S]*\/hub-assets\/product-truth\.json[\s\S]*\/hub-assets\/product-truth-ledger\.v1\.json[\s\S]*blockProductTruth/, "strict fail-closed Product Truth and ledger fetch");
 const csp = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i;
 for (const [name, source] of [["index.html", html], ["404.html", notFound]]) {
   const policy = source.match(csp)?.[1] || "";
@@ -863,7 +948,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v17" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v18" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -927,9 +1012,10 @@ requireMatch(css, /@media \(max-width: 24rem\), \(max-height: 36rem\)[\s\S]*\.ga
 const shortDivisionNavReclaimPx = Math.round(16 * ((0.875 * 1.3) + 0.35) * 10) / 10;
 if (shortDivisionNavReclaimPx < 20) throw new Error(`short division navigator reclaims only ${shortDivisionNavReclaimPx}px`);
 requireMatch(css, /@media \(forced-colors: active\)[\s\S]*\.galaxy-division-nav-field select[\s\S]*background: Canvas;/, "forced-colors native division navigator");
-requireMatch(css, /\.truth-strip,[\s\S]*\.site-footer\s*\{[\s\S]*content-visibility: auto;[\s\S]*contain-intrinsic-size: auto 62rem;/, "offscreen section layout containment");
+requireMatch(css, /main > section,[\s\S]*\.site-footer\s*\{[\s\S]*content-visibility: visible;[\s\S]*contain-intrinsic-size: none;/, "stable eager anchor-section geometry");
+requireNoMatch(css, /main > section,[\s\S]{0,180}content-visibility:\s*auto/, "geometry-unstable anchored section containment");
 requireMatch(js, /const primeAtlas = \(\) =>[\s\S]*is-render-primed[\s\S]*pointerenter[\s\S]*pointerdown[\s\S]*focus/, "intent-driven atlas prewarm");
-requireMatch(js, /runAfterFirstPaint\("Living Anatomy galaxy", startGalaxy, 20\)/, "deferred galaxy call chain");
+requireMatch(js, /runAfterFirstPaint\("Constellation Atlas", startGalaxy, 20\)/, "deferred galaxy call chain");
 requireMatch(js, /const COMMAND_CYCLE_STEPS = Object\.freeze\(\[[\s\S]*SEE · SOURCE BOUND[\s\S]*WATCH · ABSORBED/, "command cycle semantic model");
 requireMatch(js, /function wireCommandCycle\(\)[\s\S]*data-command-cycle[\s\S]*setInterval[\s\S]*1500/, "command cycle controller");
 requireMatch(js, /reduceMotion\.matches \|\| document\.body\.classList\.contains\("motion-paused"\)/, "manual reduced-motion command cycle");
@@ -937,7 +1023,7 @@ requireMatch(js, /detail: \{ snapshot, previous \}/, "previous source snapshot p
 requireMatch(js, /const applyCommandSnapshot = \(snapshot, previous = null\)[\s\S]*hive:snapshot[\s\S]*window\.hivePublicSnapshot[\s\S]*applyCommandSnapshot\(window\.hivePublicSnapshot\)/, "late command-cycle snapshot initialization");
 requireMatch(js, /previous\.hiveAi\?\.sourceCommit === sourceCommit[\s\S]*New source truth absorbed\.[\s\S]*no runtime state was inferred/, "truth-bound source absorption");
 requireMatch(js, /const paintEcho = \(\) =>[\s\S]*drawImage\(sourceCanvas/, "source-bound organism echo renderer");
-requireMatch(js, /const setFlightdeck = \(active, announce = true\)[\s\S]*command-flightdeck-open[\s\S]*Projector flightdeck online/, "projector flightdeck controller");
+requireMatch(js, /const setFlightdeck = \(active, announce = true\)[\s\S]*command-flightdeck-open[\s\S]*Projector flightdeck open/, "projector flightdeck controller");
 requireMatch(js, /setAttribute\("role", "dialog"\)[\s\S]*setAttribute\("aria-modal", "true"\)[\s\S]*Living command cycle flightdeck/, "flightdeck modal semantics");
 requireMatch(js, /event\.key === "Tab"[\s\S]*button:not\(:disabled\)[\s\S]*document\.activeElement === first[\s\S]*document\.activeElement === last/, "flightdeck focus containment");
 requireMatch(js, /!editable && root\.classList\.contains\("is-flightdeck"\) && \["ArrowLeft", "ArrowRight"\]\.includes\(event\.key\)[\s\S]*select\(current \+ \(event\.key === "ArrowRight" \? 1 : -1\)\)[\s\S]*if \(interactive\) return;/, "flightdeck arrow keys precede interactive-control guard");
@@ -978,31 +1064,39 @@ const holdIdeActionsBlock = boundedBlock(js, "function holdIdeReleaseActions()",
 requireMatch(holdIdeActionsBlock, /data-ide-download[\s\S]*data-ide-start-here[\s\S]*data-ide-manifest[\s\S]*data-ide-release-page[\s\S]*classList\.add\("is-disabled"\)[\s\S]*aria-disabled[\s\S]*tabindex[\s\S]*removeAttribute\("href"\)/, "all Hive IDE actions remain inert");
 const renderIdeReleaseBlock = boundedBlock(js, "function renderIdeRelease(latest, truthResult)", "async function loadIdeRelease()", "Hive IDE held rendering");
 requireMatch(renderIdeReleaseBlock, /root\.dataset\.state = "held"[\s\S]*Remote outer EXE bytes verified · unsigned · every action held[\s\S]*package contents, installation, and runtime remain UNKNOWN[\s\S]*public functional testing is HOLD/, "Hive IDE outer-byte-only rendering");
-requireMatch(renderIdeReleaseBlock, /SOURCE_CANDIDATE_NOT_LANDED[\s\S]*Authenticode NotSigned[\s\S]*not package contents, safety, installability, runtime, or testing authority/i, "Hive IDE receipt and unsigned evidence ceiling");
+requireMatch(renderIdeReleaseBlock, /LANDED_HASH_VERIFIED[\s\S]*PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE[\s\S]*Authenticode NotSigned[\s\S]*not package contents, safety, installability, runtime, or testing authority/i, "Hive IDE landing, retrievability, and unsigned evidence ceiling");
 requireMatch(renderIdeReleaseBlock, /Download held · unsigned \+ runtime unknown[\s\S]*START HERE held[\s\S]*Truth contract validated · action held[\s\S]*Release action held[\s\S]*holdIdeReleaseActions\(\)/, "Hive IDE hydrated action HOLD");
 requireNoMatch(renderIdeReleaseBlock, /\.href\s*=|classList\.remove\(["']is-disabled["']|removeAttribute\(["'](?:aria-disabled|tabindex)["']\)/, "Hive IDE hydrated action promotion");
 const loadIdeReleaseBlock = boundedBlock(js, "async function loadIdeRelease()", "async function copyText", "Hive IDE v2 evidence loading");
-requireMatch(loadIdeReleaseBlock, /AbortController[\s\S]*fetch\("\/downloads\/hive-ide\/latest\.json"[\s\S]*IDE_RELEASE_LATEST_MAX_BYTES[\s\S]*IDE_RELEASE_LATEST_SHA256[\s\S]*validateIdeReleaseLatest\(parseJsonStrict\(body/, "bounded and strict Hive IDE v2 feed validation");
-requireMatch(loadIdeReleaseBlock, /new URL\(latest\.truthManifestUrl\)\.pathname[\s\S]*fetch\(truthPath[\s\S]*IDE_RELEASE_TRUTH_MAX_BYTES[\s\S]*IDE_RELEASE_TRUTH_MANIFEST_SHA256[\s\S]*latest\.truthManifestSha256[\s\S]*validateIdeReleaseTruthManifest\(parseJsonStrict\(truthBody/, "same-origin Hive IDE truth-manifest byte and semantic validation");
+requireMatch(loadIdeReleaseBlock, /AbortController[\s\S]*fetch\("\/downloads\/hive-ide\/latest\.json"[\s\S]*IDE_RELEASE_LATEST_MAX_BYTES[\s\S]*IDE_RELEASE_LATEST_SHA256[\s\S]*validateIdeReleaseLatest\(parseJsonBytesStrict\(body/, "bounded and strict Hive IDE v2 feed validation");
+requireMatch(loadIdeReleaseBlock, /new URL\(latest\.truthManifestUrl\)\.pathname[\s\S]*fetch\(truthPath[\s\S]*IDE_RELEASE_TRUTH_MAX_BYTES[\s\S]*IDE_RELEASE_TRUTH_MANIFEST_SHA256[\s\S]*latest\.truthManifestSha256[\s\S]*validateIdeReleaseTruthManifest\(parseJsonBytesStrict\(truthBody/, "same-origin Hive IDE truth-manifest byte and semantic validation");
 requireNoMatch(loadIdeReleaseBlock, /JSON\.parse|\.href\s*=|classList\.remove\(["']is-disabled["']/, "Hive IDE v2 loose parse or action promotion");
-// Order-free custody gate: the receipt is unlanded, unsigned, and retains no raw bytes.
+// Order-free custody gate: landing and public retrievability remain distinct;
+// the receipt is unsigned and retains no raw bytes.
 requireMatch(ideReleaseCore, /status: "PUBLIC_REMOTE_BYTES_VERIFIED"/, "Hive IDE remote-byte receipt custody gate (status)");
-requireMatch(ideReleaseCore, /evidenceReceiptAvailability: "SOURCE_CANDIDATE_NOT_LANDED"/, "Hive IDE remote-byte receipt custody gate (unlanded)");
+requireMatch(ideReleaseCore, /landingStatus: "LANDED_HASH_VERIFIED"/, "Hive IDE remote-byte receipt custody gate (landed hash)");
+requireMatch(ideReleaseCore, /publicRetrievability: "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"/, "Hive IDE remote-byte receipt custody gate (private retrievability)");
 requireMatch(ideReleaseCore, /rawHttpRetained: false/, "Hive IDE remote-byte receipt custody gate (no raw bytes retained)");
 requireMatch(ideReleaseCore, /independentlySigned: false/, "Hive IDE remote-byte receipt custody gate (unsigned)");
-requireMatch(ideReleaseCore, /packageContents:[\s\S]*UNKNOWN[\s\S]*installation:[\s\S]*UNKNOWN[\s\S]*runtime:[\s\S]*UNKNOWN[\s\S]*productLive:[\s\S]*FALSE[\s\S]*publicFunctionalTesting:[\s\S]*HOLD/, "Hive IDE subject-scoped claim-plane gate");
+requireMatch(ideReleaseCore, /packageContents:[\s\S]*UNKNOWN[\s\S]*installation:[\s\S]*UNKNOWN[\s\S]*runtime:[\s\S]*UNKNOWN[\s\S]*productLive:[\s\S]*UNKNOWN[\s\S]*publicFunctionalTesting:[\s\S]*HOLD/, "Hive IDE subject-scoped claim-plane gate");
 requireMatch(ideReleaseCore, /requireDownloadDisposition[\s\S]*activeDownloadAuthorized[\s\S]*UNSIGNED_AND_INSTALL_RUNTIME_UNVERIFIED[\s\S]*SEPARATE_UNEXPIRED_OPERATOR_AUTHORIZATION/, "Hive IDE download-disposition HOLD gate");
 requireNoMatch(ideReleaseCore, /eval\(|new Function\(/, "Hive IDE release validator dynamic code");
 requireMatch(galaxyCore, /facts\.pmOnly !== facts\.purposeMastered - facts\.twitches/, "PM Twitch invariant");
 requireMatch(galaxyCore, /captured - now > 5 \* 60_000[\s\S]*snapshotFreshness\(snapshot\.capturedAt\)\.state === "invalid"/, "capture timestamp validity and future-skew gate");
+const loadSourceSnapshotBlock = boundedBlock(js, "async function loadSourceSnapshot()", "function scheduleSnapshotRefresh()", "source snapshot loading");
+requireMatch(js, /const HUB_FACTS_MAX_BYTES = 512 \* 1024;/, "hub-facts browser byte ceiling");
+requireMatch(loadSourceSnapshotBlock, /content-length[\s\S]*HUB_FACTS_MAX_BYTES[\s\S]*response\.arrayBuffer\(\)[\s\S]*snapshotBytes\.byteLength[\s\S]*parseJsonBytesStrict\(snapshotBytes, "hub-facts source snapshot"\)/, "bounded raw-byte strict hub-facts browser custody");
+requireMatch(generator, /COMPILED_SNAPSHOT_MAX_BYTES = 512 \* 1024[\s\S]*runCompiledJson[\s\S]*parseJsonBytesStrict\(bytes, "compiled source snapshot"\)/, "bounded strict compiler-to-hub-facts custody");
+requireNoMatch(generator, /JSON\.parse\(run\(/, "permissive compiler-to-hub-facts JSON boundary");
+requireNoMatch(loadSourceSnapshotBlock, /response\.json\(\)|JSON\.parse/, "loose hub-facts browser parsing");
 requireMatch(js, /SNAPSHOT_REFRESH_MS = 60_000/, "visibility-aware snapshot refresh interval");
 requireMatch(js, /Last-good snapshot/, "last-good refresh behavior");
 requireMatch(js, /AbortController/, "snapshot request cancellation");
 requireMatch(js, /snapshotRequestGeneration/, "snapshot response generation gate");
 requireMatch(js, /snapshotResponseCanCommit\([\s\S]*aborted:/, "behavioral snapshot response gate integration");
 requireMatch(js, /sourceSnapshotPresentation\([\s\S]*automaticBridgeEnabled === true[\s\S]*presentation\.freshness === "historical"[\s\S]*presentation\.freshness === "aged"[\s\S]*presentation\.bridge === "configured"/, "source-age and bridge-configuration separation");
-requireMatch(galaxyCore, /badgeState: freshness\.state !== "invalid" && bridge === "configured" \? "" : "stale"/, "validated snapshot badge independent from source age");
-requireMatch(js, /sourceBadgeLabel = `SOURCE SNAPSHOT \$\{facts\.sourceCommit\.slice\(0, 7\)\.toUpperCase\(\)\} · VERIFIED`[\s\S]*data-galaxy-snapshot-state[\s\S]*"verified"/, "compact browser-verified source badge");
+requireMatch(galaxyCore, /freshnessDisposition: freshness\.state === "recent" \? "CURRENT_EVIDENCE_OK" : "FRESHNESS_HOLD"[\s\S]*badgeState: freshness\.state === "recent" \? "" : "stale"/, "aged source capture always holds freshness independently of bridge state");
+requireMatch(js, /freshnessHeld = presentation\.freshnessDisposition === "FRESHNESS_HOLD"[\s\S]*HISTORICAL CAPTURE[\s\S]*FRESHNESS HOLD[\s\S]*data-galaxy-snapshot-state[\s\S]*freshnessHeld \? "historical" : "recent"/, "compact source-binding and freshness badge separation");
 requireMatch(forcedColorsWiring, /const onForcedColorsChange = \(event\) => this\.applyRenderAvailability\(Boolean\(event\.matches\)\);/, "live forced-colors transition callback");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addEventListener\("change", onForcedColorsChange\)/, "live forced-colors transition listener");
 requireMatch(forcedColorsWiring, /this\.forcedColors\.addListener\(onForcedColorsChange\)/, "legacy forced-colors transition listener");
@@ -1010,11 +1104,9 @@ requireMatch(js, /applyRenderAvailability\(forcedColorsActive\)/, "live render f
 requireMatch(js, /applyRenderAvailability\(forcedColorsActive\)[\s\S]*if \(fallback\) \{[\s\S]*this\.cancelDirector\(false\);[\s\S]*this\.setEngaged\(false\);/, "render fallback cancels Director before controls become unavailable");
 requireMatch(js, /if \(\$\("\[data-source-stamp\], \[data-galaxy-canvas\]"\)\)[\s\S]*loadSourceSnapshot\(\)\.finally\(startSnapshotRefresh\)/, "snapshot refresh surface gate");
 requireMatch(js, /runAfterFirstPaint\("Offscreen scene control", wireSceneActivity, 40\)/, "deferred offscreen CSS animation control");
-requireMatch(js, /runAfterFirstPaint\("Local runtime handoff guidance", wireLocalHandoffGate, 180\)/, "deferred local handoff guidance call chain");
-requireMatch(localHandoffWiring, /data-local-handoff-confirm[\s\S]*hive:request-local-handoff[\s\S]*dialog\.show\(\)/, "one-click local navigation with quiet recovery guidance");
-requireNoMatch(localHandoffWiring, /preventDefault|showModal/, "local links navigate on the first click");
-requireNoMatch(localHandoffWiring, /\bfetch\s*\(|new\s+(?:Image|WebSocket)\b|XMLHttpRequest/, "local availability probe");
-requireMatch(js, /hive:request-local-handoff[\s\S]*if \(this\.fullAtlas\) this\.closeFullAtlas\(false\)/, "local guidance exits isolated atlas before opening its dialog");
+requireNoMatch(js, /wireLocalHandoffGate|data-local-handoff-confirm|hive:request-local-handoff/, "obsolete active local navigation wiring");
+requireMatch(js, /Future handoff context is source-bound[\s\S]*link\.dataset\.futureHandoff = href[\s\S]*link\.dataset\.contextBound = "true"/, "disabled future Local Body context hook");
+requireNoMatch(js, /link\.href = href/, "future local context promoted to active navigation");
 requireNoMatch(js, /time\s*-\s*this\.lastFrame\s*<\s*32/, "30fps frame throttle");
 requireNoMatch(js, /Math\.random\(/, "non-deterministic visual geometry");
 requireNoMatch(galaxyCore, /GOLDEN_ANGLE|syntheticGeometry|fallbackGeometry/i, "synthetic public galaxy geometry");
@@ -1061,11 +1153,19 @@ requireMatch(css, /\.galaxy-workbench\.is-full-atlas \.galaxy-depth\s*\{[^}]*dis
 requireMatch(js, /glideStickyBox\(cacheKey, point, width, height, occupied\)[\s\S]*never re-enters[\s\S]*clamp\(pushX, -2, 2\)[\s\S]*occupied\.push\(placed\)/, "plate object permanence: sticky plates glide, never re-ladder");
 requireMatch(js, /this\.glideStickyBox\(`d\$\{index\}`, point, width, height, occupied\)\s*\|\| this\.placeSafeCanvasLabel/, "division plates take the glide path before any ladder");
 requireMatch(js, /this\.glideStickyBox\(`f\$\{familyGeometryIndex\}`, point, width, height, occupied\)\s*\|\| this\.placeSafeCanvasLabel/, "family plates take the glide path before any ladder");
-requireMatch(css, /\.hero\s*{[\s\S]*grid-template-rows:\s*auto auto;[\s\S]*min-height:\s*calc\(100svh - 5\.25rem\)[\s\S]*\.hero-support\s*{[\s\S]*grid-column:\s*1 \/ -1;/, "first-fold hero layout contract");
+requireMatch(css, /\.hero\s*{[\s\S]*grid-template-rows:\s*auto auto;[\s\S]*min-height:\s*calc\(100svh - 5\.25rem\)[\s\S]*\.hero-outcomes\s*{[\s\S]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/, "outcome-first hero layout contract");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.hero-system\s*{[\s\S]*grid-template-columns:\s*repeat\(2,[\s\S]*min-height:\s*11\.5rem;[\s\S]*\.hero-system \.satellite-core,[\s\S]*display:\s*none;/, "recognizable compact mobile organism");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.hero-primary-action \.hero-enter\s*{[\s\S]*flex:\s*none;[\s\S]*width:\s*100%;/, "mobile primary CTA uses intrinsic height");
 requireMatch(css, /@media \(max-width: 24rem\) and \(max-height: 36rem\)[\s\S]*\.primary-nav,[\s\S]*\.hero-copy > \.eyebrow[\s\S]*display:\s*none;[\s\S]*\.hero-system\s*{[\s\S]*min-height:\s*5\.75rem;/, "short mobile first-frame hierarchy");
-requireMatch(css, /\.hero-lede\s*{[\s\S]*font-size:\s*clamp\(1rem,[\s\S]*\.primary-nav a,[\s\S]*font-size:\s*0\.875rem;[\s\S]*\.hero-causal-story strong,[\s\S]*font-size:\s*1rem;/, "zero-squint 16px essential and 14px secondary typography");
+requireMatch(css, /\.hero-lede\s*{[\s\S]*font-size:\s*clamp\(1rem,[\s\S]*\.primary-nav a,[\s\S]*font-size:\s*0\.875rem;[\s\S]*\.hero-outcomes b\s*{[\s\S]*font-size:\s*0\.9375rem;/, "zero-squint hero and navigation typography");
+requireMatch(css, /@media \(max-width: 62rem\)[\s\S]*\.platform-table-scroll\s*{[\s\S]*overflow:\s*visible;[\s\S]*\.platform-table tbody td\s*{[\s\S]*grid-template-columns:/, "tablet platform matrix semantic cards");
+requireMatch(css, /@media \(min-width: 42\.01rem\) and \(max-width: 62rem\)[\s\S]*\.outcome-grid,[\s\S]*\.roadmap-rail\s*{[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/, "tablet two-column outcome and roadmap cards");
+requireMatch(css, /@media \(max-width: 62rem\) and \(max-height: 40rem\)[\s\S]*\.outcome-grid,[\s\S]*\.roadmap-rail\s*{[\s\S]*grid-template-columns:\s*1fr;/, "short presentation one-column outcome and roadmap cards");
+requireMatch(js, /fragmentCorrectionArmed[\s\S]*gap < 12 \|\| gap > 28[\s\S]*headerHeight - 18[\s\S]*hashchange[\s\S]*scheduleFragmentCorrection\(true\)/, "measured cold-fragment correction contract");
+requireMatch(js, /button\.tabIndex = selected \? 0 : -1[\s\S]*ArrowRight[\s\S]*ArrowLeft[\s\S]*Home[\s\S]*End/, "Atlas lens roving tabindex contract");
+requireMatch(js, /const openers = \$\$\('\[data-galaxy-fullscreen\]'\)[\s\S]*anchorPrimes[\s\S]*openers\.forEach[\s\S]*event\.preventDefault\(\)[\s\S]*this\.openFullAtlas/, "explicit Full Atlas dialog opener");
+const atlasAnchorPrimeWiring = boundedBlock(js, "anchorPrimes.forEach", "openers.forEach", "semantic Atlas anchor priming");
+requireNoMatch(atlasAnchorPrimeWiring, /addEventListener\("click"|preventDefault/, "semantic hero Atlas anchor interception");
 requireMatch(css, /\.mission-machine-head > div:first-child strong,[\s\S]*\.authority-wall p:last-child\s*{[\s\S]*font-size:\s*1rem;/, "16px command narrative typography floor");
 requireMatch(css, /\.inspector-stats dd,[\s\S]*\.mission-machine-head > div:first-child span,[\s\S]*\.mission-step > span,[\s\S]*\.command-cycle-orb b,[\s\S]*\.command-cycle-navigation > span,[\s\S]*\.command-cycle-actions \.button small,[\s\S]*\.command-cycle-boundary,[\s\S]*\.wall-state\s*{[\s\S]*font-size:\s*0\.875rem;/, "14px projector truth and navigation typography floor");
 requireMatch(css, /--type-copy-min:\s*1rem;[\s\S]*--type-meta-min:\s*0\.875rem;/, "page-wide zero-squint typography tokens");
@@ -1213,6 +1313,11 @@ if (!activeRefresh && !activeLocalRefresh && !inactiveRefresh) throw new Error("
 
 const syncWorkflow = read(".github/workflows/sync-living-galaxy.yml");
 const verifyWorkflow = read(".github/workflows/verify-public-hub.yml");
+const pagesWorkflow = read(".github/workflows/publish-reviewed-pages.yml");
+const pagesBuilder = read("script/build-public-pages.mjs");
+const pagesArtifactCheck = read("script/check-public-pages-artifact.mjs");
+const liveParity = read("script/check-live-parity.mjs");
+const pagesAllowlist = parseJsonBytesStrict(readBytes(".github/pages-public-allowlist.v1.json"), "Pages public allowlist");
 const ideSmokeWorkflow = read(".github/workflows/hive-ide-public-windows-smoke.yml");
 const ideSmokeScript = read("script/run-ide-public-windows-smoke.ps1");
 const syncDocs = read("docs/PUBLIC_GALAXY_SYNC.md");
@@ -1252,7 +1357,8 @@ requireMatch(ideSmokeScript, /expectedTempPrefix[\s\S]*hive-ide-public-smoke-\*[
 requireNoMatch(`${syncWorkflow}\n${verifyWorkflow}`, /11d5960a326750d5838078e36cf38b85af677262|49933ea5288caeca8642d1e84afbd3f7d6820020/, "deprecated Node-20 action pin");
 requireMatch(compileJob, /permissions:\s*\n\s+contents:\s*read/, "credential-free compiler authority");
 requireNoMatch(compileJob, /contents:\s*write|pages:\s*write/, "compiler publication authority");
-requireMatch(publishJob, /permissions:\s*\n\s+contents:\s*write\s*\n\s+pages:\s*write/, "isolated publisher authority");
+requireMatch(publishJob, /permissions:\s*\n\s+contents:\s*write/, "isolated snapshot publisher authority");
+requireNoMatch(publishJob, /pages:\s*write|id-token:\s*write/, "snapshot publisher Pages deployment authority");
 requireMatch(compileJob, /persist-credentials:\s*false/, "trusted Pages compiler checkout credential removal");
 requireMatch(compileJob, /sync-galaxy-snapshot\.mjs/, "living-main snapshot compiler call");
 requireMatch(compileJob, /actions\/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4/, "pinned inert candidate upload");
@@ -1266,8 +1372,24 @@ requireMatch(publishJob, /check-central-hub\.mjs/, "trusted pre-publish hub veri
 requireMatch(compileJob, /check-publisher-races\.mjs/, "credential-free publisher race verification");
 requireMatch(publishJob, /check-publisher-races\.mjs/, "current-main publisher race verification");
 requireMatch(publishJob, /git push origin HEAD:main/, "atomic Pages main publication");
-requireMatch(publishJob, /pages\/builds\/latest[\s\S]*latest_commit[\s\S]*latest_status[\s\S]*"built"[\s\S]*"building"[\s\S]*POST/, "recoverable Pages deployment request");
-requireMatch(publishJob, /POST ["']repos\/\$GITHUB_REPOSITORY\/pages\/builds["']/, "explicit workflow-authored Pages build");
+requireNoMatch(syncWorkflow, /pages\/builds|pages:\s*write|id-token:\s*write/, "legacy or direct Pages deployment from snapshot publisher");
+requireMatch(pagesWorkflow, /workflow_run:[\s\S]*workflows: \["Sync living galaxy"\][\s\S]*conclusion == 'success'[\s\S]*head_branch == 'main'/, "GITHUB_TOKEN snapshot push deployment route");
+requireMatch(pagesWorkflow, /cancel-in-progress:\s*true[\s\S]*git checkout --detach refs\/remotes\/origin\/main[\s\S]*Refuse a stale main artifact/, "current-main monotonic Pages custody");
+requireMatch(pagesWorkflow, /actions\/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b[\s\S]*actions\/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b[\s\S]*actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e/, "pinned custom Pages action chain");
+requireMatch(pagesWorkflow, /stage="\$\{RUNNER_TEMP\}\/hive-pages-reviewed"[\s\S]*test ! -e "\$stage"[\s\S]*build-public-pages\.mjs build[\s\S]*check-http-surface\.mjs --root "\$stage"/, "fresh allowlisted Pages stage and staged HTTP gate");
+requireMatch(pagesBuilder, /REQUIRED_FORBIDDEN_EXACT[\s\S]*forbiddenExactPaths\.length !== 23/, "Pages builder exact forbidden-path gate");
+requireMatch(pagesBuilder, /lstat[\s\S]*isSymbolicLink[\s\S]*nlink[\s\S]*PUBLIC_ARTIFACT_MEMBERSHIP_MISMATCH/, "Pages builder unsafe-member and exact-membership gate");
+requireMatch(pagesArtifactCheck, /mkdtemp[\s\S]*check-http-surface\.mjs[\s\S]*rm\(resolvedTemporaryRoot, \{ recursive: true, force: true \}\)/, "self-cleaning staged HTTP integration wrapper");
+requireMatch(liveParity, /generatedQuarantineRoutes[\s\S]*forbiddenExactPaths\.length !== 23[\s\S]*content-length[\s\S]*BODY_SIZE_OUT_OF_BOUNDS_OR_MISMATCHED[\s\S]*EXPECTED_404_OR_410/, "bounded deployed allowlist parity and retired-path negative gate");
+if (pagesAllowlist.forbiddenExactPaths?.length !== 23
+  || !pagesAllowlist.forbiddenPrefixes?.includes(".github/")
+  || !pagesAllowlist.forbiddenPrefixes?.includes("docs/")
+  || !pagesAllowlist.forbiddenPrefixes?.includes("fixtures/")
+  || !pagesAllowlist.forbiddenPrefixes?.includes("script/")
+  || !pagesAllowlist.forbiddenPrefixes?.includes("tests/")
+  || !pagesAllowlist.privateSourceOnlyPaths?.includes("README.md")) {
+  throw new Error("Pages allowlist does not freeze the exact private publication boundary");
+}
 requireMatch(compileJob, /secrets\.HIVE_AI_READ_DEPLOY_KEY/, "read-only private-source deploy key");
 requireMatch(compileJob, /mark-galaxy-bridge-inactive\.mjs --credential-missing/, "credential-removal fail-closed path");
 requireMatch(compileJob, /mark-galaxy-bridge-inactive\.mjs --checkout-failed/, "credential-failure fail-closed path");
@@ -1277,7 +1399,7 @@ requireNoMatch(syncWorkflow, /personal_access_token|\bPAT\b/i, "broad sync crede
 requireMatch(syncDocs, /read-only `compile` job[\s\S]*separate `publish` job[\s\S]*never checks out Hive-AI or executes its\s+code/, "documented split publisher trust boundary");
 requireMatch(syncDocs, /remote `main` both before and after compilation[\s\S]*never a mixed-era artifact/, "documented living-main race boundary");
 requireMatch(syncDocs, /never rebases[\s\S]*reconstructs the exact candidate bytes[\s\S]*concurrent writer changed the facts/, "documented immutable candidate reconciliation");
-requireMatch(syncDocs, /compares the latest Pages[\s\S]*requests or retries the legacy build/, "documented Pages deployment recovery");
+requireMatch(syncDocs, /never requests a legacy branch-root Pages build[\s\S]*workflow_run[\s\S]*exact current Pages `main`[\s\S]*without a PAT/, "documented allowlisted Pages deployment recovery");
 requireMatch(compileJob, /actions\/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1/, "pinned Python runtime");
 requireMatch(compileJob, /pip install --require-hashes --only-binary=:all:/, "hash-locked binary-only Python install");
 for (const requiredPath of [
@@ -1338,7 +1460,7 @@ if (png.subarray(1, 4).toString("ascii") !== "PNG" || png.readUInt32BE(16) !== 1
 }
 const icon = fs.readFileSync(path.join(root, "favicon.ico"));
 if (icon.length < 6 || !icon.subarray(0, 4).equals(Buffer.from([0, 0, 1, 0]))) throw new Error("favicon.ico is malformed");
-const manifest = JSON.parse(read("site.webmanifest"));
+const manifest = parseJsonBytesStrict(readBytes("site.webmanifest"), "site webmanifest");
 if (manifest.start_url !== "/" || manifest.scope !== "/" || !Array.isArray(manifest.icons) || manifest.icons.length < 1) throw new Error("web manifest contract drifted");
 requireMatch(read("robots.txt"), /Sitemap: https:\/\/dhenz14\.github\.io\/sitemap\.xml/, "root robots sitemap");
 const sitemap = read("sitemap.xml");
@@ -1362,5 +1484,5 @@ for (const match of html.matchAll(/(?:href|src)=["'](\/[^"'#?]*)["']/g)) {
 }
 
 console.log(
-  `CENTRAL_HUB_CONTRACT_OK source=${facts.hiveAi.sourceCommit.slice(0, 12)} canonical=${productTruthVerification.manifest.canonicalManifest.status} product_truth=${productTruthVerification.manifest.bindingDigest.value.slice(0, 12)} hostile_cases=${productTruthVerification.tests.length} browser_hostile_cases=${browserTruthSelfTests.length} nodes=${facts.hiveAi.nodes} edges=${facts.hiveAi.edges} twitches=${facts.hiveAi.twitches} pm_only=${facts.hiveAi.pmOnly} division_nav_options=${divisionNavigatorLabels.length} short_nav_reclaim_px=${shortDivisionNavReclaimPx}`,
+  `CENTRAL_HUB_CONTRACT_OK source=${facts.hiveAi.sourceCommit.slice(0, 12)} canonical=${productTruthVerification.manifest.canonicalManifest.status} product_truth=${productTruthVerification.manifest.bindingDigest.value.slice(0, 12)} hostile_cases=${productTruthVerification.tests.length} browser_hostile_cases=${browserTruthSelfTests.length} hub_facts_hostile_cases=${hubFactsHostileCases} nodes=${facts.hiveAi.nodes} edges=${facts.hiveAi.edges} twitches=${facts.hiveAi.twitches} pm_only=${facts.hiveAi.pmOnly} division_nav_options=${divisionNavigatorLabels.length} short_nav_reclaim_px=${shortDivisionNavReclaimPx}`,
 );

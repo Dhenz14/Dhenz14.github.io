@@ -23,7 +23,7 @@ import {
   sourceSnapshotPresentation,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v17";
+} from "./galaxy-core.mjs?v=galaxy-stark-v18";
 import {
   IDE_RELEASE_LATEST_MAX_BYTES,
   IDE_RELEASE_LATEST_SHA256,
@@ -32,9 +32,14 @@ import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
   validateIdeReleaseTruthManifest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v17";
+} from "./ide-release-core.mjs?v=galaxy-stark-v18";
+import {
+  parseJsonBytesStrict,
+  parseJsonStrict,
+} from "./strict-json.mjs?v=galaxy-stark-v18";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 1;
+const HUB_FACTS_MAX_BYTES = 512 * 1024;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -125,8 +130,60 @@ function wireSceneActivity() {
 function wireTopbar() {
   const topbar = $("[data-topbar]");
   if (!topbar) return;
+  let fragmentCorrectionArmed = Boolean(window.location.hash);
+  let fragmentCorrectionPasses = 0;
+  let fragmentFrame = 0;
+  const correctFragment = () => {
+    fragmentFrame = 0;
+    if (!fragmentCorrectionArmed || !window.location.hash) return;
+    let fragmentId;
+    try {
+      fragmentId = decodeURIComponent(window.location.hash.slice(1));
+    } catch {
+      fragmentCorrectionArmed = false;
+      return;
+    }
+    const target = document.getElementById(fragmentId);
+    if (!target) {
+      fragmentCorrectionArmed = false;
+      return;
+    }
+    const headerHeight = Math.ceil(topbar.getBoundingClientRect().height);
+    const gap = target.getBoundingClientRect().top - headerHeight;
+    fragmentCorrectionPasses += 1;
+    if (gap < 12 || gap > 28) {
+      window.scrollTo({
+        top: Math.max(0, window.scrollY + target.getBoundingClientRect().top - headerHeight - 18),
+        behavior: "auto",
+      });
+    }
+    const correctedGap = target.getBoundingClientRect().top - headerHeight;
+    if ((correctedGap >= 12 && correctedGap <= 28) || fragmentCorrectionPasses >= 3) fragmentCorrectionArmed = false;
+    else fragmentFrame = window.requestAnimationFrame(correctFragment);
+  };
+  const scheduleFragmentCorrection = (reset = false) => {
+    if (reset) {
+      fragmentCorrectionArmed = Boolean(window.location.hash);
+      fragmentCorrectionPasses = 0;
+    }
+    if (!fragmentCorrectionArmed || fragmentFrame) return;
+    fragmentFrame = window.requestAnimationFrame(() => {
+      fragmentFrame = window.requestAnimationFrame(correctFragment);
+    });
+  };
+  const measure = () => {
+    const height = Math.ceil(topbar.getBoundingClientRect().height);
+    if (height > 0) document.documentElement.style.setProperty("--topbar-height", `${height}px`);
+    scheduleFragmentCorrection();
+  };
   const sync = () => topbar.classList.toggle("is-scrolled", window.scrollY > 24);
+  const observer = "ResizeObserver" in window ? new ResizeObserver(measure) : null;
+  observer?.observe(topbar);
+  window.addEventListener("resize", measure, { passive: true });
+  measure();
   sync();
+  window.addEventListener("hashchange", () => scheduleFragmentCorrection(true));
+  window.addEventListener("load", () => scheduleFragmentCorrection(true), { once: true });
   window.addEventListener("scroll", sync, { passive: true });
 }
 
@@ -313,7 +370,8 @@ function wireCommandCycle() {
     root.dataset.commandVisual = String(current);
     root.classList.toggle("is-climax", current === COMMAND_CYCLE_STEPS.length - 1);
     scheduleEcho();
-    if (announce) showToast(`${step.stage.split(" · ")[0]} — ${step.title}`);
+    // The readout is already one polite aria-live region; a second toast would
+    // announce the same stage twice to assistive technology.
   };
 
   const stop = (announce = false) => {
@@ -349,7 +407,7 @@ function wireCommandCycle() {
     } else if (flightdeckReturnFocus?.isConnected) {
       flightdeckReturnFocus.focus({ preventScroll: true });
     }
-    if (announce) showToast(enabled ? "Projector flightdeck online. Arrow keys move between stages; Escape exits." : "Projector flightdeck closed.");
+    if (announce) showToast(enabled ? "Projector flightdeck open. Arrow keys move between stages; Escape exits." : "Projector flightdeck closed.");
   };
 
   const start = () => {
@@ -548,12 +606,12 @@ const LENSES = Object.freeze({
     code: "RUN",
     eyebrow: "Local state",
     title: "Runtime truth stays with the runtime.",
-    copy: "Chat, queues, health, models, and credentials remain on the local Hive-AI surface. This static page deliberately shows no invented live counters.",
-    statA: "LOCAL",
-    labelA: "chat boundary",
-    statB: "NONE",
-    labelB: "prompt relay",
-    boundary: "Start Hive-AI locally before treating either read-only body surface as available. Authority-bearing Mission Control mutations are credential-gated when configured.",
+    copy: "This static page deliberately shows no invented live counters. The local :5002 presentation route is unprobed, the distinct :5003 Operator Body is not independently observed, and Chat remains WAIT.",
+    statA: "HOLD",
+    labelA: "local body",
+    statB: "WAIT",
+    labelB: "chat",
+    boundary: "Local presentation is UNKNOWN_UNPROBED_HOLD. Operator is HOLD_NOT_INDEPENDENTLY_OBSERVED and disabled; it is never aliased to the presentation route.",
   },
   product: {
     index: "05",
@@ -580,7 +638,9 @@ function selectLens(name, focusNode = false) {
   const map = $("[data-anatomy-map]");
   if (map) map.dataset.lensView = name;
   $$('[data-lens]').forEach((button) => {
-    button.setAttribute("aria-pressed", String(button.dataset.lens === name));
+    const selected = button.dataset.lens === name;
+    button.setAttribute("aria-pressed", String(selected));
+    button.tabIndex = selected ? 0 : -1;
   });
   $$('[data-node]').forEach((node) => node.classList.toggle("is-active", node.dataset.node === name));
   setText("[data-lens-code]", lens.code);
@@ -599,6 +659,7 @@ function selectLens(name, focusNode = false) {
 function wireLenses() {
   $$('[data-lens]').forEach((button, index, buttons) => {
     button.disabled = false;
+    button.tabIndex = button.getAttribute("aria-pressed") === "true" || (index === 0 && !buttons.some((candidate) => candidate.getAttribute("aria-pressed") === "true")) ? 0 : -1;
     button.addEventListener("click", () => {
       window.dispatchEvent(new CustomEvent("hive:manual-galaxy"));
       selectLens(button.dataset.lens);
@@ -633,8 +694,8 @@ function setSourceBadge(state, label, title) {
   if (textNode) textNode.textContent = ` ${label}`;
 }
 
-const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v1";
-const PRODUCT_TRUTH_PROJECTION_DIGEST = "8f4b8cb598be24aef974e4f685bb92dd49e4b58958d4d44caf33d952e1e44b53";
+const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v2";
+const PRODUCT_TRUTH_PROJECTION_DIGEST = "4a6f343f344a2dc1015d039dd2201a5014ee04719cc0167ac69c74459ec46558";
 const PRODUCT_TRUTH_MAX_BYTES = 128 * 1024;
 const PRODUCT_TRUTH_SUBJECTS = Object.freeze({
   target_architecture: { label: "Target architecture", kind: "ARCHITECTURE_TARGET", status: "SOURCE_BOUND_DOCTRINE", plane: "TARGET" },
@@ -643,7 +704,7 @@ const PRODUCT_TRUTH_SUBJECTS = Object.freeze({
   fleet_halos: { label: "Fleet halos", kind: "NEURON_LOCAL_RETRIEVAL_CONTEXT", status: "DECLARED_HARD_OFF", plane: "SOURCE_PRESENT" },
   released_tester_5: { label: "Tester.5 remote outer bytes", kind: "PUBLIC_RELEASE_REMOTE_ARTIFACT_BYTES", status: "PUBLIC_REMOTE_BYTES_VERIFIED_OLDER_SOURCE_SUBJECT", plane: "PUBLIC_REMOTE_BYTES_VERIFIED" },
   candidate_tester_6_publication: { label: "Tester.6 publication", kind: "PUBLICATION_CANDIDATE", status: "HELD_NOT_PUBLIC", plane: "HELD" },
-  windows_wsl_candidate_design: { label: "Windows + WSL candidate design", kind: "CROSS_REPOSITORY_CANDIDATE_DESIGN", status: "DECLARED_AT_PIN_BY_NON_DURABLE_EXTERNAL_OBSERVATION", plane: "EXTERNAL_SOURCE_OBSERVATION" },
+  windows_wsl_candidate_design: { label: "Hive IDE Tauri candidate source", kind: "CROSS_REPOSITORY_CANDIDATE_DESIGN", status: "DECLARED_AT_PIN_BY_NON_DURABLE_EXTERNAL_OBSERVATION", plane: "EXTERNAL_SOURCE_OBSERVATION" },
   linux_hive_ide_publication: { label: "Linux Hive IDE publication", kind: "PLATFORM_PUBLICATION", status: "UNKNOWN_NO_ADMISSIBLE_PUBLICATION_OBSERVATION", plane: "UNKNOWN" },
   macos_hive_ide_publication: { label: "macOS Hive IDE publication", kind: "PLATFORM_PUBLICATION", status: "HELD_MISSING_ADMISSIBLE_PUBLICATION_OBSERVATION", plane: "HELD" },
   installed_runtime: { label: "Installed runtime", kind: "LOCAL_INSTALLED_RUNTIME", status: "UNKNOWN", plane: "UNKNOWN" },
@@ -658,16 +719,21 @@ const PRODUCT_TRUTH_SUBJECT_BASE_KEYS = Object.freeze([
 // its own producer rather than being forced equal to the other.
 const EVIDENCE_BASELINE_COMMIT = "472131baa2bc212a043966773bd92477c3a8a16c";
 const ATLAS_SOURCE_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
+const CANONICAL_GENESIS_SEMANTIC_SHA256 = "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791";
+const CANONICAL_GENESIS_SHA256 = "9e324cae2a6b8975d0451a1343166d5c802397595fd4b89a8d4af091574b0948";
+const CANONICAL_GENESIS_BYTES = 31198;
+const CANONICAL_GENESIS_BLOB = "3cc7a08282dedaeb7c07a193dd3cc8a4a34124d6";
 const CANONICAL_MANIFEST_SHA256 = "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056";
 const CANONICAL_MANIFEST_BYTES = 49342;
 const CANONICAL_MANIFEST_BLOB = "c1036d2fc877e058965688fe8da5097576a37826";
 const CANONICAL_LANDED_COMMIT = "0ab04f6c19ffd41bb162bea674e77853fb27cc0e";
 const CANONICAL_LANDED_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
 const TARGET_SERVING_BOUNDARY = "The source-bound target path is hive-runtime: a constellation-local in-process deterministic scaffold. The doctrine has no BYOM product lane, no implicit external-checkpoint fallback, and no local-model product serve path. An explicitly user-directed external agent may be the inbound caller; that is not a hidden Hive-selected backend fallback. None of this attests an installed runtime or observed behavior.";
-const ARCHITECTURE_LIVE_BOUNDARY = "The public atlas and this projection describe source-bound architecture. Local presentation and operator bodies are anonymous read-only GET surfaces when separately available; authority-bearing Mission Control mutations are credential-gated when configured. Installed runtime, route availability, and observed behavior require independent evidence.";
-const CURRENT_LEGACY_BOUNDARY = "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron is REMOVED on the current Hive IDE trunk; the published tester.5 build predates that removal by 302 commits and still bundles Electron. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held.";
+const ARCHITECTURE_LIVE_BOUNDARY = "The public atlas and this projection describe source-bound architecture. The explicit local presentation handoff at 127.0.0.1:5002 is UNKNOWN_UNPROBED_HOLD. A dedicated Operator Body is expected as a distinct 127.0.0.1:5003 service but is HOLD_NOT_INDEPENDENTLY_OBSERVED and disabled here; it is never aliased to the presentation route. Chat is WAIT. Installed runtime, route availability, observed behavior, and product-live state require independent evidence.";
+const CURRENT_LEGACY_BOUNDARY = "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron-removal and Tauri/WebView2 source were observed only on the unprotected Hive IDE candidate branch hive/wt/theyc/ide-electron-final-20260822 at f459e85; that candidate is not landed on the default branch. Tester.5 exact package contents are UNKNOWN_NOT_INSPECTED. The prior claim that tester.5 still bundles Electron is SUPERSEDED_REVOKED_UNSUPPORTED. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST; tester.6 publication is held.";
 const NO_LLM_BOUNDARY = "At the evidence baseline, doctrine permits an authorized external agent such as Codex or Claude to supply fluent generation as the explicit inbound caller while Hive is assigned local retrieval, routing, verification, and proof gating. The declared route is not an implicit outbound fallback selected by Hive, and it is not current runtime or network-egress proof.";
 let productTruthManifest = null;
+let productTruthLedger = null;
 
 function canonicalJson(value) {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
@@ -677,119 +743,6 @@ function canonicalJson(value) {
   return JSON.stringify(value);
 }
 
-function parseJsonStrict(source, label = "JSON document") {
-  if (typeof source !== "string") throw new Error(`${label} must be UTF-8 text`);
-  let cursor = 0;
-
-  const fail = (message) => {
-    const byte = new TextEncoder().encode(source.slice(0, cursor)).byteLength;
-    throw new Error(`${label} ${message} at byte ${byte}`);
-  };
-  const skipWhitespace = () => {
-    while (cursor < source.length && /\s/.test(source[cursor])) cursor += 1;
-  };
-  const parseString = () => {
-    if (source[cursor] !== '"') fail("expected string");
-    const start = cursor;
-    cursor += 1;
-    let escaped = false;
-    while (cursor < source.length) {
-      const character = source[cursor];
-      cursor += 1;
-      if (escaped) {
-        escaped = false;
-        continue;
-      }
-      if (character === "\\") {
-        escaped = true;
-        continue;
-      }
-      if (character === '"') {
-        try {
-          return JSON.parse(source.slice(start, cursor));
-        } catch {
-          fail("contains an invalid string escape");
-        }
-      }
-      if (character.charCodeAt(0) < 0x20) fail("contains an unescaped control character");
-    }
-    fail("contains an unterminated string");
-  };
-  const parseValue = () => {
-    skipWhitespace();
-    if (cursor >= source.length) fail("ended before a value");
-    if (source[cursor] === '"') return parseString();
-    if (source[cursor] === "{") return parseObject();
-    if (source[cursor] === "[") return parseArray();
-    for (const [token, value] of [["true", true], ["false", false], ["null", null]]) {
-      if (source.startsWith(token, cursor)) {
-        cursor += token.length;
-        return value;
-      }
-    }
-    const number = source.slice(cursor).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
-    if (number) {
-      cursor += number[0].length;
-      const value = Number(number[0]);
-      if (!Number.isFinite(value)) fail("contains a non-finite number");
-      return value;
-    }
-    fail("contains an invalid value");
-  };
-  const parseObject = () => {
-    const result = Object.create(null);
-    const keys = new Set();
-    cursor += 1;
-    skipWhitespace();
-    if (source[cursor] === "}") {
-      cursor += 1;
-      return result;
-    }
-    while (cursor < source.length) {
-      skipWhitespace();
-      const key = parseString();
-      if (keys.has(key)) fail(`contains duplicate object key ${JSON.stringify(key)}`);
-      keys.add(key);
-      skipWhitespace();
-      if (source[cursor] !== ":") fail("expected colon after object key");
-      cursor += 1;
-      result[key] = parseValue();
-      skipWhitespace();
-      if (source[cursor] === "}") {
-        cursor += 1;
-        return result;
-      }
-      if (source[cursor] !== ",") fail("expected comma between object entries");
-      cursor += 1;
-    }
-    fail("contains an unterminated object");
-  };
-  const parseArray = () => {
-    const result = [];
-    cursor += 1;
-    skipWhitespace();
-    if (source[cursor] === "]") {
-      cursor += 1;
-      return result;
-    }
-    while (cursor < source.length) {
-      result.push(parseValue());
-      skipWhitespace();
-      if (source[cursor] === "]") {
-        cursor += 1;
-        return result;
-      }
-      if (source[cursor] !== ",") fail("expected comma between array entries");
-      cursor += 1;
-    }
-    fail("contains an unterminated array");
-  };
-
-  const result = parseValue();
-  skipWhitespace();
-  if (cursor !== source.length) fail("contains trailing content");
-  return result;
-}
 
 function parseProductTruthJsonStrict(source) {
   return parseJsonStrict(source, "product truth");
@@ -802,8 +755,22 @@ async function sha256Text(value) {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function assertProductTruth(condition, reason) {
-  if (!condition) throw new Error(reason);
+async function sha256Bytes(bytes) {
+  if (!globalThis.crypto?.subtle) throw new Error("Web Crypto unavailable");
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+class ProductTruthBrowserError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "ProductTruthBrowserError";
+    this.code = code;
+  }
+}
+
+function assertProductTruth(condition, reason, code = "PRODUCT_TRUTH_BROWSER_CONTRACT_VIOLATION") {
+  if (!condition) throw new ProductTruthBrowserError(code, reason);
 }
 
 function assertProductTruthKeys(value, expected, label) {
@@ -813,25 +780,53 @@ function assertProductTruthKeys(value, expected, label) {
   assertProductTruth(actual.length === wanted.length && actual.every((key, index) => key === wanted[index]), `${label} keys rejected`);
 }
 
-async function validateProductTruthManifest(manifest, snapshot) {
+async function validateProductTruthManifest(manifest, snapshot, ledger) {
   assertProductTruth(manifest && typeof manifest === "object" && !Array.isArray(manifest), "manifest root rejected");
   assertProductTruthKeys(manifest, [
-    "schema", "version", "status", "canonicalManifest", "what_architecture_am_i", "source", "architecture", "boundaries",
+    "schema", "version", "status", "evidenceLedger", "canonicalManifest", "what_architecture_am_i", "source", "architecture", "boundaries",
     "truth_subjects", "atlasTesterMatch", "relations", "definitions", "registryClaimCut", "platforms", "integrityBoundary", "bindingDigest",
   ], "manifest root");
-  assertProductTruth(manifest.schema === PRODUCT_TRUTH_SCHEMA && manifest.version === "1.0.0", "manifest identity rejected");
+  assertProductTruth(manifest.schema === PRODUCT_TRUTH_SCHEMA && manifest.version === "2.0.0", "manifest identity rejected");
   assertProductTruth(manifest.status === "SOURCE_BOUND_TRUTH_WITH_SUBJECT_SCOPED_RUNTIME_UNKNOWNS", "manifest status rejected");
+  assertProductTruthKeys(manifest.evidenceLedger, ["schema", "path", "version", "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "bytes", "sha256", "gitBlobOid", "headEntryId"], "evidence ledger reference");
+  assertProductTruth(manifest.evidenceLedger.schema === "hive.ecosystem.product-truth.evidence-ledger.ref.v1"
+    && manifest.evidenceLedger.path === "hub-assets/product-truth-ledger.v1.json"
+    && manifest.evidenceLedger.version === 1
+    && manifest.evidenceLedger.integrityClass === "SELF_BOUND_INTEGRITY"
+    && manifest.evidenceLedger.independentTrustRoot === false
+    && manifest.evidenceLedger.authorizedPublicationAttested === false
+    && manifest.evidenceLedger.bytes === 4653
+    && manifest.evidenceLedger.sha256 === "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259"
+    && manifest.evidenceLedger.gitBlobOid === "943db0a4b30bb4dba38de3db62c5898fd9785e5c"
+    && manifest.evidenceLedger.headEntryId === "local-body-handoff-boundary-v1", "evidence ledger reference rejected");
+  assertProductTruth(ledger?.schema === "hive.ecosystem.product-truth.evidence-ledger.v1"
+    && ledger.version === 1
+    && ledger.administrationModel === "APPEND_ONLY_LEDGER_MODEL_V1"
+    && ledger.integrityClass === "SELF_BOUND_INTEGRITY"
+    && ledger.independentTrustRoot === false
+    && ledger.authorizedPublicationAttested === false
+    && Array.isArray(ledger.entries) && ledger.entries.length === 6
+    && ledger.entries.at(-1)?.entryId === manifest.evidenceLedger.headEntryId, "evidence ledger rejected");
+  const genesisEntry = ledger.entries.find((entry) => entry.entryId === "canonical-candidate-genesis-v1");
+  assertProductTruth(genesisEntry?.status === "IMMUTABLE_CONTENT_ADDRESSED_CANDIDATE_GENESIS_PROVENANCE"
+    && genesisEntry.reasonCodes?.includes("ORIGINAL_CONTENT_ADDRESSED_CANDIDATE_GENESIS_IDENTITY")
+    && genesisEntry.evidence?.semanticSha256 === CANONICAL_GENESIS_SEMANTIC_SHA256
+    && genesisEntry.evidence?.physicalSha256 === CANONICAL_GENESIS_SHA256
+    && genesisEntry.evidence?.bytes === CANONICAL_GENESIS_BYTES
+    && genesisEntry.evidence?.gitBlobOid === CANONICAL_GENESIS_BLOB, "candidate genesis ledger entry rejected");
 
   assertProductTruthKeys(manifest.source, ["projectionRole", "sourceCommit", "graphHash", "snapshotHash", "capturedAt"], "manifest source");
   assertProductTruth(manifest.source.sourceCommit === snapshot.hiveAi.sourceCommit, "source commit mismatch");
   assertProductTruth(manifest.source.graphHash === snapshot.hiveAi.graphHash && manifest.source.snapshotHash === snapshot.snapshotHash, "source graph binding mismatch");
   assertProductTruth(manifest.source.capturedAt === snapshot.capturedAt, "source capture mismatch");
-  assertProductTruth(manifest.source.projectionRole === "bounded public projection of a source candidate; not the canonical manifest at evidence pin, a served/main receipt, runtime telemetry, behavior evidence, or authority", "projection role rejected");
+  assertProductTruth(manifest.source.projectionRole === "bounded public projection of LANDED SOURCE at 0ab04f6c and its PUBLISHED SNAPSHOT captured 2026-08-23T22:53:32Z, derived from an EVIDENCE BASELINE at 472131baa; FRESHNESS is separate and HOLD; not a public served/main receipt, runtime telemetry, behavior evidence, public retrievability, or authority", "projection role rejected");
 
   const canonicalManifest = manifest.canonicalManifest;
   assertProductTruthKeys(canonicalManifest, [
-    "status", "repository", "path", "evidenceSourceCommit", "evidenceSourceTree", "candidateSha256", "candidateBytes",
-    "candidateGitBlobOid", "landedCommit", "landedTree", "landedSha256", "landedBytes", "landedGitBlobOid", "audit",
+    "status", "landingStatus", "publicRetrievability", "repository", "path", "evidenceSourceCommit", "evidenceSourceTree",
+    "candidateSemanticSha256", "candidateSha256", "candidateBytes", "candidateGitBlobOid",
+    "candidateFirstGreenCommit", "candidateLastPrelandingCommit",
+    "landedCommit", "landedTree", "landedSha256", "landedBytes", "landedGitBlobOid", "audit",
   ], "canonical manifest custody");
   assertProductTruthKeys(canonicalManifest.audit, ["status", "bindingStatus", "authorityConferred"], "canonical candidate audit");
   // Identity of the manifest content is fixed and independent of whether it has landed.
@@ -840,11 +835,16 @@ async function validateProductTruthManifest(manifest, snapshot) {
       && canonicalManifest.path === "configs/public/constellation_architecture_v1.json"
       && canonicalManifest.evidenceSourceCommit === EVIDENCE_BASELINE_COMMIT
       && canonicalManifest.evidenceSourceTree === "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00"
-      && canonicalManifest.candidateSha256 === CANONICAL_MANIFEST_SHA256
-      && canonicalManifest.candidateBytes === CANONICAL_MANIFEST_BYTES
-      && canonicalManifest.candidateGitBlobOid === CANONICAL_MANIFEST_BLOB
+      && canonicalManifest.candidateSemanticSha256 === CANONICAL_GENESIS_SEMANTIC_SHA256
+      && canonicalManifest.candidateSha256 === CANONICAL_GENESIS_SHA256
+      && canonicalManifest.candidateBytes === CANONICAL_GENESIS_BYTES
+      && canonicalManifest.candidateGitBlobOid === CANONICAL_GENESIS_BLOB
+      && canonicalManifest.candidateFirstGreenCommit === "5e3f974c8a80064d2388ea81cb151117555ff6b4"
+      && canonicalManifest.candidateLastPrelandingCommit === "ade641d988e933be5441d7f5ec15bea616d2bda7"
+      && canonicalManifest.landingStatus === "LANDED_HASH_VERIFIED"
+      && canonicalManifest.publicRetrievability === "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
       && canonicalManifest.audit.status === "PASS"
-      && canonicalManifest.audit.bindingStatus === canonicalManifest.status
+      && canonicalManifest.audit.bindingStatus === "SOURCE_BOUND_MATCH"
       && canonicalManifest.audit.authorityConferred === false,
     "canonical candidate custody or authority rejected",
   );
@@ -965,7 +965,11 @@ async function validateProductTruthManifest(manifest, snapshot) {
   const tester6 = subjects.candidate_tester_6_publication;
   assertProductTruth(tester6.tag === "hive-ide-v0.3.0-tester.6" && tester6.githubReleaseApiStatus === 404 && tester6.url === null && tester6.bytes === null && tester6.sha256 === null && tester6.signatureStatus === "UNKNOWN" && tester6.readbackReceiptSha256 === "cf4101d607fbcfce8a9173311cb1d45c9fc6c81d82514d013df30c4a5bec97b0" && tester6.verifiedAt === "2026-08-23T19:37:31.6497275Z" && tester6.validUntil === "2026-08-24T19:37:31.6497275Z", "tester.6 publication HOLD rejected");
   const wsl = subjects.windows_wsl_candidate_design;
-  assertProductTruth(wsl.repositoryCommit === "f459e85cc71801afbed4a8579b31133b9ff58edd" && wsl.evidencePersistence === "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT" && /Windows x64 NSIS host/.test(wsl.designTopology), "Windows+WSL candidate observation rejected");
+  assertProductTruth(wsl.repositoryCommit === "f459e85cc71801afbed4a8579b31133b9ff58edd"
+    && wsl.ownerRepository === "Dhenz14/hive-ide"
+    && wsl.evidencePersistence === "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT"
+    && /Tauri\/WebView2 source observed on an unprotected candidate branch/.test(wsl.designTopology),
+  "Hive IDE candidate source observation rejected");
   assertProductTruth(subjects.linux_hive_ide_publication.url === null && /UNKNOWN/.test(subjects.linux_hive_ide_publication.claim), "Linux publication UNKNOWN rejected");
   assertProductTruth(subjects.macos_hive_ide_publication.url === null && subjects.macos_hive_ide_publication.notarizationStatus === null && /held/i.test(subjects.macos_hive_ide_publication.claim), "macOS publication HOLD rejected");
   assertProductTruth(subjects.installed_runtime.runtimeSourceCommit === null && /neither probes nor claims/.test(subjects.installed_runtime.claim), "installed runtime UNKNOWN rejected");
@@ -994,7 +998,7 @@ async function validateProductTruthManifest(manifest, snapshot) {
 
   const registry = manifest.registryClaimCut;
   assertProductTruthKeys(registry, ["status", "sourceCommit", "derivedAt", "authority", "runtimeEnabled", "servedInfluenceEnabled", "productLiveClaimAllowed", "executeAuthorized", "permanentProductTurnWire", "safeToClaim100PercentProductLive", "reason", "boundary"], "registry claim cut");
-  assertProductTruth(registry.status === "HOLD" && registry.sourceCommit === source.sourceCommit && registry.derivedAt === "2026-08-23T18:46:30Z" && registry.authority === "full_catalog_grant_bound_influence_accounting_via_agent_query" && registry.runtimeEnabled === 37 && registry.servedInfluenceEnabled === 37 && registry.productLiveClaimAllowed === 37 && registry.executeAuthorized === false && registry.permanentProductTurnWire === false && registry.safeToClaim100PercentProductLive === false && registry.reason === tip.reason, "registry fixed cut rejected");
+  assertProductTruth(registry.status === "HOLD" && registry.sourceCommit === EVIDENCE_BASELINE_COMMIT && registry.derivedAt === "2026-08-23T18:46:30Z" && registry.authority === "full_catalog_grant_bound_influence_accounting_via_agent_query" && registry.runtimeEnabled === 37 && registry.servedInfluenceEnabled === 37 && registry.productLiveClaimAllowed === 37 && registry.executeAuthorized === false && registry.permanentProductTurnWire === false && registry.safeToClaim100PercentProductLive === false && registry.reason === tip.reason, "registry fixed cut rejected");
 
   const platformIds = "windows-x64-remote|windows-wsl-design|linux-source|linux-publication|macos-publication";
   assertProductTruth(Array.isArray(manifest.platforms) && manifest.platforms.map((item) => item.id).join("|") === platformIds, "platform set rejected");
@@ -1009,8 +1013,8 @@ async function validateProductTruthManifest(manifest, snapshot) {
   assertProductTruth(platformById["linux-publication"].subjectId === "linux_hive_ide_publication" && platformById["linux-publication"].evidenceRef === null && platformById["linux-publication"].freshness === "UNKNOWN", "Linux publication row rejected");
   assertProductTruth(platformById["macos-publication"].subjectId === "macos_hive_ide_publication" && platformById["macos-publication"].evidenceRef === null && platformById["macos-publication"].claimPlane === "HELD", "macOS publication row rejected");
 
-  assertProductTruthKeys(manifest.integrityBoundary, ["manifestSelfHashProvesSemanticTruth", "authorityConferred", "sourceCandidateNotLanded", "claim"], "integrity boundary");
-  assertProductTruth(manifest.integrityBoundary.manifestSelfHashProvesSemanticTruth === false && manifest.integrityBoundary.authorityConferred === false && manifest.integrityBoundary.sourceCandidateNotLanded === (canonicalManifest.status === "CANDIDATE_NOT_LANDED") && /not a detached signature/.test(manifest.integrityBoundary.claim), "integrity authority ceiling rejected");
+  assertProductTruthKeys(manifest.integrityBoundary, ["integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "manifestSelfHashProvesSemanticTruth", "authorityConferred", "claim"], "integrity boundary");
+  assertProductTruth(manifest.integrityBoundary.integrityClass === "SELF_BOUND_INTEGRITY" && manifest.integrityBoundary.independentTrustRoot === false && manifest.integrityBoundary.authorizedPublicationAttested === false && manifest.integrityBoundary.manifestSelfHashProvesSemanticTruth === false && manifest.integrityBoundary.authorityConferred === false && /does not establish an INDEPENDENT_TRUST_ROOT/.test(manifest.integrityBoundary.claim) && /does not .*attest authorized publication/i.test(manifest.integrityBoundary.claim) && /not a detached signature/.test(manifest.integrityBoundary.claim), "integrity authority ceiling rejected");
   assertProductTruthKeys(manifest.bindingDigest, ["algorithm", "canonicalization", "excluded", "value"], "binding digest");
   assertProductTruth(manifest.bindingDigest.algorithm === "sha256" && manifest.bindingDigest.canonicalization === "recursive-key-sort-json-utf8" && Array.isArray(manifest.bindingDigest.excluded) && manifest.bindingDigest.excluded.length === 1 && manifest.bindingDigest.excluded[0] === "bindingDigest", "projection digest recipe rejected");
   const projection = { ...manifest };
@@ -1044,24 +1048,19 @@ function blockProductTruth(reason) {
   setText("[data-product-truth-state-label]", "FAIL CLOSED");
 }
 
-async function renderProductTruthManifest(manifest, snapshot) {
+async function renderProductTruthManifest(manifest, snapshot, ledger = productTruthLedger) {
   const root = $("[data-product-truth]");
   if (!root) return;
   try {
-    await validateProductTruthManifest(manifest, snapshot);
-    const canonicalLanded = manifest.canonicalManifest.status === "LANDED_HASH_VERIFIED";
-    root.dataset.state = canonicalLanded ? "ready" : "held";
-    setText("[data-product-truth-status]", canonicalLanded
-      ? "SOURCE SNAPSHOT + FULL PROJECTION BYTE INTEGRITY VERIFIED"
-      : "SOURCE SNAPSHOT BOUND · CANONICAL CONTRACT CANDIDATE NOT LANDED");
+    await validateProductTruthManifest(manifest, snapshot, ledger);
+    root.dataset.state = "ready";
+    setText("[data-product-truth-status]", "SOURCE_BOUND_MATCH · LANDED_HASH_VERIFIED");
     setText("[data-product-truth-integrity]", manifest.integrityBoundary.claim);
     setText("[data-product-truth-architecture]", `${manifest.architecture.label} · ${readableManifestState(manifest.architecture.status)}`);
     setText("[data-product-truth-source]", manifest.source.sourceCommit);
     setText("[data-product-truth-captured]", `${manifest.source.capturedAt} · immutable cut`);
-    setText("[data-product-truth-canonical]", canonicalLanded
-      ? `${manifest.canonicalManifest.landedCommit.slice(0, 12)} · landed hash verified`
-      : `${manifest.canonicalManifest.candidateSha256.slice(0, 12)} · candidate only · not present at 472131baa`);
-    setText("[data-product-truth-state-label]", canonicalLanded ? "SOURCE BOUND" : "CANDIDATE HOLD");
+    setText("[data-product-truth-canonical]", `${manifest.canonicalManifest.landedCommit.slice(0, 12)} · LANDED SOURCE / PUBLISHED HISTORICAL SNAPSHOT · FRESHNESS HOLD · ${readableManifestState(manifest.canonicalManifest.publicRetrievability)}`);
+    setText("[data-product-truth-state-label]", "SOURCE BOUND");
 
     const claimsRoot = $("[data-product-truth-claims]", root);
     if (claimsRoot) {
@@ -1107,10 +1106,15 @@ async function renderProductTruthManifest(manifest, snapshot) {
         const platformStates = evidenceExpired
           ? [`${platform.supportStatus} · HISTORICAL`, "EVIDENCE EXPIRED · HELD", "EVIDENCE EXPIRED · HELD", `${platform.signingStatus} · LAST READBACK`]
           : [platform.supportStatus, platform.testStatus, platform.packageStatus, platform.signingStatus];
-        platformStates.forEach((value) => {
-          row.append(createTruthElement("td", "", readableManifestState(value)));
+        const platformLabels = ["Support", "Test evidence", "Public package", "Signing"];
+        platformStates.forEach((value, stateIndex) => {
+          const cell = createTruthElement("td", "", readableManifestState(value));
+          cell.dataset.label = platformLabels[stateIndex];
+          row.append(cell);
         });
-        row.append(createTruthElement("td", "", `${platform.evidence} Source: ${platform.evidenceRef}. Verified: ${platform.verifiedAt || "UNKNOWN"}. Valid until: ${platform.validUntil || "not time-bounded by this evidence set"}.${evidenceExpired ? " Current publication claims are HELD pending a fresh readback." : ""}`));
+        const evidenceCell = createTruthElement("td", "", `${platform.evidence} Source: ${platform.evidenceRef || "no admitted evidence reference"}. Verified: ${platform.verifiedAt || "UNKNOWN"}. Valid until: ${platform.validUntil || "not time-bounded by this evidence set"}.${evidenceExpired ? " Current publication claims are HELD pending a fresh readback." : ""}`);
+        evidenceCell.dataset.label = "Evidence ceiling";
+        row.append(evidenceCell);
         platformRoot.append(row);
       });
     }
@@ -1133,24 +1137,27 @@ function wireProductTruthManifest() {
   const root = $("[data-product-truth]");
   if (!root) return;
   window.addEventListener("hive:snapshot", (event) => {
-    if (productTruthManifest) void renderProductTruthManifest(productTruthManifest, event.detail.snapshot);
+    if (productTruthManifest && productTruthLedger) void renderProductTruthManifest(productTruthManifest, event.detail.snapshot, productTruthLedger);
   });
   window.addEventListener("hive:snapshot-error", () => blockProductTruth("source snapshot unavailable"));
-  void fetch("/hub-assets/product-truth.json", { cache: "no-store", headers: { Accept: "application/json" } })
-    .then((response) => {
-      if (!response.ok) throw new Error(`manifest HTTP ${response.status}`);
-      const declaredBytes = Number(response.headers.get("content-length"));
-      if (Number.isFinite(declaredBytes) && declaredBytes > PRODUCT_TRUTH_MAX_BYTES) throw new Error("manifest exceeded declared byte ceiling");
-      return response.text();
-    })
-    .then((body) => {
-      if (body.includes("\uFFFD")) throw new Error("manifest contains invalid UTF-8 replacement bytes");
-      if (new TextEncoder().encode(body).byteLength > PRODUCT_TRUTH_MAX_BYTES) throw new Error("manifest exceeded body byte ceiling");
-      return parseProductTruthJsonStrict(body);
-    })
-    .then((manifest) => {
+  const readBoundJson = async (url, maximumBytes, expectedBytes, expectedSha256, label) => {
+    const response = await fetch(url, { cache: "no-store", headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error(`${label} HTTP ${response.status}`);
+    const declaredBytes = Number(response.headers.get("content-length"));
+    if (Number.isFinite(declaredBytes) && declaredBytes > maximumBytes) throw new Error(`${label} exceeded declared byte ceiling`);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.byteLength > maximumBytes || (expectedBytes !== null && bytes.byteLength !== expectedBytes)) throw new Error(`${label} byte identity drifted`);
+    if (expectedSha256 && await sha256Bytes(bytes) !== expectedSha256) throw new Error(`${label} SHA-256 drifted`);
+    return parseJsonBytesStrict(bytes, label);
+  };
+  void Promise.all([
+    readBoundJson("/hub-assets/product-truth.json", PRODUCT_TRUTH_MAX_BYTES, null, null, "product truth manifest"),
+    readBoundJson("/hub-assets/product-truth-ledger.v1.json", 32 * 1024, 4653, "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259", "product truth evidence ledger"),
+  ])
+    .then(([manifest, ledger]) => {
       productTruthManifest = manifest;
-      if (window.hivePublicSnapshot) return renderProductTruthManifest(manifest, window.hivePublicSnapshot);
+      productTruthLedger = ledger;
+      if (window.hivePublicSnapshot) return renderProductTruthManifest(manifest, window.hivePublicSnapshot, ledger);
       setText("[data-product-truth-status]", "Manifest loaded · waiting for source snapshot");
       return null;
     })
@@ -1171,7 +1178,16 @@ async function loadSourceSnapshot() {
       ...(controller ? { signal: controller.signal } : {}),
     });
     if (!response.ok) throw new Error(`snapshot HTTP ${response.status}`);
-    const snapshot = await response.json();
+    const declaredHeader = response.headers.get("content-length");
+    if (declaredHeader !== null) {
+      if (!/^\d+$/.test(declaredHeader)) throw new Error("snapshot content-length was malformed");
+      if (Number(declaredHeader) > HUB_FACTS_MAX_BYTES) throw new Error("snapshot exceeded declared byte ceiling");
+    }
+    const snapshotBytes = new Uint8Array(await response.arrayBuffer());
+    if (snapshotBytes.byteLength === 0 || snapshotBytes.byteLength > HUB_FACTS_MAX_BYTES) {
+      throw new Error("snapshot body fell outside the bounded byte envelope");
+    }
+    const snapshot = parseJsonBytesStrict(snapshotBytes, "hub-facts source snapshot");
     if (!await validSnapshot(snapshot)) throw new Error("snapshot contract rejected");
     if (!snapshotResponseCanCommit({
       requestGeneration,
@@ -1215,9 +1231,7 @@ async function loadSourceSnapshot() {
       : new Intl.DateTimeFormat("en-GB", {
         day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC", hour12: false,
       }).format(captured).replace(",", "") + " UTC";
-    setText("[data-source-stamp]", `Hive-AI main @ ${facts.sourceCommit.slice(0, 7)} · ${captureLabel}`);
-    setText("[data-hero-source]", `main @ ${facts.sourceCommit.slice(0, 7)}`);
-    setText("[data-hero-freshness]", `checked now · captured ${captureLabel}`);
+    setText("[data-source-stamp]", `Published snapshot captured ${captureLabel} · source binding @ ${facts.sourceCommit.slice(0, 8)} · evidence baseline @ ${EVIDENCE_BASELINE_COMMIT.slice(0, 9)}`);
     setText("[data-graph-hash]", facts.graphHash.slice(0, 8));
     const previous = window.hivePublicSnapshot;
     window.hivePublicSnapshot = snapshot;
@@ -1232,14 +1246,17 @@ async function loadSourceSnapshot() {
         ? `The represented source capture is more than fifteen minutes old (${snapshot.capturedAt}).`
         : `The represented source capture is recent (${snapshot.capturedAt}).`;
     const bridgeTruth = presentation.bridge === "configured"
-      ? "Automatic publication is configured; the exact published source snapshot validated successfully in this browser."
-      : "This is a manual source-bound snapshot; the last validated source facts remain visible.";
-    const sourceBadgeLabel = `SOURCE SNAPSHOT ${facts.sourceCommit.slice(0, 7).toUpperCase()} · VERIFIED`;
-    setText("[data-galaxy-snapshot-state]", "verified");
+      ? "Automatic publication is configured; that configuration does not make an aged capture current."
+      : "This is a manual source-bound snapshot; source binding and freshness remain separate.";
+    const freshnessHeld = presentation.freshnessDisposition === "FRESHNESS_HOLD";
+    const sourceBadgeLabel = freshnessHeld
+      ? `HISTORICAL CAPTURE ${facts.sourceCommit.slice(0, 8).toUpperCase()} · FRESHNESS HOLD`
+      : `RECENT PUBLISHED SNAPSHOT ${facts.sourceCommit.slice(0, 8).toUpperCase()} · SOURCE-BOUND`;
+    setText("[data-galaxy-snapshot-state]", freshnessHeld ? "historical" : "recent");
     setSourceBadge(
       presentation.badgeState,
       sourceBadgeLabel,
-      `${ageTruth} ${bridgeTruth} Capture age is provenance, not runtime or publisher health.`,
+      `${ageTruth} Source binding PASS. Freshness ${freshnessHeld ? "HOLD" : "recent"}. ${bridgeTruth} Capture age is provenance, not runtime or publisher health.`,
     );
     if (!previous
       || previous.hiveAi?.sourceCommit !== snapshot.hiveAi.sourceCommit
@@ -1255,8 +1272,6 @@ async function loadSourceSnapshot() {
       document.body.classList.add("snapshot-unavailable");
       setSourceBadge("blocked", "Snapshot unavailable", "No validated source snapshot is available.");
       setText("[data-source-stamp]", "Snapshot unavailable — embedded fallback only");
-      setText("[data-hero-source]", "unavailable");
-      setText("[data-hero-freshness]", "not available");
       window.dispatchEvent(new CustomEvent("hive:snapshot-error"));
     }
     console.warn("Hive source snapshot could not be refreshed:", error);
@@ -1388,7 +1403,7 @@ function renderIdeRelease(latest, truthResult) {
   setText("[data-ide-runtime-state]", latest.claimPlanes.runtime.status);
   setText("[data-ide-sha]", latest.installerSha256);
   setText("[data-ide-warning]", evidenceCurrent
-    ? "Evidence receipt is SOURCE_CANDIDATE_NOT_LANDED and the EXE is Authenticode NotSigned. The verified SHA-256 proves only the observed remote outer bytes—not package contents, safety, installability, runtime, or testing authority."
+    ? "Receipt landing is LANDED_HASH_VERIFIED and public retrievability is PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE. The EXE is Authenticode NotSigned. The verified SHA-256 proves only the observed remote outer bytes—not package contents, safety, installability, runtime, or testing authority."
     : "The remote-byte observation is expired. No action is authorized; refresh the evidence contract before relying on availability or byte identity.");
   setText("[data-ide-download]", "Download held · unsigned + runtime unknown");
   setText("[data-ide-start-here]", "START HERE held");
@@ -1423,12 +1438,12 @@ async function loadIdeRelease() {
     if (Number.isFinite(declaredBytes) && declaredBytes > IDE_RELEASE_LATEST_MAX_BYTES) {
       throw new Error("Hive IDE feed exceeded its declared size bound");
     }
-    const body = await response.text();
-    if (body.includes("\uFFFD") || new TextEncoder().encode(body).byteLength > IDE_RELEASE_LATEST_MAX_BYTES) {
+    const body = new Uint8Array(await response.arrayBuffer());
+    if (body.byteLength > IDE_RELEASE_LATEST_MAX_BYTES) {
       throw new Error("Hive IDE feed exceeded its body size bound");
     }
-    if (await sha256Text(body) !== IDE_RELEASE_LATEST_SHA256) throw new Error("Hive IDE feed bytes drifted from the frozen v2 candidate");
-    const latest = validateIdeReleaseLatest(parseJsonStrict(body, "Hive IDE release feed"));
+    if (await sha256Bytes(body) !== IDE_RELEASE_LATEST_SHA256) throw new Error("Hive IDE feed bytes drifted from the frozen v2 candidate");
+    const latest = validateIdeReleaseLatest(parseJsonBytesStrict(body, "Hive IDE release feed"));
 
     const truthPath = new URL(latest.truthManifestUrl).pathname;
     const truthResponse = await fetch(truthPath, {
@@ -1441,15 +1456,15 @@ async function loadIdeRelease() {
     if (Number.isFinite(truthDeclaredBytes) && truthDeclaredBytes > IDE_RELEASE_TRUTH_MAX_BYTES) {
       throw new Error("Hive IDE truth manifest exceeded its declared size bound");
     }
-    const truthBody = await truthResponse.text();
-    if (truthBody.includes("\uFFFD") || new TextEncoder().encode(truthBody).byteLength > IDE_RELEASE_TRUTH_MAX_BYTES) {
+    const truthBody = new Uint8Array(await truthResponse.arrayBuffer());
+    if (truthBody.byteLength > IDE_RELEASE_TRUTH_MAX_BYTES) {
       throw new Error("Hive IDE truth manifest exceeded its body size bound");
     }
-    const truthSha256 = await sha256Text(truthBody);
+    const truthSha256 = await sha256Bytes(truthBody);
     if (truthSha256 !== IDE_RELEASE_TRUTH_MANIFEST_SHA256 || truthSha256 !== latest.truthManifestSha256) {
       throw new Error("Hive IDE truth manifest bytes drifted from the frozen v2 candidate");
     }
-    const truthResult = validateIdeReleaseTruthManifest(parseJsonStrict(truthBody, "Hive IDE truth manifest"), latest);
+    const truthResult = validateIdeReleaseTruthManifest(parseJsonBytesStrict(truthBody, "Hive IDE truth manifest"), latest);
     renderIdeRelease(latest, truthResult);
   } catch (error) {
     blockIdeRelease(error instanceof Error ? error.message : "release feed unavailable");
@@ -1510,47 +1525,6 @@ function wireIdeReleaseCopy() {
       showToast("Clipboard access was refused. Select the digest manually.");
     }
     window.setTimeout(() => { button.textContent = original; }, 2200);
-  });
-}
-
-function wireLocalHandoffGate() {
-  const dialog = $("[data-local-handoff-dialog]");
-  const confirm = $("[data-local-handoff-confirm]", dialog || document);
-  const urlLabel = $("[data-local-handoff-url]", dialog || document);
-  const status = $("[data-local-handoff-status]", dialog || document);
-  if (!dialog || !confirm || !(dialog instanceof HTMLDialogElement)) return;
-
-  const close = () => {
-    if (dialog.open) dialog.close();
-  };
-
-  // One click, one motion: the local link navigates immediately in its own
-  // tab — the click IS the explicit confirmation. This public tab keeps a
-  // quiet, non-blocking recovery card. Never a gate, never a probe.
-  $$('a[href^="http://127.0.0.1:"]:not([data-local-handoff-confirm])').forEach((link) => {
-    link.addEventListener("click", () => {
-      const selectedUrl = link.href;
-      confirm.href = selectedUrl;
-      confirm.setAttribute("aria-label", `Open the local route again for ${link.textContent.trim()}`);
-      if (urlLabel) urlLabel.textContent = selectedUrl;
-      if (status) status.textContent = "Opened in a new tab just now. No request was sent from this public page, and availability is never assumed.";
-      window.dispatchEvent(new CustomEvent("hive:request-local-handoff"));
-      if (!dialog.open) dialog.show();
-    });
-  });
-
-  confirm.addEventListener("click", () => {
-    if (status) status.textContent = "Opened again in a new tab. This public recovery guidance stays here; local availability is still not claimed.";
-  });
-  $("[data-local-handoff-close]", dialog)?.addEventListener("click", close);
-  $("[data-local-handoff-stay]", dialog)?.addEventListener("click", close);
-  $("[data-local-handoff-copy-url]", dialog)?.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(confirm.href);
-      if (status) status.textContent = "Local link copied. No request was sent to the runtime.";
-    } catch {
-      if (status) status.textContent = "Copy was unavailable. The exact local link stays visible in the details; no request was sent.";
-    }
   });
 }
 
@@ -1826,9 +1800,6 @@ class GalaxyAtlas {
     });
     window.addEventListener("hive:command-stage", (event) => this.presentCommandStage(event.detail?.index));
     window.addEventListener("hive:manual-galaxy", () => this.cancelDirector(false));
-    window.addEventListener("hive:request-local-handoff", () => {
-      if (this.fullAtlas) this.closeFullAtlas(false);
-    });
     this.setEngaged(false);
     this.wireFullAtlas();
     this.wireDivisionNavigator();
@@ -1957,17 +1928,17 @@ class GalaxyAtlas {
     }
     if (!/^[a-f0-9]{40}$/.test(this.sourceCommit) || !/^[a-f0-9]{64}$/.test(this.graphHash)) {
       setText("[data-galaxy-context-summary]", "Context unavailable · source not yet bound");
-      setText("[data-galaxy-context-copy]", "Context parameters remain unavailable until this browser validates the source snapshot. The plain local routes remain explicit and availability is never assumed.");
-      $$('[data-local-context-link]').forEach((link) => { link.dataset.contextBound = "false"; });
+      setText("[data-galaxy-context-copy]", "Future context parameters remain unavailable until this browser validates the source snapshot. No local handoff is enabled or assumed.");
+      $$('[data-local-context-link][data-local-presentation="1"]').forEach((link) => { link.dataset.contextBound = "false"; });
       return;
     }
     const summaryNode = node.replace(/^(division|family|neuron):/, "");
     const localLens = this.lens === "artifact" ? "build" : this.lens;
     const localLevel = level === "division" ? "district" : level;
     setText("[data-galaxy-context-summary]", `${localLevel[0].toUpperCase()}${localLevel.slice(1)} ${summaryNode} · ${localLens} lens`);
-    setText("[data-galaxy-context-copy]", "Context bound after strict snapshot validation: version, source commit, graph hash, lens, node, and level. Opening remains an explicit user gesture.");
-    $$('[data-local-context-link]').forEach((link) => {
-      const presentation = link.dataset.localPresentation === "0" ? "0" : "1";
+    setText("[data-galaxy-context-copy]", "Future handoff context is source-bound: version, source commit, graph hash, lens, node, and level. The action remains disabled until the strict local runtime is separately attested.");
+    $$('[data-local-context-link][data-local-presentation="1"]').forEach((link) => {
+      const presentation = "1";
       const href = buildPublicHandoffUrl({
         presentation,
         sourceCommit: this.sourceCommit,
@@ -1977,17 +1948,23 @@ class GalaxyAtlas {
         level,
       });
       if (!href) return;
-      link.href = href;
+      link.dataset.futureHandoff = href;
       link.dataset.contextBound = "true";
     });
   }
 
   wireFullAtlas() {
-    const openers = $$('[data-galaxy-open], [data-galaxy-fullscreen]');
+    const openers = $$('[data-galaxy-fullscreen]');
+    const anchorPrimes = $$('[data-hero-atlas-cta]');
     const primeAtlas = () => this.canvas.closest("#galaxy")?.classList.add("is-render-primed");
     $$('[data-galaxy-fullscreen]').forEach((button) => {
       button.disabled = false;
       button.setAttribute("aria-disabled", "false");
+    });
+    anchorPrimes.forEach((anchor) => {
+      anchor.addEventListener("pointerenter", primeAtlas, { once: true, passive: true });
+      anchor.addEventListener("pointerdown", primeAtlas, { once: true, passive: true });
+      anchor.addEventListener("focus", primeAtlas, { once: true, passive: true });
     });
     openers.forEach((opener) => {
       opener.addEventListener("pointerenter", primeAtlas, { once: true, passive: true });
@@ -2174,7 +2151,7 @@ class GalaxyAtlas {
     root?.classList.add("is-full-atlas");
     root?.setAttribute("role", "dialog");
     root?.setAttribute("aria-modal", "true");
-    root?.setAttribute("aria-label", "Full viewport public Living Anatomy atlas");
+    root?.setAttribute("aria-label", "Full viewport public Constellation Atlas");
     document.body.classList.add("galaxy-fullscreen-open");
     this.focusInsideFullAtlas();
     this.setModalIsolation(root, true);
@@ -2465,7 +2442,7 @@ class GalaxyAtlas {
     this.setFocusDetail(
       "Neuron identity",
       neuron.id,
-      `Member of ${family?.code || "its family"} · ${titleCase(family?.name)}. Public topology only—open the local map for status, evidence, and missions.`,
+      `Member of ${family?.code || "its family"} · ${titleCase(family?.name)}. Public topology only. The local presentation handoff is unprobed; Operator status, evidence, and missions require a separately deployed and observed service.`,
     );
   }
 
@@ -2476,6 +2453,24 @@ class GalaxyAtlas {
       const division = this.divisions[this.activeDivision];
       if (division) this.setFocusDetail("Division focus", `Division ${division.code}`, "Hover or select a family to resolve its ten-neuron roster.");
     }
+  }
+
+  syncCanvasAccessibleName() {
+    let selection = "No atlas selection is active.";
+    if (this.activeNeuron >= 0 && this.neurons[this.activeNeuron]) {
+      selection = `Neuron ${this.neurons[this.activeNeuron].id} is selected.`;
+    } else if (this.activeFamily >= 0 && this.familyGeometry[this.activeFamily]) {
+      const geometry = this.familyGeometry[this.activeFamily];
+      const family = this.divisions[geometry.divisionIndex]?.families?.[geometry.familyIndex];
+      if (family) selection = `Family ${family.code}, ${family.name}, is selected with ${family.neuronIds.length} neurons.`;
+    } else if (this.activeDivision >= 0 && this.divisions[this.activeDivision]) {
+      const division = this.divisions[this.activeDivision];
+      selection = `Division ${division.code}, ${division.name}, is selected.`;
+    }
+    const controls = this.engaged
+      ? "Controls are engaged: drag to orbit, Shift-drag to pan, use wheel or pinch to zoom, Home to reset, and Escape to release page scroll."
+      : "Controls are released: activate Engage controls before orbiting or zooming.";
+    this.canvas.setAttribute("aria-label", `Interactive public-safe atlas of 640 Hive-AI neurons. ${selection} ${controls} Public points show topology, not runtime liveness.`);
   }
 
   showDivision(index, updateButtons = true, updateAccessibleName = updateButtons) {
@@ -2526,10 +2521,7 @@ class GalaxyAtlas {
       this.syncDivisionNavigator(index);
     }
     if (updateAccessibleName) {
-      this.canvas.setAttribute(
-        "aria-label",
-        `Interactive public-safe atlas of 640 Hive-AI neurons. Division ${division.code}, ${division.name}, is selected. Engage controls first; then use arrow keys to orbit and plus or minus to zoom.`,
-      );
+      this.syncCanvasAccessibleName();
     }
     if (index === this.activeDivision && this.activeFamily >= 0) {
       this.renderNeuronRoster(this.activeFamily);
@@ -2605,8 +2597,7 @@ class GalaxyAtlas {
     this.focusPoint(center, 1.58, exactFit);
     this.showDivision(this.activeDivision, true, false);
     this.showFamilyFocus(familyGeometryIndex);
-    const family = this.divisions[center.divisionIndex].families[center.familyIndex];
-    this.canvas.setAttribute("aria-label", `Interactive Hive-AI atlas. Family ${family.code}, ${family.name}, is selected with ${family.neuronIds.length} neurons. Press Escape to release controls.`);
+    this.syncCanvasAccessibleName();
     this.syncContextHandoff();
     this.syncLoop();
   }
@@ -2624,7 +2615,7 @@ class GalaxyAtlas {
     this.focusPoint(neuron, 2.15, exactFit);
     this.showDivision(this.activeDivision, true, false);
     this.showNeuronFocus(neuronIndex);
-    this.canvas.setAttribute("aria-label", `Interactive Hive-AI atlas. Neuron ${neuron.id} is selected. Public topology only; press Escape to release controls.`);
+    this.syncCanvasAccessibleName();
     this.syncContextHandoff();
     this.syncLoop();
   }
@@ -2744,6 +2735,7 @@ class GalaxyAtlas {
     }
     setText("[data-galaxy-hint-state]", this.engaged ? "Scroll" : "Engage");
     setText("[data-galaxy-hint-copy]", this.engaged ? "to dive" : "controls");
+    this.syncCanvasAccessibleName();
     this.syncLabelSafeFrame();
     if (announce) showToast(this.engaged ? "Galaxy controls engaged. Press Escape to release page scroll." : "Galaxy controls released. Page scroll restored.");
   }
@@ -4040,7 +4032,7 @@ function runAfterFirstPaint(label, start, delayMs = 0) {
 runSafely("Motion controls", wireMotionToggle);
 runSafely("Top navigation", wireTopbar);
 runAfterFirstPaint("Section reveals", wireReveal, 0);
-runAfterFirstPaint("Living Anatomy galaxy", startGalaxy, 20);
+runAfterFirstPaint("Constellation Atlas", startGalaxy, 20);
 runAfterFirstPaint("Offscreen scene control", wireSceneActivity, 40);
 runAfterFirstPaint("Ambient field", startField, 60);
 runAfterFirstPaint("Section navigation", wireSectionNav, 80);
@@ -4048,7 +4040,6 @@ runAfterFirstPaint("Galaxy lenses", wireLenses, 100);
 runAfterFirstPaint("Living command cycle", wireCommandCycle, 120);
 runAfterFirstPaint("Release copy controls", wireCopyButtons, 140);
 runAfterFirstPaint("Hive IDE release copy", wireIdeReleaseCopy, 160);
-runAfterFirstPaint("Local runtime handoff guidance", wireLocalHandoffGate, 180);
 runAfterFirstPaint("Product truth manifest", wireProductTruthManifest, 190);
 runAfterFirstPaint("Source snapshot", () => {
   if ($("[data-source-stamp], [data-galaxy-canvas]")) {

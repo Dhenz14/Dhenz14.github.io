@@ -2,12 +2,18 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  parseJsonBytesStrict,
+  parseJsonStrict as sharedParseJsonStrict,
+  StrictJsonError,
+} from "../hub-assets/strict-json.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const productTruthPath = path.join(root, "hub-assets", "product-truth.json");
 const factsPath = path.join(root, "hub-assets", "hub-facts.json");
 const latestPath = path.join(root, "downloads", "hive-ide", "latest.json");
 const releaseManifestPath = path.join(root, "downloads", "hive-ide", "hive-ide-release-manifest.json");
+const ledgerPath = path.join(root, "hub-assets", "product-truth-ledger.v1.json");
 const HEX40 = /^[a-f0-9]{40}$/;
 const HEX64 = /^[a-f0-9]{64}$/;
 const UTC_SECONDS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
@@ -17,8 +23,16 @@ const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/;
 
 const isPlainObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 
-function assert(condition, message) {
-  if (!condition) throw new Error(message);
+export class ProductTruthContractError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "ProductTruthContractError";
+    this.code = code;
+  }
+}
+
+function assert(condition, message, code = "PRODUCT_TRUTH_CONTRACT_VIOLATION") {
+  if (!condition) throw new ProductTruthContractError(code, message);
 }
 
 function exactKeys(value, expected, label) {
@@ -40,119 +54,7 @@ function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-export function parseJsonStrict(source, label = "JSON document") {
-  assert(typeof source === "string", `${label} must be UTF-8 text`);
-  assert(!source.includes("\uFFFD"), `${label} contains invalid UTF-8 replacement bytes`);
-  let cursor = 0;
-
-  const fail = (message) => {
-    throw new Error(`${label} ${message} at byte ${Buffer.byteLength(source.slice(0, cursor), "utf8")}`);
-  };
-  const skipWhitespace = () => {
-    while (cursor < source.length && /\s/.test(source[cursor])) cursor += 1;
-  };
-  const parseString = () => {
-    if (source[cursor] !== '"') fail("expected string");
-    const start = cursor;
-    cursor += 1;
-    let escaped = false;
-    while (cursor < source.length) {
-      const character = source[cursor];
-      cursor += 1;
-      if (escaped) {
-        escaped = false;
-        continue;
-      }
-      if (character === "\\") {
-        escaped = true;
-        continue;
-      }
-      if (character === '"') {
-        try {
-          return JSON.parse(source.slice(start, cursor));
-        } catch {
-          fail("contains an invalid string escape");
-        }
-      }
-      if (character.charCodeAt(0) < 0x20) fail("contains an unescaped control character");
-    }
-    fail("contains an unterminated string");
-  };
-  const parseValue = () => {
-    skipWhitespace();
-    if (cursor >= source.length) fail("ended before a value");
-    if (source[cursor] === '"') return parseString();
-    if (source[cursor] === "{") return parseObject();
-    if (source[cursor] === "[") return parseArray();
-    for (const [token, value] of [["true", true], ["false", false], ["null", null]]) {
-      if (source.startsWith(token, cursor)) {
-        cursor += token.length;
-        return value;
-      }
-    }
-    const number = source.slice(cursor).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
-    if (number) {
-      cursor += number[0].length;
-      const value = Number(number[0]);
-      if (!Number.isFinite(value)) fail("contains a non-finite number");
-      return value;
-    }
-    fail("contains an invalid value");
-  };
-  const parseObject = () => {
-    const result = Object.create(null);
-    const keys = new Set();
-    cursor += 1;
-    skipWhitespace();
-    if (source[cursor] === "}") {
-      cursor += 1;
-      return result;
-    }
-    while (cursor < source.length) {
-      skipWhitespace();
-      const key = parseString();
-      if (keys.has(key)) fail(`contains duplicate object key ${JSON.stringify(key)}`);
-      keys.add(key);
-      skipWhitespace();
-      if (source[cursor] !== ":") fail("expected colon after object key");
-      cursor += 1;
-      result[key] = parseValue();
-      skipWhitespace();
-      if (source[cursor] === "}") {
-        cursor += 1;
-        return result;
-      }
-      if (source[cursor] !== ",") fail("expected comma between object entries");
-      cursor += 1;
-    }
-    fail("contains an unterminated object");
-  };
-  const parseArray = () => {
-    const result = [];
-    cursor += 1;
-    skipWhitespace();
-    if (source[cursor] === "]") {
-      cursor += 1;
-      return result;
-    }
-    while (cursor < source.length) {
-      result.push(parseValue());
-      skipWhitespace();
-      if (source[cursor] === "]") {
-        cursor += 1;
-        return result;
-      }
-      if (source[cursor] !== ",") fail("expected comma between array entries");
-      cursor += 1;
-    }
-    fail("contains an unterminated array");
-  };
-
-  const result = parseValue();
-  skipWhitespace();
-  if (cursor !== source.length) fail("contains trailing content");
-  return result;
-}
+export const parseJsonStrict = sharedParseJsonStrict;
 
 const SUBJECT_STATUSES = Object.freeze({
   target_architecture: "SOURCE_BOUND_DOCTRINE",
@@ -198,7 +100,7 @@ const EXPECTED_PLATFORM_IDS = Object.freeze([
 const ATLAS_SOURCE_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
 const EVIDENCE_BASELINE_COMMIT = "472131baa2bc212a043966773bd92477c3a8a16c";
 const EVIDENCE_BASELINE_TREE = "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00";
-const EXPECTED_CANDIDATE_BINDING_DIGEST = "40812261a20c7d10cd358b843154c19db793cea62d6db3e0081fb5b5c0a0f9ab";
+const SOURCE_ATLAS_EVIDENCE_REF = "hub-assets/hub-facts.json; Dhenz14/Hive-AI@0ab04f6c19ffd41bb162bea674e77853fb27cc0e configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 46626c1662d1fe04e056ba1c44926184d523c65d490a76ad89acd2e58e04f62c";
 // The exact candidate-state strings that landing is allowed to replace. A landed
 // manifest must rebuild to this baseline digest, proving the landing changed the
 // custody fields and nothing else.
@@ -212,17 +114,60 @@ export function releasedTesterAvailability(manifest, now = Date.now()) {
   return "PUBLICATION_READBACK_WITHIN_VALIDITY_WINDOW";
 }
 
-export function validateProductTruth(manifest, { facts, latest, releaseManifest, expectedLanding } = {}) {
+export function validateProductTruth(manifest, { facts, latest, releaseManifest, ledger, expectedLanding } = {}) {
   exactKeys(manifest, [
-    "schema", "version", "status", "canonicalManifest", "what_architecture_am_i", "source", "architecture", "boundaries",
+    "schema", "version", "status", "evidenceLedger", "canonicalManifest", "what_architecture_am_i", "source", "architecture", "boundaries",
     "truth_subjects", "atlasTesterMatch", "relations", "definitions", "registryClaimCut", "platforms", "integrityBoundary", "bindingDigest",
   ], "product truth projection");
-  assert(manifest.schema === "hive.ecosystem.product-truth.public-projection.v1", "product truth schema drifted");
-  assert(manifest.version === "1.0.0", "product truth version drifted");
+  assert(manifest.schema === "hive.ecosystem.product-truth.public-projection.v2", "product truth schema drifted");
+  assert(manifest.version === "2.0.0", "product truth version drifted");
   assert(manifest.status === "SOURCE_BOUND_TRUTH_WITH_SUBJECT_SCOPED_RUNTIME_UNKNOWNS", "product truth projection status drifted");
+  exactKeys(manifest.evidenceLedger, ["schema", "path", "version", "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "bytes", "sha256", "gitBlobOid", "headEntryId"], "evidence ledger reference");
+  assert(manifest.evidenceLedger.schema === "hive.ecosystem.product-truth.evidence-ledger.ref.v1"
+    && manifest.evidenceLedger.path === "hub-assets/product-truth-ledger.v1.json"
+    && manifest.evidenceLedger.version === 1
+    && manifest.evidenceLedger.integrityClass === "SELF_BOUND_INTEGRITY"
+    && manifest.evidenceLedger.independentTrustRoot === false
+    && manifest.evidenceLedger.authorizedPublicationAttested === false
+    && manifest.evidenceLedger.bytes === 4653
+    && manifest.evidenceLedger.sha256 === "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259"
+    && manifest.evidenceLedger.gitBlobOid === "943db0a4b30bb4dba38de3db62c5898fd9785e5c"
+    && manifest.evidenceLedger.headEntryId === "local-body-handoff-boundary-v1", "evidence ledger reference drifted");
+  if (ledger) {
+    exactKeys(ledger, ["schema", "version", "administrationModel", "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "entries"], "evidence ledger");
+    assert(ledger.schema === "hive.ecosystem.product-truth.evidence-ledger.v1"
+      && ledger.version === 1
+      && ledger.administrationModel === "APPEND_ONLY_LEDGER_MODEL_V1"
+      && ledger.integrityClass === "SELF_BOUND_INTEGRITY"
+      && ledger.independentTrustRoot === false
+      && ledger.authorizedPublicationAttested === false
+      && Array.isArray(ledger.entries) && ledger.entries.length === 6
+      && ledger.entries.at(-1)?.entryId === manifest.evidenceLedger.headEntryId,
+    "evidence ledger envelope drifted", "EVIDENCE_LEDGER_INVALID");
+    const genesis = ledger.entries.find((entry) => entry.entryId === "canonical-candidate-genesis-v1");
+    assert(genesis?.status === "IMMUTABLE_CONTENT_ADDRESSED_CANDIDATE_GENESIS_PROVENANCE"
+      && genesis.reasonCodes?.includes("ORIGINAL_CONTENT_ADDRESSED_CANDIDATE_GENESIS_IDENTITY")
+      && genesis.evidence?.semanticSha256 === "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791"
+      && genesis.evidence?.physicalSha256 === "9e324cae2a6b8975d0451a1343166d5c802397595fd4b89a8d4af091574b0948"
+      && genesis.evidence?.bytes === 31198
+      && genesis.evidence?.gitBlobOid === "3cc7a08282dedaeb7c07a193dd3cc8a4a34124d6"
+      && genesis.evidence?.firstGreenCommit === "5e3f974c8a80064d2388ea81cb151117555ff6b4"
+      && genesis.evidence?.lastPrelandingCommit === "ade641d988e933be5441d7f5ec15bea616d2bda7",
+    "immutable candidate genesis drifted", "CANDIDATE_GENESIS_INVALID");
+    const diagnostic = ledger.entries.find((entry) => entry.entryId === "candidate-reconstruction-diagnostic-v1");
+    assert(diagnostic?.status === "SUPERSEDED_RECONSTRUCTED_DIAGNOSTIC_NOT_INDEPENDENT_TRUST_ROOT"
+      && diagnostic.reasonCodes?.includes("NOT_INDEPENDENT_TRUST_ROOT")
+      && diagnostic.evidence?.projectionBindingDigest === "40812261a20c7d10cd358b843154c19db793cea62d6db3e0081fb5b5c0a0f9ab",
+    "reconstructed diagnostic was promoted to trust root", "DIAGNOSTIC_TRUST_ROOT_INVALID");
+    const revoked = ledger.entries.find((entry) => entry.entryId === "tester5-electron-claim-revocation-v1");
+    assert(revoked?.status === "SUPERSEDED_REVOKED_UNSUPPORTED"
+      && revoked.reasonCodes?.includes("TESTER5_PACKAGE_CONTENTS_UNKNOWN_NOT_INSPECTED"),
+    "unsupported Electron history was not revoked", "ELECTRON_CLAIM_REVOCATION_INVALID");
+  }
   exactKeys(manifest.canonicalManifest, [
-    "status", "repository", "path", "evidenceSourceCommit", "evidenceSourceTree",
-    "candidateSha256", "candidateBytes", "candidateGitBlobOid",
+    "status", "landingStatus", "publicRetrievability", "repository", "path", "evidenceSourceCommit", "evidenceSourceTree",
+    "candidateSemanticSha256", "candidateSha256", "candidateBytes", "candidateGitBlobOid",
+    "candidateFirstGreenCommit", "candidateLastPrelandingCommit",
     "landedCommit", "landedTree", "landedSha256", "landedBytes", "landedGitBlobOid", "audit",
   ], "canonical manifest custody");
   const canonicalManifest = manifest.canonicalManifest;
@@ -230,14 +175,19 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && canonicalManifest.path === "configs/public/constellation_architecture_v1.json"
     && canonicalManifest.evidenceSourceCommit === "472131baa2bc212a043966773bd92477c3a8a16c"
     && canonicalManifest.evidenceSourceTree === "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00"
-    && canonicalManifest.candidateSha256 === "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056"
-    && canonicalManifest.candidateBytes === 49342
-    && canonicalManifest.candidateGitBlobOid === "c1036d2fc877e058965688fe8da5097576a37826", "canonical manifest candidate custody drifted");
+    && canonicalManifest.candidateSemanticSha256 === "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791"
+    && canonicalManifest.candidateSha256 === "9e324cae2a6b8975d0451a1343166d5c802397595fd4b89a8d4af091574b0948"
+    && canonicalManifest.candidateBytes === 31198
+    && canonicalManifest.candidateGitBlobOid === "3cc7a08282dedaeb7c07a193dd3cc8a4a34124d6"
+    && canonicalManifest.candidateFirstGreenCommit === "5e3f974c8a80064d2388ea81cb151117555ff6b4"
+    && canonicalManifest.candidateLastPrelandingCommit === "ade641d988e933be5441d7f5ec15bea616d2bda7"
+    && canonicalManifest.landingStatus === "LANDED_HASH_VERIFIED"
+    && canonicalManifest.publicRetrievability === "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE", "canonical manifest custody drifted");
   const canonicalAudit = canonicalManifest.audit;
   exactKeys(canonicalAudit, ["status", "bindingStatus", "authorityConferred"], "canonical manifest audit");
   assert(canonicalAudit.status === "PASS", "canonical manifest audit must be PASS to publish");
-  assert(canonicalAudit.bindingStatus === canonicalManifest.status,
-    "canonical manifest audit binding status must equal the custody status");
+  assert(canonicalAudit.bindingStatus === "SOURCE_BOUND_MATCH",
+    "canonical source binding must remain SOURCE_BOUND_MATCH and separate from landing custody");
   assert(canonicalAudit.authorityConferred === false,
     "a public projection must never claim conferred authority");
   if (canonicalManifest.status === "CANDIDATE_NOT_LANDED") {
@@ -278,11 +228,14 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && architectureIdentity.claim_plane === "TARGET", "canonical architecture answer or identity material drifted");
 
   exactKeys(manifest.source, ["projectionRole", "sourceCommit", "graphHash", "snapshotHash", "capturedAt"], "product truth source");
-  assert(/bounded public projection of a source candidate/i.test(manifest.source.projectionRole)
-    && /not the canonical manifest at evidence pin/i.test(manifest.source.projectionRole)
+  assert(/LANDED SOURCE at 0ab04f6c/i.test(manifest.source.projectionRole)
+    && /PUBLISHED SNAPSHOT captured 2026-08-23T22:53:32Z/i.test(manifest.source.projectionRole)
+    && /FRESHNESS is separate and HOLD/i.test(manifest.source.projectionRole)
+    && /EVIDENCE BASELINE at 472131baa/i.test(manifest.source.projectionRole)
     && /served\/main receipt/i.test(manifest.source.projectionRole)
     && /runtime telemetry/i.test(manifest.source.projectionRole)
     && /behaviou?r evidence/i.test(manifest.source.projectionRole)
+    && /public retrievability/i.test(manifest.source.projectionRole)
     && /authority/i.test(manifest.source.projectionRole), "public projection role is not fail-closed");
   assert(HEX40.test(manifest.source.sourceCommit), "product truth source commit is not exact");
   assert(HEX64.test(manifest.source.graphHash), "product truth graph hash is not exact");
@@ -313,11 +266,18 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   exactKeys(manifest.boundaries.currentVsLegacy, ["status", "claim"], "current-versus-legacy boundary");
   exactKeys(manifest.boundaries.noLlmClaim, ["status", "claim", "exactBoundary"], "no-LLM boundary");
   assert(manifest.boundaries.architectureVsLive.status === "SEPARATE_PLANES"
-    && /read-only GET surfaces/i.test(manifest.boundaries.architectureVsLive.claim)
-    && /authority-bearing Mission Control mutations are credential-gated when configured/i.test(manifest.boundaries.architectureVsLive.claim)
+    && /127\.0\.0\.1:5002 is UNKNOWN_UNPROBED_HOLD/i.test(manifest.boundaries.architectureVsLive.claim)
+    && /distinct 127\.0\.0\.1:5003 service/i.test(manifest.boundaries.architectureVsLive.claim)
+    && /HOLD_NOT_INDEPENDENTLY_OBSERVED/i.test(manifest.boundaries.architectureVsLive.claim)
+    && /never aliased to the presentation route/i.test(manifest.boundaries.architectureVsLive.claim)
+    && /Chat is WAIT/i.test(manifest.boundaries.architectureVsLive.claim)
     && /require independent evidence/i.test(manifest.boundaries.architectureVsLive.claim), "architecture and local live truth were conflated");
   assert(manifest.boundaries.currentVsLegacy.status === "SUBJECT_SCOPED_DISPOSITIONS"
-    && manifest.boundaries.currentVsLegacy.claim === "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron is REMOVED on the current Hive IDE trunk; the published tester.5 build predates that removal by 302 commits and still bundles Electron. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held.", "current and legacy subject dispositions drifted");
+    && /Tauri\/WebView2 source were observed only on the unprotected Hive IDE candidate branch/i.test(manifest.boundaries.currentVsLegacy.claim)
+    && /candidate is not landed on the default branch/i.test(manifest.boundaries.currentVsLegacy.claim)
+    && /Tester\.5 exact package contents are UNKNOWN_NOT_INSPECTED/i.test(manifest.boundaries.currentVsLegacy.claim)
+    && /SUPERSEDED_REVOKED_UNSUPPORTED/i.test(manifest.boundaries.currentVsLegacy.claim),
+  "current and legacy subject dispositions drifted");
   assert(manifest.boundaries.noLlmClaim.status === "HOLD"
     && /does not publish a bare ['\u2018\u2019\"]no LLM/i.test(manifest.boundaries.noLlmClaim.claim)
     && /authorized external agent/i.test(manifest.boundaries.noLlmClaim.exactBoundary)
@@ -448,6 +408,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && sourceAtlas.divisions === 16
     && sourceAtlas.families === 64
     && sourceAtlas.rowBackedTwitchProofs === 636
+    && sourceAtlas.evidenceRef === SOURCE_ATLAS_EVIDENCE_REF
     && /not runtime telemetry/i.test(sourceAtlas.claim), "source atlas facts or boundary drifted");
   if (facts) {
     assert(sourceAtlas.neurons === facts.hiveAi?.neurons
@@ -551,9 +512,9 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
       && observation.exactSha256Matched === released.artifactSha256IndependentlyVerified
       && observation.evidenceReceiptSha256 === released.verificationReceiptSha256
       && observation.validUntilUtc === released.validUntil, "released tester byte observation disagrees with latest.json");
-    // The receipt lives in an unlanded Hive-AI candidate; the feed must say so rather
-    // than implying a landed, publicly retrievable proof.
-    assert(observation.evidenceReceiptAvailability === "SOURCE_CANDIDATE_NOT_LANDED"
+    // Landing custody and public retrievability are independent evidence planes.
+    assert(observation.landingStatus === "LANDED_HASH_VERIFIED"
+      && observation.publicRetrievability === "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
       && HEX40.test(observation.evidenceReceiptGitBlobOid ?? "")
       && observation.rawHttpRetained === false
       && observation.independentlySigned === false, "byte-observation receipt custody was overstated");
@@ -586,16 +547,19 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(tester6.readbackReceiptSha256 !== released.verificationReceiptSha256,
     "tester.5 and tester.6 must not share one observation receipt");
 
-  // ---- Windows + WSL: candidate design only, explicitly non-durable ----
+  // ---- Hive IDE Tauri source: candidate branch only, explicitly non-durable ----
   const wsl = manifest.truth_subjects.windows_wsl_candidate_design;
   exactKeys(wsl, [
     ...SUBJECT_BASE_KEYS, "ownerRepository", "repositoryRef", "repositoryCommit", "designTopology", "evidencePersistence",
   ], "windows/WSL candidate design subject");
-  assert(wsl.ownerRepository === "Hive IDE"
+  assert(wsl.ownerRepository === "Dhenz14/hive-ide"
     && typeof wsl.repositoryRef === "string" && wsl.repositoryRef.trim()
-    && HEX40.test(wsl.repositoryCommit)
+    && wsl.repositoryCommit === "f459e85cc71801afbed4a8579b31133b9ff58edd"
     && wsl.evidencePersistence === "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT"
-    && /candidate design, not landing, installation, or runtime proof/i.test(wsl.claim), "Windows/WSL candidate design was promoted beyond a non-durable observation");
+    && /candidate branch at f459e85/i.test(wsl.claim)
+    && /not landed on the default branch/i.test(wsl.claim)
+    && /not tester\.5 package contents, installation, or runtime proof/i.test(wsl.claim),
+  "Hive IDE candidate source observation was promoted beyond its evidence");
 
   // ---- platform publications with no admissible observation ----
   const linuxPublication = manifest.truth_subjects.linux_hive_ide_publication;
@@ -690,8 +654,8 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     "executeAuthorized", "permanentProductTurnWire", "safeToClaim100PercentProductLive", "reason", "boundary",
   ], "registry claim cut");
   assert(registry.status === "HOLD"
-    && registry.sourceCommit === manifest.source.sourceCommit
-    && UTC_SECONDS.test(registry.derivedAt)
+    && registry.sourceCommit === EVIDENCE_BASELINE_COMMIT
+    && registry.derivedAt === "2026-08-23T18:46:30Z"
     && registry.runtimeEnabled === tip.runtimeEnabled
     && registry.servedInfluenceEnabled === tip.servedInfluenceEnabled
     && registry.productLiveClaimAllowed === tip.productLiveClaimAllowed
@@ -744,11 +708,13 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && /embedded Hive-AI source is older than the atlas/i.test(platforms["windows-x64-remote"].evidence), "Windows tester row was promoted past verified outer bytes");
 
   assert(platforms["windows-wsl-design"].subjectId === "windows_wsl_candidate_design"
-    && platforms["windows-wsl-design"].supportStatus === "DECLARED_INSIDE_WINDOWS_TESTER_PATH"
-    && platforms["windows-wsl-design"].testStatus === "NOT_A_SEPARATE_PUBLIC_PACKAGE"
-    && platforms["windows-wsl-design"].packageStatus === "BUNDLED_TOPOLOGY_NOT_PLATFORM_ARTIFACT"
+    && platforms["windows-wsl-design"].supportStatus === "CANDIDATE_BRANCH_NOT_LANDED"
+    && platforms["windows-wsl-design"].testStatus === "SOURCE_OBSERVED_NOT_PACKAGE_INSPECTED"
+    && platforms["windows-wsl-design"].packageStatus === "TESTER5_UNKNOWN_NOT_INSPECTED"
     && platforms["windows-wsl-design"].signingStatus === "NOT_APPLICABLE"
-    && /not durable custody, a second package, landing, installation, or runtime proof/i.test(platforms["windows-wsl-design"].evidence), "Windows+WSL row was promoted into a separate package or runtime claim");
+    && /Default tip 41df9be does not contain that candidate/i.test(platforms["windows-wsl-design"].evidence)
+    && /Tester\.5 package contents remain UNKNOWN_NOT_INSPECTED/i.test(platforms["windows-wsl-design"].evidence),
+  "Hive IDE candidate source observation was promoted into default landing or package contents");
 
   // The two Linux rows are the whole point of the split: a source path is not a package.
   assert(platforms["linux-source"].subjectId === "source_atlas"
@@ -762,11 +728,16 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(platforms["macos-publication"].subjectId === "macos_hive_ide_publication", "macOS row is not bound to the macOS publication subject");
 
   exactKeys(manifest.integrityBoundary, [
-    "manifestSelfHashProvesSemanticTruth", "authorityConferred", "sourceCandidateNotLanded", "claim",
+    "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "manifestSelfHashProvesSemanticTruth", "authorityConferred", "claim",
   ], "manifest integrity boundary");
-  assert(manifest.integrityBoundary.manifestSelfHashProvesSemanticTruth === false
+  assert(manifest.integrityBoundary.integrityClass === "SELF_BOUND_INTEGRITY"
+    && manifest.integrityBoundary.independentTrustRoot === false
+    && manifest.integrityBoundary.authorizedPublicationAttested === false
+    && manifest.integrityBoundary.manifestSelfHashProvesSemanticTruth === false
     && manifest.integrityBoundary.authorityConferred === false
-    && manifest.integrityBoundary.sourceCandidateNotLanded === (canonicalManifest.status === "CANDIDATE_NOT_LANDED")
+    && /SELF_BOUND_INTEGRITY/.test(manifest.integrityBoundary.claim)
+    && /does not establish an INDEPENDENT_TRUST_ROOT/.test(manifest.integrityBoundary.claim)
+    && /does not .*attest authorized publication/i.test(manifest.integrityBoundary.claim)
     && /not a detached signature/i.test(manifest.integrityBoundary.claim)
     && /served\/main receipt/i.test(manifest.integrityBoundary.claim)
     && /runtime attestation/i.test(manifest.integrityBoundary.claim)
@@ -781,25 +752,8 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(HEX64.test(manifest.bindingDigest.value), "product truth digest is not an exact SHA-256");
   const { bindingDigest, ...digestBody } = manifest;
   assert(manifest.bindingDigest.value === sha256(canonicalJson(digestBody)), "product truth full-projection digest mismatch");
-  if (canonicalManifest.status === "CANDIDATE_NOT_LANDED") {
-    assert(manifest.bindingDigest.value === EXPECTED_CANDIDATE_BINDING_DIGEST, "candidate product truth projection drifted from the independently frozen full digest");
-  } else {
-    const candidateBaseline = structuredClone(manifest);
-    candidateBaseline.canonicalManifest.status = "CANDIDATE_NOT_LANDED";
-    candidateBaseline.canonicalManifest.landedCommit = null;
-    candidateBaseline.canonicalManifest.landedTree = null;
-    candidateBaseline.canonicalManifest.landedSha256 = null;
-    candidateBaseline.canonicalManifest.landedBytes = null;
-    candidateBaseline.canonicalManifest.landedGitBlobOid = null;
-    candidateBaseline.canonicalManifest.audit.bindingStatus = "CANDIDATE_NOT_LANDED";
-    candidateBaseline.integrityBoundary.sourceCandidateNotLanded = true;
-    candidateBaseline.relations.candidateServed.status = "CANDIDATE_NOT_LANDED";
-    candidateBaseline.relations.candidateServed.claim = CANDIDATE_SERVED_CLAIM;
-    candidateBaseline.truth_subjects.target_architecture.evidence = CANDIDATE_TARGET_EVIDENCE;
-    candidateBaseline.truth_subjects.target_architecture.evidenceRef = CANDIDATE_TARGET_EVIDENCE_REF;
-    delete candidateBaseline.bindingDigest;
-    assert(sha256(canonicalJson(candidateBaseline)) === EXPECTED_CANDIDATE_BINDING_DIGEST, "landed projection contains drift beyond the independently expected landing reconciliation");
-  }
+  assert(manifest.evidenceLedger.headEntryId === "local-body-handoff-boundary-v1",
+    "current projection is not bound to the versioned append-only ledger-model head");
 
   const serialized = JSON.stringify(manifest);
   assert(!/releases\/download\/[^"']*tester\.6/i.test(serialized), "unpublished tester.6 URL leaked into product truth");
@@ -812,8 +766,12 @@ function expectReject(label, manifest, context, mutate) {
   mutate(fixture);
   try {
     validateProductTruth(fixture, context);
-  } catch {
-    return { label, passed: true };
+  } catch (error) {
+    return {
+      label,
+      passed: error instanceof ProductTruthContractError && error.code === "PRODUCT_TRUTH_CONTRACT_VIOLATION",
+      observedCode: error?.code ?? error?.name ?? typeof error,
+    };
   }
   return { label, passed: false };
 }
@@ -837,15 +795,28 @@ function validateLandingExpectation(expectedLanding) {
 export function projectVerifiedLanding(manifest, expectedLanding) {
   const landing = validateLandingExpectation(expectedLanding);
   const projected = structuredClone(manifest);
+  if (projected.canonicalManifest?.status === "LANDED_HASH_VERIFIED") {
+    assert(projected.canonicalManifest.landingStatus === "LANDED_HASH_VERIFIED"
+      && projected.canonicalManifest.publicRetrievability === "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
+      && projected.canonicalManifest.landedCommit === landing.commit
+      && projected.canonicalManifest.landedTree === landing.tree
+      && projected.canonicalManifest.landedSha256 === landing.sha256
+      && projected.canonicalManifest.landedBytes === landing.bytes
+      && projected.canonicalManifest.landedGitBlobOid === landing.blobOid
+      && projected.canonicalManifest.audit.bindingStatus === "SOURCE_BOUND_MATCH",
+    "existing landed projection does not match the exact external landing expectation");
+    return projected;
+  }
   assert(projected.canonicalManifest?.status === "CANDIDATE_NOT_LANDED", "only a candidate projection can be advanced in memory");
   projected.canonicalManifest.status = "LANDED_HASH_VERIFIED";
+  projected.canonicalManifest.landingStatus = "LANDED_HASH_VERIFIED";
+  projected.canonicalManifest.publicRetrievability = "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE";
   projected.canonicalManifest.landedCommit = landing.commit;
   projected.canonicalManifest.landedTree = landing.tree;
   projected.canonicalManifest.landedSha256 = landing.sha256;
   projected.canonicalManifest.landedBytes = landing.bytes;
   projected.canonicalManifest.landedGitBlobOid = landing.blobOid;
-  projected.canonicalManifest.audit.bindingStatus = "LANDED_HASH_VERIFIED";
-  projected.integrityBoundary.sourceCandidateNotLanded = false;
+  projected.canonicalManifest.audit.bindingStatus = "SOURCE_BOUND_MATCH";
   projected.relations.candidateServed.status = "LANDED_HASH_VERIFIED";
   projected.relations.candidateServed.claim = "The canonical source candidate is landed and hash-verified at the stated commit. No installed-runtime, behavior, authority, or product-live claim is allowed.";
   const target = projected.truth_subjects?.target_architecture;
@@ -863,6 +834,19 @@ function expectRejectRebound(label, manifest, context, mutate) {
     mutate(fixture);
     rebindFullProjection(fixture);
   });
+}
+
+function expectStrictJsonReject(label, source, expectedCode) {
+  try {
+    parseJsonStrict(source, `${label} fixture`);
+  } catch (error) {
+    return {
+      label,
+      passed: error instanceof StrictJsonError && error.code === expectedCode,
+      observedCode: error?.code ?? error?.name ?? typeof error,
+    };
+  }
+  return { label, passed: false };
 }
 
 export function runProductTruthSelfTests(manifest, context) {
@@ -940,6 +924,8 @@ export function runProductTruthSelfTests(manifest, context) {
     }),
     expectRejectRebound("wsl_durability_promotion_refused", manifest, context, (value) => { value.truth_subjects.windows_wsl_candidate_design.evidencePersistence = "SOURCE_CONTROLLED_RECEIPT"; }),
     expectRejectRebound("conferred_authority_refused", manifest, context, (value) => { value.integrityBoundary.authorityConferred = true; }),
+    expectRejectRebound("independent_trust_root_invention_refused", manifest, context, (value) => { value.integrityBoundary.independentTrustRoot = true; }),
+    expectRejectRebound("authorized_publication_invention_refused", manifest, context, (value) => { value.integrityBoundary.authorizedPublicationAttested = true; }),
     expectRejectRebound("canonical_audit_conferral_refused", manifest, context, (value) => { value.canonicalManifest.audit.authorityConferred = true; }),
     expectRejectRebound("canonical_audit_binding_split_refused", manifest, context, (value) => {
       value.canonicalManifest.audit.bindingStatus = value.canonicalManifest.status === "CANDIDATE_NOT_LANDED"
@@ -979,37 +965,19 @@ export function runProductTruthSelfTests(manifest, context) {
     expectReject("digest_tamper_refused", manifest, context, (value) => { value.bindingDigest.value = "0".repeat(64); }),
     { label: "release_after_expiry_is_held", passed: releasedTesterAvailability(manifest, Date.parse(manifest.truth_subjects.released_tester_5.validUntil) + 1) === "PUBLICATION_FRESHNESS_EXPIRED_HELD" },
   ];
-  try {
-    parseJsonStrict('{"schema":"first","schema":"second"}', "duplicate-key fixture");
-    tests.push({ label: "duplicate_json_key_refused", passed: false });
-  } catch {
-    tests.push({ label: "duplicate_json_key_refused", passed: true });
-  }
-  try {
-    parseJsonStrict('{"truth_subjects":{"released_tester":{"claim":"first","claim":"second"}}}', "nested duplicate-key fixture");
-    tests.push({ label: "nested_duplicate_json_key_refused", passed: false });
-  } catch {
-    tests.push({ label: "nested_duplicate_json_key_refused", passed: true });
-  }
-  try {
-    parseJsonStrict('{"schema":', "malformed fixture");
-    tests.push({ label: "malformed_json_refused", passed: false });
-  } catch {
-    tests.push({ label: "malformed_json_refused", passed: true });
-  }
-  try {
-    parseJsonStrict('{"schema":"\uFFFD"}', "invalid UTF-8 fixture");
-    tests.push({ label: "utf8_replacement_bytes_refused", passed: false });
-  } catch {
-    tests.push({ label: "utf8_replacement_bytes_refused", passed: true });
-  }
+  tests.push(
+    expectStrictJsonReject("duplicate_json_key_refused", '{"schema":"first","schema":"second"}', "JSON_DUPLICATE_KEY"),
+    expectStrictJsonReject("nested_duplicate_json_key_refused", '{"truth_subjects":{"released_tester":{"claim":"first","claim":"second"}}}', "JSON_DUPLICATE_KEY"),
+    expectStrictJsonReject("malformed_json_refused", '{"schema":', "JSON_MISSING_VALUE"),
+    expectStrictJsonReject("utf8_replacement_bytes_refused", '{"schema":"\uFFFD"}', "JSON_INVALID_UTF8"),
+  );
   return tests;
 }
 
 function readStrictJson(filePath, maximumBytes, label) {
   const bytes = fs.readFileSync(filePath);
   assert(bytes.length > 0 && bytes.length <= maximumBytes, `${label} exceeds its static byte bounds`);
-  return parseJsonStrict(bytes.toString("utf8"), label);
+  return parseJsonBytesStrict(bytes, label);
 }
 
 export function validatePublishedProductTruth({ selfTest = false, expectedLanding } = {}) {
@@ -1017,12 +985,18 @@ export function validatePublishedProductTruth({ selfTest = false, expectedLandin
   const facts = readStrictJson(factsPath, 8 * 1024 * 1024, "public source snapshot");
   const latest = readStrictJson(latestPath, 64 * 1024, "Hive IDE latest feed");
   const releaseManifest = readStrictJson(releaseManifestPath, 512 * 1024, "Hive IDE release manifest");
+  const ledgerBytes = fs.readFileSync(ledgerPath);
+  assert(ledgerBytes.length === manifest.evidenceLedger.bytes, "evidence ledger byte count drifted", "EVIDENCE_LEDGER_BYTES_MISMATCH");
+  assert(sha256(ledgerBytes) === manifest.evidenceLedger.sha256, "evidence ledger SHA-256 drifted", "EVIDENCE_LEDGER_SHA256_MISMATCH");
+  assert(crypto.createHash("sha1").update(`blob ${ledgerBytes.length}\0`).update(ledgerBytes).digest("hex") === manifest.evidenceLedger.gitBlobOid,
+    "evidence ledger Git blob OID drifted", "EVIDENCE_LEDGER_GIT_BLOB_MISMATCH");
+  const ledger = parseJsonBytesStrict(ledgerBytes, "product truth evidence ledger");
   if (expectedLanding) validateLandingExpectation(expectedLanding);
-  const context = { facts, latest, releaseManifest, expectedLanding };
+  const context = { facts, latest, releaseManifest, ledger, expectedLanding };
   validateProductTruth(manifest, context);
   const tests = selfTest ? runProductTruthSelfTests(manifest, context) : [];
   if (selfTest) assert(tests.every((test) => test.passed), `product truth hostile self-test failed: ${tests.filter((test) => !test.passed).map((test) => test.label).join(",")}`);
-  return { manifest, facts, latest, releaseManifest, tests };
+  return { manifest, facts, latest, releaseManifest, ledger, tests };
 }
 
 const isMain = Boolean(process.argv[1]) && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
@@ -1054,7 +1028,7 @@ if (isMain) {
     : PINNED_LANDING;
   if (process.argv.includes("--project-landing")) {
     assert(expectedLanding, "--project-landing requires every --expect-landing-* value");
-    const result = validatePublishedProductTruth({ expectedLanding: undefined });
+    const result = validatePublishedProductTruth({ expectedLanding });
     const projected = projectVerifiedLanding(result.manifest, expectedLanding);
     validateProductTruth(projected, { facts: result.facts, latest: result.latest, releaseManifest: result.releaseManifest, expectedLanding });
     console.log(JSON.stringify(projected, null, 2));

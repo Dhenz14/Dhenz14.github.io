@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { canonicalJson } from "../hub-assets/galaxy-core.mjs";
+import { readHubFactsSync } from "./hub-facts-custody.mjs";
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const factsPathIndex = process.argv.indexOf("--facts-path");
@@ -27,7 +28,7 @@ if (factsPathIndex !== -1 && !process.argv[factsPathIndex + 1]) {
 const reasonCode = checkoutFailed
   ? "PRIVATE_SOURCE_CHECKOUT_FAILED"
   : "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED";
-const current = JSON.parse(fs.readFileSync(outputPath, "utf8"));
+const current = readHubFactsSync(outputPath, "bridge marker hub-facts input");
 const nextRefresh = {
   privateSourceMode: "manual-source-bound-snapshot",
   automaticBridgeEnabled: false,

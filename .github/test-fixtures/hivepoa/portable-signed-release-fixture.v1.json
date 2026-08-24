@@ -1,0 +1,30 @@
+{
+  "schema": "hivepoa.signed_release.portable_fixture.v1",
+  "version": 1,
+  "historicalReceipt": {
+    "path": "HivePoA/public-surface-quarantine-receipt.json",
+    "bytes": 5310,
+    "sha256": "ac1cd5ac2a678b5bb46e2503c90ab9364b80cd562f2725039137ab74da94ec1a",
+    "gitBlobOid": "a4ff709e53106fd932224c6d7a6f2e48ee13e7e0"
+  },
+  "bindings": {
+    "historicalIndex": {
+      "path": ".github/test-fixtures/hivepoa/historical-index-1a607c451406.html",
+      "bytes": 19354,
+      "sha256": "78c1353fa32410062eb4585ff4a606b02578697faad1023910ed3d50b71c9397",
+      "gitBlobOid": "1a607c451406eb81c5e838fbcb2237ed3d057d3c"
+    },
+    "authorizationModule": {
+      "path": ".github/test-fixtures/hivepoa/tester-network-authorization-3f397e3bc3a6.js",
+      "bytes": 13971,
+      "sha256": "75c02a84f91f9fce72672427b6865d80c09118ad3ad9c4be758aa6cfc3d4282a",
+      "gitBlobOid": "3f397e3bc3a6a3a4ee83b9c54f11c1b8bc55daf0"
+    }
+  },
+  "currentDeployment": {
+    "status": "UNKNOWN_NOT_OBSERVED",
+    "observedAt": null,
+    "receiptRef": null,
+    "reasonCode": "NO_CURRENT_DEPLOYMENT_READBACK_IN_CANDIDATE"
+  }
+}

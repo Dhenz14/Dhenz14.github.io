@@ -51,7 +51,7 @@
     },
     "currentVsLegacy": {
       "status": "SUBJECT_SCOPED_DISPOSITIONS",
-      "claim": "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron is REMOVED in the current Hive IDE build, observed at an exact candidate commit that is neither landed on that repository's main nor published; tester.5 predates that removal and still bundles Electron. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held."
+      "claim": "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron is REMOVED on the current Hive IDE trunk; the published tester.5 build predates that removal by 302 commits and still bundles Electron. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held."
     },
     "noLlmClaim": {
       "status": "HOLD",
@@ -634,6 +634,6 @@
     "excluded": [
       "bindingDigest"
     ],
-    "value": "530e551a78ee23435618570587ace2e0ba9fe4e8f2f3dd5ae1402c2a27be3d92"
+    "value": "8f4b8cb598be24aef974e4f685bb92dd49e4b58958d4d44caf33d952e1e44b53"
   }
 }

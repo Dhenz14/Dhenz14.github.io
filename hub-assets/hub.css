@@ -1017,7 +1017,10 @@ h3 {
   margin-bottom: clamp(3rem, 6vw, 5.5rem);
 }
 
-.section-heading .eyebrow {
+/* Child selector on purpose: this negative pull only cancels the grid row gap when the
+   eyebrow is itself a grid item. Where a section wraps its eyebrow and heading in a div,
+   grid-column is inert and the pull would drag the heading up over the eyebrow. */
+.section-heading > .eyebrow {
   grid-column: 1 / -1;
   margin-bottom: -2.7rem;
 }
@@ -5860,7 +5863,8 @@ body.command-flightdeck-open::after {
 .hero-system {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-template-rows: 5rem repeat(3, minmax(7rem, 1fr)) 5.5rem;
+  /* First and last rows hold the satellites: 5.8rem core + 0.55rem ring each side. */
+  grid-template-rows: 7rem repeat(3, minmax(7rem, 1fr)) 7rem;
   gap: 0.7rem;
   padding: 0.5rem;
 }
@@ -6144,7 +6148,8 @@ body.galaxy-fullscreen-open {
   }
 
   .hero-system {
-    grid-template-rows: 4.5rem repeat(3, minmax(6.5rem, 1fr)) 5.5rem;
+    /* First/last rows carry the satellites: 5.2rem core + 0.55rem ring each side. */
+    grid-template-rows: 6.5rem repeat(3, minmax(6.5rem, 1fr)) 6.5rem;
   }
 
   .galaxy-controls {
@@ -6373,7 +6378,7 @@ body.galaxy-fullscreen-open {
 
 .hero-system {
   min-height: clamp(26rem, 45vh, 34rem);
-  grid-template-rows: 4rem repeat(3, minmax(5.5rem, 1fr)) 4.5rem;
+  grid-template-rows: 7rem repeat(3, minmax(5.5rem, 1fr)) 7rem;
 }
 
 .hero-system .system-core > span,
@@ -7068,7 +7073,7 @@ body.galaxy-fullscreen-open {
     width: min(100%, 46rem);
     min-height: 20rem;
     margin: 0 auto;
-    grid-template-rows: 3.5rem repeat(3, minmax(3.8rem, 1fr)) 3.5rem;
+    grid-template-rows: 6.5rem repeat(3, minmax(3.8rem, 1fr)) 6.5rem;
   }
 
   .hero-support {

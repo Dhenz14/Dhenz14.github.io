@@ -7750,7 +7750,7 @@ body.motion-paused *::after {
 /* Short viewports (browser zoom on laptops, small landscape windows):
    keep the chrome compact so the headline, CTA, and a real atlas stage
    all survive the first view. 34rem ≈ 544px effective height covers
-   125%–200% zoom on 720–800px-tall displays. */
+   125%–200% zoom on 720–800px-tall displays. Navigation targets stay 44px. */
 @media (max-height: 40rem) {
   .topbar {
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -7781,7 +7781,7 @@ body.motion-paused *::after {
   .primary-nav a {
     flex: 0 0 auto;
     min-width: max-content;
-    min-height: 2.4rem;
+    min-height: 2.75rem;
     padding: 0.35rem 0.65rem;
   }
 

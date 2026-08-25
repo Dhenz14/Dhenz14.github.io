@@ -6,8 +6,10 @@
 - Actions `allowed_actions=selected` with SHA pinning required
 - Default `GITHUB_TOKEN` contents permission is read
 - `main` cannot be force-pushed or deleted
-- Hosted `contract` status check is required on `main`
+- Hosted `contract` status check is required on `main` (`enforce_admins=true`, strict)
 - CODEOWNERS names owners for workflows, scripts, allowlist, and truth surfaces
+- Merge commits remain allowed so Commit A/B path preservation stays valid
+- Required linear history stays off while A/B identity matters
 
 ## Intentionally deferred until a second reviewer exists
 
@@ -17,9 +19,8 @@ reviewer is available, enable:
 - required pull-request reviews (count ≥ 1)
 - required CODEOWNERS review for `.github/workflows/**`, `script/**`, and the Pages allowlist
 - conversation resolution before merge
-
-Merge commits must remain allowed so Commit A/B path preservation stays valid.
-Do not enable required linear history for this repository while A/B identity matters.
+- a repository ruleset that forbids direct pushes to `main` (classic required-status
+  checks alone do not force the pull-request boundary)
 
 ## Emergency path
 

@@ -31,7 +31,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: calc(var(--topbar-height) + 1rem);
+  scroll-padding-top: calc(var(--topbar-height) + 3.75rem);
   overflow-x: clip;
   background: var(--bg);
 }
@@ -9443,6 +9443,137 @@ main > section,
   min-height: 2.75rem;
   padding: 0.5rem 0.25rem;
   font-size: 0.875rem;
+}
+
+/* GALAXY_STARK_V20_PRESENTATION_PROOF_SPLIT */
+.system-state-strip {
+  position: sticky;
+  top: var(--topbar-height);
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.35rem;
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid rgba(255, 214, 102, 0.18);
+  background: rgba(5, 7, 13, 0.92);
+  backdrop-filter: blur(10px);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.system-state-strip span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-height: 2rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.system-state-strip b {
+  color: #ffd666;
+  font-weight: 700;
+}
+
+.surface-mode {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border: 1px solid rgba(255, 214, 102, 0.28);
+  border-radius: 999px;
+}
+
+.surface-mode button {
+  min-height: 2.4rem;
+  min-width: 6.5rem;
+  padding: 0.35rem 0.7rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.surface-mode button[aria-pressed="true"] {
+  background: rgba(255, 214, 102, 0.16);
+  color: #ffd666;
+}
+
+.hero-mode-hint,
+.proof-teaser {
+  margin-top: 0.85rem;
+}
+
+.hero-mode-hint .text-button,
+button.text-button {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #ffd666;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.proof-teaser-shell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body[data-surface-mode="presentation"] [data-proof-depth] {
+  display: none !important;
+}
+
+body[data-surface-mode="proof"] [data-presentation-only] {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 62rem) {
+  .system-state-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 34rem), (max-height: 40rem) {
+  .system-state-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0.35rem 0.75rem;
+  }
+
+  .surface-mode button {
+    min-width: 0;
+    padding: 0.3rem 0.55rem;
+  }
+}
+
+@media (max-height: 40rem) {
+  :root {
+    --topbar-height: 4.5rem;
+  }
 }
 
 /* GALAXY_STARK_V18_PRESENTATION_CONTRACT_END */

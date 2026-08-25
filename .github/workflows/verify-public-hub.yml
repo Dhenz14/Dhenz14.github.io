@@ -46,6 +46,7 @@ jobs:
           node --check script/check-galaxy-core.mjs
           node --check script/check-live-parity.mjs
           node --check script/check-publisher-races.mjs
+          node --check script/check-viewport-matrix.mjs
           node --check script/verify-pages-artifact.mjs
           node --check script/check-signed-release.mjs
           node --check script/check-signed-release-portability.mjs
@@ -79,6 +80,7 @@ jobs:
           node script/verify-pages-artifact.mjs --self-test
           node script/check-public-pages-artifact.mjs
           node script/check-publisher-races.mjs
+          node script/check-viewport-matrix.mjs
           node script/check-signed-release.mjs
           node script/check-signed-release.mjs --verify-git-provenance
           node script/check-signed-release.mjs --self-test

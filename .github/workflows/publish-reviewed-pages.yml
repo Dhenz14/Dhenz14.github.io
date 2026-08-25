@@ -5,8 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    # Bounded recovery for a replaced push signal or a failed same-SHA run.
-    - cron: "17,47 * * * *"
+    # Daily recovery for a replaced push signal, expired durable artifact, or
+    # failed same-SHA run. Push and workflow_dispatch remain immediate.
+    - cron: "17 6 * * *"
 
 permissions:
   contents: read
@@ -303,7 +304,7 @@ jobs:
         with:
           name: ${{ needs.resolve.outputs.artifact_name }}
           path: ${{ runner.temp }}/hive-pages-reviewed-${{ github.run_id }}-${{ github.run_attempt }}
-          retention-days: 1
+          retention-days: 30
           include-hidden-files: true
 
   verify-artifact:
@@ -421,7 +422,9 @@ jobs:
           jobs="$(curl --fail --silent --show-error --location "${auth[@]}" "$api/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs?per_page=100")"
           jq -e '([.jobs[] | select(.name == "Build reviewed artifact" or .name == "Verify immutable Pages artifact") | select(.status == "completed" and .conclusion == "success")] | length) == 2' >/dev/null <<<"$jobs"
           jq -e '([.jobs[] | select((.name == "Build reviewed artifact" or .name == "Verify immutable Pages artifact") and .status != "completed")] | length) == 0' >/dev/null <<<"$jobs"
-      - name: Deploy the unique verified artifact without repository code
+      # Privileged deploy: no checkout and no checked-out repository scripts.
+      # The job still runs repository-controlled workflow YAML / inline shell.
+      - name: Deploy the unique verified artifact without checkout or repository scripts
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
         with:

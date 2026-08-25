@@ -2,12 +2,20 @@
 
 ## Ordinary responsive rows
 
-For widths/heights such as `320×568`, `390×844`, `720×560`, `1408×900`, `1440×900`,
-and `1440×560`, **PASS** means:
+For widths/heights such as `320×568`, `390×844`, `720×560`, `1015×227`,
+`1256×959`, `1408×900`, `1409×900`, `1440×900`, `1440×560`, and
+`1920×1080`, **PASS** means:
 
 - `document.documentElement.scrollWidth - window.innerWidth <= 0`
 - primary navigation targets retain at least `44px` CSS height
 - primary CTA and truth qualifier remain readable without clipping at `window.innerWidth`
+- the primary navigation, Presentation/Proof mode control, source badge, and
+  motion control occupy disjoint rectangles
+- visible semantic copy does not exceed a hidden or clipped content box
+- the six-item public-state strip remains fully represented; short wide
+  projectors keep six columns while narrow screens wrap without truncation
+- Full Atlas opens with camera controls engaged, and wheel zoom changes the
+  rendered view without changing page scroll position
 
 Record `window.innerWidth`, `window.innerHeight`, and
 `document.documentElement.scrollWidth`.

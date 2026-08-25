@@ -706,7 +706,7 @@ const openingHeroCopy = html.slice(heroCopyStart, heroCopyEnd);
 requireNoMatch(openingHeroCopy, /\b(?:H10|BYOM|tester\.\d+|SHA-256|workflow history)\b|472131baa|0ab04f6c/i, "plain-language opening before forensic detail");
 requireNoMatch(html, /class="outcome-grid"/, "duplicate post-hero Ask/Build/Improve outcome grid");
 requireMatch(html, /class="roadmap-rail"[\s\S]*SOURCE-PRESENT[\s\S]*source-authored Constellation Atlas[\s\S]*NEXT PROOF GATES[\s\S]*installed-process evidence[\s\S]*LONG-TERM TARGET[\s\S]*Hive-native generation[\s\S]*explicitly operator-invoked caller/i, "source-present proof-gates long-term roadmap");
-requireMatch(html, /class="hero-status-rail"[\s\S]*SOURCE ATLAS PRESENT · SNAPSHOT FRESHNESS HOLD · RUNTIME NOT ATTESTED[\s\S]*LOCAL BODY HOLD · OPERATOR HOLD · CHAT WAIT · IDE WAIT · HIVEPOA QUARANTINED/, "compact first-screen truth rail");
+requireMatch(html, /class="hero-status-rail"[\s\S]*SOURCE ATLAS PRESENT · SNAPSHOT FRESHNESS HOLD · RUNTIME NOT ATTESTED[\s\S]*LOCAL BODY LINK · USER INITIATED · OPERATOR HOLD · CHAT WAIT · IDE WAIT · HIVEPOA QUARANTINED/, "compact first-screen truth rail");
 const heroActionIndex = openingHeroCopy.indexOf('class="hero-actions hero-primary-action"');
 const heroOutcomesIndex = openingHeroCopy.indexOf('class="hero-outcomes"');
 if (heroActionIndex < 0 || heroOutcomesIndex <= heroActionIndex) throw new Error("primary request CTA must precede the compact Ask/Build/Improve pills");
@@ -780,7 +780,7 @@ requireMatch(html, /<\/label>\s*<\/div>\s*<\/div>\s*<p class="galaxy-atlas-statu
 requireMatch(html, /data-galaxy-division-nav-current[^>]*>A · Route, Hold, and Activation Budget<\//, "full initial compact division name");
 requireMatch(html, /<select[^>]+data-galaxy-division-nav-select[^>]+disabled[^>]+aria-disabled="true"[^>]*><\/select>/, "fail-closed native division select");
 requireMatch(html, /<select[^>]+data-galaxy-division-nav-select[^>]+aria-label="Jump to division"/, "explicit short-mode native division label");
-requireMatch(html, /data-galaxy-context-summary>Context unavailable · source not yet bound<[\s\S]*data-galaxy-context-copy>Future context parameters remain unavailable until this browser validates/, "unbound future local-context truth");
+requireMatch(html, /data-galaxy-context-summary>Context unavailable · source not yet bound<[\s\S]*data-galaxy-context-copy>The fixed local doorway is available by user click only[\s\S]*nothing is sent automatically/, "unbound user-initiated local-context truth");
 const directorButtons = rootButtonTags.filter((tag) => /\sdata-galaxy-director(?:\s|>)/.test(tag));
 if (directorButtons.length !== 1 || !directorButtons[0].includes('aria-pressed="false"')) {
   throw new Error(`exactly one startup Director control is required, found ${directorButtons.length}`);
@@ -838,16 +838,17 @@ if (localChatLinks.length) {
   throw new Error(`presentation-safe hub must not expose a clickable local chat route, found ${localChatLinks.length}`);
 }
 const localContextTags = [...html.matchAll(/<[a-z][^>]*\sdata-local-context-link(?=[\s>])[^>]*>/gi)].map((match) => match[0]);
-if (localContextTags.length !== 2) {
-  throw new Error("exactly two inert Local Body context hooks are required, found " + localContextTags.length);
+if (localContextTags.length !== 5) {
+  throw new Error("exactly five explicit Local Body doorways are required, found " + localContextTags.length);
 }
+const localBodyUrl = "http://127.0.0.1:5002/constellation/body?presentation=1";
 for (const tag of localContextTags) {
-  if (/\s(?:href|target|formaction)=/i.test(tag)
-    || !/\saria-disabled="true"/i.test(tag)
-    || !/\stabindex="-1"/i.test(tag)
-    || /\stabindex="(?:0|[1-9]\d*)"/i.test(tag)
-    || (/^<button\b/i.test(tag) && !/\sdisabled(?:\s|>)/i.test(tag))) {
-    throw new Error("Local Body context hook is not statically inert: " + tag);
+  if (!/^<a\b/i.test(tag)
+    || !tag.includes(`href="${localBodyUrl}"`)
+    || !/\starget="hive-local-body"/i.test(tag)
+    || !/\srel="noopener noreferrer"/i.test(tag)
+    || /\s(?:aria-disabled="true"|tabindex="-1"|disabled(?:\s|>))/i.test(tag)) {
+    throw new Error("Local Body doorway is not an exact user-initiated navigation: " + tag);
   }
 }
 const operatorSurfaceTags = [...html.matchAll(/<[a-z][^>]*\sdata-body-surface="operator"[^>]*>/gi)].map((match) => match[0]);
@@ -859,22 +860,25 @@ if (operatorSurfaceTags.length !== 1
   ))) {
   throw new Error("distinct Operator Body surface must remain one statically inert HOLD hook");
 }
-for (const [label, source] of [["index", html], ["404", notFound], ["hub", js], ["core", galaxyCore]]) {
+for (const [label, source] of [["404", notFound], ["hub", js], ["core", galaxyCore]]) {
   requireNoMatch(source, /https?:\/\/(?:127(?:\.\d{1,3}){3}|localhost|\[?::1\]?)/i, label + " complete loopback URL");
 }
+const completeLoopbackUrls = html.match(/https?:\/\/(?:127(?:\.\d{1,3}){3}|localhost|\[?::1\]?)[^"'\s<]*/gi) || [];
+if (completeLoopbackUrls.length !== localContextTags.length || completeLoopbackUrls.some((url) => url !== localBodyUrl)) {
+  throw new Error(`only the five exact Local Body navigation URLs may name loopback, found: ${completeLoopbackUrls.join(", ")}`);
+}
 requireNoMatch(js, /\bwindow\.open\s*\(|\blocation\.(?:assign|replace)\s*\(|\blocation\s*=|\bnew\s+(?:XMLHttpRequest|WebSocket|EventSource|Worker|SharedWorker)\s*\(|\bnavigator\.(?:sendBeacon|serviceWorker\b)/, "browser loopback-capable active sink");
-requireMatch(js, /function enforceLocalContextInertness\(\)[\s\S]*\["href", "target", "formaction"\][\s\S]*setAttribute\("aria-disabled", "true"\)[\s\S]*setAttribute\("tabindex", "-1"\)[\s\S]*node\.disabled = true[\s\S]*event\.preventDefault\(\)/, "behavioral Local Body inertness gate");
+requireMatch(js, /function enforceLocalHandoffBoundary\(\)[\s\S]*node instanceof HTMLAnchorElement[\s\S]*node\.protocol === "http:"[\s\S]*node\.hostname === "127\.0\.0\.1"[\s\S]*node\.port === "5002"[\s\S]*node\.pathname === "\/constellation\/body"[\s\S]*node\.search === "\?presentation=1"[\s\S]*node\.target = "hive-local-body"[\s\S]*node\.rel = "noopener noreferrer"/, "fail-closed exact Local Body navigation boundary");
 requireNoMatch(js, /localChatUrl|127\.0\.0\.1:5002\/chat/, "browser-created local chat presentation route");
-requireNoMatch(html, /href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1/, "unattested local presentation navigation");
-requireMatch(html, /Local Body · HOLD[\s\S]{0,180}Intended :5002 handoff not attested/, "held future Local Body handoff");
+requireMatch(html, /Open Local 3D Body[\s\S]{0,180}:5002 · runs only on this computer/, "visible user-initiated Local Body handoff");
 requireNoMatch(html, /presentation=0/, "operator alias to the presentation service");
 requireNoMatch(html, /href="http:\/\/127\.0\.0\.1:5003/, "unobserved Operator service navigation");
 requireMatch(html, /Operator body · HOLD[\s\S]{0,180}Distinct :5003 service not observed/, "disabled distinct Operator handoff");
 requireNoMatch(html, /127\.0\.0\.1:8791/, "retired split-port Living Anatomy route");
 requireNoMatch(html, /data-local-handoff-dialog|data-local-handoff-confirm/, "obsolete active local-handoff dialog");
 requireNoMatch(html, /href="http:\/\/127\.0\.0\.1:[^"]*"[^>]*target="_blank"/, "local links never scatter into unnamed tabs");
-requireMatch(html, /data-body-surface="atlas"[\s\S]*data-body-surface="presentation"[\s\S]*data-body-surface="operator"[^>]+aria-disabled="true"/, "public Atlas plus presentation and held Operator bridge");
-requireMatch(html, /No local handoff is enabled in this public candidate[\s\S]*Local Body awaits exact :5002 runtime evidence[\s\S]*Operator remains a separate intended :5003 service[\s\S]*Chat remains WAIT/i, "truthful local availability boundary");
+requireMatch(html, /data-body-surface="atlas"[\s\S]*data-body-surface="presentation"[^>]+href="http:\/\/127\.0\.0\.1:5002\/constellation\/body\?presentation=1"[\s\S]*data-body-surface="operator"[^>]+aria-disabled="true"/, "public Atlas plus user-initiated presentation and held Operator bridge");
+requireMatch(html, /Local Body is an explicit user-initiated doorway, not a liveness claim[\s\S]*never probes :5002[\s\S]*Operator remains a separate intended :5003 service[\s\S]*Chat remains WAIT/i, "truthful local availability boundary");
 requireMatch(html, /Chat is not available from this public presentation\. Status: WAIT\./, "exact public Chat WAIT boundary");
 requireMatch(html, /class="pipeline-rail"[\s\S]*Intent[\s\S]*Route[\s\S]*Halo[\s\S]*Trust[\s\S]*Compose[\s\S]*Gate[\s\S]*Witness[\s\S]*Record outcome or HOLD/, "constellation causal flight path");
 requireNoMatch(html, /class="pipeline-rail"[\s\S]{0,2000}<strong>Generate<\/strong>/, "retired conventional Generate endpoint");
@@ -959,7 +963,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v20" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v21" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -982,7 +986,7 @@ requireMatch(js, /data-release-evidence-index/, "separate evidence states");
 requireMatch(js, /class GalaxyAtlas/, "galaxy renderer");
 requireMatch(js, /wireFullAtlas\(\)[\s\S]*setAttribute\("role", "dialog"\)[\s\S]*setAttribute\("aria-modal", "true"\)/, "full-viewport atlas dialog and focus contract");
 requireMatch(js, /startDirector\(\)[\s\S]*setTimeout\(\(\) => this\.cancelDirector\(true\), 4000\)[\s\S]*cancelDirector\(completed = false\)/, "interruptible 24-second director");
-requireMatch(js, /syncContextHandoff\(\)[\s\S]*Context unavailable · source not yet bound[\s\S]*buildPublicHandoffContext\([\s\S]*presentation,[\s\S]*sourceCommit:[\s\S]*graphHash:[\s\S]*lens:[\s\S]*node,[\s\S]*level,[\s\S]*dataset\.futureContext = JSON\.stringify\(context\)/, "validated inert public-to-future-local context tuple");
+requireMatch(js, /syncContextHandoff\(\)[\s\S]*Context unavailable · source not yet bound[\s\S]*buildPublicHandoffContext\([\s\S]*presentation,[\s\S]*sourceCommit:[\s\S]*graphHash:[\s\S]*lens:[\s\S]*node,[\s\S]*level,[\s\S]*dataset\.futureContext = JSON\.stringify\(context\)/, "validated non-executing public-to-local context preview");
 requireMatch(galaxyCore, /artifact: "build"[\s\S]*division: "district"[\s\S]*rawNode\.slice\("neuron:"\.length\)/, "canonical local context taxonomy");
 requireMatch(galaxyCore, /buildPublicHandoffContext[\s\S]*publicContextVersion: 1[\s\S]*presentation: route[\s\S]*sourceCommit[\s\S]*graphHash[\s\S]*lens: canonicalLens[\s\S]*node: canonicalNode[\s\S]*level: canonicalLevel[\s\S]*effectiveDisposition: "INERT_HOLD_REQUIRES_STRICT_RUNTIME_RECEIPT"/, "closed inert handoff context tuple");
 const inertHandoffCore = boundedBlock(galaxyCore, "export function buildPublicHandoffContext", "export const PRODUCT_TRUTH_SNAPSHOT_RELATIONS", "inert handoff core");
@@ -1117,7 +1121,7 @@ requireMatch(js, /applyRenderAvailability\(forcedColorsActive\)[\s\S]*if \(fallb
 requireMatch(js, /if \(\$\("\[data-source-stamp\], \[data-galaxy-canvas\]"\)\)[\s\S]*startSnapshotRefresh\(\);[\s\S]*void loadSourceSnapshot\(\)/, "independently scheduled snapshot refresh surface gate");
 requireMatch(js, /runAfterFirstPaint\("Offscreen scene control", wireSceneActivity, 40\)/, "deferred offscreen CSS animation control");
 requireNoMatch(js, /wireLocalHandoffGate|data-local-handoff-confirm|hive:request-local-handoff/, "obsolete active local navigation wiring");
-requireMatch(js, /Future handoff context is source-bound[\s\S]*link\.dataset\.futureContext = JSON\.stringify\(context\)[\s\S]*link\.dataset\.contextBound = "true"/, "disabled future Local Body context hook");
+requireMatch(js, /selected Atlas context is source-bound and retained as a non-executing preview[\s\S]*link\.dataset\.futureContext = JSON\.stringify\(context\)[\s\S]*link\.dataset\.contextBound = "true"/, "non-executing Local Body context preview");
 requireNoMatch(js, /link\.href\s*=|link\.setAttribute\(["']href["']|window\.open\(|location\.(?:href|assign|replace)\s*=|fetch\([^\n]*127\.0\.0\.1/, "future local context promoted to active navigation");
 requireNoMatch(js, /time\s*-\s*this\.lastFrame\s*<\s*32/, "30fps frame throttle");
 requireNoMatch(js, /Math\.random\(/, "non-deterministic visual geometry");
@@ -1151,7 +1155,12 @@ requireMatch(css, /\.galaxy-stage-bottom\s*{[\s\S]*right:\s*1rem;[\s\S]*bottom:\
 requireMatch(css, /@media \(max-width: 20rem\)[\s\S]*\.galaxy-demo-proof\s*{[\s\S]*top:\s*4rem;/, "200-percent mobile overlay stack");
 requireMatch(css, /\.galaxy-atlas-toolbar\s*{[\s\S]*position:\s*sticky;[\s\S]*\.galaxy-atlas-toolbar \[data-galaxy-director\]\s*{[\s\S]*grid-column:\s*auto;/, "compact persistent Director, Reset, and Fit toolbar");
 requireMatch(js, /const GALAXY_OVERVIEW_LABEL_LIMIT = 1;[\s\S]*const fontSize = active \? 19 : 17;[\s\S]*selected \? 18 : 16[\s\S]*800 17px/, "single-focus overview label and typography floors");
-requireMatch(js, /context\.globalAlpha = Math\.min\(this\.width, this\.height\) < 640 \? 0\.38 : 0\.28;/, "subordinate warm-field exposure");
+requireMatch(js, /context\.globalAlpha = Math\.min\(this\.width, this\.height\) < 640 \? 0\.58 : 0\.48;/, "restored warm-field exposure");
+requireMatch(js, /const routeAlpha = selected \? 0\.58[\s\S]*: 0\.08;[\s\S]*const branchAlpha = selected \? 0\.4[\s\S]*: 0\.048;/, "whole-body authored route visibility");
+requireMatch(js, /const alpha = clamp\(\(active \? compactOverview \? 0\.56 : 0\.9 : 0\.28 \+ depth \* 0\.44\)[\s\S]*active \? 0\.16 : 0\.08/, "whole-body neuron visibility");
+requireMatch(js, /openFullAtlas\(trigger = null\)[\s\S]*this\.focusInsideFullAtlas\(\);[\s\S]*this\.setEngaged\(true, true\);[\s\S]*this\.setModalIsolation\(root, true\)/, "full-atlas immediate wheel and pointer engagement");
+requireMatch(css, /GALAXY_STARK_V21_FABLE_RESTORATION[\s\S]*@media \(min-width: 62\.01rem\) and \(max-width: 98rem\) and \(min-height: 40\.01rem\)[\s\S]*grid-template-rows: auto auto;[\s\S]*@media \(min-width: 98\.01rem\) and \(min-height: 40\.01rem\)[\s\S]*calc\(\(100vw - 110rem\) \/ 2\)[\s\S]*@media \(min-width: 42\.01rem\) and \(max-height: 40rem\)[\s\S]*grid-template-columns: repeat\(6, minmax\(0, 1fr\)\)/, "non-overlapping responsive header and short-height state strip");
+requireMatch(css, /\.body-surface > span,[\s\S]*\.body-surface > strong,[\s\S]*\.body-surface > small[\s\S]*overflow: visible;[\s\S]*white-space: normal;[\s\S]*text-overflow: clip;/, "body surface text containment without truncation");
 requireMatch(js, /stageFocusSummary = this\.width < 420[\s\S]*FOCUS · \$\{division\.code\} · \$\{division\.neuronCount\}N · \$\{division\.families\.length\}F[\s\S]*Focus · \$\{division\.code\} · \$\{division\.neuronCount\} neurons · \$\{division\.families\.length\} families/, "responsive non-duplicative atlas focus summary");
 requireMatch(js, /const expansive = active && hovered && !this\.fullAtlas && semanticAnchor/, "full-atlas canvas label stays compact");
 requireMatch(js, /if \(!selected && this\.zoom < 1\.55\) return false;/, "semantic family-label zoom gate");

@@ -10,6 +10,12 @@ This claim covers only the reviewed 30-member static GitHub Pages surface publis
 `https://dhenz14.github.io/`, bound to the landed source cut, with private material
 excluded and non-live systems represented as HOLD or WAIT.
 
+The static artifact also contains a fixed, visible, user-initiated navigation to
+`http://127.0.0.1:5002/constellation/body?presentation=1`. That doorway is part of
+the supported HTML surface; it is not a runtime probe, liveness claim, automatic
+request, context transfer, or assertion that Local Body is running on a visitor's
+computer.
+
 ## Explicitly out of scope
 
 These are not established by the Pages origin and must not ride the publication claim:
@@ -18,7 +24,7 @@ These are not established by the Pages origin and must not ride the publication 
 - Operator Body runtime on `:5003`
 - Chat availability
 - Hive IDE package/runtime/product behavior
-- Fable Three.js living-anatomy repair and deployment
+- Fable Three.js runtime correctness or deployment (the public doorway does not attest either)
 - End-to-end request execution across live bodies
 - Whole-system product-live behavior
 

@@ -22,9 +22,11 @@ The homepage separates these planes deliberately:
 - **Freshness** — evaluated from the capture time. A structurally valid aged or
   historical capture stays source-bound but renders `FRESHNESS HOLD`; automatic
   sync configuration cannot make old evidence current.
-- **Local Living Anatomy** — a future reserved presentation overlay that
-  requires separate attestation. Its inert context tuple cannot become an
-  active `:5002` handoff until an exact strict-runtime receipt exists.
+- **Local Living Anatomy** — the preserved separate 3D presentation surface.
+  The public hub exposes one exact, user-initiated `:5002` navigation in its
+  five visible body doorways, but it never probes, starts, or attests that
+  runtime and sends no selected Atlas context. The retained context tuple is a
+  non-executing preview until a strict-runtime receipt authorizes more.
 - **Operator Body** — a distinct intended `127.0.0.1:5003` service. It is never
   aliased to the Local Body and remains `HOLD` until separately deployed and
   observed.

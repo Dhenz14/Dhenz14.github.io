@@ -841,6 +841,7 @@ const localContextTags = [...html.matchAll(/<[a-z][^>]*\sdata-local-context-link
 if (localContextTags.length !== 5) {
   throw new Error("exactly five explicit Local Body doorways are required, found " + localContextTags.length);
 }
+requireMatch(html, /class="hero-body-gate local-body-link"[^>]+aria-label="Enter the Local 3D Body on this computer"[\s\S]{0,500}<strong>Enter 3D Body<\/strong>[\s\S]{0,160}LOCAL :5002 · CLICK/, "first-frame Local 3D Body portal");
 const localBodyUrl = "http://127.0.0.1:5002/constellation/body?presentation=1";
 for (const tag of localContextTags) {
   if (!/^<a\b/i.test(tag)
@@ -963,7 +964,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v21" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v22" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -1176,6 +1177,7 @@ requireMatch(js, /this\.glideStickyBox\(`d\$\{index\}`, point, width, height, oc
 requireMatch(js, /this\.glideStickyBox\(`f\$\{familyGeometryIndex\}`, point, width, height, occupied\)\s*\|\| this\.placeSafeCanvasLabel/, "family plates take the glide path before any ladder");
 requireMatch(css, /\.hero\s*{[\s\S]*grid-template-rows:\s*auto auto;[\s\S]*min-height:\s*calc\(100svh - 5\.25rem\)[\s\S]*\.hero-outcomes\s*{[\s\S]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/, "outcome-first hero layout contract");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.hero-system\s*{[\s\S]*grid-template-columns:\s*repeat\(2,[\s\S]*min-height:\s*11\.5rem;[\s\S]*\.hero-system \.satellite-core,[\s\S]*display:\s*none;/, "recognizable compact mobile organism");
+requireMatch(css, /\.hero-body-gate\s*{[\s\S]*grid-column:\s*3 \/ 5;[\s\S]*grid-row:\s*3;[\s\S]*@media \(max-width: 42rem\)\s*{[\s\S]*\.hero-body-gate\s*{[\s\S]*grid-column:\s*1 \/ -1;[\s\S]*grid-row:\s*2;/, "responsive Living Anatomy hero junction");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.hero-primary-action \.hero-enter\s*{[\s\S]*flex:\s*none;[\s\S]*width:\s*100%;/, "mobile primary CTA uses intrinsic height");
 requireMatch(css, /@media \(max-width: 34rem\) and \(max-height: 40rem\)[\s\S]*\.primary-nav\s*{[\s\S]*display:\s*grid;[\s\S]*grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\);[\s\S]*\.primary-nav a\s*{[\s\S]*min-height:\s*2\.75rem;/, "short mobile two-row five-target header");
 const finalCompactPhoneRules = css.slice(css.lastIndexOf("@media (max-width: 24rem) and (max-height: 36rem)"));

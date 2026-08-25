@@ -167,25 +167,30 @@ jobs:
   probe-published:
     name: Probe exact live bytes before no-op
     needs: resolve
-    if: needs.resolve.outputs.admitted == 'true' && needs.resolve.outputs.candidate_noop == 'true'
+    # Always run once admitted. Skipping this job skip-poisons every repair
+    # descendant, which greenwashed run 32813061089 (action=repair, deploy skipped).
+    if: needs.resolve.outputs.admitted == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
       contents: read
     outputs:
-      passed: ${{ steps.parity.outputs.passed }}
+      passed: ${{ steps.parity.outputs.passed || steps.unprobed.outputs.passed }}
     steps:
       - name: Check out exact current target without credentials
+        if: needs.resolve.outputs.candidate_noop == 'true'
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ needs.resolve.outputs.target_sha }}
           fetch-depth: 1
           persist-credentials: false
       - name: Use Node.js 22
+        if: needs.resolve.outputs.candidate_noop == 'true'
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
       - name: Run fresh bounded live parity without mutating the watermark
+        if: needs.resolve.outputs.candidate_noop == 'true'
         id: parity
         shell: bash
         run: |
@@ -194,6 +199,11 @@ jobs:
           result=$?
           if test "$result" -eq 0; then echo "passed=true" >> "$GITHUB_OUTPUT"; else echo "passed=false" >> "$GITHUB_OUTPUT"; fi
           exit 0
+      - name: Record that a missing durable watermark cannot no-op
+        if: needs.resolve.outputs.candidate_noop != 'true'
+        id: unprobed
+        shell: bash
+        run: echo "passed=false" >> "$GITHUB_OUTPUT"
 
   decide:
     name: Decide no-op or repair
@@ -223,7 +233,7 @@ jobs:
   build:
     name: Build reviewed artifact
     needs: [resolve, decide]
-    if: needs.decide.outputs.action == 'repair'
+    if: always() && !cancelled() && needs.resolve.result == 'success' && needs.decide.result == 'success' && needs.decide.outputs.action == 'repair'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -297,7 +307,7 @@ jobs:
   verify-artifact:
     name: Verify immutable Pages artifact
     needs: [resolve, build]
-    if: needs.build.result == 'success'
+    if: always() && !cancelled() && needs.build.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
@@ -348,7 +358,7 @@ jobs:
   pending-marker:
     name: Mark exact target parity pending
     needs: [resolve, verify-artifact]
-    if: needs.verify-artifact.result == 'success'
+    if: always() && !cancelled() && needs.verify-artifact.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     permissions:
@@ -372,7 +382,7 @@ jobs:
   deploy:
     name: Deploy exact verified artifact
     needs: [resolve, build, verify-artifact, pending-marker]
-    if: needs.pending-marker.result == 'success'
+    if: always() && !cancelled() && needs.pending-marker.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
@@ -418,7 +428,7 @@ jobs:
   parity:
     name: Verify deployed exact bytes
     needs: [resolve, deploy]
-    if: needs.deploy.result == 'success'
+    if: always() && !cancelled() && needs.deploy.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
@@ -455,7 +465,7 @@ jobs:
   final-marker:
     name: Finalize exact target parity watermark
     needs: [resolve, verify-artifact, pending-marker, deploy, parity]
-    if: always() && needs.pending-marker.result == 'success'
+    if: always() && !cancelled() && needs.pending-marker.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     permissions:
@@ -481,3 +491,59 @@ jobs:
           jq -nc --arg state "$state" --arg context "$PARITY_STATUS_CONTEXT" --arg description "$description" --arg target_url "$target_url" '{state:$state,context:$context,description:$description,target_url:$target_url}' > "$RUNNER_TEMP/status.json"
           curl --fail --silent --show-error --request POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" "https://api.github.com/repos/$REPOSITORY/statuses/$TARGET_SHA" --data-binary @"$RUNNER_TEMP/status.json" >/dev/null
           test "$state" = success
+
+  publication-gate:
+    name: Fail closed unless the decided path completed
+    needs:
+      - resolve
+      - redispatch-stale
+      - probe-published
+      - decide
+      - build
+      - verify-artifact
+      - pending-marker
+      - deploy
+      - parity
+      - final-marker
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    steps:
+      - name: Require redispatch, exact no-op, or exact repair deploy
+        shell: bash
+        env:
+          STALE: ${{ needs.resolve.outputs.stale }}
+          ADMITTED: ${{ needs.resolve.outputs.admitted }}
+          ACTION: ${{ needs.decide.outputs.action }}
+          REDISPATCH: ${{ needs.redispatch-stale.result }}
+          PROBE: ${{ needs.probe-published.result }}
+          DEPLOY: ${{ needs.deploy.result }}
+          PARITY: ${{ needs.parity.result }}
+          FINAL: ${{ needs.final-marker.result }}
+        run: |
+          set -euo pipefail
+          if test "${STALE:-}" = true; then
+            test "$REDISPATCH" = success
+            echo "PUBLICATION_GATE_OK path=stale-redispatch"
+            exit 0
+          fi
+          if test "${ADMITTED:-}" != true; then
+            echo "PUBLICATION_GATE_FAIL unadmitted"
+            exit 1
+          fi
+          if test "${ACTION:-}" = noop; then
+            test "$PROBE" = success
+            echo "PUBLICATION_GATE_OK path=noop"
+            exit 0
+          fi
+          if test "${ACTION:-}" = repair; then
+            test "$DEPLOY" = success
+            test "$PARITY" = success
+            test "$FINAL" = success
+            echo "PUBLICATION_GATE_OK path=repair"
+            exit 0
+          fi
+          echo "PUBLICATION_GATE_FAIL undecided action=${ACTION:-empty}"
+          exit 1

@@ -1417,11 +1417,15 @@ requireMatch(pagesWorkflow, /actions\/configure-pages@983d7736d9b0ae728b81ab4795
 requireMatch(pagesWorkflow, /hive-pages-reviewed-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}[\s\S]*build-public-pages\.mjs build[\s\S]*check-http-surface\.mjs --root[\s\S]*include-hidden-files: true/, "fresh exact stage and hidden-file upload gate");
 requireMatch(pagesWorkflow, /github-pages-\$RUN_ID-\$RUN_ATTEMPT[\s\S]*steps\.upload\.outputs\.artifact_id[\s\S]*verify-pages-artifact\.mjs[\s\S]*artifact_rest_digest[\s\S]*artifact_tar_sha256[\s\S]*membership_manifest_sha256/, "one immutable run-attempt artifact tuple");
 requireMatch(workflowJob("deploy"), /actions: read[\s\S]*contents: read[\s\S]*pages: write[\s\S]*id-token: write[\s\S]*git\/ref\/heads\/main[\s\S]*\.artifacts\[\][\s\S]*artifact_name:/, "privileged exact-name predeploy recheck");
-for (const privilegedJob of ["redispatch-stale", "pending-marker", "deploy", "final-marker"]) {
+for (const privilegedJob of ["redispatch-stale", "pending-marker", "deploy", "final-marker", "publication-gate"]) {
   requireNoMatch(workflowJob(privilegedJob), /actions\/checkout|node\s+script\/|python|persist-credentials/, `${privilegedJob} mutable repository code boundary`);
 }
 requireMatch(workflowJob("pending-marker"), /statuses: write[\s\S]*r8 pending run=[\s\S]*state pending/, "pending marker isolation");
 requireMatch(workflowJob("final-marker"), /statuses: write[\s\S]*DEPLOY_RESULT[\s\S]*PARITY_RESULT[\s\S]*state=success[\s\S]*r8 run=/, "final marker isolation");
+requireMatch(workflowJob("build"), /always\(\) && !cancelled\(\)[\s\S]*action == 'repair'/, "repair build skip-poison immunity");
+requireMatch(workflowJob("probe-published"), /if: needs\.resolve\.outputs\.admitted == 'true'[\s\S]*id: unprobed[\s\S]*passed=false/, "admitted probe always records a no-op refusal");
+requireNoMatch(workflowJob("probe-published"), /if: needs\.resolve\.outputs\.admitted == 'true' && needs\.resolve\.outputs\.candidate_noop == 'true'/, "repair probe skip-poison");
+requireMatch(workflowJob("publication-gate"), /Fail closed unless the decided path completed[\s\S]*PUBLICATION_GATE_FAIL[\s\S]*path=repair/, "publication gate fail-closed");
 requireMatch(pagesBuilder, /REQUIRED_FORBIDDEN_EXACT[\s\S]*HivePoA\/\.distribution-publish-receipt\.json[\s\S]*HivePoA\/\.nojekyll[\s\S]*product-truth-ledger\.v1\.json[\s\S]*forbiddenExactPaths\.length !== 26/, "Pages builder exact forbidden-path gate");
 requireMatch(pagesBuilder, /lstat[\s\S]*isSymbolicLink[\s\S]*nlink[\s\S]*PUBLIC_ARTIFACT_MEMBERSHIP_MISMATCH/, "Pages builder unsafe-member and exact-membership gate");
 requireMatch(pagesBuilder, /exactAncestorDirectories[\s\S]*PUBLIC_ARTIFACT_DIRECTORY_MEMBERSHIP_MISMATCH[\s\S]*unlisted empty directory refused[\s\S]*forbidden-prefix empty directory refused/, "Pages builder exact directory-membership gate");

@@ -26,7 +26,7 @@ import {
   snapshotIdentityChanged,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v20";
+} from "./galaxy-core.mjs?v=galaxy-stark-v21";
 import {
   IDE_RELEASE_LATEST_BYTES,
   IDE_RELEASE_LATEST_MAX_BYTES,
@@ -37,11 +37,11 @@ import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
   validateIdeReleaseTruthManifest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v20";
+} from "./ide-release-core.mjs?v=galaxy-stark-v21";
 import {
   parseJsonStrict,
-} from "./strict-json.mjs?v=galaxy-stark-v20";
-import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v20";
+} from "./strict-json.mjs?v=galaxy-stark-v21";
+import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v21";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 1;
 const HUB_FACTS_MAX_BYTES = 512 * 1024;
@@ -715,13 +715,27 @@ function setSourceBadge(state, label, title) {
   if (textNode) textNode.textContent = ` ${label}`;
 }
 
-function enforceLocalContextInertness() {
+function enforceLocalHandoffBoundary() {
   $$('[data-local-context-link]').forEach((node) => {
-    ["href", "target", "formaction"].forEach((name) => node.removeAttribute(name));
-    node.setAttribute("aria-disabled", "true");
-    node.setAttribute("tabindex", "-1");
-    if ("disabled" in node) node.disabled = true;
-    node.addEventListener("click", (event) => event.preventDefault());
+    const allowed = node instanceof HTMLAnchorElement
+      && node.protocol === "http:"
+      && node.hostname === "127.0.0.1"
+      && node.port === "5002"
+      && node.pathname === "/constellation/body"
+      && node.search === "?presentation=1";
+    if (!allowed) {
+      ["href", "target", "formaction"].forEach((name) => node.removeAttribute(name));
+      node.setAttribute("aria-disabled", "true");
+      node.setAttribute("tabindex", "-1");
+      node.classList.add("is-disabled");
+      if ("disabled" in node) node.disabled = true;
+      return;
+    }
+    node.target = "hive-local-body";
+    node.rel = "noopener noreferrer";
+    node.removeAttribute("aria-disabled");
+    node.removeAttribute("tabindex");
+    node.classList.remove("is-disabled");
   });
 }
 
@@ -2004,7 +2018,7 @@ class GalaxyAtlas {
     }
     if (!/^[a-f0-9]{40}$/.test(this.sourceCommit) || !/^[a-f0-9]{64}$/.test(this.graphHash)) {
       setText("[data-galaxy-context-summary]", "Context unavailable · source not yet bound");
-      setText("[data-galaxy-context-copy]", "Future context parameters remain unavailable until this browser validates the source snapshot. No local handoff is enabled or assumed.");
+      setText("[data-galaxy-context-copy]", "The fixed Local Body doorway is user-initiated and unprobed. Atlas context stays unbound until this browser validates the source snapshot; nothing is sent automatically.");
       $$('[data-local-context-link][data-local-presentation="1"]').forEach((link) => {
         link.dataset.contextBound = "false";
         delete link.dataset.futureContext;
@@ -2015,7 +2029,7 @@ class GalaxyAtlas {
     const localLens = this.lens === "artifact" ? "build" : this.lens;
     const localLevel = level === "division" ? "district" : level;
     setText("[data-galaxy-context-summary]", `${localLevel[0].toUpperCase()}${localLevel.slice(1)} ${summaryNode} · ${localLens} lens`);
-    setText("[data-galaxy-context-copy]", "Future handoff context is source-bound: version, source commit, graph hash, lens, node, and level. The action remains disabled unless the strict local runtime receives separate attestation.");
+    setText("[data-galaxy-context-copy]", "The selected Atlas context is source-bound and retained as a non-executing preview. The fixed Local Body doorway remains user-initiated; this page neither probes :5002 nor sends the selected context.");
     $$('[data-local-context-link][data-local-presentation="1"]').forEach((link) => {
       const presentation = "1";
       const context = buildPublicHandoffContext({
@@ -2270,6 +2284,7 @@ class GalaxyAtlas {
     root?.setAttribute("aria-label", "Full viewport public Constellation Atlas");
     document.body.classList.add("galaxy-fullscreen-open");
     this.focusInsideFullAtlas();
+    this.setEngaged(true, true);
     this.setModalIsolation(root, true);
     window.requestAnimationFrame(() => {
       this.resize();
@@ -3262,7 +3277,7 @@ class GalaxyAtlas {
     // Alpha is set for the COMPOSITED surface: the warm core must clear
     // R>70 on screen, not merely exist in canvas space. Small stages get a
     // lift so the chord stays audible when the projection compresses.
-    context.globalAlpha = Math.min(this.width, this.height) < 640 ? 0.38 : 0.28;
+    context.globalAlpha = Math.min(this.width, this.height) < 640 ? 0.58 : 0.48;
     context.drawImage(
       sprites.nebulaWarm,
       this.width * 0.3 - span * 0.5 + Math.sin(time * 0.00006 + 2.1) * 26 * drift + this.rotationY * 14,
@@ -3282,9 +3297,9 @@ class GalaxyAtlas {
       // Quantized size keeps the per-frame blit unscaled-cheap; the breath
       // itself lives in alpha, which costs nothing.
       const active = index === this.activeDivision || index === this.hoverDivision;
-      const size = Math.round(((active ? 146 : 118) * Math.sqrt(this.zoom) * point.perspective * profile.divisions) / 16) * 16;
+      const size = Math.round(((active ? 154 : 138) * Math.sqrt(this.zoom) * point.perspective * profile.divisions) / 16) * 16;
       const exposure = clamp(Math.min(this.width, this.height) / 640, 0.6, 1);
-      context.globalAlpha = (active ? 0.2 + breathe * 0.24 : 0.07 + breathe * 0.11) * exposure;
+      context.globalAlpha = (active ? 0.3 + breathe * 0.38 : 0.18 + breathe * 0.26) * exposure;
       context.drawImage(sprites.auras[index % sprites.auras.length], point.x - size / 2, point.y - size / 2, size, size);
     });
     context.restore();
@@ -3356,10 +3371,10 @@ class GalaxyAtlas {
         const selected = family === this.activeFamily || family === this.hoverFamily;
         const activeDivision = familyPoint.divisionIndex === this.activeDivision
           || familyPoint.divisionIndex === this.hoverDivision;
-        const routeAlpha = selected ? 0.62 : activeDivision ? (focusedFamily >= 0 ? 0.095 : compactOverview ? 0.11 : 0.2) : 0.038;
-        const branchAlpha = selected ? 0.46 : activeDivision ? (focusedFamily >= 0 ? 0.028 : compactOverview ? 0.03 : 0.065) : 0.014;
+        const routeAlpha = selected ? 0.58 : activeDivision ? (focusedFamily >= 0 ? 0.14 : compactOverview ? 0.18 : 0.24) : 0.08;
+        const branchAlpha = selected ? 0.4 : activeDivision ? (focusedFamily >= 0 ? 0.06 : compactOverview ? 0.075 : 0.1) : 0.048;
         layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(routeAlpha * profile.links, 0, 0.68)})`;
-        layer.lineWidth = selected ? 1.28 : activeDivision ? 0.86 : 0.54;
+        layer.lineWidth = selected ? 1.2 : activeDivision ? 0.84 : 0.58;
         layer.beginPath();
         layer.moveTo(divisionPoint.x, divisionPoint.y);
         layer.quadraticCurveTo(bundle.sourceControl.x, bundle.sourceControl.y, familyPoint.x, familyPoint.y);
@@ -3368,7 +3383,7 @@ class GalaxyAtlas {
         layer.stroke();
 
         layer.strokeStyle = `rgba(${color.join(",")}, ${clamp(branchAlpha * profile.links, 0, 0.5)})`;
-        layer.lineWidth = selected ? 0.92 : activeDivision ? 0.62 : 0.34;
+        layer.lineWidth = selected ? 0.88 : activeDivision ? 0.6 : 0.4;
         layer.beginPath();
         chains[family].forEach((neuronIndex) => {
           const neuron = this.projectedNeurons[neuronIndex];
@@ -3386,8 +3401,8 @@ class GalaxyAtlas {
         }
       }
       // Sibling chains: consecutive neurons within each family are true
-      // roster relations. They appear only at selected/deep semantic focus so
-      // the overview reads as a body rather than a crossing-heavy wireframe.
+      // roster relations. A quiet whole-body pass preserves the authored
+      // silhouette; semantic focus strengthens it without erasing the rest.
       layer.lineWidth = 0.4;
       for (let family = 0; family < chains.length; family += 1) {
         const members = chains[family];
@@ -3397,9 +3412,8 @@ class GalaxyAtlas {
         const color = this.paletteColor(familyPoint.divisionIndex);
         const selected = family === this.activeFamily || family === this.hoverFamily;
         const active = familyPoint.divisionIndex === this.activeDivision || familyPoint.divisionIndex === this.hoverDivision;
-        if (!selected && !(active && this.zoom > 1.55)) continue;
-        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp((selected ? 0.24 : 0.075) * profile.links, 0, 0.34)})`;
-        layer.lineWidth = selected ? 0.62 : 0.38;
+        layer.strokeStyle = `rgba(${color.join(",")}, ${clamp((selected ? 0.22 : active ? 0.095 : 0.055) * profile.links, 0, 0.34)})`;
+        layer.lineWidth = selected ? 0.62 : active ? 0.44 : 0.36;
         layer.beginPath();
         for (let position = 1; position < members.length; position += 1) {
           const previous = this.projectedNeurons[members[position - 1]];
@@ -3630,7 +3644,7 @@ class GalaxyAtlas {
       const color = this.paletteColor(index);
       const active = index === this.activeDivision || index === this.hoverDivision;
       const depth = clamp((point.z + 2.7) / 5.4, 0, 1);
-      context.strokeStyle = `rgba(${color.join(",")}, ${(active ? 0.4 : 0.03 + depth * 0.025) * profile.links})`;
+      context.strokeStyle = `rgba(${color.join(",")}, ${(active ? 0.34 : 0.065 + depth * 0.055) * profile.links})`;
       context.lineWidth = active ? 1.45 : 0.58 + depth * 0.25;
       context.beginPath();
       context.moveTo(center.x, center.y);
@@ -3640,7 +3654,7 @@ class GalaxyAtlas {
       context.stroke();
 
       const next = this.projectedDivisions[(index + 1) % this.projectedDivisions.length];
-      context.strokeStyle = `rgba(${color.join(",")}, ${(active ? 0.28 : 0.018 + depth * 0.018) * profile.links})`;
+      context.strokeStyle = `rgba(${color.join(",")}, ${(active ? 0.24 : 0.045 + depth * 0.035) * profile.links})`;
       context.beginPath();
       context.moveTo(point.x, point.y);
       context.lineTo(next.x, next.y);
@@ -3657,12 +3671,12 @@ class GalaxyAtlas {
       context.save();
       if (active) {
         context.shadowColor = `rgba(${color.join(",")}, 0.62)`;
-        context.shadowBlur = 12;
+        context.shadowBlur = 22;
       }
       const divisionGlow = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
-      divisionGlow.addColorStop(0, `rgba(${color.join(",")}, ${(active ? 0.2 : 0.065) * profile.divisions})`);
-      divisionGlow.addColorStop(0.5, `rgba(${color.join(",")}, ${(active ? 0.07 : 0.024) * profile.divisions})`);
-      divisionGlow.addColorStop(0.78, `rgba(${color.join(",")}, ${(active ? 0.025 : 0.008) * profile.divisions})`);
+      divisionGlow.addColorStop(0, `rgba(${color.join(",")}, ${(active ? 0.29 : 0.12) * profile.divisions})`);
+      divisionGlow.addColorStop(0.5, `rgba(${color.join(",")}, ${(active ? 0.095 : 0.038) * profile.divisions})`);
+      divisionGlow.addColorStop(0.78, `rgba(${color.join(",")}, ${(active ? 0.035 : 0.012) * profile.divisions})`);
       divisionGlow.addColorStop(1, `rgba(${color.join(",")}, 0)`);
       context.fillStyle = divisionGlow;
       context.beginPath();
@@ -3735,12 +3749,12 @@ class GalaxyAtlas {
         const compactOverview = this.width < 520 && selectedFamily < 0 && this.zoom < 1.5;
         const depth = clamp((point.z + 2.7) / 5.4, 0, 1);
         const shimmer = this.paused ? 0.86 : 0.78 + Math.sin(time * 0.0015 + point.phase) * 0.16;
-        const alpha = clamp((active ? compactOverview ? 0.48 : 0.97 : 0.2 + depth * 0.3) * shimmer * (1 + globalBeat * 0.16) * profile.neurons, 0.14, 1);
+        const alpha = clamp((active ? compactOverview ? 0.56 : 0.9 : 0.28 + depth * 0.44) * shimmer * (1 + globalBeat * 0.16) * profile.neurons, 0.16, 1);
         const depthScale = 0.72 + depth * 0.72;
-        const radius = clamp((active ? compactOverview ? 1.32 : 2.4 : 1.38) * point.perspective * Math.sqrt(this.zoom) * Math.sqrt(profile.neurons) * depthScale, 0.78, 4.8) * (0.8 + 0.2 * exposure);
-        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (active ? 0.12 : 0.04) * exposure * (1 - globalBeat * (0.12 + 0.25 * (1 - exposure)))})`;
+        const radius = clamp((active ? compactOverview ? 1.38 : 2.08 : 1.28) * point.perspective * Math.sqrt(this.zoom) * Math.sqrt(profile.neurons) * depthScale, 0.82, 4.8) * (0.8 + 0.2 * exposure);
+        context.fillStyle = `rgba(${color.join(",")}, ${alpha * (active ? 0.16 : 0.08) * exposure * (1 - globalBeat * (0.12 + 0.25 * (1 - exposure)))})`;
         context.beginPath();
-        context.arc(point.x, point.y, radius * (active ? compactOverview ? 1.5 : 2.65 : 1.85) * (0.82 + 0.18 * exposure), 0, Math.PI * 2);
+        context.arc(point.x, point.y, radius * (active ? compactOverview ? 1.8 : 3.15 : 2.45) * (0.82 + 0.18 * exposure), 0, Math.PI * 2);
         context.fill();
         context.fillStyle = `rgba(${color.join(",")}, ${alpha * (1 - globalBeat * (0.1 + 0.22 * (1 - exposure)))})`;
         context.beginPath();
@@ -4198,7 +4212,7 @@ function wireSurfaceMode() {
 runSafely("Motion controls", wireMotionToggle);
 runSafely("Surface mode", wireSurfaceMode);
 runSafely("Top navigation", wireTopbar);
-runSafely("Local context HOLD", enforceLocalContextInertness);
+runSafely("Local Body handoff boundary", enforceLocalHandoffBoundary);
 runAfterFirstPaint("Section reveals", wireReveal, 0);
 runAfterFirstPaint("Constellation Atlas", startGalaxy, 20);
 runAfterFirstPaint("Offscreen scene control", wireSceneActivity, 40);

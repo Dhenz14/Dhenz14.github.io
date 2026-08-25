@@ -1,137 +1,126 @@
 #!/usr/bin/env node
 
-import crypto from "node:crypto";
-import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SHA256 = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
-const FACTS_PATH = "hub-assets/hub-facts.json";
+const DIGEST = /^[a-f0-9]{64}$/;
+const INTEGER = /^[1-9][0-9]*$/;
 
-export function publisherCandidateDecision({ baseFactsHash, remoteFactsHash, candidateFactsHash }) {
-  for (const [name, value] of Object.entries({ baseFactsHash, remoteFactsHash, candidateFactsHash })) {
-    if (!SHA256.test(String(value || ""))) throw new Error(`invalid ${name}`);
-  }
-  if (remoteFactsHash === candidateFactsHash) return "ALREADY_LANDED";
-  if (remoteFactsHash === baseFactsHash) return "REBUILD_EXACT";
-  return "CONCURRENT_FACTS_WINNER";
+export const PAGES_POLICY = Object.freeze({
+  repository: "Dhenz14/Dhenz14.github.io",
+  ref: "refs/heads/main",
+  workflowPath: ".github/workflows/publish-reviewed-pages.yml",
+  statusContext: "pages/parity/r8",
+  admittedEvents: Object.freeze(["push", "workflow_dispatch", "schedule"]),
+});
+
+function exactSha(value, label) {
+  if (!COMMIT.test(String(value || ""))) throw new Error(`invalid ${label}`);
+  return value;
 }
 
-function exactMutation(value) {
-  if (!value || !COMMIT.test(value.sha || "") || !Number.isSafeInteger(value.parentCount)
-    || !Array.isArray(value.paths) || value.paths.length < 1) {
-    throw new Error("invalid intervening mutation");
-  }
-  const paths = [...new Set(value.paths.map((entry) => String(entry || "")))];
-  if (paths.some((entry) => !entry || entry.includes("\\") || path.posix.normalize(entry) !== entry)) {
-    throw new Error("unsafe intervening mutation path");
-  }
-  return { ...value, paths };
+function exactInteger(value, label) {
+  if (!INTEGER.test(String(value || ""))) throw new Error(`invalid ${label}`);
+  return String(value);
 }
 
-export function publisherTransitionDecision({
-  baseCommit,
-  remoteCommit,
-  baseIsAncestor,
-  mutations,
-  baseFactsHash,
-  remoteFactsHash,
-  candidateFactsHash,
+export function artifactName(runId, runAttempt) {
+  return `github-pages-${exactInteger(runId, "run ID")}-${exactInteger(runAttempt, "run attempt")}`;
+}
+
+export function publicationAuthorityDecision({
+  repository,
+  ref,
+  eventName,
+  eventSha,
+  workflowSha,
+  currentMainSha,
+  workflowPath,
 }) {
-  if (!COMMIT.test(String(baseCommit || "")) || !COMMIT.test(String(remoteCommit || ""))) {
-    throw new Error("invalid source commit identity");
+  if (repository !== PAGES_POLICY.repository || ref !== PAGES_POLICY.ref
+    || workflowPath !== PAGES_POLICY.workflowPath || !PAGES_POLICY.admittedEvents.includes(eventName)) {
+    return "REFUSE_SCOPE";
   }
-  if (baseIsAncestor !== true) return "REJECT_BASE_NOT_ANCESTOR";
-  if (!Array.isArray(mutations)) throw new Error("invalid intervening mutation set");
-  const admittedMutations = mutations.map(exactMutation);
-  if (admittedMutations.some((mutation) => mutation.parentCount !== 1)) return "REJECT_MERGE_MUTATION";
-  if (admittedMutations.some((mutation) => mutation.paths.includes(FACTS_PATH) && mutation.paths.length !== 1)) {
-    return "REJECT_MIXED_FACTS_MUTATION";
-  }
-  return publisherCandidateDecision({ baseFactsHash, remoteFactsHash, candidateFactsHash });
+  exactSha(eventSha, "event SHA");
+  exactSha(workflowSha, "workflow SHA");
+  exactSha(currentMainSha, "current main SHA");
+  if (eventSha !== workflowSha || workflowSha !== currentMainSha) return "REDISPATCH_CURRENT_MAIN";
+  return "ADMIT_CURRENT_MAIN";
 }
 
-export function publicationHandoff({ changed, targetSha }) {
-  if (changed === false) return null;
-  if (changed !== true || !COMMIT.test(String(targetSha || ""))) throw new Error("invalid publication handoff");
-  return Object.freeze({ requestedSha: targetSha, signalKind: "sync-direct-handoff" });
+export function pendingQueueSurvivors(signals) {
+  if (!Array.isArray(signals) || signals.length === 0) throw new Error("publication signal set is empty");
+  signals.forEach((signal, index) => exactSha(signal, `signal ${index}`));
+  return signals.length === 1 ? [signals[0]] : [signals[0], signals.at(-1)];
 }
 
-export function resolvePublicationTarget({ requestedSha, currentMainSha, requestedIsAncestor }) {
-  if (!COMMIT.test(String(requestedSha || "")) || !COMMIT.test(String(currentMainSha || ""))) {
-    throw new Error("invalid publication target identity");
-  }
-  if (requestedIsAncestor !== true) throw new Error("publication signal is not an ancestor of current main");
-  return currentMainSha;
+export function markerDescription({ runId, runAttempt, artifactId, digest, pending = false }) {
+  const prefix = pending ? "r8 pending" : "r8";
+  if (!DIGEST.test(String(digest || ""))) throw new Error("invalid artifact digest");
+  return `${prefix} run=${exactInteger(runId, "run ID")} attempt=${exactInteger(runAttempt, "run attempt")} artifact=${exactInteger(artifactId, "artifact ID")} digest=${digest}`;
 }
 
-function git(repository, args, options = {}) {
-  return execFileSync("git", ["-C", repository, ...args], {
-    encoding: options.encoding ?? "utf8",
-    maxBuffer: 16 * 1024 * 1024,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+export function parseSuccessMarker({ state, context, creator, description, targetUrl, repository = PAGES_POLICY.repository }) {
+  if (state !== "success" || context !== PAGES_POLICY.statusContext || creator !== "github-actions[bot]") return null;
+  const match = /^r8 run=([1-9][0-9]*) attempt=([1-9][0-9]*) artifact=([1-9][0-9]*) digest=([a-f0-9]{64})$/.exec(String(description || ""));
+  if (!match) return null;
+  const [, runId, runAttempt, artifactId, digest] = match;
+  const exactTargetUrl = `https://github.com/${repository}/actions/runs/${runId}/attempts/${runAttempt}`;
+  if (targetUrl !== exactTargetUrl) return null;
+  return Object.freeze({ runId, runAttempt, artifactId, digest, artifactName: artifactName(runId, runAttempt) });
 }
 
-function gitObjectHash(repository, commit, repositoryPath) {
-  const bytes = git(repository, ["show", `${commit}:${repositoryPath}`], { encoding: null });
-  return crypto.createHash("sha256").update(bytes).digest("hex");
+export function artifactTupleMatches({ marker, artifact, targetSha, repositoryId }) {
+  if (!marker || !artifact || !Number.isSafeInteger(Number(repositoryId)) || Number(repositoryId) <= 0) return false;
+  exactSha(targetSha, "target SHA");
+  return String(artifact.id) === marker.artifactId
+    && artifact.name === marker.artifactName
+    && artifact.digest === `sha256:${marker.digest}`
+    && artifact.expired === false
+    && String(artifact.runId) === marker.runId
+    && String(artifact.runAttempt) === marker.runAttempt
+    && artifact.headSha === targetSha
+    && Number(artifact.repositoryId) === Number(repositoryId)
+    && artifact.exactNameCount === 1;
 }
 
-export function inspectPublisherTransition({ repository, baseCommit, remoteCommit, candidateFactsHash }) {
-  const repo = path.resolve(repository);
-  let baseIsAncestor = true;
-  try {
-    git(repo, ["merge-base", "--is-ancestor", baseCommit, remoteCommit]);
-  } catch {
-    baseIsAncestor = false;
-  }
-  const mutations = [];
-  if (baseIsAncestor && baseCommit !== remoteCommit) {
-    const commits = git(repo, ["rev-list", "--reverse", "--topo-order", `${baseCommit}..${remoteCommit}`])
-      .trim().split(/\s+/u).filter(Boolean);
-    for (const sha of commits) {
-      const parents = git(repo, ["rev-list", "--parents", "-n", "1", sha]).trim().split(/\s+/u);
-      const paths = git(repo, ["diff-tree", "--no-commit-id", "--name-only", "-r", `${sha}^`, sha])
-        .trim().split(/\r?\n/u).filter(Boolean);
-      mutations.push({ sha, parentCount: parents.length - 1, paths });
-    }
-  }
-  return publisherTransitionDecision({
-    baseCommit,
-    remoteCommit,
-    baseIsAncestor,
-    mutations,
-    baseFactsHash: gitObjectHash(repo, baseCommit, FACTS_PATH),
-    remoteFactsHash: gitObjectHash(repo, remoteCommit, FACTS_PATH),
-    candidateFactsHash,
-  });
+export function durablePublicationDecision({
+  targetSha,
+  workflowSha,
+  currentMainSha,
+  exactDeploymentSucceeded,
+  marker,
+  artifact,
+  repositoryId,
+}) {
+  exactSha(targetSha, "target SHA");
+  exactSha(workflowSha, "workflow SHA");
+  exactSha(currentMainSha, "current main SHA");
+  if (targetSha !== workflowSha || targetSha !== currentMainSha) return "REPAIR";
+  const parsed = parseSuccessMarker(marker || {});
+  if (exactDeploymentSucceeded !== true || !artifactTupleMatches({ marker: parsed, artifact, targetSha, repositoryId })) return "REPAIR";
+  return "PROBE_LIVE_BEFORE_NOOP";
 }
 
-function option(name) {
-  const index = process.argv.indexOf(name);
-  return index === -1 ? "" : String(process.argv[index + 1] || "");
+export function publicationDecisionAfterProbe({ durableDecision, liveParityPassed }) {
+  return durableDecision === "PROBE_LIVE_BEFORE_NOOP" && liveParityPassed === true ? "NOOP" : "REPAIR";
+}
+
+export function predeployDecision({ targetSha, workflowSha, currentMainSha, artifactVerified, artifactUnique, producersComplete }) {
+  exactSha(targetSha, "target SHA");
+  exactSha(workflowSha, "workflow SHA");
+  exactSha(currentMainSha, "current main SHA");
+  return targetSha === workflowSha && targetSha === currentMainSha
+    && artifactVerified === true && artifactUnique === true && producersComplete === true
+    ? "DEPLOY" : "REFUSE_STALE_OR_UNBOUND";
+}
+
+export function finalMarkerState({ pendingWritten, deployResult, parityResult, currentMainStillTarget }) {
+  return pendingWritten === true && deployResult === "success" && parityResult === "success" && currentMainStillTarget === true
+    ? "success" : "failure";
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  try {
-    if (option("--repository")) {
-      console.log(inspectPublisherTransition({
-        repository: option("--repository"),
-        baseCommit: option("--base-commit"),
-        remoteCommit: option("--remote-commit"),
-        candidateFactsHash: option("--candidate"),
-      }));
-    } else {
-      console.log(publisherCandidateDecision({
-        baseFactsHash: option("--base"),
-        remoteFactsHash: option("--remote"),
-        candidateFactsHash: option("--candidate"),
-      }));
-    }
-  } catch (error) {
-    console.error(`publisher candidate policy refused: ${error.message}`);
-    process.exitCode = 1;
-  }
+  console.log(`PUBLISHER_POLICY_OK context=${PAGES_POLICY.statusContext} queue=one-active-one-pending recovery=redispatch-current-main`);
 }

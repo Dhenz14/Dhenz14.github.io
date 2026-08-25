@@ -17,6 +17,7 @@ import {
   galaxyRenderState,
   galaxyZoomAtPointer,
   placeCanvasLabel,
+  productTruthSemanticRelation,
   productTruthSnapshotRelation,
   projectGalaxyPoint,
   resolveGalaxySelection,
@@ -725,7 +726,7 @@ function enforceLocalContextInertness() {
 }
 
 const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v2";
-const PRODUCT_TRUTH_PROJECTION_DIGEST = "5c9b7cd069933a272b0fb2a8d5a4afa8e1854b67dfb81955f94a5b2d242fdfa7";
+const PRODUCT_TRUTH_PROJECTION_DIGEST = "78ed09843aeaa94eb1053c92c0c13f12ff65591306905baf67f5ae8560a3d8bc";
 const PRODUCT_TRUTH_MAX_BYTES = 128 * 1024;
 const PRODUCT_TRUTH_SUBJECTS = Object.freeze({
   target_architecture: { label: "Target architecture", kind: "ARCHITECTURE_TARGET", status: "SOURCE_BOUND_DOCTRINE", plane: "TARGET" },
@@ -764,6 +765,7 @@ const CURRENT_LEGACY_BOUNDARY = "BYOM is RETIRED and implicit external-checkpoin
 const NO_LLM_BOUNDARY = "At the evidence baseline, doctrine permits an authorized external agent such as Codex or Claude to supply fluent generation as the explicit inbound caller while Hive is assigned local retrieval, routing, verification, and proof gating. The declared route is not an implicit outbound fallback selected by Hive, and it is not current runtime or network-egress proof.";
 let productTruthManifest = null;
 let productTruthLedger = null;
+let productTruthSemanticBaseline = null;
 
 function canonicalJson(value) {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
@@ -810,7 +812,7 @@ function assertProductTruthKeys(value, expected, label) {
   assertProductTruth(actual.length === wanted.length && actual.every((key, index) => key === wanted[index]), `${label} keys rejected`);
 }
 
-async function validateProductTruthManifest(manifest, snapshot, ledger) {
+async function validateProductTruthManifest(manifest, snapshot, ledger, semanticBaseline) {
   assertProductTruth(manifest && typeof manifest === "object" && !Array.isArray(manifest), "manifest root rejected");
   assertProductTruthKeys(manifest, [
     "schema", "version", "status", "evidenceLedger", "canonicalManifest", "what_architecture_am_i", "source", "architecture", "boundaries",
@@ -825,14 +827,19 @@ async function validateProductTruthManifest(manifest, snapshot, ledger) {
     && manifest.evidenceLedger.integrityClass === "SELF_BOUND_INTEGRITY"
     && manifest.evidenceLedger.independentTrustRoot === false
     && manifest.evidenceLedger.authorizedPublicationAttested === false
-    && manifest.evidenceLedger.bytes === 7001
-    && manifest.evidenceLedger.sha256 === "787b5e3a19c5025bf7e914f31dbf02b02b04cafb4b9625cd6022c9746815af44"
-    && manifest.evidenceLedger.gitBlobOid === "3d26b94e40f618dd2d65251e628461ffbfe8bf11"
+    && manifest.evidenceLedger.bytes === 7181
+    && manifest.evidenceLedger.sha256 === "e623836c21581035e9dd4d5fb2e11abfb3a5e18baf30ef16ce527fdfc74c7f24"
+    && manifest.evidenceLedger.gitBlobOid === "249276fd196998fa6b2f3de614f550febfc394ce"
     && manifest.evidenceLedger.headEntryId === "current-public-unknown-hold-after-evidence-expiry-v2", "evidence ledger reference rejected");
   assertProductTruth(ledger?.schema === "hive.ecosystem.product-truth.public-evidence-projection.v2"
     && ledger.version === 2
     && ledger.projectionClass === "PUBLIC_SANITIZED_HISTORICAL_EVIDENCE_WITH_CURRENT_HOLD"
     && ledger.sourceLedger?.publicationDisposition === "PRIVATE_NOT_PUBLISHED"
+    && ledger.sourceLedger?.path === "hub-assets/product-truth-ledger.v1.json"
+    && ledger.sourceLedger?.bytes === 4653
+    && ledger.sourceLedger?.sha256 === "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259"
+    && ledger.sourceLedger?.gitBlobOid === "943db0a4b30bb4dba38de3db62c5898fd9785e5c"
+    && ledger.sourceLedger?.projectionAlgorithm === "hive.product-truth.private-v1-to-public-v2.v1"
     && ledger.integrityClass === "SELF_BOUND_INTEGRITY"
     && ledger.independentTrustRoot === false
     && ledger.authorizedPublicationAttested === false
@@ -853,24 +860,45 @@ async function validateProductTruthManifest(manifest, snapshot, ledger) {
     && currentLedgerEntry.effectiveState?.operatorBody === "HOLD_REQUIRES_DISTINCT_RUNTIME_ATTESTATION"
     && currentLedgerEntry.effectiveState?.chat === "WAIT_NOT_AVAILABLE"
     && currentLedgerEntry.effectiveState?.publicActionsAuthorized === false
-    && !/https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\])/i.test(JSON.stringify(ledger)), "public ledger current HOLD or endpoint sanitization rejected");
+    && !/https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\])/i.test(JSON.stringify(ledger))
+    && !/127\.0\.0\.1|localhost|\[::1\]|localBodyUrl|operatorBodyExpectedOrigin|localBodyContext|operatorBodyContext|presentationMode/i.test(JSON.stringify(ledger)), "public ledger current HOLD or transport-coordinate sanitization rejected");
 
-  assertProductTruthKeys(manifest.source, ["projectionRole", "sourceCommit", "graphHash", "snapshotHash", "capturedAt", "reviewedBaseline", "allowedSnapshotRelations"], "manifest source");
-  assertProductTruthKeys(manifest.source.reviewedBaseline, [
-    "snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash",
-    "reviewedSiteCommit", "reviewedFactsGitBlobOid", "immutableRawReference",
-  ], "reviewed source baseline");
-  assertProductTruth(manifest.source.sourceCommit === manifest.source.reviewedBaseline.sourceCommit
-    && manifest.source.graphHash === manifest.source.reviewedBaseline.graphHash
-    && manifest.source.snapshotHash === "23d2456bc77574491279af30b129aced09358944159a7ad6857565e49732c33e"
-    && manifest.source.capturedAt === "2026-08-23T22:53:32Z"
-    && manifest.source.reviewedBaseline.reviewedSiteCommit === "db2f240efd3be938e9e888a3aa5f5af0b9c522e3"
-    && manifest.source.reviewedBaseline.reviewedFactsGitBlobOid === "e5962434b1864a60082bb9a732fd7a87acf29a11"
-    && manifest.source.reviewedBaseline.immutableRawReference === "https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/db2f240efd3be938e9e888a3aa5f5af0b9c522e3/hub-assets/hub-facts.json", "reviewed source baseline identity rejected");
-  assertProductTruth(manifest.source.projectionRole === "stable reviewed semantic baseline for the published source atlas; mutable source snapshots may display topology but cannot rewrite reviewed semantic, runtime, product, or authority claims without a fresh review", "projection role rejected");
+  assertProductTruthKeys(manifest.source, ["projectionRole", "currentSnapshotIdentity", "reviewedSemanticBaseline", "allowedSnapshotRelations"], "manifest source");
+  assertProductTruthKeys(manifest.source.currentSnapshotIdentity, ["sourceCommit", "graphHash", "snapshotHash", "capturedAt"], "mutable snapshot identity");
+  assertProductTruthKeys(manifest.source.reviewedSemanticBaseline, [
+    "schema", "path", "reviewedCommit", "bytes", "sha256", "gitBlobOid", "canonicalSemanticDigest",
+    "immutableRawReference", "portableVerificationBoundary",
+  ], "reviewed semantic baseline reference");
+  assertProductTruthKeys(semanticBaseline, [
+    "schema", "version", "snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash", "canonicalSemanticDigest",
+  ], "reviewed semantic baseline");
+  const semanticProjection = {
+    snapshotVersion: semanticBaseline.snapshotVersion,
+    sourceCommit: semanticBaseline.sourceCommit,
+    graphHash: semanticBaseline.graphHash,
+    sourceFingerprint: semanticBaseline.sourceFingerprint,
+    projectionHash: semanticBaseline.projectionHash,
+    geometryHash: semanticBaseline.geometryHash,
+  };
+  assertProductTruth(semanticBaseline.schema === "hive.ecosystem.product-truth.semantic-baseline.v1"
+    && semanticBaseline.version === 1
+    && semanticBaseline.canonicalSemanticDigest === await sha256Text(canonicalJson(semanticProjection))
+    && manifest.source.reviewedSemanticBaseline.schema === "hive.ecosystem.product-truth.semantic-baseline.ref.v1"
+    && manifest.source.reviewedSemanticBaseline.path === "hub-assets/product-truth-semantic-baseline.v1.json"
+    && manifest.source.reviewedSemanticBaseline.reviewedCommit === "b542be86ddf256bc767124f92d2b1e66c37236bb"
+    && manifest.source.reviewedSemanticBaseline.bytes === 621
+    && manifest.source.reviewedSemanticBaseline.sha256 === "31a060917fc5aac5dc964cd2db0465eb44881a4a2eb9b36fc3459f61bbc58155"
+    && manifest.source.reviewedSemanticBaseline.gitBlobOid === "1636e500e7d5f53a1cfcda2dabf1510bbd377dbe"
+    && manifest.source.reviewedSemanticBaseline.canonicalSemanticDigest === semanticBaseline.canonicalSemanticDigest
+    && /not verified by the browser/i.test(manifest.source.reviewedSemanticBaseline.portableVerificationBoundary), "reviewed semantic baseline identity rejected");
+  assertProductTruth(manifest.source.currentSnapshotIdentity.sourceCommit === snapshot.hiveAi.sourceCommit
+    && manifest.source.currentSnapshotIdentity.graphHash === snapshot.hiveAi.graphHash
+    && manifest.source.currentSnapshotIdentity.snapshotHash === snapshot.snapshotHash
+    && manifest.source.currentSnapshotIdentity.capturedAt === snapshot.capturedAt, "mutable snapshot identity rejected");
+  assertProductTruth(manifest.source.projectionRole === "Commit-bound reviewed semantics are immutable input. The mutable source snapshot may display validated topology but cannot rewrite reviewed semantic, runtime, product, or authority claims without a fresh review.", "projection role rejected");
   assertProductTruth(Array.isArray(manifest.source.allowedSnapshotRelations)
     && manifest.source.allowedSnapshotRelations.join("|") === "EXACT_REVIEWED_BASELINE_MATCH|NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD|BRIDGE_INACTIVE_LAST_GOOD_SOURCE|SNAPSHOT_INVALID_BLOCKED", "snapshot relation set rejected");
-  const snapshotRelation = await productTruthSnapshotRelation(snapshot, manifest.source.reviewedBaseline);
+  const snapshotRelation = await productTruthSnapshotRelation(snapshot, semanticBaseline);
   assertProductTruth(manifest.source.allowedSnapshotRelations.includes(snapshotRelation), "snapshot relation escaped the closed set");
   assertProductTruth(snapshotRelation !== "SNAPSHOT_INVALID_BLOCKED", "source snapshot failed validation");
 
@@ -993,7 +1021,11 @@ async function validateProductTruthManifest(manifest, snapshot, ledger) {
     "target doctrine predicates rejected",
   );
   const source = subjects.source_atlas;
-  assertProductTruth(source.sourceCommit === manifest.source.reviewedBaseline.sourceCommit && source.sourceTree === ATLAS_SOURCE_TREE && source.graphHash === manifest.source.reviewedBaseline.graphHash && source.snapshotHash === manifest.source.snapshotHash, "reviewed atlas binding rejected");
+  assertProductTruth(source.sourceCommit === manifest.source.currentSnapshotIdentity.sourceCommit
+    && source.sourceTree === ATLAS_SOURCE_TREE
+    && source.graphHash === manifest.source.currentSnapshotIdentity.graphHash
+    && source.snapshotHash === manifest.source.currentSnapshotIdentity.snapshotHash,
+  "reviewed atlas binding rejected");
   assertProductTruth(source.neurons === 640 && source.trainable === 448 && source.deterministic === 192 && source.divisions === 16 && source.families === 64 && source.rowBackedTwitchProofs === 636, "atlas counts rejected");
   const tip = subjects.tip_influence;
   assertProductTruth(tip.matchingRows === 37 && tip.effectiveDisposition === "HOLD" && tip.executeAuthorized === false && tip.permanentProductTurnWire === false && tip.reason === "TIP_FUSE_CODE_BINDING_BYTES_MISMATCH_FAIL_CLOSED", "TIP source-predicate ceiling rejected");
@@ -1002,8 +1034,13 @@ async function validateProductTruthManifest(manifest, snapshot, ledger) {
   assertProductTruth(/9fd9d11b2cf595b51e80b05ba4ec76d7d07a55023159756127f6cf61a17d3e49/.test(halos.evidenceRef) && /ef804428576068626aa85230821633daf04371ec23f4e4540aa5aff0d408396c/.test(halos.evidenceRef), "halo evidence refs rejected");
 
   const tester5 = subjects.released_tester_5;
-  assertProductTruthKeys(tester5.historicalEvidence, ["tag", "url", "releaseId", "assetId", "assetState", "responseChain", "tlsVerified", "bytes", "sha256", "artifactBytesIndependentlyVerified", "artifactSha256IndependentlyVerified", "authenticodeStatus", "publisherAuthenticated", "signedPublicRelease", "smartScreenWarningExpected", "artifactExecuted", "packageContentsStatus", "sourceCommit", "embeddedHiveAiCommit", "representsReviewedSourceAtlas", "verificationReceiptSha256"], "tester.5 historical evidence");
-  const tester5Historical = tester5.historicalEvidence;
+  assertProductTruthKeys(tester5.historicalEvidence, ["outerExecutable", "receiptCustody"], "tester.5 historical planes");
+  const tester5Historical = tester5.historicalEvidence.outerExecutable;
+  const tester5Receipt = tester5.historicalEvidence.receiptCustody;
+  assertProductTruthKeys(tester5Receipt, [
+    "repository", "path", "sha256", "sha256VerificationStatus", "bytes", "gitObjectStatus",
+    "landingCommit", "landingTree", "gitBlobOid", "landingStatus", "publicRetrievability",
+  ], "tester.5 receipt custody");
   assertProductTruth(
     tester5.effectiveStatus === "EVIDENCE_EXPIRED_HELD" && tester5.activeDownloadAuthorized === false
       && tester5.currentPackageStatus === "UNKNOWN" && tester5.currentPublicRetrievability === "UNKNOWN"
@@ -1016,7 +1053,13 @@ async function validateProductTruthManifest(manifest, snapshot, ledger) {
       && tester5Historical.sourceCommit === "6f7fd8a9a18c8921aa0fad1fe5b0b901bacd3383"
       && tester5Historical.embeddedHiveAiCommit === "a0fe64832edb801c9944c0923e222a64ef14e498"
       && tester5Historical.representsReviewedSourceAtlas === false
-      && tester5Historical.verificationReceiptSha256 === "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56"
+      && tester5Historical.retrievabilityAtObservation === "REMOTE_ASSET_RETRIEVED_OVER_HTTPS"
+      && tester5Receipt.sha256 === "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56"
+      && tester5Receipt.sha256VerificationStatus === "DECLARED_NOT_REVERIFIED_IN_SITE_CUSTODY"
+      && tester5Receipt.bytes === null
+      && tester5Receipt.gitObjectStatus === "UNKNOWN_NOT_AVAILABLE_IN_SITE_CUSTODY"
+      && tester5Receipt.landingCommit === null && tester5Receipt.landingTree === null && tester5Receipt.gitBlobOid === null
+      && tester5Receipt.landingStatus === "UNKNOWN_NOT_VERIFIED_FROM_PUBLIC_SITE_CUSTODY"
       && tester5.verifiedAt === "2026-08-23T19:20:09.7630961Z" && tester5.validUntil === "2026-08-24T19:20:09.7630961Z",
     "tester.5 expired historical evidence plane rejected",
   );
@@ -1111,21 +1154,22 @@ function blockProductTruth(reason) {
   setText("[data-product-truth-state-label]", "FAIL CLOSED");
 }
 
-async function renderProductTruthManifest(manifest, snapshot, ledger = productTruthLedger) {
+async function renderProductTruthManifest(manifest, snapshot, ledger = productTruthLedger, semanticBaseline = productTruthSemanticBaseline) {
   const root = $("[data-product-truth]");
   if (!root) return;
   try {
-    await validateProductTruthManifest(manifest, snapshot, ledger);
-    const snapshotRelation = await productTruthSnapshotRelation(snapshot, manifest.source.reviewedBaseline);
-    const semanticCurrent = snapshotRelation === "EXACT_REVIEWED_BASELINE_MATCH";
+    await validateProductTruthManifest(manifest, snapshot, ledger, semanticBaseline);
+    const semanticRelation = await productTruthSemanticRelation(snapshot, semanticBaseline);
+    const snapshotRelation = await productTruthSnapshotRelation(snapshot, semanticBaseline);
+    const semanticCurrent = semanticRelation === "EXACT_REVIEWED_BASELINE_MATCH";
     root.dataset.state = semanticCurrent ? "ready" : "held";
     setText("[data-product-truth-status]", semanticCurrent
-      ? "SOURCE_BOUND_MATCH · EXACT REVIEWED BASELINE"
+      ? "SNAPSHOT CONTRACT PASS · EXACT REVIEWED SEMANTICS"
       : `${readableManifestState(snapshotRelation)} · SEMANTIC/RUNTIME CLAIMS HOLD`);
     setText("[data-product-truth-integrity]", manifest.integrityBoundary.claim);
     setText("[data-product-truth-architecture]", `${manifest.architecture.label} · ${readableManifestState(manifest.architecture.status)}`);
     setText("[data-product-truth-source]", snapshot.hiveAi.sourceCommit);
-    setText("[data-product-truth-captured]", `${snapshot.capturedAt} · displayed topology; reviewed semantics @ ${manifest.source.sourceCommit.slice(0, 12)}`);
+    setText("[data-product-truth-captured]", `${snapshot.capturedAt} · displayed topology; reviewed semantics @ ${semanticBaseline.sourceCommit.slice(0, 12)}`);
     setText("[data-product-truth-canonical]", `${manifest.canonicalManifest.landedCommit.slice(0, 12)} · LANDED SOURCE / PUBLISHED HISTORICAL SNAPSHOT · FRESHNESS HOLD · ${readableManifestState(manifest.canonicalManifest.publicRetrievability)}`);
     setText("[data-product-truth-state-label]", "SOURCE BOUND");
 
@@ -1205,7 +1249,9 @@ function wireProductTruthManifest() {
   const root = $("[data-product-truth]");
   if (!root) return;
   window.addEventListener("hive:snapshot", (event) => {
-    if (productTruthManifest && productTruthLedger) void renderProductTruthManifest(productTruthManifest, event.detail.snapshot, productTruthLedger);
+    if (productTruthManifest && productTruthLedger && productTruthSemanticBaseline) {
+      void renderProductTruthManifest(productTruthManifest, event.detail.snapshot, productTruthLedger, productTruthSemanticBaseline);
+    }
   });
   window.addEventListener("hive:snapshot-error", () => blockProductTruth("source snapshot unavailable"));
   void Promise.all([
@@ -1213,16 +1259,25 @@ function wireProductTruthManifest() {
     acquireStrictJson({
       url: "/hub-assets/product-truth-ledger.public.v2.json",
       maximumBytes: 32 * 1024,
-      expectedBytes: 7001,
-      expectedSha256: "787b5e3a19c5025bf7e914f31dbf02b02b04cafb4b9625cd6022c9746815af44",
+      expectedBytes: 7181,
+      expectedSha256: "e623836c21581035e9dd4d5fb2e11abfb3a5e18baf30ef16ce527fdfc74c7f24",
       sha256: sha256Bytes,
       label: "product truth evidence ledger",
     }),
+    acquireStrictJson({
+      url: "/hub-assets/product-truth-semantic-baseline.v1.json",
+      maximumBytes: 4 * 1024,
+      expectedBytes: 621,
+      expectedSha256: "31a060917fc5aac5dc964cd2db0465eb44881a4a2eb9b36fc3459f61bbc58155",
+      sha256: sha256Bytes,
+      label: "reviewed semantic baseline",
+    }),
   ])
-    .then(([manifest, ledger]) => {
+    .then(([manifest, ledger, semanticBaseline]) => {
       productTruthManifest = manifest;
       productTruthLedger = ledger;
-      if (window.hivePublicSnapshot) return renderProductTruthManifest(manifest, window.hivePublicSnapshot, ledger);
+      productTruthSemanticBaseline = semanticBaseline;
+      if (window.hivePublicSnapshot) return renderProductTruthManifest(manifest, window.hivePublicSnapshot, ledger, semanticBaseline);
       setText("[data-product-truth-status]", "Manifest loaded · waiting for source snapshot");
       return null;
     })
@@ -1293,7 +1348,7 @@ async function loadSourceSnapshot() {
     document.body.classList.remove("snapshot-unavailable");
     const presentation = sourceSnapshotPresentation(
       snapshot.capturedAt,
-      snapshot.refresh?.automaticBridgeConfiguredAtCapture === true,
+      snapshot.refresh,
     );
     const ageTruth = presentation.freshness === "historical"
       ? `The represented source capture is more than one hour old (${snapshot.capturedAt}).`
@@ -1301,8 +1356,11 @@ async function loadSourceSnapshot() {
         ? `The represented source capture is more than fifteen minutes old (${snapshot.capturedAt}).`
         : `The represented source capture is recent (${snapshot.capturedAt}).`;
     const bridgeTruth = presentation.configuration === "configured_at_capture"
-      ? "Automatic publication was configured at capture; current operation is UNKNOWN and execution is not attested."
-      : "Automatic publication was not configured at capture; current operation is UNKNOWN and execution is not attested.";
+      ? "Automatic publication was configured at capture."
+      : "Automatic publication was not configured at capture.";
+    const latestRefreshTruth = presentation.latestConfiguration === "configured_at_latest_observation"
+      ? "The latest refresh observation records configuration, while execution and current operation remain unverified."
+      : "The public/private bridge is intentionally disabled for this presentation release; current operation remains UNKNOWN and execution is not attested.";
     const freshnessHeld = presentation.freshnessDisposition === "FRESHNESS_HOLD";
     const sourceBadgeLabel = freshnessHeld
       ? `HISTORICAL · ${facts.sourceCommit.slice(0, 8).toUpperCase()}`
@@ -1311,7 +1369,7 @@ async function loadSourceSnapshot() {
     setSourceBadge(
       presentation.badgeState,
       sourceBadgeLabel,
-      `${ageTruth} Source binding PASS. Freshness ${freshnessHeld ? "HOLD" : "recent"}. ${bridgeTruth} Capture age is provenance, not runtime or publisher health.`,
+      `${ageTruth} Snapshot contract PASS: the declared public source identity is internally bound. Independent private-source readback was not performed. Freshness ${freshnessHeld ? "HOLD" : "recent"}. ${bridgeTruth} ${latestRefreshTruth} Capture age is provenance, not runtime or publisher health.`,
     );
     if (snapshotIdentityChanged(previous, snapshot)) {
       window.dispatchEvent(new CustomEvent("hive:snapshot", { detail: { snapshot, previous } }));
@@ -1449,7 +1507,7 @@ function renderIdeRelease(latest, truthResult) {
   setText("[data-ide-package-state]", latest.effectiveDisposition.currentPackageStatus);
   setText("[data-ide-runtime-state]", latest.effectiveDisposition.currentRuntimeStatus);
   setText("[data-ide-sha]", `${historicalOuter.sha256} · historical evidence only`);
-  setText("[data-ide-warning]", "At the historical observation time, receipt landing was LANDED_HASH_VERIFIED, private-source retrievability read PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE, and Authenticode read NotSigned. The observation expired. Current retrievability and installer identity are UNKNOWN; no download, install, or test action is authorized.");
+  setText("[data-ide-warning]", "At the historical observation time, the remote executable was retrieved over HTTPS, its outer bytes matched the recorded size and SHA-256, and Authenticode read NotSigned. The private receipt path and declared SHA-256 are preserved separately; its Git object and landing identities are unavailable in this site custody. The observation expired. Current retrievability and installer identity are UNKNOWN; no download, install, or test action is authorized.");
   setText("[data-ide-download]", "Download held · evidence expired");
   setText("[data-ide-start-here]", "START HERE held");
   setText("[data-ide-manifest]", "Expired evidence contract validated · action held");

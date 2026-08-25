@@ -110,9 +110,12 @@ export const PRODUCT_TRUTH_SNAPSHOT_RELATIONS = Object.freeze([
   "SNAPSHOT_INVALID_BLOCKED",
 ]);
 
-export function sourceSnapshotPresentation(capturedAt, automaticBridgeConfiguredAtCapture, now = Date.now()) {
+export function sourceSnapshotPresentation(capturedAt, refresh, now = Date.now()) {
   const freshness = snapshotFreshness(capturedAt, now);
-  const configuration = automaticBridgeConfiguredAtCapture ? "configured_at_capture" : "not_configured_at_capture";
+  const configuration = refresh?.automaticBridgeConfiguredAtCapture === true ? "configured_at_capture" : "not_configured_at_capture";
+  const latestConfiguration = refresh?.latestRefreshObservation?.automaticBridgeConfiguredAtObservation === true
+    ? "configured_at_latest_observation"
+    : "not_configured_at_latest_observation";
   const ageLabel = freshness.state === "historical"
     ? "Historical source capture"
     : freshness.state === "aged"
@@ -123,11 +126,12 @@ export function sourceSnapshotPresentation(capturedAt, automaticBridgeConfigured
   return Object.freeze({
     freshness: freshness.state,
     configuration,
+    latestConfiguration,
     executionObservationStatus: "NOT_ATTESTED",
     currentOperationalStatus: "UNKNOWN",
     freshnessDisposition: freshness.state === "recent" ? "CURRENT_EVIDENCE_OK" : "FRESHNESS_HOLD",
     badgeState: freshness.state === "recent" ? "" : "stale",
-    label: `${ageLabel} · ${freshness.state === "invalid" ? "source binding held" : "source binding verified"} · ${freshness.state === "recent" ? "freshness recent" : "freshness HOLD"} · ${configuration === "configured_at_capture" ? "automation configured at capture" : "automation not configured at capture"} · execution not attested · current operation UNKNOWN`,
+    label: `${ageLabel} · ${freshness.state === "invalid" ? "snapshot contract held" : "snapshot contract verified"} · ${freshness.state === "recent" ? "freshness recent" : "freshness HOLD"} · ${configuration === "configured_at_capture" ? "automation configured at capture" : "automation not configured at capture"} · ${latestConfiguration === "configured_at_latest_observation" ? "configured at latest observation" : "not configured at latest observation"} · execution not attested · current operation UNKNOWN`,
   });
 }
 
@@ -717,9 +721,19 @@ export async function validSnapshot(snapshot) {
     || snapshot.ecosystem.federationRepositories !== facts.federationRepositories
     || !Array.isArray(snapshot.ecosystem.primaryOrgans)
     || snapshot.ecosystem.primaryOrgans.length !== 6
-    || !exactKeys(snapshot.refresh, ["sourceAcquisitionModeAtCapture", "automaticBridgeConfiguredAtCapture", "configurationReasonCodeAtCapture", "executionObservationStatus", "currentOperationalStatus", "lastGoodTopologyBehavior"])
-    || snapshot.refresh.executionObservationStatus !== "NOT_ATTESTED"
-    || snapshot.refresh.currentOperationalStatus !== "UNKNOWN"
+    || !exactKeys(snapshot.refresh, ["sourceAcquisitionModeAtCapture", "automaticBridgeConfiguredAtCapture", "configurationReasonCodeAtCapture", "latestRefreshObservation", "lastGoodTopologyBehavior"])
+    || !exactKeys(snapshot.refresh.latestRefreshObservation, ["observedAt", "disposition", "reasonCode", "automaticBridgeConfiguredAtObservation", "executionObservationStatus", "currentOperationalStatus"])
+    || !Number.isFinite(Date.parse(snapshot.refresh.latestRefreshObservation.observedAt || ""))
+    || new Date(Date.parse(snapshot.refresh.latestRefreshObservation.observedAt || "")).toISOString().replace(".000Z", "Z") !== snapshot.refresh.latestRefreshObservation.observedAt
+    || typeof snapshot.refresh.latestRefreshObservation.automaticBridgeConfiguredAtObservation !== "boolean"
+    || snapshot.refresh.latestRefreshObservation.executionObservationStatus !== "NOT_ATTESTED"
+    || snapshot.refresh.latestRefreshObservation.currentOperationalStatus !== "UNKNOWN"
+    || ![
+      "PUBLIC_PRIVATE_BRIDGE_RETIRED_PRESENTATION_RELEASE",
+      "AUTOMATIC_BRIDGE_CONFIGURED_CURRENT_OPERATION_UNKNOWN",
+      "MANUAL_SOURCE_CAPTURE_CURRENT_OPERATION_UNKNOWN",
+      "REFRESH_FAILED_LAST_GOOD_SOURCE_HELD",
+    ].includes(snapshot.refresh.latestRefreshObservation.disposition)
     || snapshot.refresh.lastGoodTopologyBehavior !== "retain_previous_source_facts_and_topology_refresh_boundary_may_change") return false;
 
   const organIds = ["hive-ai", "hivepoa", "neurachain", "hive-ide", "second-brain", "compute-pool"];
@@ -737,27 +751,43 @@ export async function validSnapshot(snapshot) {
     && snapshot.refresh.configurationReasonCodeAtCapture === "LOCAL_LIVING_MAIN_PUBLISHER";
   const inactive = snapshot.refresh.automaticBridgeConfiguredAtCapture === false
     && snapshot.refresh.sourceAcquisitionModeAtCapture === "manual-source-bound-snapshot"
-    && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED", "MANUAL_WORKFLOW_DISPATCH"].includes(snapshot.refresh.configurationReasonCodeAtCapture);
+    && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED", "MANUAL_WORKFLOW_DISPATCH", "MANUAL_SOURCE_SNAPSHOT"].includes(snapshot.refresh.configurationReasonCodeAtCapture);
   if (!activeCloud && !activeLocal && !inactive) return false;
   if (!await validGalaxyProjection(snapshot.galaxy, facts)) return false;
   const { snapshotHash, ...body } = snapshot;
   return snapshotHash === await sha256Hex(canonicalJson(body));
 }
 
-export async function productTruthSnapshotRelation(snapshot, reviewedBaseline) {
+export async function productTruthSemanticRelation(snapshot, reviewedBaseline) {
   if (!await validSnapshot(snapshot)) return "SNAPSHOT_INVALID_BLOCKED";
   if (!isPlainObject(reviewedBaseline) || !exactKeys(reviewedBaseline, [
-    "snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash",
-    "reviewedSiteCommit", "reviewedFactsGitBlobOid", "immutableRawReference",
+    "schema", "version", "snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash",
+    "canonicalSemanticDigest",
   ])) return "SNAPSHOT_INVALID_BLOCKED";
+  const semanticProjection = {
+    snapshotVersion: reviewedBaseline.snapshotVersion,
+    sourceCommit: reviewedBaseline.sourceCommit,
+    graphHash: reviewedBaseline.graphHash,
+    sourceFingerprint: reviewedBaseline.sourceFingerprint,
+    projectionHash: reviewedBaseline.projectionHash,
+    geometryHash: reviewedBaseline.geometryHash,
+  };
+  if (reviewedBaseline.schema !== "hive.ecosystem.product-truth.semantic-baseline.v1"
+    || reviewedBaseline.version !== 1
+    || reviewedBaseline.canonicalSemanticDigest !== await sha256Hex(canonicalJson(semanticProjection))) return "SNAPSHOT_INVALID_BLOCKED";
   const exact = reviewedBaseline.snapshotVersion === snapshot.snapshotVersion
     && reviewedBaseline.sourceCommit === snapshot.hiveAi.sourceCommit
     && reviewedBaseline.graphHash === snapshot.hiveAi.graphHash
     && reviewedBaseline.sourceFingerprint === snapshot.hiveAi.sourceFingerprint
     && reviewedBaseline.projectionHash === snapshot.galaxy.projectionHash
     && reviewedBaseline.geometryHash === snapshot.galaxy.geometry.geometryHash;
-  if (!exact) return "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD";
-  return snapshot.refresh.automaticBridgeConfiguredAtCapture === false
+  return exact ? "EXACT_REVIEWED_BASELINE_MATCH" : "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD";
+}
+
+export async function productTruthSnapshotRelation(snapshot, reviewedBaseline) {
+  const semanticRelation = await productTruthSemanticRelation(snapshot, reviewedBaseline);
+  if (semanticRelation !== "EXACT_REVIEWED_BASELINE_MATCH") return semanticRelation;
+  return snapshot.refresh.latestRefreshObservation.automaticBridgeConfiguredAtObservation === false
     ? "BRIDGE_INACTIVE_LAST_GOOD_SOURCE"
     : "EXACT_REVIEWED_BASELINE_MATCH";
 }

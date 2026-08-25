@@ -4,10 +4,10 @@ const RFC3339_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/;
 
 export const IDE_RELEASE_LATEST_MAX_BYTES = 64 * 1024;
 export const IDE_RELEASE_TRUTH_MAX_BYTES = 128 * 1024;
-export const IDE_RELEASE_LATEST_BYTES = 2433;
-export const IDE_RELEASE_TRUTH_BYTES = 3896;
-export const IDE_RELEASE_LATEST_SHA256 = "ff5867d1a59eb67283717a169f8ae49f2bd01d052a95b90204162ae692be9b5a";
-export const IDE_RELEASE_TRUTH_MANIFEST_SHA256 = "5cbb3c6bf576cb16409bcbb838050425931f51655fed1262194a842bf9707a8a";
+export const IDE_RELEASE_LATEST_BYTES = 2927;
+export const IDE_RELEASE_TRUTH_BYTES = 4390;
+export const IDE_RELEASE_LATEST_SHA256 = "077c5010c1d590424b47366c75d8af3fa3bb96e9638dc31ae5cfc43731d22900";
+export const IDE_RELEASE_TRUTH_MANIFEST_SHA256 = "90172e421380e0d3dc193b8dbb9b89b5f165954afb6cd11ecc8b1b6509158413";
 
 const TRUTH_MANIFEST_URL = "https://dhenz14.github.io/downloads/hive-ide/hive-ide-release-manifest.json";
 const HISTORICAL_INSTALLER_URL = "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/Hive-IDE-OneClick-Windows-x64.exe";
@@ -19,6 +19,8 @@ const OBSERVED_AT = "2026-08-23T19:20:09.7630961Z";
 const VALID_UNTIL = "2026-08-24T19:20:09.7630961Z";
 const CLAIM_BOUNDARY = "HISTORICAL_TESTER5_REMOTE_BYTE_OBSERVATION_EXPIRED; CURRENT_PACKAGE_RETRIEVABILITY_INSTALLER_RUNTIME_PRODUCT_LIVE_UNKNOWN; ACTIVE_DOWNLOAD_AND_PUBLIC_FUNCTIONAL_TESTING_HOLD";
 const REQUIRED_ACTION = "FRESH_BOUNDED_REMOTE_READBACK_AND_SEPARATE_OPERATOR_AUTHORIZATION";
+const RECEIPT_PATH = "tests/fixtures/constellation_public_truth/tester5_remote_bytes_observation_v1.json";
+const RECEIPT_SHA256 = "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56";
 
 export class IdeReleaseContractError extends Error {
   constructor(code, message) {
@@ -69,8 +71,26 @@ function requireEffective(value, label) {
   return value;
 }
 
+function requireReceiptCustody(value, label) {
+  exactObject(value, {
+    repository: "Dhenz14/Hive-AI",
+    path: RECEIPT_PATH,
+    sha256: RECEIPT_SHA256,
+    sha256VerificationStatus: "DECLARED_NOT_REVERIFIED_IN_SITE_CUSTODY",
+    bytes: null,
+    gitObjectStatus: "UNKNOWN_NOT_AVAILABLE_IN_SITE_CUSTODY",
+    landingCommit: null,
+    landingTree: null,
+    gitBlobOid: null,
+    landingStatus: "UNKNOWN_NOT_VERIFIED_FROM_PUBLIC_SITE_CUSTODY",
+    publicRetrievability: "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE",
+  }, label);
+  hex(value.sha256, HEX_64, `${label}.sha256`);
+  return value;
+}
+
 function requireLatestHistorical(value) {
-  exactKeys(value, ["status", "observedAtUtc", "validUntilUtc", "release", "outerExecutable", "claim"], "latest.historicalEvidence");
+  exactKeys(value, ["status", "observedAtUtc", "validUntilUtc", "release", "outerExecutable", "receiptCustody", "claim"], "latest.historicalEvidence");
   exact(value.status, "HISTORICAL_EXPIRED_OBSERVATION", "latest.historicalEvidence.status");
   exact(value.observedAtUtc, OBSERVED_AT, "latest.historicalEvidence.observedAtUtc");
   exact(value.validUntilUtc, VALID_UNTIL, "latest.historicalEvidence.validUntilUtc");
@@ -95,13 +115,11 @@ function requireLatestHistorical(value) {
     authenticodeStatus: "NotSigned",
     publisherAuthenticated: false,
     packageContentsStatus: "UNKNOWN_NOT_INSPECTED",
-    landingStatus: "LANDED_HASH_VERIFIED",
-    publicRetrievabilityAtObservation: "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE",
-    receiptSha256: "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56",
+    retrievabilityAtObservation: "REMOTE_ASSET_RETRIEVED_OVER_HTTPS",
   }, "latest.historicalEvidence.outerExecutable");
   httpsUrl(outer.historicalUrl, HISTORICAL_INSTALLER_URL, "latest historical installer URL");
   hex(outer.sha256, HEX_64, "latest historical installer SHA-256");
-  hex(outer.receiptSha256, HEX_64, "latest historical receipt SHA-256");
+  requireReceiptCustody(value.receiptCustody, "latest.historicalEvidence.receiptCustody");
   if (typeof value.claim !== "string" || !/evidence expired/i.test(value.claim)) reject("latest historical claim must state expiry");
 }
 
@@ -121,7 +139,7 @@ export function validateIdeReleaseLatest(value) {
 }
 
 function requireTruthHistorical(value, latest) {
-  exactKeys(value, ["status", "observedAtUtc", "validUntilUtc", "release", "outerExecutable", "sourceDeclarations", "historicalReleaseManifest", "claim"], "truth.historicalEvidence");
+  exactKeys(value, ["status", "observedAtUtc", "validUntilUtc", "release", "outerExecutable", "receiptCustody", "sourceDeclarations", "historicalReleaseManifest", "claim"], "truth.historicalEvidence");
   exact(value.status, "HISTORICAL_EXPIRED_OBSERVATION", "truth historical status");
   exact(value.observedAtUtc, OBSERVED_AT, "truth historical observedAtUtc");
   exact(value.validUntilUtc, VALID_UNTIL, "truth historical validUntilUtc");
@@ -144,11 +162,13 @@ function requireTruthHistorical(value, latest) {
     publisherAuthenticated: false,
     artifactExecuted: false,
     packageContentsStatus: "UNKNOWN_NOT_INSPECTED",
-    landingStatus: "LANDED_HASH_VERIFIED",
-    publicRetrievabilityAtObservation: "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE",
-    receiptSha256: "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56",
+    retrievabilityAtObservation: "REMOTE_ASSET_RETRIEVED_OVER_HTTPS",
   }, "truth.historicalEvidence.outerExecutable");
   httpsUrl(value.outerExecutable.historicalUrl, HISTORICAL_INSTALLER_URL, "truth historical installer URL");
+  requireReceiptCustody(value.receiptCustody, "truth.historicalEvidence.receiptCustody");
+  if (JSON.stringify(value.receiptCustody) !== JSON.stringify(latest.historicalEvidence.receiptCustody)) {
+    reject("truth receipt custody drifted from latest without a new evidence plane");
+  }
   exactObject(value.sourceDeclarations, {
     status: "HISTORICAL_RELEASE_MANIFEST_DECLARATION_ONLY",
     hiveIdeCommit: latest.historicalEvidence.release.sourceCommit,

@@ -8,7 +8,6 @@ import { fileURLToPath } from "node:url";
 
 import { parseJsonBytesStrict } from "../hub-assets/strict-json.mjs";
 import { readHubFactsSync } from "./hub-facts-custody.mjs";
-import { readAndVerifyBundle } from "./private-source-bundle.mjs";
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputPath = path.join(siteRoot, "hub-assets", "hub-facts.json");
@@ -23,13 +22,6 @@ const REQUIRED_PUBLISHER_EVIDENCE_PATHS = Object.freeze([
   "tests/fixtures/physiology/formal_l3_e01_v2/RATIFY_L3_E01_V2.json",
   "tests/fixtures/physiology/formal_l3_e02/window_seal/RATIFY_L3_E02_V1.json",
 ]);
-const automaticBridgeConfiguredAtCapture = process.env.GALAXY_AUTOMATIC_BRIDGE_CONFIGURED_AT_CAPTURE === "true";
-const inactiveBridgeReason = process.env.GALAXY_BRIDGE_INACTIVE_REASON === "MANUAL_WORKFLOW_DISPATCH"
-  ? "MANUAL_WORKFLOW_DISPATCH"
-  : "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED";
-const bridgeModeAtCapture = automaticBridgeConfiguredAtCapture && process.env.GALAXY_SOURCE_ACQUISITION_MODE_AT_CAPTURE === "local"
-  ? "local"
-  : automaticBridgeConfiguredAtCapture ? "cloud" : "inactive";
 
 const PYTHON_BUILD = String.raw`
 import json
@@ -199,28 +191,23 @@ function atomicWriteJson(destination, value) {
   return rendered;
 }
 
-const sourceBundleOption = option("--source-bundle");
-const sourceBundle = sourceBundleOption ? path.resolve(sourceBundleOption) : "";
-const sourceBinding = sourceBundle ? readAndVerifyBundle(sourceBundle, { allowPreparedGit: true }) : null;
-if (sourceBinding && sourceBinding.status !== "SOURCE_MATERIALIZED") {
-  fail("inactive source materialization cannot be compiled");
-}
-const hiveAiRepo = sourceBinding
-  ? path.join(sourceBundle, "source")
-  : path.resolve(option("--hive-ai-repo", process.env.HIVE_AI_REPO || "/home/theyc/src/Hive-AI"));
+if (process.argv.includes("--source-bundle")) fail("private source bundles are retired from this public presentation release");
+const hiveAiRepo = path.resolve(option("--hive-ai-repo", process.env.HIVE_AI_REPO || "/home/theyc/src/Hive-AI"));
 const sourceRef = option("--hive-ai-ref", process.env.HIVE_AI_REF || "origin/main");
 const checkOnly = process.argv.includes("--check");
+const capturedAt = option("--captured-at");
+if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(capturedAt)
+  || new Date(Date.parse(capturedAt)).toISOString().replace(".000Z", "Z") !== capturedAt) {
+  fail("--captured-at requires one explicit UTC-second instant; implicit wall-clock snapshot churn is forbidden");
+}
 
 if (!fs.existsSync(hiveAiRepo)) fail(`Hive-AI repository missing: ${hiveAiRepo}`);
 
-const sourceCommit = sourceBinding?.sourceCommit
-  || run("git", ["-C", hiveAiRepo, "rev-parse", `${sourceRef}^{commit}`]);
+const sourceCommit = run("git", ["-C", hiveAiRepo, "rev-parse", `${sourceRef}^{commit}`]);
 if (!/^[a-f0-9]{40}$/.test(sourceCommit)) fail("source commit is not an exact SHA-1");
-if (!sourceBinding) {
-  const checkoutCommit = run("git", ["-C", hiveAiRepo, "rev-parse", "HEAD^{commit}"]);
-  if (checkoutCommit !== sourceCommit) {
-    fail(`compiled checkout does not equal the selected source: HEAD=${checkoutCommit} source=${sourceCommit}`);
-  }
+const checkoutCommit = run("git", ["-C", hiveAiRepo, "rev-parse", "HEAD^{commit}"]);
+if (checkoutCommit !== sourceCommit) {
+  fail(`compiled checkout does not equal the selected source: HEAD=${checkoutCommit} source=${sourceCommit}`);
 }
 
 function remoteMainCommit() {
@@ -228,27 +215,19 @@ function remoteMainCommit() {
     .split(/\s+/)[0] || "";
 }
 
-const remoteMainBeforeCompile = sourceBinding ? sourceCommit : remoteMainCommit();
-if (!sourceBinding && remoteMainBeforeCompile !== sourceCommit) {
+const remoteMainBeforeCompile = remoteMainCommit();
+if (remoteMainBeforeCompile !== sourceCommit) {
   fail(`local ${sourceRef} is not live GitHub main: local=${sourceCommit} remote=${remoteMainBeforeCompile || "missing"}`);
 }
 
-if (!sourceBinding) {
-  const checkoutStatus = run("git", [
-    "-C", hiveAiRepo, "status", "--porcelain", "--untracked-files=all", "--ignored=matching",
-  ]);
-  if (checkoutStatus) fail("compiled checkout contains modified, untracked, or ignored files");
-}
+const checkoutStatus = run("git", [
+  "-C", hiveAiRepo, "status", "--porcelain", "--untracked-files=all", "--ignored=matching",
+]);
+if (checkoutStatus) fail("compiled checkout contains modified, untracked, or ignored files");
 
 const objectFormat = run("git", ["-C", hiveAiRepo, "rev-parse", "--show-object-format"]);
 if (objectFormat !== "sha1") fail(`unsupported source object format: ${objectFormat}`);
-const sourceTreeEntries = sourceBinding
-  ? new Map(sourceBinding.files.map((entry) => [entry.path, {
-    mode: entry.mode,
-    type: "blob",
-    objectId: entry.gitBlobOid,
-  }]))
-  : sourceTree(sourceCommit, hiveAiRepo);
+const sourceTreeEntries = sourceTree(sourceCommit, hiveAiRepo);
 const verifiedCheckoutPaths = new Map();
 
 function verifyMaterializedSource(repositoryPath, expected = null) {
@@ -336,14 +315,12 @@ const truthInputCommit = String(compiled.truth_input_commit || "").toLowerCase()
 if (!/^[a-f0-9]{40}$/.test(truthInputCommit)) {
   fail(`source history is too shallow to prove the truth-input commit: ${truthInputCommit || "missing"}`);
 }
-if (!sourceBinding) {
-  const shallowPathRaw = run("git", ["-C", hiveAiRepo, "rev-parse", "--git-path", "shallow"]);
-  const shallowPath = path.isAbsolute(shallowPathRaw) ? shallowPathRaw : path.resolve(hiveAiRepo, shallowPathRaw);
-  if (fs.existsSync(shallowPath)) {
-    const shallowBoundaries = new Set(fs.readFileSync(shallowPath, "utf8").trim().split(/\s+/).filter(Boolean));
-    if (shallowBoundaries.has(truthInputCommit)) {
-      fail(`truth-input commit ${truthInputCommit} is a shallow boundary; deepen source history`);
-    }
+const shallowPathRaw = run("git", ["-C", hiveAiRepo, "rev-parse", "--git-path", "shallow"]);
+const shallowPath = path.isAbsolute(shallowPathRaw) ? shallowPathRaw : path.resolve(hiveAiRepo, shallowPathRaw);
+if (fs.existsSync(shallowPath)) {
+  const shallowBoundaries = new Set(fs.readFileSync(shallowPath, "utf8").trim().split(/\s+/).filter(Boolean));
+  if (shallowBoundaries.has(truthInputCommit)) {
+    fail(`truth-input commit ${truthInputCommit} is a shallow boundary; deepen source history`);
   }
 }
 
@@ -520,15 +497,17 @@ const base = {
     federationRepositories: graph.edges.filter((edge) => edge.relationship_type === "federation_member").length,
   },
   refresh: {
-    sourceAcquisitionModeAtCapture: bridgeModeAtCapture === "local"
-      ? "local-living-main-publisher"
-      : automaticBridgeConfiguredAtCapture ? "scheduled-living-main-publisher" : "manual-source-bound-snapshot",
-    automaticBridgeConfiguredAtCapture,
-    configurationReasonCodeAtCapture: bridgeModeAtCapture === "local"
-      ? "LOCAL_LIVING_MAIN_PUBLISHER"
-      : automaticBridgeConfiguredAtCapture ? "SCHEDULED_LIVING_MAIN_PUBLISHER" : inactiveBridgeReason,
-    executionObservationStatus: "NOT_ATTESTED",
-    currentOperationalStatus: "UNKNOWN",
+    sourceAcquisitionModeAtCapture: "manual-source-bound-snapshot",
+    automaticBridgeConfiguredAtCapture: false,
+    configurationReasonCodeAtCapture: "MANUAL_SOURCE_SNAPSHOT",
+    latestRefreshObservation: {
+      observedAt: capturedAt,
+      disposition: "MANUAL_SOURCE_CAPTURE_CURRENT_OPERATION_UNKNOWN",
+      reasonCode: "MANUAL_SOURCE_SNAPSHOT",
+      automaticBridgeConfiguredAtObservation: false,
+      executionObservationStatus: "NOT_ATTESTED",
+      currentOperationalStatus: "UNKNOWN",
+    },
     lastGoodTopologyBehavior: "retain_previous_source_facts_and_topology_refresh_boundary_may_change",
   },
   boundaries: {
@@ -562,9 +541,7 @@ if (previousBase) {
 const unchanged = previousBase && canonicalJson(previousBase) === canonicalJson(base);
 const nextBody = {
   ...base,
-  capturedAt: unchanged && typeof previous.capturedAt === "string"
-    ? previous.capturedAt
-    : new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+  capturedAt: unchanged && typeof previous.capturedAt === "string" ? previous.capturedAt : capturedAt,
 };
 const next = {
   ...nextBody,
@@ -574,8 +551,8 @@ const rendered = `${JSON.stringify(next, null, 2)}\n`;
 const current = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : "";
 const stale = current !== rendered;
 
-const remoteMainAfterCompile = sourceBinding ? sourceCommit : remoteMainCommit();
-if (!sourceBinding && remoteMainAfterCompile !== sourceCommit) {
+const remoteMainAfterCompile = remoteMainCommit();
+if (remoteMainAfterCompile !== sourceCommit) {
   fail(`Hive-AI main moved during compilation: selected=${sourceCommit} remote=${remoteMainAfterCompile || "missing"}`);
 }
 

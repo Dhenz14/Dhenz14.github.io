@@ -19,8 +19,8 @@ import { parseJsonBytesStrict, parseJsonStrict, StrictJsonError } from "../hub-a
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const feedPath = path.join(root, "downloads", "hive-ide", "latest.json");
 const manifestPath = path.join(root, "downloads", "hive-ide", "hive-ide-release-manifest.json");
-const LATEST_GIT_BLOB = "bba5886a2f5938558185aa3f94a76a5b7afd5bfe";
-const TRUTH_GIT_BLOB = "fb83829b50f8573cdd5cd2783b881c496635eeed";
+const LATEST_GIT_BLOB = "5089256f3b5644301eba04fddf3f3846a348c473";
+const TRUTH_GIT_BLOB = "badce0aafedd1fd3b0f42dde230d4ff0d1353a6d";
 
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const sha256 = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
@@ -81,6 +81,11 @@ function selfTest() {
     expectReject("runtime_promotion_refused", fixtures, (latest) => { latest.effectiveDisposition.currentRuntimeStatus = "RUNNING"; }),
     expectReject("historical_hash_tamper_refused", fixtures, (latest) => { latest.historicalEvidence.outerExecutable.sha256 = "0".repeat(64); }),
     expectReject("historical_url_tamper_refused", fixtures, (latest) => { latest.historicalEvidence.outerExecutable.historicalUrl = "https://example.com/tester.exe"; }),
+    expectReject("executable_private_receipt_retrievability_mix_refused", fixtures, (latest) => { latest.historicalEvidence.outerExecutable.retrievabilityAtObservation = "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"; }),
+    expectReject("receipt_hash_moved_to_executable_refused", fixtures, (latest) => { latest.historicalEvidence.outerExecutable.receiptSha256 = latest.historicalEvidence.receiptCustody.sha256; }),
+    expectReject("receipt_landing_invented_refused", fixtures, (latest) => { latest.historicalEvidence.receiptCustody.landingStatus = "LANDED_HASH_VERIFIED"; }),
+    expectReject("receipt_blob_invented_refused", fixtures, (latest) => { latest.historicalEvidence.receiptCustody.gitBlobOid = "0".repeat(40); }),
+    expectReject("receipt_plane_divergence_refused", fixtures, (_latest, manifest) => { manifest.historicalEvidence.receiptCustody.path = "tests/fixtures/other.json"; }),
     expectReject("historical_time_extension_refused", fixtures, (latest) => { latest.historicalEvidence.validUntilUtc = "2027-08-24T19:20:09Z"; }),
     expectReject("truth_effective_divergence_refused", fixtures, (_latest, manifest) => { manifest.effectiveDisposition.currentPackageStatus = "AVAILABLE"; }),
     expectReject("truth_historical_divergence_refused", fixtures, (_latest, manifest) => { manifest.historicalEvidence.outerExecutable.sizeBytes += 1; }),

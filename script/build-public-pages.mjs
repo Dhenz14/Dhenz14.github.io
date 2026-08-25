@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -91,13 +92,29 @@ function exactKeys(value, expected, label) {
 }
 
 function canonicalPublicPath(value, label) {
-  if (typeof value !== "string" || !value || value !== value.trim() || value.includes("\\") || value.includes("\0")) {
+  if (typeof value !== "string" || !value || value !== value.trim() || value.includes("\\")
+    || /[\u0000-\u001f\u007f]/.test(value) || value.normalize("NFC") !== value) {
     reject("PUBLIC_ALLOWLIST_PATH_UNSAFE", `${label} is not a canonical POSIX-relative path`);
   }
   if (path.posix.isAbsolute(value) || path.posix.normalize(value) !== value || value === "." || value.startsWith("../") || value.includes("/../") || value.endsWith("/")) {
     reject("PUBLIC_ALLOWLIST_PATH_UNSAFE", `${label} escaped the artifact root`);
   }
   return value;
+}
+
+function collisionKey(value) {
+  return value.normalize("NFC").toLowerCase();
+}
+
+function assertUnionCollisionFree(groups) {
+  const seen = new Map();
+  for (const [label, values] of groups) {
+    for (const value of values) {
+      const key = collisionKey(value);
+      if (seen.has(key)) reject("PUBLIC_ALLOWLIST_DUPLICATE_PATH", `${label} collides with ${seen.get(key)}: ${value}`);
+      seen.set(key, `${label}:${value}`);
+    }
+  }
 }
 
 function canonicalForbiddenPrefix(value, label) {
@@ -113,7 +130,7 @@ function exactSortedUnique(values, label, canonicalizer = canonicalPublicPath) {
   const canonical = values.map((value, index) => canonicalizer(value, `${label}[${index}]`));
   const sorted = [...canonical].sort((left, right) => left.localeCompare(right, "en"));
   if (canonical.some((value, index) => value !== sorted[index])) reject("PUBLIC_ALLOWLIST_NOT_SORTED", `${label} must remain sorted`);
-  const folded = canonical.map((value) => value.toLocaleLowerCase("en-US"));
+  const folded = canonical.map(collisionKey);
   if (new Set(folded).size !== folded.length) reject("PUBLIC_ALLOWLIST_DUPLICATE_PATH", `${label} contains a duplicate or case-colliding path`);
   return canonical;
 }
@@ -136,13 +153,19 @@ function validateManifest(value) {
   const forbiddenPrefixes = exactSortedUnique(value.forbiddenPrefixes, "forbiddenPrefixes", canonicalForbiddenPrefix);
   const privateSourceOnlyPaths = exactSortedUnique(value.privateSourceOnlyPaths, "privateSourceOnlyPaths");
   const forbiddenExactPaths = exactSortedUnique(value.forbiddenExactPaths, "forbiddenExactPaths");
+  if (!Array.isArray(value.generatedFiles) || value.generatedFiles.length !== 1) reject("PUBLIC_ALLOWLIST_SCHEMA_INVALID", "generatedFiles must contain only .nojekyll");
+  exactKeys(value.generatedFiles[0], ["path", "content"], "generatedFiles[0]");
+  const generatedFilePaths = value.generatedFiles.map((entry, index) => canonicalPublicPath(entry.path, `generatedFiles[${index}].path`));
+  assertUnionCollisionFree([
+    ["publicFiles", publicFiles],
+    ["generatedFiles", generatedFilePaths],
+    ["generatedQuarantineRoutes", generatedQuarantineRoutes],
+  ]);
   exactSequence(forbiddenPrefixes, REQUIRED_FORBIDDEN_PREFIXES, "PUBLIC_ALLOWLIST_REQUIRED_PREFIX_MISSING", "required forbidden prefixes");
   exactSequence(privateSourceOnlyPaths, REQUIRED_PRIVATE_SOURCE_PATHS, "PUBLIC_ALLOWLIST_PRIVATE_PATH_MISSING", "private source-only paths");
   exactSequence(forbiddenExactPaths, REQUIRED_FORBIDDEN_EXACT, "PUBLIC_ALLOWLIST_FORBIDDEN_PATH_MISSING", "26 exact forbidden publication paths");
   exactSequence(generatedQuarantineRoutes, REQUIRED_QUARANTINE_ROUTES, "PUBLIC_ALLOWLIST_QUARANTINE_ROUTE_DRIFT", "generated HivePoA quarantine routes");
   if (forbiddenExactPaths.length !== 26) reject("PUBLIC_ALLOWLIST_FORBIDDEN_PATH_MISSING", "the original 25 retired/fixture/private control paths plus the private Product Truth ledger must remain forbidden");
-  if (!Array.isArray(value.generatedFiles) || value.generatedFiles.length !== 1) reject("PUBLIC_ALLOWLIST_SCHEMA_INVALID", "generatedFiles must contain only .nojekyll");
-  exactKeys(value.generatedFiles[0], ["path", "content"], "generatedFiles[0]");
   if (canonicalPublicPath(value.generatedFiles[0].path, "generatedFiles[0].path") !== ".nojekyll" || value.generatedFiles[0].content !== "") {
     reject("PUBLIC_ALLOWLIST_SCHEMA_INVALID", "the only generated public member must be an empty .nojekyll");
   }
@@ -300,10 +323,11 @@ async function expectError(label, expectedCode, callback) {
   throw new Error(`${label} did not fail with ${expectedCode}`);
 }
 
-async function selfTest() {
+async function selfTest({ requireLinkTests = false } = {}) {
   const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), "hive-pages-builder-"));
   const stage = path.join(temporaryRoot, "stage");
   let symlinkCase = "tested";
+  let specialFileCase = process.platform === "win32" ? "platform-skipped" : "tested";
   try {
     const built = await buildArtifact(stage);
     await checkArtifact(stage);
@@ -328,10 +352,26 @@ async function selfTest() {
       if (error?.code === "EPERM" || error?.code === "EACCES") symlinkCase = "platform-skipped";
       else throw error;
     }
+    if (process.platform !== "win32") {
+      const fifoPath = path.join(stage, "special.fifo");
+      const fifo = spawnSync("mkfifo", [fifoPath], { encoding: "utf8" });
+      if (fifo.status !== 0) {
+        specialFileCase = "platform-skipped";
+      } else {
+        await expectError("special file refused", "PUBLIC_ARTIFACT_MEMBER_TYPE_INVALID", async () => checkArtifact(stage));
+        await fs.unlink(fifoPath);
+      }
+    }
+    if (requireLinkTests && (symlinkCase !== "tested" || specialFileCase !== "tested")) {
+      reject("PUBLIC_ARTIFACT_REQUIRED_LINK_TESTS_SKIPPED", `required adversaries were not executed: symlink=${symlinkCase} special=${specialFileCase}`);
+    }
     const manifest = await loadManifest();
     await expectError("unsafe path refused", "PUBLIC_ALLOWLIST_PATH_UNSAFE", async () => validateManifest({ ...manifest, publicFiles: [...manifest.publicFiles.slice(0, -1), "../escape"] }));
+    await expectError("control path refused", "PUBLIC_ALLOWLIST_PATH_UNSAFE", async () => validateManifest({ ...manifest, publicFiles: [...manifest.publicFiles.slice(0, -1), "unsafe\u007f.html"] }));
+    await expectError("non-NFC path refused", "PUBLIC_ALLOWLIST_PATH_UNSAFE", async () => validateManifest({ ...manifest, publicFiles: [...manifest.publicFiles.slice(0, -1), "cafe\u0301.html"] }));
+    await expectError("cross-set collision refused", "PUBLIC_ALLOWLIST_DUPLICATE_PATH", async () => validateManifest({ ...manifest, publicFiles: [".nojekyll", ...manifest.publicFiles] }));
     await expectError("forbidden exact path set frozen", "PUBLIC_ALLOWLIST_FORBIDDEN_PATH_MISSING", async () => validateManifest({ ...manifest, forbiddenExactPaths: manifest.forbiddenExactPaths.slice(1) }));
-    console.log(`PUBLIC_PAGES_BUILDER_SELF_TEST_OK members=${built.members} forbidden_exact=${manifest.forbiddenExactPaths.length} symlink=${symlinkCase}`);
+    console.log(`PUBLIC_PAGES_BUILDER_SELF_TEST_OK members=${built.members} forbidden_exact=${manifest.forbiddenExactPaths.length} symlink=${symlinkCase} special=${specialFileCase} required_links=${requireLinkTests}`);
   } finally {
     await fs.rm(temporaryRoot, { recursive: true, force: true });
   }
@@ -343,7 +383,7 @@ function argumentValue(name) {
 }
 
 try {
-  if (process.argv.includes("--self-test")) await selfTest();
+  if (process.argv.includes("--self-test")) await selfTest({ requireLinkTests: process.argv.includes("--require-link-tests") });
   else {
     const command = process.argv[2];
     const output = argumentValue("--output");

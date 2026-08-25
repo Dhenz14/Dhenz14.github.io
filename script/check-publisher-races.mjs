@@ -5,120 +5,170 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  publicationHandoff,
-  publisherCandidateDecision,
-  publisherTransitionDecision,
-  resolvePublicationTarget,
+  PAGES_POLICY,
+  artifactName,
+  durablePublicationDecision,
+  finalMarkerState,
+  markerDescription,
+  pendingQueueSurvivors,
+  predeployDecision,
+  publicationAuthorityDecision,
+  publicationDecisionAfterProbe,
 } from "./publisher-candidate-policy.mjs";
-import {
-  GALAXY_CANONICAL_GEOMETRY_HASH,
-  GALAXY_RENDERER_CONTRACT_HASH,
-  GALAXY_SNAPSHOT_VERSION,
-  validSnapshot,
-} from "../hub-assets/galaxy-core.mjs";
-import { readHubFactsSync } from "./hub-facts-custody.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const workflow = fs.readFileSync(path.join(root, ".github/workflows/sync-living-galaxy.yml"), "utf8");
-const pagesWorkflow = fs.readFileSync(path.join(root, ".github/workflows/publish-reviewed-pages.yml"), "utf8");
-const facts = readHubFactsSync(path.join(root, "hub-assets/hub-facts.json"), "publisher race snapshot");
-const hash = (character) => character.repeat(64);
+const workflowPath = path.join(root, ".github", "workflows", "publish-reviewed-pages.yml");
+const workflow = fs.readFileSync(workflowPath, "utf8");
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const commit = (character) => character.repeat(40);
-const factsPath = "hub-assets/hub-facts.json";
-const mutation = (sha, paths, parentCount = 1) => ({ sha, paths, parentCount });
-const assert = (condition, message) => {
-  if (!condition) throw new Error(message);
-};
+const digest = (character) => character.repeat(64);
+const B = commit("b");
+const C = commit("c");
+const E = commit("e");
+const repositoryId = 12345;
 
-assert(publisherCandidateDecision({
-  baseFactsHash: hash("a"), remoteFactsHash: hash("a"), candidateFactsHash: hash("b"),
-}) === "REBUILD_EXACT", "disjoint Pages-main motion did not rebuild the exact candidate");
-assert(publisherCandidateDecision({
-  baseFactsHash: hash("a"), remoteFactsHash: hash("b"), candidateFactsHash: hash("b"),
-}) === "ALREADY_LANDED", "an independently landed identical candidate was not recognized");
-assert(publisherCandidateDecision({
-  baseFactsHash: hash("a"), remoteFactsHash: hash("c"), candidateFactsHash: hash("b"),
-}) === "CONCURRENT_FACTS_WINNER", "a concurrent facts writer did not win safely");
+function authority(overrides = {}) {
+  return publicationAuthorityDecision({
+    repository: PAGES_POLICY.repository,
+    ref: PAGES_POLICY.ref,
+    eventName: "push",
+    eventSha: E,
+    workflowSha: E,
+    currentMainSha: E,
+    workflowPath: PAGES_POLICY.workflowPath,
+    ...overrides,
+  });
+}
 
-const transition = (overrides = {}) => publisherTransitionDecision({
-  baseCommit: commit("b"),
-  remoteCommit: commit("d"),
-  baseIsAncestor: true,
-  mutations: [mutation(commit("d"), ["README.md"])],
-  baseFactsHash: hash("a"),
-  remoteFactsHash: hash("a"),
-  candidateFactsHash: hash("b"),
-  ...overrides,
-});
+function exactMarker(overrides = {}) {
+  const runId = "7001";
+  const runAttempt = "2";
+  const artifactId = "9001";
+  const valueDigest = digest("a");
+  return {
+    state: "success",
+    context: PAGES_POLICY.statusContext,
+    creator: "github-actions[bot]",
+    description: markerDescription({ runId, runAttempt, artifactId, digest: valueDigest }),
+    targetUrl: `https://github.com/${PAGES_POLICY.repository}/actions/runs/${runId}/attempts/${runAttempt}`,
+    ...overrides,
+  };
+}
 
-// B -> D(other) admits rebuilding C(facts) directly on D.
-assert(transition() === "REBUILD_EXACT", "B -> D(other) did not admit an exact facts-only child");
-assert(transition({
-  remoteCommit: commit("c"),
-  mutations: [mutation(commit("c"), [factsPath, "README.md"])],
-}) === "REJECT_MIXED_FACTS_MUTATION", "facts plus another path was admitted");
-assert(transition({ baseIsAncestor: false }) === "REJECT_BASE_NOT_ANCESTOR", "non-ancestor compiler base was admitted");
-assert(transition({ mutations: [mutation(commit("d"), ["README.md"], 2)] }) === "REJECT_MERGE_MUTATION", "merge mutation was admitted");
+function exactArtifact(overrides = {}) {
+  return {
+    id: "9001",
+    name: artifactName("7001", "2"),
+    digest: `sha256:${digest("a")}`,
+    expired: false,
+    runId: "7001",
+    runAttempt: "2",
+    headSha: E,
+    repositoryId,
+    exactNameCount: 1,
+    ...overrides,
+  };
+}
 
-// B -> C(facts) -> E(other) recognizes the candidate but never calls E "C".
-assert(transition({
-  remoteCommit: commit("e"),
-  mutations: [mutation(commit("c"), [factsPath]), mutation(commit("e"), ["README.md"])],
-  remoteFactsHash: hash("b"),
-}) === "ALREADY_LANDED", "B -> C -> E did not recognize the exact candidate at current main");
-assert(resolvePublicationTarget({
-  requestedSha: commit("c"), currentMainSha: commit("e"), requestedIsAncestor: true,
-}) === commit("e"), "a later current-main target was mislabeled as the earlier facts commit");
+function durable(overrides = {}) {
+  return durablePublicationDecision({
+    targetSha: E,
+    workflowSha: E,
+    currentMainSha: E,
+    exactDeploymentSucceeded: true,
+    marker: exactMarker(),
+    artifact: exactArtifact(),
+    repositoryId,
+    ...overrides,
+  });
+}
 
-const changedHandoff = publicationHandoff({ changed: true, targetSha: commit("c") });
-assert(changedHandoff?.requestedSha === commit("c") && changedHandoff.signalKind === "sync-direct-handoff", "changed bot push did not emit one exact handoff");
-assert(publicationHandoff({ changed: false, targetSha: commit("c") }) === null, "no-change sync emitted a deploy signal");
+assert(authority() === "ADMIT_CURRENT_MAIN", "exact current-main workflow authority was refused");
+assert(authority({ eventSha: B, workflowSha: B }) === "REDISPATCH_CURRENT_MAIN", "old push/rerun did not redispatch current main");
+assert(authority({ eventSha: C, workflowSha: C }) === "REDISPATCH_CURRENT_MAIN", "intermediate push did not redispatch current main");
+assert(authority({ ref: "refs/tags/main" }) === "REFUSE_SCOPE", "tag authority was admitted");
+assert(authority({ ref: "refs/heads/feature" }) === "REFUSE_SCOPE", "non-main authority was admitted");
+assert(authority({ eventName: "pull_request" }) === "REFUSE_SCOPE", "unlisted event authority was admitted");
 
-// With cancel-in-progress false, every admitted signal resolves under the lock
-// to current main. A stable newer tip is therefore the only deployable target.
-const queuedSignals = [commit("b"), commit("c"), commit("e")];
-const resolvedTargets = queuedSignals.map((requestedSha) => resolvePublicationTarget({
-  requestedSha,
-  currentMainSha: commit("e"),
-  requestedIsAncestor: true,
-}));
-assert(resolvedTargets.every((target) => target === commit("e")), "a queued permutation could deploy stale main");
-let malformedRefused = false;
-try {
-  publisherCandidateDecision({ baseFactsHash: "bad", remoteFactsHash: hash("a"), candidateFactsHash: hash("b") });
-} catch { malformedRefused = true; }
-assert(malformedRefused, "malformed custody hash was accepted");
-let staleSignalRefused = false;
-try {
-  resolvePublicationTarget({ requestedSha: commit("b"), currentMainSha: commit("e"), requestedIsAncestor: false });
-} catch { staleSignalRefused = true; }
-assert(staleSignalRefused, "non-ancestor deployment signal was admitted");
+const survivors = pendingQueueSurvivors([B, C, E]);
+assert(survivors.length === 2 && survivors[0] === B && survivors[1] === E, "one-pending replacement model drifted");
+assert(authority({ eventSha: survivors[0], workflowSha: survivors[0] }) === "REDISPATCH_CURRENT_MAIN", "stale active survivor did not repair a replaced pending signal");
+assert(authority({ eventSha: survivors[1], workflowSha: survivors[1] }) === "ADMIT_CURRENT_MAIN", "stable pending survivor did not reconcile current main");
 
-assert(workflow.includes("node script/publisher-candidate-policy.mjs"), "publisher does not invoke the tested transition policy");
-assert(!workflow.includes("git rebase"), "publisher may mutate an admitted candidate through rebase");
-assert(!/pages\/builds/.test(workflow), "snapshot publisher still requests a legacy branch-root Pages build");
-assert(!/workflow_run:/.test(pagesWorkflow), "Pages still infers a deployment from ambiguous workflow_run state");
-assert(/workflow_call:[\s\S]*requested_sha:[\s\S]*signal_kind:/.test(pagesWorkflow), "Pages is not an exact reusable publication workflow");
-assert(/deploy-changed-snapshot:[\s\S]*changed == 'true'[\s\S]*uses: \.\/\.github\/workflows\/publish-reviewed-pages\.yml[\s\S]*requested_sha: \$\{\{ needs\.publish\.outputs\.target_sha \}\}/.test(workflow), "changed sync does not invoke exactly one direct reusable handoff");
-assert(/outputs:[\s\S]*changed: \$\{\{ steps\.publish\.outputs\.changed \}\}[\s\S]*target_sha: \$\{\{ steps\.publish\.outputs\.target_sha \}\}/.test(workflow), "publisher does not propagate changed plus exact pushed SHA");
-assert(/deploy-reviewed-pages:[\s\S]*concurrency:[\s\S]*group: reviewed-pages[\s\S]*cancel-in-progress: false/.test(pagesWorkflow), "genuine deployment work lacks one non-cancelling lock");
-assert(!/^concurrency:/mu.test(pagesWorkflow), "non-deployment resolver work still owns the Pages concurrency group");
-assert(/REQUESTED_SHA:[\s\S]*git merge-base --is-ancestor "\$REQUESTED_SHA" "\$target_sha"/.test(pagesWorkflow), "requested SHA is not a checked audit lower-bound");
-assert(/Refuse a stale main artifact immediately before upload[\s\S]*refs\/remotes\/origin\/main[\s\S]*steps\.bind\.outputs\.target_sha/.test(pagesWorkflow), "Pages upload can race a newer main tip");
-assert(/Build and exercise[\s\S]*build-public-pages\.mjs build[\s\S]*build-public-pages\.mjs check[\s\S]*check-http-surface\.mjs/.test(pagesWorkflow), "exact stage tests do not precede Pages upload");
-assert(/Deploy the reviewed artifact[\s\S]*check-live-parity\.mjs[\s\S]*expected-target-sha/.test(pagesWorkflow), "deployment lacks bounded target-bound live parity");
-assert(/materialize-private-source:[\s\S]*HIVE_AI_READ_DEPLOY_KEY[\s\S]*persist-credentials: false[\s\S]*private-source-bundle\.mjs create/.test(workflow), "credentialed materialization is not inert and non-persistent");
-const compileSection = workflow.split(/\n  compile:\n/u)[1]?.split(/\n  publish:\n/u)[0] || "";
-assert(compileSection && !compileSection.includes("secrets.HIVE_AI_READ_DEPLOY_KEY"), "credential-free compiler references the private deploy key");
-assert(/Prove the compiler job has no private checkout credential[\s\S]*HIVE_AI_READ_DEPLOY_KEY[\s\S]*GIT_SSH_COMMAND[\s\S]*private-source-bundle\.mjs verify/.test(compileSection), "compiler does not prove credential absence before private execution");
-assert(/private-source-bundle\.mjs prepare[\s\S]*sync-galaxy-snapshot\.mjs --source-bundle/.test(compileSection), "compiler does not verify and prepare the inert source bundle before execution");
-assert(/publish:[\s\S]*if: needs\.compile\.result == 'success' && github\.ref == 'refs\/heads\/main'/.test(workflow), "contents-write publisher is not main-bound");
-assert(workflow.includes("/hiveai/static/living-anatomy/src/galaxy-contract.json"), "private materialization omits the canonical renderer contract");
-assert(facts.schema === "hive.ecosystem.public-source-snapshot.v3"
-  && facts.snapshotVersion === GALAXY_SNAPSHOT_VERSION
-  && /^[a-f0-9]{64}$/.test(facts.snapshotHash || ""), "publisher candidate is not a sealed v3 snapshot");
-assert(facts.galaxy?.geometry?.contractHash === GALAXY_RENDERER_CONTRACT_HASH, "publisher candidate is not bound to the canonical renderer contract");
-assert(facts.galaxy?.geometry?.geometryHash === GALAXY_CANONICAL_GEOMETRY_HASH, "publisher candidate is not bound to the reviewed authored geometry digest");
-assert(await validSnapshot(facts), "publisher candidate fails the strict runtime validator");
+assert(durable() === "PROBE_LIVE_BEFORE_NOOP", "exact deployment and parity tuple was not admitted for a fresh probe");
+assert(publicationDecisionAfterProbe({ durableDecision: durable(), liveParityPassed: true }) === "NOOP", "successful exact deployment plus fresh parity did not no-op");
+assert(publicationDecisionAfterProbe({ durableDecision: durable(), liveParityPassed: false }) === "REPAIR", "live parity failure did not repair");
+for (const mutation of [
+  { exactDeploymentSucceeded: false },
+  { marker: null },
+  { marker: exactMarker({ state: "pending" }) },
+  { marker: exactMarker({ state: "failure" }) },
+  { marker: exactMarker({ creator: "attacker" }) },
+  { marker: exactMarker({ context: "pages/parity/r7" }) },
+  { marker: exactMarker({ targetUrl: "https://example.invalid/spoof" }) },
+  { artifact: exactArtifact({ exactNameCount: 2 }) },
+  { artifact: exactArtifact({ digest: `sha256:${digest("f")}` }) },
+  { artifact: exactArtifact({ expired: true }) },
+  { targetSha: C },
+  { workflowSha: C },
+  { currentMainSha: C },
+]) assert(durable(mutation) === "REPAIR", `malformed/missing durable watermark did not repair: ${JSON.stringify(mutation)}`);
 
-console.log("PUBLISHER_RACES_OK b_d_c=accepted facts_plus_other=refused nonancestor=refused merge=refused b_c_e=current_main changed_handoff=one nochange_handoff=zero concurrency=noncancelling credential_isolation=bound");
+assert(predeployDecision({ targetSha: E, workflowSha: E, currentMainSha: E, artifactVerified: true, artifactUnique: true, producersComplete: true }) === "DEPLOY", "exact predeploy tuple was refused");
+for (const mutation of [
+  { currentMainSha: C },
+  { workflowSha: C },
+  { artifactVerified: false },
+  { artifactUnique: false },
+  { producersComplete: false },
+]) assert(predeployDecision({ targetSha: E, workflowSha: E, currentMainSha: E, artifactVerified: true, artifactUnique: true, producersComplete: true, ...mutation }) === "REFUSE_STALE_OR_UNBOUND", `predeploy race was admitted: ${JSON.stringify(mutation)}`);
+
+assert(finalMarkerState({ pendingWritten: true, deployResult: "success", parityResult: "success", currentMainStillTarget: true }) === "success", "exact deploy/parity did not produce success");
+for (const mutation of [
+  { pendingWritten: false },
+  { deployResult: "failure" },
+  { parityResult: "failure" },
+  { currentMainStillTarget: false },
+]) assert(finalMarkerState({ pendingWritten: true, deployResult: "success", parityResult: "success", currentMainStillTarget: true, ...mutation }) === "failure", `failed boundary produced success: ${JSON.stringify(mutation)}`);
+
+function jobSection(job) {
+  const start = workflow.indexOf(`\n  ${job}:\n`);
+  if (start < 0) throw new Error(`workflow job missing: ${job}`);
+  const bodyStart = start + 1;
+  const remainder = workflow.slice(bodyStart);
+  const next = /\n  [a-z0-9-]+:\n/u.exec(remainder.slice(1));
+  return next ? remainder.slice(0, next.index + 1) : remainder;
+}
+
+assert(!fs.existsSync(path.join(root, ".github", "workflows", "sync-living-galaxy.yml")), "retired private sync workflow remains");
+assert(!fs.existsSync(path.join(root, "script", "private-source-bundle.mjs")), "retired private bundle executor remains");
+assert(!/workflow_call|HIVE_AI_READ_DEPLOY_KEY|private-source-bundle|sync-living-galaxy/u.test(workflow), "retired bridge authority remains in Pages workflow");
+assert(/push:[\s\S]*branches: \[main\][\s\S]*workflow_dispatch:[\s\S]*schedule:/u.test(workflow), "repair-capable trigger set drifted");
+assert(/concurrency:\s*\n\s*group: reviewed-pages\s*\n\s*cancel-in-progress: false/u.test(workflow), "workflow-level non-cancelling lock missing");
+assert(/github\.sha|EVENT_SHA/u.test(workflow) && /github\.workflow_sha|WORKFLOW_SHA/u.test(workflow) && /git\/ref\/heads\/main/u.test(workflow), "initial current-main/workflow authority identity is incomplete");
+
+for (const match of workflow.matchAll(/^\s*uses:\s*([^\s#]+)(?:\s+#.*)?$/gmu)) {
+  assert(/@[a-f0-9]{40}$/u.test(match[1]), `external action is not full-SHA pinned: ${match[1]}`);
+}
+assert(/github-pages-\$RUN_ID-\$RUN_ATTEMPT|github-pages-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/u.test(workflow), "unique run/attempt artifact name is missing");
+assert(/include-hidden-files:\s*true/u.test(workflow), "hidden-file artifact admission is not explicit");
+assert(/verify-pages-artifact\.mjs[\s\S]*--expected-id[\s\S]*--expected-target-sha/u.test(workflow), "fresh exact-ID artifact verifier is not invoked");
+assert(/artifact_rest_digest[\s\S]*artifact_tar_sha256[\s\S]*membership_manifest_sha256[\s\S]*member_count/u.test(workflow), "verified artifact tuple outputs are incomplete");
+assert(/pages\/parity\/r8/u.test(workflow) && /r8 pending run=/u.test(workflow) && /r8 run=/u.test(workflow), "versioned pending/final marker lifecycle is incomplete");
+assert(/candidate_noop[\s\S]*check-live-parity\.mjs[\s\S]*action=noop/u.test(workflow), "durable no-op is not followed by fresh live parity");
+assert(/Redispatch stale authority[\s\S]*actions: write[\s\S]*publish-reviewed-pages\.yml\/dispatches[\s\S]*[{]"ref":"main"[}]/u.test(workflow), "stale one-pending survivor lacks bounded redispatch");
+
+const privileged = ["redispatch-stale", "pending-marker", "deploy", "final-marker"];
+for (const job of privileged) {
+  const section = jobSection(job);
+  assert(!/actions\/checkout|node\s+script\/|python|persist-credentials/u.test(section), `privileged job executes mutable repository/private code: ${job}`);
+}
+const deploy = jobSection("deploy");
+assert(/actions: read[\s\S]*contents: read[\s\S]*pages: write[\s\S]*id-token: write/u.test(deploy), "deploy least-privilege set drifted");
+assert(!/statuses: write/u.test(deploy), "deploy job can mutate status");
+assert(/git\/ref\/heads\/main[\s\S]*exactNameCount|git\/ref\/heads\/main[\s\S]*\[\.artifacts\[\]/u.test(deploy), "predeploy current-main and exact artifact REST recheck is missing");
+assert(/artifact_name:\s*\$\{\{ needs\.verify-artifact\.outputs\.artifact_name \}\}/u.test(deploy), "deploy action does not consume the unique verified name");
+assert(/Mark exact target parity pending[\s\S]*statuses: write/u.test(workflow), "pending marker is not isolated to statuses write");
+assert(/Finalize exact target parity watermark[\s\S]*statuses: write/u.test(workflow), "final marker is not isolated to statuses write");
+
+console.log("PUBLISHER_RACES_OK authority=current-main stale=redispatch queue=one-pending-repaired durable=deployment+tuple+fresh-parity recovery=all-failures privileged=repo-code-free artifact=unique-id-digest-tar-manifest");

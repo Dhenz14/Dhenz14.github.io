@@ -7702,8 +7702,14 @@
     "sourceAcquisitionModeAtCapture": "scheduled-living-main-publisher",
     "automaticBridgeConfiguredAtCapture": true,
     "configurationReasonCodeAtCapture": "SCHEDULED_LIVING_MAIN_PUBLISHER",
-    "executionObservationStatus": "NOT_ATTESTED",
-    "currentOperationalStatus": "UNKNOWN",
+    "latestRefreshObservation": {
+      "observedAt": "2026-08-25T01:09:50Z",
+      "disposition": "PUBLIC_PRIVATE_BRIDGE_RETIRED_PRESENTATION_RELEASE",
+      "reasonCode": "AUTOMATIC_PRIVATE_SOURCE_BRIDGE_INTENTIONALLY_DISABLED",
+      "automaticBridgeConfiguredAtObservation": false,
+      "executionObservationStatus": "NOT_ATTESTED",
+      "currentOperationalStatus": "UNKNOWN"
+    },
     "lastGoodTopologyBehavior": "retain_previous_source_facts_and_topology_refresh_boundary_may_change"
   },
   "boundaries": {
@@ -7727,5 +7733,5 @@
     "chatEffectiveDisposition": "WAIT_NOT_AVAILABLE"
   },
   "capturedAt": "2026-08-23T22:53:32Z",
-  "snapshotHash": "23d2456bc77574491279af30b129aced09358944159a7ad6857565e49732c33e"
+  "snapshotHash": "a5385342050d2458105b007cc5a03d81afd2cd15a0e805d5e5050d2d7e9dd2a1"
 }

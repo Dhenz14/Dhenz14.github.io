@@ -9395,13 +9395,9 @@ main > section,
   }
 
   .hero-lede {
-    display: -webkit-box;
-    overflow: hidden;
     margin-bottom: 0;
     font-size: 0.875rem;
-    line-height: 1.28;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
+    line-height: 1.2;
   }
 
   .hero-primary-action {
@@ -9415,7 +9411,29 @@ main > section,
   }
 
   .hero-primary-action .hero-enter small {
-    display: none;
+    display: block;
+    font-size: 0.875rem;
+    line-height: 1;
+  }
+
+  .hero-outcomes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.2rem;
+    margin-top: 0.3rem;
+  }
+
+  .hero-outcomes > span {
+    min-height: 2.75rem;
+    padding: 0.25rem 0.2rem;
+  }
+
+  .hero-outcomes b {
+    font-size: 0.875rem;
+    line-height: 1.05;
+  }
+
+  .hero-status-rail {
+    margin-top: 0.3rem;
   }
 }
 

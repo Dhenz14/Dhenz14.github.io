@@ -4,7 +4,7 @@
   "version": "0.3.0",
   "stage": "tester",
   "truthManifestUrl": "https://dhenz14.github.io/downloads/hive-ide/hive-ide-release-manifest.json",
-  "truthManifestSha256": "5cbb3c6bf576cb16409bcbb838050425931f51655fed1262194a842bf9707a8a",
+  "truthManifestSha256": "90172e421380e0d3dc193b8dbb9b89b5f165954afb6cd11ecc8b1b6509158413",
   "effectiveDisposition": {
     "effectiveStatus": "EVIDENCE_EXPIRED_HELD",
     "activeDownloadAuthorized": false,
@@ -38,9 +38,20 @@
       "authenticodeStatus": "NotSigned",
       "publisherAuthenticated": false,
       "packageContentsStatus": "UNKNOWN_NOT_INSPECTED",
-      "landingStatus": "LANDED_HASH_VERIFIED",
-      "publicRetrievabilityAtObservation": "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE",
-      "receiptSha256": "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56"
+      "retrievabilityAtObservation": "REMOTE_ASSET_RETRIEVED_OVER_HTTPS"
+    },
+    "receiptCustody": {
+      "repository": "Dhenz14/Hive-AI",
+      "path": "tests/fixtures/constellation_public_truth/tester5_remote_bytes_observation_v1.json",
+      "sha256": "6f8890a30285200e2ce1289672b17760e202ce85978cacd18e4eac7009ea3f56",
+      "sha256VerificationStatus": "DECLARED_NOT_REVERIFIED_IN_SITE_CUSTODY",
+      "bytes": null,
+      "gitObjectStatus": "UNKNOWN_NOT_AVAILABLE_IN_SITE_CUSTODY",
+      "landingCommit": null,
+      "landingTree": null,
+      "gitBlobOid": null,
+      "landingStatus": "UNKNOWN_NOT_VERIFIED_FROM_PUBLIC_SITE_CUSTODY",
+      "publicRetrievability": "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
     },
     "claim": "At the observation time, tester.5 outer EXE bytes matched the recorded size and SHA-256. That evidence expired and cannot establish current availability or authorize an action."
   },

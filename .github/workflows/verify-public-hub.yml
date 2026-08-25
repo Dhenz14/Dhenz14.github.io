@@ -23,6 +23,7 @@ jobs:
           # Default signed-release verification is archive-portable. Full history is
           # retained as an independent provenance check for the same fixture bytes.
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
@@ -45,12 +46,12 @@ jobs:
           node --check script/check-galaxy-core.mjs
           node --check script/check-live-parity.mjs
           node --check script/check-publisher-races.mjs
+          node --check script/verify-pages-artifact.mjs
           node --check script/check-signed-release.mjs
           node --check script/check-signed-release-portability.mjs
           node --check script/sync-galaxy-snapshot.mjs
           node --check script/mark-galaxy-bridge-inactive.mjs
           node --check script/publisher-candidate-policy.mjs
-          node --check script/private-source-bundle.mjs
       - name: Verify Windows smoke PowerShell syntax
         shell: pwsh
         run: |
@@ -68,14 +69,14 @@ jobs:
       - name: Verify public hub contract
         run: |
           node script/check-central-hub.mjs
-          node script/check-product-truth.mjs --self-test
+          node script/check-product-truth.mjs --self-test --require-git-binding
           node script/check-ide-release.mjs --self-test
           node script/check-browser-json-acquisition.mjs
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
           node script/hub-facts-custody.mjs --self-test
-          node script/private-source-bundle.mjs --self-test
-          node script/build-public-pages.mjs --self-test
+          node script/build-public-pages.mjs --self-test --require-link-tests
+          node script/verify-pages-artifact.mjs --self-test
           node script/check-public-pages-artifact.mjs
           node script/check-publisher-races.mjs
           node script/check-signed-release.mjs

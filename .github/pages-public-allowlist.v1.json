@@ -16,6 +16,7 @@
     "hub-assets/ide-release-core.mjs",
     "hub-assets/og.png",
     "hub-assets/product-truth-ledger.public.v2.json",
+    "hub-assets/product-truth-semantic-baseline.v1.json",
     "hub-assets/product-truth.json",
     "hub-assets/strict-json-fetch.mjs",
     "hub-assets/strict-json.mjs",
@@ -44,6 +45,7 @@
     "downloads/hive-ide/latest.json",
     "hub-assets/hub-facts.json",
     "hub-assets/product-truth-ledger.public.v2.json",
+    "hub-assets/product-truth-semantic-baseline.v1.json",
     "hub-assets/product-truth.json"
   ],
   "forbiddenPrefixes": [

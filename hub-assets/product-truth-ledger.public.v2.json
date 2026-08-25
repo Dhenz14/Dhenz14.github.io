@@ -5,8 +5,13 @@
   "sourceLedger": {
     "schema": "hive.ecosystem.product-truth.evidence-ledger.v1",
     "version": 1,
+    "path": "hub-assets/product-truth-ledger.v1.json",
+    "bytes": 4653,
+    "sha256": "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259",
+    "gitBlobOid": "943db0a4b30bb4dba38de3db62c5898fd9785e5c",
     "publicationDisposition": "PRIVATE_NOT_PUBLISHED",
-    "projectionRule": "Preserve historical identities and dispositions, remove actionable local endpoints, and append current supersession without rewriting the private ledger."
+    "projectionAlgorithm": "hive.product-truth.private-v1-to-public-v2.v1",
+    "projectionRule": "Preserve historical identities and dispositions, remove every local scheme, host, port, path, query, and presentation-mode field, omit navigation and fetch targets and action authority, then append the current supersession without rewriting the private ledger."
   },
   "integrityClass": "SELF_BOUND_INTEGRITY",
   "independentTrustRoot": false,
@@ -119,20 +124,10 @@
         "CHAT_DEFERRED"
       ],
       "evidence": {
-        "localBodyContext": {
-          "scheme": "http",
-          "loopbackHost": "127.0.0.1",
-          "port": 5002,
-          "path": "/constellation/body",
-          "presentationMode": "1"
-        },
         "localBodyStatus": "UNKNOWN_UNPROBED",
-        "operatorBodyContext": {
-          "loopbackHost": "127.0.0.1",
-          "port": 5003
-        },
         "operatorBodyStatus": "HOLD_NOT_INDEPENDENTLY_OBSERVED",
-        "chatStatus": "WAIT"
+        "chatStatus": "WAIT",
+        "contextDisposition": "OMITTED_FROM_PUBLIC_LEDGER_USE_SEPARATE_ARCHITECTURE_PLANE"
       }
     },
     {

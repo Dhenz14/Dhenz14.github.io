@@ -8,7 +8,11 @@ runtime, a product-live claim, or an authority surface.
 The homepage separates these planes deliberately:
 
 - **Reviewed Product Truth baseline** — stable semantic claims that a routine
-  source refresh cannot rewrite. The browser admits only the closed relation
+  source refresh cannot rewrite. The public-safe baseline is frozen in its own
+  predecessor commit before the projection that binds it. The browser verifies
+  its exact bytes and independently derives its semantic digest; browser-only
+  custody does not verify the Git commit:path relation and is not an independent
+  trust root. The browser admits only the closed relation
   set `EXACT_REVIEWED_BASELINE_MATCH`, `NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD`,
   `BRIDGE_INACTIVE_LAST_GOOD_SOURCE`, or `SNAPSHOT_INVALID_BLOCKED`.
 - **Published source snapshot** — the exact mutable `hub-assets/hub-facts.json`
@@ -45,12 +49,17 @@ safe, and zero-effect.
 
 ## Publication custody
 
-The repository root is **not** the Pages artifact. The custom workflow
-`.github/workflows/publish-reviewed-pages.yml` creates a brand-new empty stage
-from `.github/pages-public-allowlist.v1.json`, verifies exact final membership,
-runs the HTTP-surface contract against that stage, and uploads only that
-artifact. The builder rejects unsafe paths, unlisted public JSON, symlinks,
-detectable hard-link ambiguity, and private repository material.
+The repository root is **not** the Pages artifact. The sole publication state
+machine, `.github/workflows/publish-reviewed-pages.yml`, creates a brand-new
+empty stage from `.github/pages-public-allowlist.v1.json`, verifies its exact
+30-file and exact-directory membership, runs the HTTP-surface contract, and
+uploads a unique run/attempt artifact. A fresh read-only job downloads that
+artifact by exact ID, binds the REST digest, inspects the inner tar bytes and
+member types, and records exact tar and membership-manifest digests before a
+no-checkout deploy job may consume the same unique artifact name. The builder
+and verifier reject unsafe/non-NFC paths, control characters, case or Unicode
+collisions, extra directories, links, special/PAX members, unlisted JSON, and
+private repository material.
 
 The published artifact intentionally excludes:
 
@@ -67,32 +76,37 @@ Seven legacy HivePoA routes remain as byte-identical, scriptless, CSP-bound
 quarantine pages so old links fail safely. They expose no download, verification,
 release, authorization, or tester-network action.
 
-The source workflow does not prove that the repository's Pages setting has been
+The source workflow and its local tests do not prove that the repository's Pages setting has been
 switched from legacy branch publication to **GitHub Actions**. That setting and
 the deployed artifact require a separate repository readback before anyone may
 claim the allowlisted workflow is product-live.
 
 ## Source snapshot refresh
 
-`.github/workflows/sync-living-galaxy.yml` compiles and admits only one bounded
-`hub-assets/hub-facts.json` candidate. A credentialed job may materialize exact
-private-main source bytes, but it executes no private module and persists no
-checkout credential. A fresh credential-free job verifies the bounded path,
-byte, SHA-256, Git-blob, commit, and tree binding before it runs the compiler.
-Credential or checkout failure retains last-good source facts and topology while
-updating only the refresh boundary to `HOLD`; it does not leave the entire prior
-facts file untouched.
+The public/private automatic source bridge is intentionally retired from this
+presentation release. There is no scheduled private checkout, deploy-key use,
+private-source executor, contents-write source publisher, or direct sync/deploy
+handoff in this repository. The checked-in facts are a historical captured
+source snapshot. Capture-time acquisition fields remain immutable; the separate
+`latestRefreshObservation` records that automatic execution is not attested and
+current operation is `UNKNOWN`. A future re-enable requires a separately
+reviewed private producer and authority package that exports only a sanitized,
+strictly bounded public snapshot. This repository neither configures nor claims
+that producer.
 
-The publisher reconstructs from current `main`, applies the executable
-concurrent-writer policy, validates exact bytes and paths, and pushes only the
-facts file. A successful changed push directly calls the reusable Pages
-workflow with its exact pushed SHA; a no-change, failed, or ineligible sync does
-not enter the Pages concurrency lock. Under its non-cancelling lock, the Pages
-workflow treats that SHA as an ancestor lower-bound, resolves and builds exact
-current `main`, rechecks it immediately before upload, and then runs bounded
-target-bound live parity. It never infers a deployment from `workflow_run` and
-never requests a legacy Pages build. This is a source design contract, not proof
-that a scheduled run, deployment, Pages setting, or public readback succeeded.
+Pages publication is recovery-driven and public-only. Main pushes, manual
+dispatch, and a bounded schedule enter one non-cancelling lock. A run whose
+event/workflow SHA is no longer exact current main performs no build or deploy;
+it issues one fixed no-checkout redispatch at `main`. An admitted run no-ops only
+when an exact successful Pages deployment, a versioned exact-SHA parity marker
+bound to its run/attempt/artifact tuple, and a fresh live parity read all agree.
+Otherwise it rebuilds and verifies the public artifact. A pending marker
+invalidates older success before deploy, and final success is written only after
+exact deployment and bounded live parity. GitHub branch movement has no atomic
+cross-API compare-and-swap, so current main is rechecked before upload, before
+deploy, and after parity; any mismatch fails closed and the newer push or
+scheduled recovery must reconcile the stable tip. This is source policy, not
+proof that a run, deployment, Pages setting, or public readback succeeded.
 
 The browser acquires `hub-facts.json`, Product Truth, its evidence ledger, and
 both Hive IDE evidence documents through one shared streaming primitive.
@@ -121,9 +135,8 @@ node --check hub-assets/strict-json-fetch.mjs
 node --check script/check-browser-json-acquisition.mjs
 node --check script/hub-facts-custody.mjs
 node script/hub-facts-custody.mjs --self-test
-node script/private-source-bundle.mjs --self-test
 node script/check-central-hub.mjs
-node script/check-product-truth.mjs --self-test
+node script/check-product-truth.mjs --self-test --require-git-binding
 node script/check-ide-release.mjs --self-test
 node script/check-browser-json-acquisition.mjs
 node script/check-galaxy-bridge.mjs
@@ -134,6 +147,7 @@ node script/check-signed-release.mjs --verify-git-provenance
 node script/check-signed-release.mjs --self-test
 node script/check-signed-release-portability.mjs --git-archive
 node script/build-public-pages.mjs --self-test
+node script/verify-pages-artifact.mjs --self-test
 node script/check-public-pages-artifact.mjs
 git diff --check
 ```

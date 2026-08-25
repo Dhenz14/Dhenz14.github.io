@@ -295,7 +295,7 @@ jobs:
           test "$current" = "${{ needs.resolve.outputs.target_sha }}"
           test "$current" = "${{ needs.resolve.outputs.workflow_sha }}"
       - name: Configure GitHub Actions Pages
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Upload the unique reviewed Pages artifact
         id: upload
         # v4.0.0 (7b1f4a76) ignores include-hidden-files and tars with

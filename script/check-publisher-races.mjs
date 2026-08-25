@@ -14,6 +14,7 @@ import {
   predeployDecision,
   publicationAuthorityDecision,
   publicationDecisionAfterProbe,
+  publicationGateDecision,
 } from "./publisher-candidate-policy.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -131,6 +132,57 @@ for (const mutation of [
   { currentMainStillTarget: false },
 ]) assert(finalMarkerState({ pendingWritten: true, deployResult: "success", parityResult: "success", currentMainStillTarget: true, ...mutation }) === "failure", `failed boundary produced success: ${JSON.stringify(mutation)}`);
 
+assert(publicationGateDecision({
+  stale: false,
+  admitted: true,
+  action: "repair",
+  redispatchResult: "skipped",
+  probeResult: "success",
+  deployResult: "success",
+  parityResult: "success",
+  finalMarkerResult: "success",
+}) === "PASS_REPAIR", "completed repair path was not admitted");
+assert(publicationGateDecision({
+  stale: false,
+  admitted: true,
+  action: "repair",
+  redispatchResult: "skipped",
+  probeResult: "skipped",
+  deployResult: "skipped",
+  parityResult: "skipped",
+  finalMarkerResult: "skipped",
+}) === "FAIL_REPAIR_WITHOUT_DEPLOY", "run 32813061089 skip-poisoned repair was not refused");
+assert(publicationGateDecision({
+  stale: false,
+  admitted: true,
+  action: "noop",
+  redispatchResult: "skipped",
+  probeResult: "success",
+  deployResult: "skipped",
+  parityResult: "skipped",
+  finalMarkerResult: "skipped",
+}) === "PASS_NOOP", "exact live no-op was not admitted");
+assert(publicationGateDecision({
+  stale: true,
+  admitted: false,
+  action: "",
+  redispatchResult: "success",
+  probeResult: "skipped",
+  deployResult: "skipped",
+  parityResult: "skipped",
+  finalMarkerResult: "skipped",
+}) === "PASS_STALE_REDISPATCH", "stale redispatch was not admitted");
+assert(publicationGateDecision({
+  stale: false,
+  admitted: true,
+  action: "",
+  redispatchResult: "skipped",
+  probeResult: "success",
+  deployResult: "skipped",
+  parityResult: "skipped",
+  finalMarkerResult: "skipped",
+}) === "FAIL_UNDECIDED", "empty publication action was admitted");
+
 function jobSection(job) {
   const start = workflow.indexOf(`\n  ${job}:\n`);
   if (start < 0) throw new Error(`workflow job missing: ${job}`);
@@ -158,7 +210,7 @@ assert(/pages\/parity\/r8/u.test(workflow) && /r8 pending run=/u.test(workflow) 
 assert(/candidate_noop[\s\S]*check-live-parity\.mjs[\s\S]*action=noop/u.test(workflow), "durable no-op is not followed by fresh live parity");
 assert(/Redispatch stale authority[\s\S]*actions: write[\s\S]*publish-reviewed-pages\.yml\/dispatches[\s\S]*[{]"ref":"main"[}]/u.test(workflow), "stale one-pending survivor lacks bounded redispatch");
 
-const privileged = ["redispatch-stale", "pending-marker", "deploy", "final-marker"];
+const privileged = ["redispatch-stale", "pending-marker", "deploy", "final-marker", "publication-gate"];
 for (const job of privileged) {
   const section = jobSection(job);
   assert(!/actions\/checkout|node\s+script\/|python|persist-credentials/u.test(section), `privileged job executes mutable repository/private code: ${job}`);
@@ -170,5 +222,16 @@ assert(/git\/ref\/heads\/main[\s\S]*exactNameCount|git\/ref\/heads\/main[\s\S]*\
 assert(/artifact_name:\s*\$\{\{ needs\.verify-artifact\.outputs\.artifact_name \}\}/u.test(deploy), "deploy action does not consume the unique verified name");
 assert(/Mark exact target parity pending[\s\S]*statuses: write/u.test(workflow), "pending marker is not isolated to statuses write");
 assert(/Finalize exact target parity watermark[\s\S]*statuses: write/u.test(workflow), "final marker is not isolated to statuses write");
+
+const skipImmune = /if: always\(\) && !cancelled\(\)/u;
+for (const job of ["build", "verify-artifact", "pending-marker", "deploy", "parity", "final-marker", "publication-gate"]) {
+  assert(skipImmune.test(jobSection(job)), `${job} is skip-poisoned by a skipped live probe`);
+}
+assert(!/if: needs\.resolve\.outputs\.admitted == 'true' && needs\.resolve\.outputs\.candidate_noop == 'true'/u.test(jobSection("probe-published")), "admitted live-probe job is still skipped on the repair path");
+assert(/if: needs\.resolve\.outputs\.admitted == 'true'/u.test(jobSection("probe-published")), "admitted live-probe job lost its admission gate");
+assert(/id: unprobed[\s\S]*passed=false/u.test(jobSection("probe-published")), "repair path has no explicit failed no-op probe record");
+assert(/needs\.decide\.outputs\.action == 'repair'/u.test(jobSection("build")), "repair build is not bound to decide=repair");
+assert(/Fail closed unless the decided path completed/u.test(workflow), "skipped repair can still mark the workflow success");
+assert(/\$\{ACTION:-\}" = repair[\s\S]*\$DEPLOY" = success[\s\S]*\$PARITY" = success[\s\S]*\$FINAL" = success/u.test(jobSection("publication-gate")), "publication gate does not require exact repair deploy");
 
 console.log("PUBLISHER_RACES_OK authority=current-main stale=redispatch queue=one-pending-repaired durable=deployment+tuple+fresh-parity recovery=all-failures privileged=repo-code-free artifact=unique-id-digest-tar-manifest");

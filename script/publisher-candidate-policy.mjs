@@ -121,6 +121,35 @@ export function finalMarkerState({ pendingWritten, deployResult, parityResult, c
     ? "success" : "failure";
 }
 
+function truthy(value) {
+  return value === true || value === "true";
+}
+
+export function publicationGateDecision({
+  stale,
+  admitted,
+  action,
+  redispatchResult,
+  probeResult,
+  deployResult,
+  parityResult,
+  finalMarkerResult,
+}) {
+  if (truthy(stale)) {
+    return redispatchResult === "success" ? "PASS_STALE_REDISPATCH" : "FAIL_STALE_REDISPATCH";
+  }
+  if (!truthy(admitted)) return "FAIL_UNADMITTED";
+  if (action === "noop") {
+    return probeResult === "success" ? "PASS_NOOP" : "FAIL_NOOP_WITHOUT_LIVE_PROBE";
+  }
+  if (action === "repair") {
+    return deployResult === "success" && parityResult === "success" && finalMarkerResult === "success"
+      ? "PASS_REPAIR"
+      : "FAIL_REPAIR_WITHOUT_DEPLOY";
+  }
+  return "FAIL_UNDECIDED";
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   console.log(`PUBLISHER_POLICY_OK context=${PAGES_POLICY.statusContext} queue=one-active-one-pending recovery=redispatch-current-main`);
 }

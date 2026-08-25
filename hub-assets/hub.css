@@ -20,6 +20,7 @@
   --shadow: 0 32px 90px rgba(0, 0, 0, 0.42);
   --radius: 1.25rem;
   --shell: min(92rem, calc(100vw - 3rem));
+  --topbar-height: 5.25rem;
   --sans: "Segoe UI Variable Text", "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, monospace;
 }
@@ -30,14 +31,13 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 7rem;
+  scroll-padding-top: calc(var(--topbar-height) + 1rem);
   overflow-x: clip;
   background: var(--bg);
 }
 
 body {
   margin: 0;
-  min-width: 20rem;
   overflow-x: clip;
   color: var(--text);
   background:
@@ -156,9 +156,7 @@ section[id] {
   scroll-margin-top: 0;
 }
 
-/* Keep the cinematic opening inside one bounded layout task. The atlas is
-   prewarmed on pointer, focus, or touch intent because it is the hero's primary
-   action; deeper sections retain geometry and render near the viewport. */
+/* Anchored sections keep real layout geometry before first activation. */
 .truth-strip,
 .systems,
 .organism,
@@ -169,12 +167,12 @@ section[id] {
 .tester,
 .access,
 .site-footer {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 62rem;
+  content-visibility: visible;
+  contain-intrinsic-size: none;
 }
 
 .truth-strip {
-  contain-intrinsic-size: auto 11rem;
+  contain-intrinsic-size: none;
 }
 
 .anatomy.is-render-primed,
@@ -4813,7 +4811,7 @@ body.command-flightdeck-open::after {
 .toast {
   position: fixed;
   z-index: 80;
-  top: 6rem;
+  top: calc(var(--topbar-height) + 0.5rem);
   right: 1rem;
   max-width: min(22rem, calc(100vw - 2rem));
   padding: 0.7rem 0.95rem;
@@ -5242,7 +5240,7 @@ body.command-flightdeck-open::after {
   }
 
   html {
-    scroll-padding-top: 9.25rem;
+    scroll-padding-top: calc(var(--topbar-height) + 1rem);
   }
 
   section[id] {
@@ -7752,8 +7750,8 @@ body.motion-paused *::after {
 /* Short viewports (browser zoom on laptops, small landscape windows):
    keep the chrome compact so the headline, CTA, and a real atlas stage
    all survive the first view. 34rem ≈ 544px effective height covers
-   125%–200% zoom on 720–800px-tall displays. */
-@media (max-height: 34rem) {
+   125%–200% zoom on 720–800px-tall displays. Navigation targets stay 44px. */
+@media (max-height: 40rem) {
   .topbar {
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 0.75rem;
@@ -7783,7 +7781,7 @@ body.motion-paused *::after {
   .primary-nav a {
     flex: 0 0 auto;
     min-width: max-content;
-    min-height: 2.4rem;
+    min-height: 2.75rem;
     padding: 0.35rem 0.65rem;
   }
 
@@ -7842,9 +7840,7 @@ body.motion-paused *::after {
     margin-top: 0.75rem;
   }
 
-  .toast {
-    top: 4.1rem;
-  }
+  .toast { top: calc(var(--topbar-height) + 0.5rem); }
 }
 
 /* Mid-width band (992–1408px, including common 1280px presentation laptops):
@@ -8045,8 +8041,8 @@ body.motion-paused *::after {
 
 .architecture,
 .product-truth {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 72rem;
+  content-visibility: visible;
+  contain-intrinsic-size: none;
 }
 
 .source-badge {
@@ -8799,3 +8795,654 @@ body.motion-paused *::after {
 }
 
 /* GALAXY_STARK_V17_PRODUCT_TRUTH_END */
+
+/* GALAXY_STARK_V18_PRESENTATION_CONTRACT_START
+   Real section geometry and one measured sticky-header offset keep every
+   first anchor activation deterministic across compact presentation windows. */
+main > section,
+.site-footer {
+  content-visibility: visible;
+  contain-intrinsic-size: none;
+}
+
+.toast {
+  top: calc(var(--topbar-height) + 0.5rem);
+}
+
+.semantic-roadmap {
+  position: relative;
+  overflow: clip;
+  border-block: 1px solid rgba(104, 228, 255, 0.12);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(104, 228, 255, 0.12), transparent 28rem),
+    radial-gradient(circle at 88% 100%, rgba(175, 123, 255, 0.1), transparent 26rem),
+    linear-gradient(180deg, rgba(4, 9, 16, 0.98), rgba(7, 12, 21, 0.96));
+}
+
+.semantic-roadmap::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  opacity: 0.24;
+  background-image:
+    linear-gradient(rgba(104, 228, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(104, 228, 255, 0.04) 1px, transparent 1px);
+  background-size: 3rem 3rem;
+  mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+}
+
+.semantic-roadmap .section-shell {
+  position: relative;
+  z-index: 1;
+}
+
+.roadmap-rail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.roadmap-rail article {
+  position: relative;
+  min-width: 0;
+  padding: 1.25rem;
+  overflow: hidden;
+  border: 1px solid rgba(169, 195, 224, 0.16);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(15, 25, 41, 0.86), rgba(7, 12, 21, 0.92));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.roadmap-rail article::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  content: "";
+  background: var(--cyan);
+  box-shadow: 0 0 1.2rem rgba(104, 228, 255, 0.72);
+}
+
+.roadmap-rail article[data-state="gates"]::before {
+  background: var(--amber);
+  box-shadow: 0 0 1.2rem rgba(255, 210, 122, 0.62);
+}
+
+.roadmap-rail article[data-state="target"]::before {
+  background: var(--violet);
+  box-shadow: 0 0 1.2rem rgba(175, 123, 255, 0.62);
+}
+
+.roadmap-rail span {
+  color: var(--cyan);
+  font: 900 0.8125rem/1.3 var(--mono);
+  letter-spacing: 0.085em;
+}
+
+.roadmap-rail p {
+  margin: 0;
+  color: #bac9da;
+  font-size: 0.9375rem;
+  line-height: 1.62;
+}
+
+.roadmap-rail {
+  margin-top: 0.85rem;
+}
+
+.roadmap-rail article {
+  min-height: 12rem;
+}
+
+.roadmap-rail strong {
+  display: block;
+  margin: 0.7rem 0 0.5rem;
+  color: #eef6ff;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.doctrine-card details {
+  margin-top: 0.65rem;
+  border-top: 1px solid rgba(169, 195, 224, 0.14);
+}
+
+.doctrine-card summary {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  cursor: pointer;
+  color: var(--cyan-bright);
+  font: 800 0.8125rem/1.4 var(--mono);
+}
+
+.doctrine-card summary:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.hero-compute-disclosure summary,
+.galaxy-gold-legend summary,
+.local-handoff-boundary summary,
+.truth-plane-ceiling summary,
+.registry-cut summary {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding-block: 0.5rem;
+}
+
+.platform-table-scroll:focus-visible,
+.hero-compute-disclosure summary:focus-visible,
+.galaxy-gold-legend summary:focus-visible,
+.local-handoff-boundary summary:focus-visible,
+.truth-plane-ceiling summary:focus-visible,
+.registry-cut summary:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 4px;
+}
+
+.hero-doctrine strong,
+.hero-compute-disclosure summary,
+.truth-plane-ceiling,
+.truth-plane-ceiling summary,
+.registry-cut summary,
+.platform-table th,
+.platform-table td {
+  font-size: 0.875rem;
+}
+
+.registry-cut span,
+.registry-cut small,
+.registry-cut p,
+.registry-cut details,
+.release-generation-warning > span {
+  font-size: 0.8125rem;
+}
+
+.platform-table caption {
+  padding: 0.85rem 0.9rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.button.is-disabled,
+.body-surface.is-disabled,
+.pipeline-actions .is-disabled {
+  color: var(--dim);
+  border-color: rgba(151, 170, 196, 0.18);
+  background: rgba(255, 255, 255, 0.018);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.72;
+  text-decoration: none;
+}
+
+.body-surface.is-disabled {
+  pointer-events: none;
+}
+
+.pipeline-actions .is-disabled {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(151, 170, 196, 0.18);
+  border-radius: 0.55rem;
+  font: 800 0.875rem/1.4 var(--mono);
+}
+
+@media (min-width: 62.01rem) and (max-height: 40rem) {
+  .hero {
+    min-height: auto;
+    padding-block: 1rem;
+    row-gap: 0.6rem;
+  }
+
+  .hero-copy h1 {
+    margin-bottom: 0.6rem;
+    font-size: clamp(2.75rem, 8.4vh, 3.25rem);
+  }
+
+  .hero-lede {
+    line-height: 1.4;
+  }
+
+  .hero-primary-action {
+    margin-top: 0.75rem;
+  }
+}
+
+@media (max-width: 34rem) and (max-height: 40rem) {
+  .topbar,
+  .topbar.is-scrolled {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 0.45rem 0.6rem;
+    min-height: 0;
+    padding: 0.45rem 0.65rem;
+    overflow: visible;
+  }
+
+  .brand-lockup {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .brand-copy {
+    display: block;
+  }
+
+  .brand-copy small,
+  .source-badge {
+    display: none;
+  }
+
+  .topbar-tools {
+    position: static;
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .primary-nav {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .primary-nav a {
+    min-width: 0;
+    min-height: 2.75rem;
+    padding-inline: 0.15rem;
+  }
+}
+
+@media (min-width: 42.01rem) and (max-width: 62rem) {
+  .galaxy-commandbar .lens-bar,
+  .galaxy-controls {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .galaxy-controls [data-galaxy-engage],
+  .galaxy-controls [data-galaxy-fullscreen] {
+    grid-column: auto;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 42rem) {
+  .roadmap-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .roadmap-rail article {
+    min-height: 0;
+  }
+
+  .galaxy-commandbar {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .galaxy-commandbar .lens-bar {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.3rem;
+    width: 100%;
+  }
+
+  .galaxy-commandbar .lens-bar button,
+  .galaxy-commandbar .lens-bar button:last-child {
+    grid-column: auto;
+    min-width: 0;
+    min-height: 2.75rem;
+    padding-inline: 0.15rem;
+    font-size: 0.8125rem;
+  }
+
+  .galaxy-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .galaxy-controls [data-galaxy-engage] {
+    grid-column: 1 / 3;
+    min-width: 0;
+  }
+
+  .galaxy-controls [data-galaxy-fullscreen] {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .galaxy-controls [data-galaxy-zoom="out"] { grid-column: 1; grid-row: 2; }
+  .galaxy-controls [data-galaxy-reset] { grid-column: 2; grid-row: 2; }
+  .galaxy-controls [data-galaxy-zoom="in"] { grid-column: 3; grid-row: 2; }
+
+  .galaxy-workbench:not(.is-full-atlas) {
+    grid-template-rows: minmax(15rem, 56svh) auto;
+    height: auto;
+  }
+
+  .galaxy-workbench:not(.is-full-atlas) .galaxy-stage {
+    min-height: 15rem;
+  }
+
+  .galaxy-workbench.is-full-atlas .galaxy-canvas {
+    inset: 3.75rem 0 0;
+    height: auto;
+  }
+
+  .galaxy-workbench.is-full-atlas .galaxy-depth,
+  .galaxy-workbench.is-full-atlas .galaxy-exit {
+    top: 0.5rem;
+  }
+
+  .galaxy-workbench.is-full-atlas .galaxy-mark-key {
+    top: 7rem;
+  }
+
+  .command-cycle-navigation {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    justify-content: stretch;
+  }
+
+  .command-cycle-navigation button,
+  .command-cycle-navigation > span {
+    min-height: 2.75rem;
+  }
+
+  .command-cycle-navigation button {
+    width: 100%;
+  }
+
+  .command-cycle-navigation [data-command-reset] {
+    grid-column: 1 / -1;
+  }
+
+}
+
+/* Outcome-first hero translation and held proof plane. */
+.hero-outcomes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  max-width: 43rem;
+  margin-top: 0.9rem;
+}
+
+.hero-outcomes > span {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  min-height: 3.5rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(104, 228, 255, 0.19);
+  border-radius: 0.65rem;
+  background: rgba(7, 14, 24, 0.74);
+}
+
+.hero-outcomes b {
+  color: #eef6ff;
+  font-size: 0.9375rem;
+}
+
+.hero-outcomes small {
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.hero-status-rail {
+  display: grid;
+  gap: 1px;
+  max-width: 43rem;
+  margin-top: 0.65rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 210, 122, 0.22);
+  border-radius: 0.65rem;
+  background: rgba(255, 210, 122, 0.14);
+}
+
+.hero-status-rail span {
+  min-width: 0;
+  padding: 0.42rem 0.65rem;
+  color: #d9e5f1;
+  background: rgba(6, 11, 19, 0.94);
+  font: 800 0.875rem/1.4 var(--mono);
+  letter-spacing: 0.025em;
+  overflow-wrap: anywhere;
+}
+
+.hero-status-rail span:first-child {
+  color: #ffe4aa;
+}
+
+.hero-system .core-held {
+  border-color: rgba(255, 210, 122, 0.34);
+  background: linear-gradient(145deg, rgba(255, 210, 122, 0.075), rgba(8, 12, 21, 0.9));
+  box-shadow: inset 0 0 0 1px rgba(255, 210, 122, 0.06), 0 0 2rem rgba(255, 210, 122, 0.06);
+  opacity: 0.78;
+}
+
+.hero-system .core-held .core-kicker {
+  color: var(--amber);
+}
+
+@media (min-width: 42.01rem) and (max-width: 62rem) {
+  .roadmap-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .roadmap-rail article:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The platform matrix becomes semantic cards before its 74rem table can clip. */
+@media (max-width: 62rem) {
+  .platform-table-scroll {
+    overflow: visible;
+    border: 0;
+  }
+
+  .platform-table {
+    display: block;
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0 0.8rem;
+  }
+
+  .platform-table caption {
+    display: block;
+    width: 100%;
+    text-align: left;
+  }
+
+  .platform-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .platform-table tbody,
+  .platform-table tr,
+  .platform-table th,
+  .platform-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .platform-table tbody tr {
+    overflow: hidden;
+    margin-bottom: 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 0.75rem;
+    background: rgba(8, 13, 22, 0.9);
+  }
+
+  .platform-table tbody th {
+    padding: 1rem;
+    border-right: 0;
+    background: rgba(104, 228, 255, 0.06);
+  }
+
+  .platform-table tbody td {
+    display: grid;
+    grid-template-columns: minmax(8.5rem, 0.42fr) minmax(0, 1fr);
+    gap: 0.75rem;
+    border-right: 0;
+    text-transform: none;
+  }
+
+  .platform-table tbody td::before {
+    color: var(--cyan-bright);
+    content: attr(data-label);
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+}
+
+@media (max-width: 42rem) {
+  .hero-outcomes {
+    gap: 0.35rem;
+  }
+
+  .hero-outcomes > span {
+    min-height: 2.75rem;
+    padding-inline: 0.35rem;
+    text-align: center;
+  }
+
+  .hero-outcomes small {
+    display: none;
+  }
+
+  .hero-status-rail span {
+    padding-inline: 0.5rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 62rem) and (max-height: 40rem) {
+  .roadmap-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .roadmap-rail article:last-child {
+    grid-column: auto;
+  }
+}
+
+@media (max-height: 40rem) {
+  .hero-outcomes {
+    margin-top: 0.55rem;
+  }
+
+  .hero-outcomes > span {
+    min-height: 2.75rem;
+    padding-block: 0.35rem;
+  }
+
+  .hero-outcomes small {
+    display: none;
+  }
+
+  .hero-status-rail {
+    margin-top: 0.45rem;
+  }
+
+  .hero-status-rail span {
+    padding-block: 0.3rem;
+  }
+
+  .hero-doctrine {
+    margin-top: 0.45rem;
+    padding: 0.45rem 0.65rem;
+  }
+}
+
+/* Keep the primary request handoff wholly visible on the shortest phone frame.
+   The five navigation targets remain present and retain their 44px geometry. */
+@media (max-width: 24rem) and (max-height: 36rem) {
+  .hero {
+    gap: 0.35rem;
+    padding-block: 0.4rem;
+  }
+
+  .hero-copy > .eyebrow {
+    display: none;
+  }
+
+  .hero-copy h1 {
+    margin-bottom: 0.35rem;
+    font-size: clamp(1.8rem, 9.4vw, 2rem);
+    line-height: 0.96;
+  }
+
+  .hero-lede {
+    margin-bottom: 0;
+    font-size: 0.875rem;
+    line-height: 1.2;
+  }
+
+  .hero-primary-action {
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+  }
+
+  .hero-primary-action .hero-enter {
+    min-height: 2.75rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .hero-primary-action .hero-enter small {
+    display: block;
+    font-size: 0.875rem;
+    line-height: 1;
+  }
+
+  .hero-outcomes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.2rem;
+    margin-top: 0.3rem;
+  }
+
+  .hero-outcomes > span {
+    min-height: 2.75rem;
+    padding: 0.25rem 0.2rem;
+  }
+
+  .hero-outcomes b {
+    font-size: 0.875rem;
+    line-height: 1.05;
+  }
+
+  .hero-status-rail {
+    margin-top: 0.3rem;
+  }
+}
+
+.site-footer nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.25rem;
+  font-size: 0.875rem;
+}
+
+/* GALAXY_STARK_V18_PRESENTATION_CONTRACT_END */

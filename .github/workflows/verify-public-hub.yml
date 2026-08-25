@@ -20,10 +20,10 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          # check-signed-release.mjs recovers the pre-quarantine signed-index fixture
-          # by the exact blob OID the quarantine receipt pins. A shallow clone cannot
-          # reach that object, so this must stay at full depth.
+          # Default signed-release verification is archive-portable. Full history is
+          # retained as an independent provenance check for the same fixture bytes.
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
@@ -31,15 +31,24 @@ jobs:
         run: |
           node --check hub-assets/hub.js
           node --check hub-assets/galaxy-core.mjs
+          node --check hub-assets/ide-release-core.mjs
+          node --check hub-assets/strict-json.mjs
+          node --check hub-assets/strict-json-fetch.mjs
+          node --check script/build-public-pages.mjs
+          node --check script/hub-facts-custody.mjs
+          node --check script/check-browser-json-acquisition.mjs
           node --check script/check-central-hub.mjs
           node --check script/check-product-truth.mjs
           node --check script/check-ide-release.mjs
           node --check script/check-galaxy-bridge.mjs
           node --check script/check-http-surface.mjs
+          node --check script/check-public-pages-artifact.mjs
           node --check script/check-galaxy-core.mjs
           node --check script/check-live-parity.mjs
           node --check script/check-publisher-races.mjs
+          node --check script/verify-pages-artifact.mjs
           node --check script/check-signed-release.mjs
+          node --check script/check-signed-release-portability.mjs
           node --check script/sync-galaxy-snapshot.mjs
           node --check script/mark-galaxy-bridge-inactive.mjs
           node --check script/publisher-candidate-policy.mjs
@@ -60,10 +69,26 @@ jobs:
       - name: Verify public hub contract
         run: |
           node script/check-central-hub.mjs
-          node script/check-product-truth.mjs --self-test
+          node script/check-product-truth.mjs --self-test --require-git-binding
           node script/check-ide-release.mjs --self-test
+          node script/check-browser-json-acquisition.mjs
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
-          node script/check-http-surface.mjs
+          node script/hub-facts-custody.mjs --self-test
+          node script/build-public-pages.mjs --self-test --require-link-tests
+          node script/verify-pages-artifact.mjs --self-test
+          node script/check-public-pages-artifact.mjs
           node script/check-publisher-races.mjs
           node script/check-signed-release.mjs
+          node script/check-signed-release.mjs --verify-git-provenance
+          node script/check-signed-release.mjs --self-test
+          node script/check-signed-release-portability.mjs --git-archive
+      - name: Verify exact staged HTTP surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="${RUNNER_TEMP}/hive-pages-reviewed-pr"
+          test ! -e "$stage"
+          node script/build-public-pages.mjs build --output "$stage"
+          node script/build-public-pages.mjs check --output "$stage"
+          node script/check-http-surface.mjs --root "$stage"

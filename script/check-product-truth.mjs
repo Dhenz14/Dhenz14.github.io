@@ -1,13 +1,22 @@
 import crypto from "node:crypto";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  parseJsonBytesStrict,
+  parseJsonStrict as sharedParseJsonStrict,
+  StrictJsonError,
+} from "../hub-assets/strict-json.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const productTruthPath = path.join(root, "hub-assets", "product-truth.json");
 const factsPath = path.join(root, "hub-assets", "hub-facts.json");
 const latestPath = path.join(root, "downloads", "hive-ide", "latest.json");
 const releaseManifestPath = path.join(root, "downloads", "hive-ide", "hive-ide-release-manifest.json");
+const ledgerPath = path.join(root, "hub-assets", "product-truth-ledger.public.v2.json");
+const privateLedgerPath = path.join(root, "hub-assets", "product-truth-ledger.v1.json");
+const semanticBaselinePath = path.join(root, "hub-assets", "product-truth-semantic-baseline.v1.json");
 const HEX40 = /^[a-f0-9]{40}$/;
 const HEX64 = /^[a-f0-9]{64}$/;
 const UTC_SECONDS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
@@ -17,8 +26,16 @@ const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/;
 
 const isPlainObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 
-function assert(condition, message) {
-  if (!condition) throw new Error(message);
+export class ProductTruthContractError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "ProductTruthContractError";
+    this.code = code;
+  }
+}
+
+function assert(condition, message, code = "PRODUCT_TRUTH_CONTRACT_VIOLATION") {
+  if (!condition) throw new ProductTruthContractError(code, message);
 }
 
 function exactKeys(value, expected, label) {
@@ -40,127 +57,90 @@ function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-export function parseJsonStrict(source, label = "JSON document") {
-  assert(typeof source === "string", `${label} must be UTF-8 text`);
-  assert(!source.includes("\uFFFD"), `${label} contains invalid UTF-8 replacement bytes`);
-  let cursor = 0;
+const SEMANTIC_BASELINE_FIELDS = Object.freeze([
+  "snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash",
+]);
 
-  const fail = (message) => {
-    throw new Error(`${label} ${message} at byte ${Buffer.byteLength(source.slice(0, cursor), "utf8")}`);
-  };
-  const skipWhitespace = () => {
-    while (cursor < source.length && /\s/.test(source[cursor])) cursor += 1;
-  };
-  const parseString = () => {
-    if (source[cursor] !== '"') fail("expected string");
-    const start = cursor;
-    cursor += 1;
-    let escaped = false;
-    while (cursor < source.length) {
-      const character = source[cursor];
-      cursor += 1;
-      if (escaped) {
-        escaped = false;
-        continue;
-      }
-      if (character === "\\") {
-        escaped = true;
-        continue;
-      }
-      if (character === '"') {
-        try {
-          return JSON.parse(source.slice(start, cursor));
-        } catch {
-          fail("contains an invalid string escape");
-        }
-      }
-      if (character.charCodeAt(0) < 0x20) fail("contains an unescaped control character");
-    }
-    fail("contains an unterminated string");
-  };
-  const parseValue = () => {
-    skipWhitespace();
-    if (cursor >= source.length) fail("ended before a value");
-    if (source[cursor] === '"') return parseString();
-    if (source[cursor] === "{") return parseObject();
-    if (source[cursor] === "[") return parseArray();
-    for (const [token, value] of [["true", true], ["false", false], ["null", null]]) {
-      if (source.startsWith(token, cursor)) {
-        cursor += token.length;
-        return value;
-      }
-    }
-    const number = source.slice(cursor).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
-    if (number) {
-      cursor += number[0].length;
-      const value = Number(number[0]);
-      if (!Number.isFinite(value)) fail("contains a non-finite number");
-      return value;
-    }
-    fail("contains an invalid value");
-  };
-  const parseObject = () => {
-    const result = Object.create(null);
-    const keys = new Set();
-    cursor += 1;
-    skipWhitespace();
-    if (source[cursor] === "}") {
-      cursor += 1;
-      return result;
-    }
-    while (cursor < source.length) {
-      skipWhitespace();
-      const key = parseString();
-      if (keys.has(key)) fail(`contains duplicate object key ${JSON.stringify(key)}`);
-      keys.add(key);
-      skipWhitespace();
-      if (source[cursor] !== ":") fail("expected colon after object key");
-      cursor += 1;
-      result[key] = parseValue();
-      skipWhitespace();
-      if (source[cursor] === "}") {
-        cursor += 1;
-        return result;
-      }
-      if (source[cursor] !== ",") fail("expected comma between object entries");
-      cursor += 1;
-    }
-    fail("contains an unterminated object");
-  };
-  const parseArray = () => {
-    const result = [];
-    cursor += 1;
-    skipWhitespace();
-    if (source[cursor] === "]") {
-      cursor += 1;
-      return result;
-    }
-    while (cursor < source.length) {
-      result.push(parseValue());
-      skipWhitespace();
-      if (source[cursor] === "]") {
-        cursor += 1;
-        return result;
-      }
-      if (source[cursor] !== ",") fail("expected comma between array entries");
-      cursor += 1;
-    }
-    fail("contains an unterminated array");
-  };
-
-  const result = parseValue();
-  skipWhitespace();
-  if (cursor !== source.length) fail("contains trailing content");
-  return result;
+function semanticProjection(value) {
+  return Object.fromEntries(SEMANTIC_BASELINE_FIELDS.map((key) => [key, value[key]]));
 }
+
+export function validateSemanticBaseline(value) {
+  exactKeys(value, ["schema", "version", ...SEMANTIC_BASELINE_FIELDS, "canonicalSemanticDigest"], "reviewed semantic baseline");
+  assert(value.schema === "hive.ecosystem.product-truth.semantic-baseline.v1" && value.version === 1,
+    "reviewed semantic baseline schema/version drifted", "SEMANTIC_BASELINE_SCHEMA_INVALID");
+  assert(value.snapshotVersion === "3.1.0" && HEX40.test(value.sourceCommit)
+    && [value.graphHash, value.sourceFingerprint, value.projectionHash, value.geometryHash, value.canonicalSemanticDigest].every((item) => HEX64.test(item)),
+  "reviewed semantic baseline fields are malformed", "SEMANTIC_BASELINE_FIELDS_INVALID");
+  assert(sha256(canonicalJson(semanticProjection(value))) === value.canonicalSemanticDigest,
+    "reviewed semantic digest was not independently derived", "SEMANTIC_BASELINE_DIGEST_MISMATCH");
+  return value;
+}
+
+function gitObject(args, { encoding = "utf8" } = {}) {
+  return execFileSync("git", ["-C", root, ...args], {
+    encoding,
+    env: { ...process.env, GIT_NO_LAZY_FETCH: "1" },
+    stdio: ["ignore", "pipe", "pipe"],
+    maxBuffer: 1024 * 1024,
+  });
+}
+
+function hasLocalGitCustody() {
+  try {
+    return gitObject(["rev-parse", "--is-inside-work-tree"]).trim() === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function verifyReviewedBaselineBinding(reference, localBytes, { requireGitBinding = false } = {}) {
+  exactKeys(reference, [
+    "schema", "path", "reviewedCommit", "bytes", "sha256", "gitBlobOid", "canonicalSemanticDigest",
+    "immutableRawReference", "portableVerificationBoundary",
+  ], "reviewed semantic baseline reference");
+  assert(reference.schema === "hive.ecosystem.product-truth.semantic-baseline.ref.v1"
+    && reference.path === "hub-assets/product-truth-semantic-baseline.v1.json"
+    && reference.reviewedCommit === "b542be86ddf256bc767124f92d2b1e66c37236bb"
+    && reference.bytes === 621
+    && reference.sha256 === "31a060917fc5aac5dc964cd2db0465eb44881a4a2eb9b36fc3459f61bbc58155"
+    && reference.gitBlobOid === "1636e500e7d5f53a1cfcda2dabf1510bbd377dbe"
+    && reference.canonicalSemanticDigest === "f9022dca084c3fab57caa77a2782ac0d5a2e972d22f0f7d413464ba5ddab3b43"
+    && reference.immutableRawReference === `https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/${reference.reviewedCommit}/${reference.path}`
+    && /not verified by the browser/i.test(reference.portableVerificationBoundary),
+  "reviewed semantic baseline reference drifted", "SEMANTIC_BASELINE_REFERENCE_INVALID");
+  assert(localBytes.length === reference.bytes, "reviewed semantic baseline local byte count drifted", "SEMANTIC_BASELINE_BYTES_MISMATCH");
+  assert(sha256(localBytes) === reference.sha256, "reviewed semantic baseline local SHA-256 drifted", "SEMANTIC_BASELINE_SHA256_MISMATCH");
+  assert(crypto.createHash("sha1").update(`blob ${localBytes.length}\0`).update(localBytes).digest("hex") === reference.gitBlobOid,
+    "reviewed semantic baseline local Git blob OID drifted", "SEMANTIC_BASELINE_GIT_BLOB_MISMATCH");
+  if (!hasLocalGitCustody()) {
+    assert(!requireGitBinding, "reviewed commit:path proof requires local Git object custody", "SEMANTIC_BASELINE_GIT_CUSTODY_UNAVAILABLE");
+    return "NOT_VERIFIED_NO_GIT_CUSTODY";
+  }
+  const commitType = gitObject(["cat-file", "-t", reference.reviewedCommit]).trim();
+  assert(commitType === "commit", "reviewed semantic baseline commit object is not a commit", "SEMANTIC_BASELINE_REVIEWED_COMMIT_INVALID");
+  const objectSpec = `${reference.reviewedCommit}:${reference.path}`;
+  assert(gitObject(["cat-file", "-t", objectSpec]).trim() === "blob",
+    "reviewed commit:path does not resolve to a blob", "SEMANTIC_BASELINE_REVIEWED_PATH_INVALID");
+  assert(gitObject(["rev-parse", objectSpec]).trim() === reference.gitBlobOid,
+    "reviewed commit:path resolved to the wrong blob", "SEMANTIC_BASELINE_REVIEWED_BLOB_MISMATCH");
+  const committedBytes = gitObject(["cat-file", "blob", objectSpec], { encoding: null });
+  assert(Buffer.isBuffer(committedBytes) && committedBytes.length === reference.bytes && committedBytes.equals(localBytes),
+    "reviewed commit:path bytes do not equal the portable baseline", "SEMANTIC_BASELINE_REVIEWED_BYTES_MISMATCH");
+  assert(sha256(committedBytes) === reference.sha256,
+    "reviewed commit:path SHA-256 drifted", "SEMANTIC_BASELINE_REVIEWED_SHA256_MISMATCH");
+  return "REVIEWED_COMMIT_PATH_VERIFIED";
+}
+
+export const parseJsonStrict = sharedParseJsonStrict;
 
 const SUBJECT_STATUSES = Object.freeze({
   target_architecture: "SOURCE_BOUND_DOCTRINE",
   source_atlas: "SOURCE_PRESENT_AT_PIN",
   tip_influence: "SOURCE_GOVERNED_HOLD",
   fleet_halos: "DECLARED_HARD_OFF",
-  released_tester_5: "PUBLIC_REMOTE_BYTES_VERIFIED_OLDER_SOURCE_SUBJECT",
-  candidate_tester_6_publication: "HELD_NOT_PUBLIC",
+  released_tester_5: "EVIDENCE_EXPIRED_HELD",
+  candidate_tester_6_publication: "EVIDENCE_EXPIRED_HELD",
   windows_wsl_candidate_design: "DECLARED_AT_PIN_BY_NON_DURABLE_EXTERNAL_OBSERVATION",
   linux_hive_ide_publication: "UNKNOWN_NO_ADMISSIBLE_PUBLICATION_OBSERVATION",
   macos_hive_ide_publication: "HELD_MISSING_ADMISSIBLE_PUBLICATION_OBSERVATION",
@@ -198,7 +178,7 @@ const EXPECTED_PLATFORM_IDS = Object.freeze([
 const ATLAS_SOURCE_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
 const EVIDENCE_BASELINE_COMMIT = "472131baa2bc212a043966773bd92477c3a8a16c";
 const EVIDENCE_BASELINE_TREE = "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00";
-const EXPECTED_CANDIDATE_BINDING_DIGEST = "40812261a20c7d10cd358b843154c19db793cea62d6db3e0081fb5b5c0a0f9ab";
+const SOURCE_ATLAS_EVIDENCE_REF = "hub-assets/hub-facts.json; Dhenz14/Hive-AI@0ab04f6c19ffd41bb162bea674e77853fb27cc0e configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 46626c1662d1fe04e056ba1c44926184d523c65d490a76ad89acd2e58e04f62c";
 // The exact candidate-state strings that landing is allowed to replace. A landed
 // manifest must rebuild to this baseline digest, proving the landing changed the
 // custody fields and nothing else.
@@ -212,17 +192,195 @@ export function releasedTesterAvailability(manifest, now = Date.now()) {
   return "PUBLICATION_READBACK_WITHIN_VALIDITY_WINDOW";
 }
 
-export function validateProductTruth(manifest, { facts, latest, releaseManifest, expectedLanding } = {}) {
+export function classifyProductTruthSemanticRelation(snapshot, reviewedBaseline, { snapshotValid = true } = {}) {
+  if (!snapshotValid || !isPlainObject(snapshot) || !isPlainObject(reviewedBaseline)
+    || !isPlainObject(snapshot.hiveAi) || !isPlainObject(snapshot.galaxy) || !isPlainObject(snapshot.refresh)) return "SNAPSHOT_INVALID_BLOCKED";
+  const exact = reviewedBaseline.snapshotVersion === snapshot.snapshotVersion
+    && reviewedBaseline.sourceCommit === snapshot.hiveAi.sourceCommit
+    && reviewedBaseline.graphHash === snapshot.hiveAi.graphHash
+    && reviewedBaseline.sourceFingerprint === snapshot.hiveAi.sourceFingerprint
+    && reviewedBaseline.projectionHash === snapshot.galaxy.projectionHash
+    && reviewedBaseline.geometryHash === snapshot.galaxy.geometry?.geometryHash;
+  return exact ? "EXACT_REVIEWED_BASELINE_MATCH" : "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD";
+}
+
+export function classifyProductTruthSnapshot(snapshot, reviewedBaseline, options = {}) {
+  const semanticRelation = classifyProductTruthSemanticRelation(snapshot, reviewedBaseline, options);
+  if (semanticRelation !== "EXACT_REVIEWED_BASELINE_MATCH") return semanticRelation;
+  return snapshot.refresh.latestRefreshObservation?.automaticBridgeConfiguredAtObservation === false
+    ? "BRIDGE_INACTIVE_LAST_GOOD_SOURCE"
+    : "EXACT_REVIEWED_BASELINE_MATCH";
+}
+
+const CURRENT_PUBLIC_LEDGER_SUPERSESSION = Object.freeze({
+  entryId: "current-public-unknown-hold-after-evidence-expiry-v2",
+  effectiveAt: "2026-08-24T19:37:31.6497275Z",
+  temporalDisposition: "CURRENT_EFFECTIVE_DISPOSITION",
+  claimPlane: "PUBLIC_EFFECTIVE_STATE",
+  status: "UNKNOWN_HOLD",
+  supersedesForCurrentUse: [
+    "hive-ide-tauri-candidate-observation-v1",
+    "local-body-handoff-boundary-v1",
+  ],
+  reasonCodes: [
+    "HISTORICAL_OBSERVATIONS_DO_NOT_ESTABLISH_CURRENT_OPERATION",
+    "HIVE_IDE_CURRENT_LANDING_AND_PACKAGE_REQUIRE_FRESH_READBACK",
+    "LOCAL_AND_OPERATOR_RUNTIMES_REQUIRE_SEPARATE_ATTESTATION",
+    "CHAT_NOT_AVAILABLE",
+    "PUBLIC_ACTIONS_NOT_AUTHORIZED",
+  ],
+  effectiveState: {
+    hiveIdeLanding: "UNKNOWN_HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK",
+    hiveIdePackage: "UNKNOWN",
+    hiveIdeRuntime: "UNKNOWN",
+    localBody: "HOLD_REQUIRES_SEPARATE_ATTESTATION",
+    operatorBody: "HOLD_REQUIRES_DISTINCT_RUNTIME_ATTESTATION",
+    chat: "WAIT_NOT_AVAILABLE",
+    publicActionsAuthorized: false,
+  },
+});
+
+export function projectPrivateLedgerEntries(privateLedger) {
+  exactKeys(privateLedger, [
+    "schema", "version", "administrationModel", "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "entries",
+  ], "private evidence ledger");
+  assert(privateLedger.schema === "hive.ecosystem.product-truth.evidence-ledger.v1"
+    && privateLedger.version === 1
+    && privateLedger.administrationModel === "APPEND_ONLY_LEDGER_MODEL_V1"
+    && privateLedger.integrityClass === "SELF_BOUND_INTEGRITY"
+    && privateLedger.independentTrustRoot === false
+    && privateLedger.authorizedPublicationAttested === false
+    && Array.isArray(privateLedger.entries) && privateLedger.entries.length === 6,
+  "private evidence ledger envelope drifted", "PRIVATE_LEDGER_INVALID");
+  const projected = privateLedger.entries.map((sourceEntry) => {
+    const entry = structuredClone(sourceEntry);
+    entry.temporalDisposition = "HISTORICAL_EVIDENCE_ONLY";
+    if (entry.entryId === "hive-ide-tauri-candidate-observation-v1") {
+      entry.status = "HISTORICAL_CANDIDATE_BRANCH_RELATION_CURRENT_LANDING_UNKNOWN_HOLD";
+      entry.reasonCodes = [
+        "TAURI_OBSERVED_ON_UNPROTECTED_CANDIDATE_BRANCH_AT_2026_08_23T18_46_30Z",
+        "THEN_OBSERVED_DEFAULT_BRANCH_DID_NOT_CONTAIN_CANDIDATE",
+        "CURRENT_RELATION_REQUIRES_FRESH_OWNER_REPOSITORY_READBACK",
+      ];
+      entry.evidence = {
+        observedAt: "2026-08-23T18:46:30Z",
+        repository: entry.evidence.repository,
+        thenObservedDefaultBranchTip: entry.evidence.defaultBranchTip,
+        candidateBranch: entry.evidence.candidateBranch,
+        candidateCommit: entry.evidence.candidateCommit,
+        aheadByAtObservation: entry.evidence.aheadBy,
+        behindByAtObservation: entry.evidence.behindBy,
+        historicalSourceObservation: "Electron-removal and Tauri/WebView2 source were observed on the candidate branch at the stated time.",
+        currentLandingStatus: "UNKNOWN_HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK",
+      };
+    }
+    if (entry.entryId === "local-body-handoff-boundary-v1") {
+      entry.evidence = {
+        localBodyStatus: entry.evidence.localBodyStatus,
+        operatorBodyStatus: entry.evidence.operatorBodyStatus,
+        chatStatus: entry.evidence.chatStatus,
+        contextDisposition: "OMITTED_FROM_PUBLIC_LEDGER_USE_SEPARATE_ARCHITECTURE_PLANE",
+      };
+    }
+    return entry;
+  });
+  projected.push(structuredClone(CURRENT_PUBLIC_LEDGER_SUPERSESSION));
+  return projected;
+}
+
+export function validateProductTruth(manifest, { facts, latest, releaseManifest, ledger, privateLedger, semanticBaseline, expectedLanding } = {}) {
   exactKeys(manifest, [
-    "schema", "version", "status", "canonicalManifest", "what_architecture_am_i", "source", "architecture", "boundaries",
+    "schema", "version", "status", "evidenceLedger", "canonicalManifest", "what_architecture_am_i", "source", "architecture", "boundaries",
     "truth_subjects", "atlasTesterMatch", "relations", "definitions", "registryClaimCut", "platforms", "integrityBoundary", "bindingDigest",
   ], "product truth projection");
-  assert(manifest.schema === "hive.ecosystem.product-truth.public-projection.v1", "product truth schema drifted");
-  assert(manifest.version === "1.0.0", "product truth version drifted");
+  assert(manifest.schema === "hive.ecosystem.product-truth.public-projection.v2", "product truth schema drifted");
+  assert(manifest.version === "2.0.0", "product truth version drifted");
   assert(manifest.status === "SOURCE_BOUND_TRUTH_WITH_SUBJECT_SCOPED_RUNTIME_UNKNOWNS", "product truth projection status drifted");
+  exactKeys(manifest.evidenceLedger, ["schema", "path", "version", "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "bytes", "sha256", "gitBlobOid", "headEntryId"], "evidence ledger reference");
+  assert(manifest.evidenceLedger.schema === "hive.ecosystem.product-truth.public-evidence-projection.ref.v2"
+    && manifest.evidenceLedger.path === "hub-assets/product-truth-ledger.public.v2.json"
+    && manifest.evidenceLedger.version === 2
+    && manifest.evidenceLedger.integrityClass === "SELF_BOUND_INTEGRITY"
+    && manifest.evidenceLedger.independentTrustRoot === false
+    && manifest.evidenceLedger.authorizedPublicationAttested === false
+    && manifest.evidenceLedger.bytes === 7181
+    && manifest.evidenceLedger.sha256 === "e623836c21581035e9dd4d5fb2e11abfb3a5e18baf30ef16ce527fdfc74c7f24"
+    && manifest.evidenceLedger.gitBlobOid === "249276fd196998fa6b2f3de614f550febfc394ce"
+    && manifest.evidenceLedger.headEntryId === "current-public-unknown-hold-after-evidence-expiry-v2", "evidence ledger reference drifted");
+  if (ledger) {
+    exactKeys(ledger, ["schema", "version", "projectionClass", "sourceLedger", "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "entries"], "public evidence projection");
+    exactKeys(ledger.sourceLedger, ["schema", "version", "path", "bytes", "sha256", "gitBlobOid", "publicationDisposition", "projectionAlgorithm", "projectionRule"], "private ledger projection boundary");
+    assert(ledger.schema === "hive.ecosystem.product-truth.public-evidence-projection.v2"
+      && ledger.version === 2
+      && ledger.projectionClass === "PUBLIC_SANITIZED_HISTORICAL_EVIDENCE_WITH_CURRENT_HOLD"
+      && ledger.sourceLedger.schema === "hive.ecosystem.product-truth.evidence-ledger.v1"
+      && ledger.sourceLedger.version === 1
+      && ledger.sourceLedger.path === "hub-assets/product-truth-ledger.v1.json"
+      && ledger.sourceLedger.bytes === 4653
+      && ledger.sourceLedger.sha256 === "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259"
+      && ledger.sourceLedger.gitBlobOid === "943db0a4b30bb4dba38de3db62c5898fd9785e5c"
+      && ledger.sourceLedger.publicationDisposition === "PRIVATE_NOT_PUBLISHED"
+      && ledger.sourceLedger.projectionAlgorithm === "hive.product-truth.private-v1-to-public-v2.v1"
+      && /remove every local scheme, host, port, path, query, and presentation-mode field/i.test(ledger.sourceLedger.projectionRule)
+      && /omit navigation and fetch targets and action authority/i.test(ledger.sourceLedger.projectionRule)
+      && ledger.integrityClass === "SELF_BOUND_INTEGRITY"
+      && ledger.independentTrustRoot === false
+      && ledger.authorizedPublicationAttested === false
+      && Array.isArray(ledger.entries) && ledger.entries.length === 7
+      && ledger.entries.at(-1)?.entryId === manifest.evidenceLedger.headEntryId,
+    "public evidence projection envelope drifted", "EVIDENCE_LEDGER_INVALID");
+    const genesis = ledger.entries.find((entry) => entry.entryId === "canonical-candidate-genesis-v1");
+    assert(genesis?.status === "IMMUTABLE_CONTENT_ADDRESSED_CANDIDATE_GENESIS_PROVENANCE"
+      && genesis.reasonCodes?.includes("ORIGINAL_CONTENT_ADDRESSED_CANDIDATE_GENESIS_IDENTITY")
+      && genesis.evidence?.semanticSha256 === "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791"
+      && genesis.evidence?.physicalSha256 === "9e324cae2a6b8975d0451a1343166d5c802397595fd4b89a8d4af091574b0948"
+      && genesis.evidence?.bytes === 31198
+      && genesis.evidence?.gitBlobOid === "3cc7a08282dedaeb7c07a193dd3cc8a4a34124d6"
+      && genesis.evidence?.firstGreenCommit === "5e3f974c8a80064d2388ea81cb151117555ff6b4"
+      && genesis.evidence?.lastPrelandingCommit === "ade641d988e933be5441d7f5ec15bea616d2bda7",
+    "immutable candidate genesis drifted", "CANDIDATE_GENESIS_INVALID");
+    const diagnostic = ledger.entries.find((entry) => entry.entryId === "candidate-reconstruction-diagnostic-v1");
+    assert(diagnostic?.status === "SUPERSEDED_RECONSTRUCTED_DIAGNOSTIC_NOT_INDEPENDENT_TRUST_ROOT"
+      && diagnostic.reasonCodes?.includes("NOT_INDEPENDENT_TRUST_ROOT")
+      && diagnostic.evidence?.projectionBindingDigest === "40812261a20c7d10cd358b843154c19db793cea62d6db3e0081fb5b5c0a0f9ab",
+    "reconstructed diagnostic was promoted to trust root", "DIAGNOSTIC_TRUST_ROOT_INVALID");
+    const revoked = ledger.entries.find((entry) => entry.entryId === "tester5-electron-claim-revocation-v1");
+    assert(revoked?.status === "SUPERSEDED_REVOKED_UNSUPPORTED"
+      && revoked.reasonCodes?.includes("TESTER5_PACKAGE_CONTENTS_UNKNOWN_NOT_INSPECTED"),
+    "unsupported Electron history was not revoked", "ELECTRON_CLAIM_REVOCATION_INVALID");
+    const ideHistory = ledger.entries.find((entry) => entry.entryId === "hive-ide-tauri-candidate-observation-v1");
+    assert(ideHistory?.temporalDisposition === "HISTORICAL_EVIDENCE_ONLY"
+      && ideHistory.status === "HISTORICAL_CANDIDATE_BRANCH_RELATION_CURRENT_LANDING_UNKNOWN_HOLD"
+      && ideHistory.evidence?.observedAt === "2026-08-23T18:46:30Z"
+      && ideHistory.evidence?.thenObservedDefaultBranchTip === "41df9be58ebb3696d00c08602c44c3b0abf3647d"
+      && ideHistory.evidence?.currentLandingStatus === "UNKNOWN_HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK",
+    "historical IDE branch observation escaped its current UNKNOWN/HOLD ceiling", "IDE_HISTORY_INVALID");
+    const localBoundary = ledger.entries.find((entry) => entry.entryId === "local-body-handoff-boundary-v1");
+    assert(localBoundary?.evidence?.localBodyStatus === "UNKNOWN_UNPROBED"
+      && localBoundary.evidence.operatorBodyStatus === "HOLD_NOT_INDEPENDENTLY_OBSERVED",
+    "sanitized local handoff context drifted", "LOCAL_HANDOFF_BOUNDARY_INVALID");
+    const current = ledger.entries.at(-1);
+    assert(current.temporalDisposition === "CURRENT_EFFECTIVE_DISPOSITION"
+      && current.status === "UNKNOWN_HOLD"
+      && current.effectiveState?.hiveIdeLanding === "UNKNOWN_HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK"
+      && current.effectiveState?.localBody === "HOLD_REQUIRES_SEPARATE_ATTESTATION"
+      && current.effectiveState?.operatorBody === "HOLD_REQUIRES_DISTINCT_RUNTIME_ATTESTATION"
+      && current.effectiveState?.chat === "WAIT_NOT_AVAILABLE"
+      && current.effectiveState?.publicActionsAuthorized === false,
+    "current public supersession escaped UNKNOWN/HOLD", "CURRENT_PUBLIC_DISPOSITION_INVALID");
+    assert(!/https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\])/i.test(JSON.stringify(ledger)),
+      "public evidence projection contains a complete loopback URL", "PUBLIC_LOOPBACK_URL_FORBIDDEN");
+    assert(!/127\.0\.0\.1|localhost|\[::1\]|localBodyUrl|operatorBodyExpectedOrigin|localBodyContext|operatorBodyContext|presentationMode/i.test(JSON.stringify(ledger)),
+      "public evidence projection retained local transport coordinates", "PUBLIC_LEDGER_LOCAL_COORDINATES_FORBIDDEN");
+    if (privateLedger) {
+      assert(canonicalJson(projectPrivateLedgerEntries(privateLedger)) === canonicalJson(ledger.entries),
+        "public evidence entries are not the deterministic private-v1 projection plus supersession", "PUBLIC_LEDGER_PROJECTION_MISMATCH");
+    }
+  }
   exactKeys(manifest.canonicalManifest, [
-    "status", "repository", "path", "evidenceSourceCommit", "evidenceSourceTree",
-    "candidateSha256", "candidateBytes", "candidateGitBlobOid",
+    "status", "landingStatus", "publicRetrievability", "repository", "path", "evidenceSourceCommit", "evidenceSourceTree",
+    "candidateSemanticSha256", "candidateSha256", "candidateBytes", "candidateGitBlobOid",
+    "candidateFirstGreenCommit", "candidateLastPrelandingCommit",
     "landedCommit", "landedTree", "landedSha256", "landedBytes", "landedGitBlobOid", "audit",
   ], "canonical manifest custody");
   const canonicalManifest = manifest.canonicalManifest;
@@ -230,14 +388,19 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && canonicalManifest.path === "configs/public/constellation_architecture_v1.json"
     && canonicalManifest.evidenceSourceCommit === "472131baa2bc212a043966773bd92477c3a8a16c"
     && canonicalManifest.evidenceSourceTree === "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00"
-    && canonicalManifest.candidateSha256 === "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056"
-    && canonicalManifest.candidateBytes === 49342
-    && canonicalManifest.candidateGitBlobOid === "c1036d2fc877e058965688fe8da5097576a37826", "canonical manifest candidate custody drifted");
+    && canonicalManifest.candidateSemanticSha256 === "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791"
+    && canonicalManifest.candidateSha256 === "9e324cae2a6b8975d0451a1343166d5c802397595fd4b89a8d4af091574b0948"
+    && canonicalManifest.candidateBytes === 31198
+    && canonicalManifest.candidateGitBlobOid === "3cc7a08282dedaeb7c07a193dd3cc8a4a34124d6"
+    && canonicalManifest.candidateFirstGreenCommit === "5e3f974c8a80064d2388ea81cb151117555ff6b4"
+    && canonicalManifest.candidateLastPrelandingCommit === "ade641d988e933be5441d7f5ec15bea616d2bda7"
+    && canonicalManifest.landingStatus === "LANDED_HASH_VERIFIED"
+    && canonicalManifest.publicRetrievability === "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE", "canonical manifest custody drifted");
   const canonicalAudit = canonicalManifest.audit;
   exactKeys(canonicalAudit, ["status", "bindingStatus", "authorityConferred"], "canonical manifest audit");
   assert(canonicalAudit.status === "PASS", "canonical manifest audit must be PASS to publish");
-  assert(canonicalAudit.bindingStatus === canonicalManifest.status,
-    "canonical manifest audit binding status must equal the custody status");
+  assert(canonicalAudit.bindingStatus === "SOURCE_BOUND_MATCH",
+    "canonical source binding must remain SOURCE_BOUND_MATCH and separate from landing custody");
   assert(canonicalAudit.authorityConferred === false,
     "a public projection must never claim conferred authority");
   if (canonicalManifest.status === "CANDIDATE_NOT_LANDED") {
@@ -277,23 +440,53 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && architectureIdentity.subject_id === "target_architecture"
     && architectureIdentity.claim_plane === "TARGET", "canonical architecture answer or identity material drifted");
 
-  exactKeys(manifest.source, ["projectionRole", "sourceCommit", "graphHash", "snapshotHash", "capturedAt"], "product truth source");
-  assert(/bounded public projection of a source candidate/i.test(manifest.source.projectionRole)
-    && /not the canonical manifest at evidence pin/i.test(manifest.source.projectionRole)
-    && /served\/main receipt/i.test(manifest.source.projectionRole)
-    && /runtime telemetry/i.test(manifest.source.projectionRole)
-    && /behaviou?r evidence/i.test(manifest.source.projectionRole)
-    && /authority/i.test(manifest.source.projectionRole), "public projection role is not fail-closed");
-  assert(HEX40.test(manifest.source.sourceCommit), "product truth source commit is not exact");
-  assert(HEX64.test(manifest.source.graphHash), "product truth graph hash is not exact");
-  assert(HEX64.test(manifest.source.snapshotHash), "product truth snapshot hash is not exact");
-  assert(UTC_SECONDS.test(manifest.source.capturedAt), "product truth capture time is not canonical UTC seconds");
+  exactKeys(manifest.source, ["projectionRole", "currentSnapshotIdentity", "reviewedSemanticBaseline", "allowedSnapshotRelations"], "product truth source");
+  exactKeys(manifest.source.currentSnapshotIdentity, ["sourceCommit", "graphHash", "snapshotHash", "capturedAt"], "mutable current snapshot identity");
+  exactKeys(manifest.source.reviewedSemanticBaseline, [
+    "schema", "path", "reviewedCommit", "bytes", "sha256", "gitBlobOid", "canonicalSemanticDigest",
+    "immutableRawReference", "portableVerificationBoundary",
+  ], "reviewed semantic baseline reference");
+  assert(/Commit-bound reviewed semantics are immutable input/i.test(manifest.source.projectionRole)
+    && /mutable source snapshot may display validated topology/i.test(manifest.source.projectionRole)
+    && /cannot rewrite reviewed semantic, runtime, product, or authority claims/i.test(manifest.source.projectionRole), "public projection role is not fail-closed");
+  const snapshotIdentity = manifest.source.currentSnapshotIdentity;
+  const baselineReference = manifest.source.reviewedSemanticBaseline;
+  assert(baselineReference.schema === "hive.ecosystem.product-truth.semantic-baseline.ref.v1"
+    && baselineReference.path === "hub-assets/product-truth-semantic-baseline.v1.json"
+    && baselineReference.reviewedCommit === "b542be86ddf256bc767124f92d2b1e66c37236bb"
+    && baselineReference.bytes === 621
+    && baselineReference.sha256 === "31a060917fc5aac5dc964cd2db0465eb44881a4a2eb9b36fc3459f61bbc58155"
+    && baselineReference.gitBlobOid === "1636e500e7d5f53a1cfcda2dabf1510bbd377dbe"
+    && baselineReference.canonicalSemanticDigest === "f9022dca084c3fab57caa77a2782ac0d5a2e972d22f0f7d413464ba5ddab3b43"
+    && baselineReference.immutableRawReference === `https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/${baselineReference.reviewedCommit}/${baselineReference.path}`
+    && /not verified by the browser/i.test(baselineReference.portableVerificationBoundary),
+  "reviewed semantic baseline reference drifted");
+  assert(HEX40.test(snapshotIdentity.sourceCommit), "product truth source commit is not exact");
+  assert(HEX64.test(snapshotIdentity.graphHash), "product truth graph hash is not exact");
+  assert(HEX64.test(snapshotIdentity.snapshotHash), "product truth snapshot hash is not exact");
+  assert(UTC_SECONDS.test(snapshotIdentity.capturedAt), "product truth capture time is not canonical UTC seconds");
+  assert(snapshotIdentity.sourceCommit === "0ab04f6c19ffd41bb162bea674e77853fb27cc0e"
+    && snapshotIdentity.graphHash === "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac"
+    && snapshotIdentity.snapshotHash === "a5385342050d2458105b007cc5a03d81afd2cd15a0e805d5e5050d2d7e9dd2a1"
+    && snapshotIdentity.capturedAt === "2026-08-23T22:53:32Z", "mutable snapshot identity drifted");
+  assert(semanticBaseline && validateSemanticBaseline(semanticBaseline)
+    && manifest.source.reviewedSemanticBaseline.canonicalSemanticDigest === semanticBaseline.canonicalSemanticDigest,
+  "reviewed semantic baseline was not supplied or digest-bound", "SEMANTIC_BASELINE_NOT_BOUND");
+  assert(JSON.stringify(manifest.source.allowedSnapshotRelations) === JSON.stringify([
+    "EXACT_REVIEWED_BASELINE_MATCH", "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD", "BRIDGE_INACTIVE_LAST_GOOD_SOURCE", "SNAPSHOT_INVALID_BLOCKED",
+  ]), "closed snapshot relation set drifted");
   if (facts) {
-    assert(manifest.source.sourceCommit === facts.hiveAi?.sourceCommit, "product truth source commit is stale or mismatched");
-    assert(manifest.source.graphHash === facts.hiveAi?.graphHash, "product truth graph hash is stale or mismatched");
-    assert(manifest.source.snapshotHash === facts.snapshotHash, "product truth snapshot hash is stale or mismatched");
-    assert(manifest.source.capturedAt === facts.capturedAt, "product truth capture time is stale or mismatched");
+    const relation = classifyProductTruthSnapshot(facts, semanticBaseline);
+    assert(manifest.source.allowedSnapshotRelations.includes(relation) && relation !== "SNAPSHOT_INVALID_BLOCKED", "source snapshot relation is invalid or unclassified");
+    assert(facts.hiveAi.sourceCommit === snapshotIdentity.sourceCommit
+      && facts.hiveAi.graphHash === snapshotIdentity.graphHash
+      && facts.snapshotHash === snapshotIdentity.snapshotHash
+      && facts.capturedAt === snapshotIdentity.capturedAt,
+    "mutable Product Truth snapshot identity does not equal hub-facts", "CURRENT_SNAPSHOT_IDENTITY_MISMATCH");
     assert(facts.boundaries?.runtimeTelemetry === false && facts.galaxy?.statusProjection === "none", "source snapshot must remain non-runtime and status-neutral");
+    const organs = Object.fromEntries((facts.ecosystem?.primaryOrgans || []).map((organ) => [organ.id, organ]));
+    assert(organs.hivepoa?.effectivePublicDisposition === "HISTORICAL_QUARANTINE_PUBLIC_ACTIONS_HOLD"
+      && organs["hive-ide"]?.effectivePublicDisposition === "INTEGRATION_WAIT_NO_CURRENT_PACKAGE_OR_RUNTIME_CLAIM", "organ effective public dispositions contradict product truth");
   }
 
   exactKeys(manifest.architecture, ["label", "status", "servingBoundary"], "architecture display projection");
@@ -313,11 +506,18 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   exactKeys(manifest.boundaries.currentVsLegacy, ["status", "claim"], "current-versus-legacy boundary");
   exactKeys(manifest.boundaries.noLlmClaim, ["status", "claim", "exactBoundary"], "no-LLM boundary");
   assert(manifest.boundaries.architectureVsLive.status === "SEPARATE_PLANES"
-    && /read-only GET surfaces/i.test(manifest.boundaries.architectureVsLive.claim)
-    && /authority-bearing Mission Control mutations are credential-gated when configured/i.test(manifest.boundaries.architectureVsLive.claim)
+    && /127\.0\.0\.1:5002 is UNKNOWN_UNPROBED_HOLD/i.test(manifest.boundaries.architectureVsLive.claim)
+    && /distinct 127\.0\.0\.1:5003 service/i.test(manifest.boundaries.architectureVsLive.claim)
+    && /HOLD_NOT_INDEPENDENTLY_OBSERVED/i.test(manifest.boundaries.architectureVsLive.claim)
+    && /never aliased to the presentation route/i.test(manifest.boundaries.architectureVsLive.claim)
+    && /Chat is WAIT/i.test(manifest.boundaries.architectureVsLive.claim)
     && /require independent evidence/i.test(manifest.boundaries.architectureVsLive.claim), "architecture and local live truth were conflated");
   assert(manifest.boundaries.currentVsLegacy.status === "SUBJECT_SCOPED_DISPOSITIONS"
-    && manifest.boundaries.currentVsLegacy.claim === "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. Electron is REMOVED on the current Hive IDE trunk; the published tester.5 build predates that removal by 302 commits and still bundles Electron. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST. Tester.5 is a distinct older Hive-AI source subject; tester.6 publication is held.", "current and legacy subject dispositions drifted");
+    && /At 2026-08-23T18:46:30Z, Electron-removal and Tauri\/WebView2 source were observed on the unprotected Hive IDE candidate branch/i.test(manifest.boundaries.currentVsLegacy.claim)
+    && /Current landing and current default-tip relation are UNKNOWN\/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK/i.test(manifest.boundaries.currentVsLegacy.claim)
+    && /Tester\.5 exact package contents are UNKNOWN_NOT_INSPECTED/i.test(manifest.boundaries.currentVsLegacy.claim)
+    && /SUPERSEDED_REVOKED_UNSUPPORTED/i.test(manifest.boundaries.currentVsLegacy.claim),
+  "current and legacy subject dispositions drifted");
   assert(manifest.boundaries.noLlmClaim.status === "HOLD"
     && /does not publish a bare ['\u2018\u2019\"]no LLM/i.test(manifest.boundaries.noLlmClaim.claim)
     && /authorized external agent/i.test(manifest.boundaries.noLlmClaim.exactBoundary)
@@ -345,7 +545,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     // A recertification promise is only meaningful for a subject that was durably
     // certified: one holding a bounded validity window, or an immutable source-pinned
     // claim. Non-durable observations and no-observation subjects must NOT promise one.
-    const recertificationRequired = subject.validUntil !== null || /^IMMUTABLE_/.test(subject.freshness);
+    const recertificationRequired = subject.validUntil !== null || /^IMMUTABLE_/.test(subject.freshness) || subjectId === "windows_wsl_candidate_design";
     if (recertificationRequired) {
       assert(isPlainObject(subject.recertification), `${subjectId} is durably certified and must carry a recertification contract`);
       exactKeys(subject.recertification, ["ownerId", "procedureId", "trigger", "expiryAction"], `${subjectId} recertification`);
@@ -438,9 +638,9 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(canonicalManifest.evidenceSourceCommit === EVIDENCE_BASELINE_COMMIT
     && canonicalManifest.evidenceSourceTree === EVIDENCE_BASELINE_TREE,
     "canonical evidence baseline drifted from its independent pin");
-  assert(sourceAtlas.sourceCommit === manifest.source.sourceCommit
-    && sourceAtlas.graphHash === manifest.source.graphHash
-    && sourceAtlas.snapshotHash === manifest.source.snapshotHash
+  assert(sourceAtlas.sourceCommit === manifest.source.currentSnapshotIdentity.sourceCommit
+    && sourceAtlas.graphHash === manifest.source.currentSnapshotIdentity.graphHash
+    && sourceAtlas.snapshotHash === manifest.source.currentSnapshotIdentity.snapshotHash
     && sourceAtlas.neurons === 640
     && sourceAtlas.trainable === 448
     && sourceAtlas.deterministic === 192
@@ -448,6 +648,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && sourceAtlas.divisions === 16
     && sourceAtlas.families === 64
     && sourceAtlas.rowBackedTwitchProofs === 636
+    && sourceAtlas.evidenceRef === SOURCE_ATLAS_EVIDENCE_REF
     && /not runtime telemetry/i.test(sourceAtlas.claim), "source atlas facts or boundary drifted");
   if (facts) {
     assert(sourceAtlas.neurons === facts.hiveAi?.neurons
@@ -460,15 +661,12 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
 
   const tip = manifest.truth_subjects.tip_influence;
   exactKeys(tip, [
-    ...SUBJECT_BASE_KEYS, "runtimeEnabled", "servedInfluenceEnabled", "productLiveClaimAllowed",
-    "executeAuthorized", "permanentProductTurnWire", "safeToClaim100PercentProductLive", "reason",
+    ...SUBJECT_BASE_KEYS, "matchingRows", "effectiveDisposition", "executeAuthorized", "permanentProductTurnWire", "reason",
   ], "tip influence subject");
-  assert(tip.runtimeEnabled === 37
-    && tip.servedInfluenceEnabled === 37
-    && tip.productLiveClaimAllowed === 37
+  assert(tip.matchingRows === 37
+    && tip.effectiveDisposition === "HOLD"
     && tip.executeAuthorized === false
     && tip.permanentProductTurnWire === false
-    && tip.safeToClaim100PercentProductLive === false
     && tip.reason === "TIP_FUSE_CODE_BINDING_BYTES_MISMATCH_FAIL_CLOSED", "tip influence HOLD predicates drifted");
 
   const halos = manifest.truth_subjects.fleet_halos;
@@ -486,86 +684,88 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
 
   const released = manifest.truth_subjects.released_tester_5;
   exactKeys(released, [
-    ...SUBJECT_BASE_KEYS, "tag", "url", "releaseId", "assetId", "assetState", "responseChain", "tlsVerified",
-    "bytes", "sha256", "artifactBytesIndependentlyVerified", "artifactSha256IndependentlyVerified",
-    "authenticodeStatus", "publisherAuthenticated", "signedPublicRelease", "smartScreenWarningExpected",
-    "artifactExecuted", "packageContentsStatus", "sourceCommit", "embeddedHiveAiCommit",
-    "representsCurrentSourceAtlas", "verificationReceiptSha256",
+    ...SUBJECT_BASE_KEYS, "effectiveStatus", "activeDownloadAuthorized", "currentPackageStatus", "currentPublicRetrievability",
+    "currentInstallerUrl", "currentRuntimeStatus", "historicalEvidence",
   ], "released tester subject");
-  // Remote outer bytes are now independently verified. That upgrade is confined to the
-  // byte plane: contents, installation, execution, runtime and behavior stay unproven,
-  // and the packaged Hive-AI generation stays explicitly older than the mapped atlas.
-  assert(released.tag === "hive-ide-v0.3.0-tester.5"
+  const releasedHistorical = released.historicalEvidence;
+  exactKeys(releasedHistorical, ["outerExecutable", "receiptCustody"], "released tester historical planes");
+  const releasedOuter = releasedHistorical.outerExecutable;
+  const releasedReceipt = releasedHistorical.receiptCustody;
+  exactKeys(releasedOuter, [
+    "tag", "url", "releaseId", "assetId", "assetState", "responseChain", "tlsVerified", "bytes", "sha256",
+    "retrievabilityAtObservation",
+    "artifactBytesIndependentlyVerified", "artifactSha256IndependentlyVerified", "authenticodeStatus", "publisherAuthenticated",
+    "signedPublicRelease", "smartScreenWarningExpected", "artifactExecuted", "packageContentsStatus", "sourceCommit",
+    "embeddedHiveAiCommit", "representsReviewedSourceAtlas",
+  ], "released tester historical executable evidence");
+  exactKeys(releasedReceipt, [
+    "repository", "path", "sha256", "sha256VerificationStatus", "bytes", "gitObjectStatus",
+    "landingCommit", "landingTree", "gitBlobOid", "landingStatus", "publicRetrievability",
+  ], "released tester private receipt custody");
+  assert(released.effectiveStatus === "EVIDENCE_EXPIRED_HELD"
+    && released.activeDownloadAuthorized === false
+    && released.currentPackageStatus === "UNKNOWN"
+    && released.currentPublicRetrievability === "UNKNOWN"
+    && released.currentInstallerUrl === null
+    && released.currentRuntimeStatus === "UNKNOWN"
     && released.subject_kind === "PUBLIC_RELEASE_REMOTE_ARTIFACT_BYTES"
-    && released.claim_plane === "PUBLIC_REMOTE_BYTES_VERIFIED"
-    && released.url === "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/Hive-IDE-OneClick-Windows-x64.exe"
-    && !/tester\.6/.test(released.url)
-    && Number.isSafeInteger(released.releaseId) && released.releaseId > 0
-    && Number.isSafeInteger(released.assetId) && released.assetId > 0
-    && released.assetState === "uploaded"
-    && released.responseChain === "302_TO_200"
-    && released.tlsVerified === true
-    && released.bytes === 924864317
-    && released.sha256 === "be1795640763e99315b426757c76d655f6f07f92701d040c62f6126c1401b000", "released tester artifact identity drifted");
-  assert(released.artifactBytesIndependentlyVerified === true
-    && released.artifactSha256IndependentlyVerified === true
-    && HEX64.test(released.verificationReceiptSha256)
-    && released.evidenceRef.includes(released.verificationReceiptSha256), "independent byte verification is not bound to an exact observation receipt");
-  assert(released.authenticodeStatus === "NotSigned"
-    && released.publisherAuthenticated === false
-    && released.signedPublicRelease === false
-    && released.smartScreenWarningExpected === true, "unsigned publisher disclosure drifted");
-  assert(released.artifactExecuted === false
-    && released.packageContentsStatus === "UNKNOWN_NOT_INSPECTED", "verified outer bytes were promoted into contents or execution proof");
-  assert(released.sourceCommit === "6f7fd8a9a18c8921aa0fad1fe5b0b901bacd3383"
-    && released.embeddedHiveAiCommit === "a0fe64832edb801c9944c0923e222a64ef14e498"
-    && released.embeddedHiveAiCommit !== manifest.source.sourceCommit
-    && released.representsCurrentSourceAtlas === false, "the downloadable tester was joined to the current atlas generation");
+    && released.claim_plane === "HISTORICAL_EVIDENCE", "released tester effective disposition drifted");
+  assert(releasedOuter.tag === "hive-ide-v0.3.0-tester.5"
+    && releasedOuter.url === "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.5/Hive-IDE-OneClick-Windows-x64.exe"
+    && releasedOuter.releaseId === 366980498 && releasedOuter.assetId === 505603161
+    && releasedOuter.assetState === "uploaded" && releasedOuter.responseChain === "302_TO_200"
+    && releasedOuter.tlsVerified === true && releasedOuter.bytes === 924864317
+    && releasedOuter.sha256 === "be1795640763e99315b426757c76d655f6f07f92701d040c62f6126c1401b000"
+    && releasedOuter.retrievabilityAtObservation === "REMOTE_ASSET_RETRIEVED_OVER_HTTPS"
+    && releasedOuter.artifactBytesIndependentlyVerified === true && releasedOuter.artifactSha256IndependentlyVerified === true
+    && releasedOuter.authenticodeStatus === "NotSigned" && releasedOuter.publisherAuthenticated === false
+    && releasedOuter.signedPublicRelease === false && releasedOuter.smartScreenWarningExpected === true
+    && releasedOuter.artifactExecuted === false && releasedOuter.packageContentsStatus === "UNKNOWN_NOT_INSPECTED"
+    && releasedOuter.sourceCommit === "6f7fd8a9a18c8921aa0fad1fe5b0b901bacd3383"
+    && releasedOuter.embeddedHiveAiCommit === "a0fe64832edb801c9944c0923e222a64ef14e498"
+    && releasedOuter.representsReviewedSourceAtlas === false
+    && releasedReceipt.repository === "Dhenz14/Hive-AI"
+    && releasedReceipt.path === "tests/fixtures/constellation_public_truth/tester5_remote_bytes_observation_v1.json"
+    && HEX64.test(releasedReceipt.sha256)
+    && releasedReceipt.sha256VerificationStatus === "DECLARED_NOT_REVERIFIED_IN_SITE_CUSTODY"
+    && releasedReceipt.bytes === null
+    && releasedReceipt.gitObjectStatus === "UNKNOWN_NOT_AVAILABLE_IN_SITE_CUSTODY"
+    && releasedReceipt.landingCommit === null
+    && releasedReceipt.landingTree === null
+    && releasedReceipt.gitBlobOid === null
+    && releasedReceipt.landingStatus === "UNKNOWN_NOT_VERIFIED_FROM_PUBLIC_SITE_CUSTODY"
+    && releasedReceipt.publicRetrievability === "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
+    && released.evidenceRef.includes(releasedReceipt.sha256), "released tester historical identity drifted");
   assert(Date.parse(released.validUntil) > Date.parse(released.verifiedAt)
     && /raw HTTP bytes were not retained/i.test(released.evidence)
-    && /independent bounded GitHub API, TLS, full-body remote download/i.test(released.evidence)
-    && /Authenticode is NotSigned/i.test(released.claim)
-    && /Package contents, installation, execution, runtime, and behavior remain unproven/i.test(released.claim)
-    && /declared embedded Hive-AI source is older than the atlas/i.test(released.claim), "released tester byte verification lost its non-proof boundary");
+    && /historical independent bounded GitHub API, TLS, full-body remote download/i.test(released.evidence)
+    && /That observation expired/i.test(released.claim)
+    && /current package identity, retrievability, installation, execution, runtime, and behavior are UNKNOWN or HOLD/i.test(released.claim), "released tester expired boundary drifted");
   if (latest) {
-    // v2 feed: publisher and byte-observation facts moved into their own planes.
-    assert(released.url === latest.installerUrl
-      && released.bytes === latest.installerSizeBytes
-      && released.sha256 === latest.installerSha256
-      && released.sourceCommit === latest.sourceCommit
-      && released.embeddedHiveAiCommit === latest.embeddedHiveAiCommit
-      && released.tag === latest.releaseTag, "released tester subject is stale against latest.json");
-    assert(released.publisherAuthenticated === latest.publisherAuthentication?.publisherAuthenticated
-      && released.smartScreenWarningExpected === latest.publisherAuthentication?.smartScreenWarningExpected
-      && released.authenticodeStatus === latest.publisherAuthentication?.authenticodeStatus, "released tester publisher disclosure disagrees with latest.json");
-    const observation = latest.outerExecutableObservation;
-    assert(isPlainObject(observation)
-      && observation.status === "PUBLIC_REMOTE_BYTES_VERIFIED"
-      && observation.releaseId === released.releaseId
-      && observation.assetId === released.assetId
-      && observation.assetState === released.assetState
-      && observation.responseChain === released.responseChain
-      && observation.tlsVerified === released.tlsVerified
-      && observation.fullBodyDownloaded === true
-      && observation.exactByteCountMatched === released.artifactBytesIndependentlyVerified
-      && observation.exactSha256Matched === released.artifactSha256IndependentlyVerified
-      && observation.evidenceReceiptSha256 === released.verificationReceiptSha256
-      && observation.validUntilUtc === released.validUntil, "released tester byte observation disagrees with latest.json");
-    // The receipt lives in an unlanded Hive-AI candidate; the feed must say so rather
-    // than implying a landed, publicly retrievable proof.
-    assert(observation.evidenceReceiptAvailability === "SOURCE_CANDIDATE_NOT_LANDED"
-      && HEX40.test(observation.evidenceReceiptGitBlobOid ?? "")
-      && observation.rawHttpRetained === false
-      && observation.independentlySigned === false, "byte-observation receipt custody was overstated");
-    assert(latest.downloadDisposition?.status === "HOLD"
-      && latest.downloadDisposition?.activeDownloadAuthorized === false, "verified bytes were promoted into an authorized download");
+    assert(latest.schema === "hive.ide.public_release_latest.v3"
+      && latest.effectiveDisposition?.effectiveStatus === released.effectiveStatus
+      && latest.effectiveDisposition?.activeDownloadAuthorized === false
+      && latest.effectiveDisposition?.currentPackageStatus === "UNKNOWN"
+      && latest.effectiveDisposition?.currentPublicRetrievability === "UNKNOWN"
+      && latest.effectiveDisposition?.currentInstallerUrl === null
+      && latest.historicalEvidence?.outerExecutable?.sha256 === releasedOuter.sha256
+      && latest.historicalEvidence?.outerExecutable?.retrievabilityAtObservation === releasedOuter.retrievabilityAtObservation
+      && latest.historicalEvidence?.receiptCustody?.sha256 === releasedReceipt.sha256
+      && latest.historicalEvidence?.receiptCustody?.landingStatus === releasedReceipt.landingStatus
+      && latest.historicalEvidence?.release?.sourceCommit === releasedOuter.sourceCommit
+      && latest.historicalEvidence?.release?.embeddedHiveAiCommit === releasedOuter.embeddedHiveAiCommit,
+    "released tester subject disagrees with latest v3 effective/historical planes");
   }
   if (releaseManifest) {
-    // v2 truth manifest: source identities moved under sourceDeclarations.
-    assert(releaseManifest.schema === "hive.ide.public_release_truth_manifest.v2", "release truth manifest schema drifted");
-    assert(released.embeddedHiveAiCommit === releaseManifest.sourceDeclarations?.hiveAi?.commit
-      && released.sourceCommit === releaseManifest.sourceDeclarations?.hiveIde?.commit, "released tester embedded Hive-AI identity drifted");
-    assert(releaseManifest.downloadDisposition?.status === "HOLD", "release truth manifest authorized a held download");
+    assert(releaseManifest.schema === "hive.ide.public_release_truth_manifest.v3"
+      && releaseManifest.effectiveDisposition?.effectiveStatus === "EVIDENCE_EXPIRED_HELD"
+      && releaseManifest.effectiveDisposition?.currentInstallerUrl === null
+      && releaseManifest.historicalEvidence?.outerExecutable?.retrievabilityAtObservation === releasedOuter.retrievabilityAtObservation
+      && releaseManifest.historicalEvidence?.receiptCustody?.sha256 === releasedReceipt.sha256
+      && releaseManifest.historicalEvidence?.sourceDeclarations?.embeddedHiveAiCommit === releasedOuter.embeddedHiveAiCommit
+      && releaseManifest.historicalEvidence?.sourceDeclarations?.hiveIdeCommit === releasedOuter.sourceCommit
+      && releaseManifest.downloadDisposition?.status === "HOLD"
+      && releaseManifest.downloadDisposition?.activeDownloadAuthorized === false, "release truth manifest effective/historical planes drifted");
   }
 
   // ---- tester.6: held after a real readback, never presented as public ----
@@ -581,21 +781,28 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && tester6.signatureStatus === "UNKNOWN"
     && HEX64.test(tester6.readbackReceiptSha256)
     && tester6.evidenceRef.includes(tester6.readbackReceiptSha256)
-    && /held and not public at this readback/i.test(tester6.claim)
-    && /canonical mirrors continued to name tester\.5/i.test(tester6.claim), "tester.6 was promoted out of its held, unpublished state");
-  assert(tester6.readbackReceiptSha256 !== released.verificationReceiptSha256,
+    && /At 2026-08-23T19:37:31\.6497275Z/i.test(tester6.claim)
+    && /That observation expired/i.test(tester6.claim)
+    && /current publication and absence are UNKNOWN/i.test(tester6.claim), "tester.6 expired readback was promoted into a current claim");
+  assert(tester6.readbackReceiptSha256 !== releasedReceipt.sha256,
     "tester.5 and tester.6 must not share one observation receipt");
 
-  // ---- Windows + WSL: candidate design only, explicitly non-durable ----
+  // ---- Hive IDE Tauri source: candidate branch only, explicitly non-durable ----
   const wsl = manifest.truth_subjects.windows_wsl_candidate_design;
   exactKeys(wsl, [
     ...SUBJECT_BASE_KEYS, "ownerRepository", "repositoryRef", "repositoryCommit", "designTopology", "evidencePersistence",
   ], "windows/WSL candidate design subject");
-  assert(wsl.ownerRepository === "Hive IDE"
+  assert(wsl.ownerRepository === "Dhenz14/hive-ide"
     && typeof wsl.repositoryRef === "string" && wsl.repositoryRef.trim()
-    && HEX40.test(wsl.repositoryCommit)
+    && wsl.repositoryCommit === "f459e85cc71801afbed4a8579b31133b9ff58edd"
     && wsl.evidencePersistence === "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT"
-    && /candidate design, not landing, installation, or runtime proof/i.test(wsl.claim), "Windows/WSL candidate design was promoted beyond a non-durable observation");
+    && /^At 2026-08-23T18:46:30Z,/.test(wsl.claim)
+    && /at that time it was observed 92 commits ahead and 0 behind the then-observed default tip 41df9be/i.test(wsl.claim)
+    && /Current landing and current default-tip relation are UNKNOWN and HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK/i.test(wsl.claim)
+    && !/remains unlanded|default-branch tip .* does not contain|current default tip/i.test(wsl.claim)
+    && /not tester\.5 package, installation, or runtime proof/i.test(wsl.claim)
+    && wsl.recertification?.expiryAction === "HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK",
+  "Hive IDE candidate source observation was promoted beyond its evidence");
 
   // ---- platform publications with no admissible observation ----
   const linuxPublication = manifest.truth_subjects.linux_hive_ide_publication;
@@ -636,7 +843,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   exactKeys(manifest.relations.atlasTester, ["status", "atlasSourceCommit", "testerEmbeddedHiveAiCommit", "claim"], "atlas-tester relation");
   assert(manifest.relations.atlasTester.status === "MISMATCH"
     && manifest.relations.atlasTester.atlasSourceCommit === sourceAtlas.sourceCommit
-    && manifest.relations.atlasTester.testerEmbeddedHiveAiCommit === released.embeddedHiveAiCommit
+    && manifest.relations.atlasTester.testerEmbeddedHiveAiCommit === releasedOuter.embeddedHiveAiCommit
     && manifest.relations.atlasTester.atlasSourceCommit !== manifest.relations.atlasTester.testerEmbeddedHiveAiCommit
     && /(?:must|may) not be presented as realizing (?:it|that Constellation)/i.test(manifest.relations.atlasTester.claim), "atlas-tester generation mismatch was hidden or misclassified");
 
@@ -681,23 +888,22 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && /not.*product-live authority/i.test(definitions.twitch.boundary), "Twitch definition was conflated with current liveness");
   assert(/not one monolithic general model/i.test(definitions.hivebrain.boundary)
     && /not proof that an installed runtime performed the target path/i.test(definitions.hivebrain.boundary), "HiveBrain definition was collapsed into a single model or an installed-runtime claim");
-  assert(/(?:is )?not brain authority/i.test(definitions["living-anatomy"].boundary)
-    && /authored geometry does not become runtime proof/i.test(definitions["living-anatomy"].boundary), "Living Anatomy was granted brain authority");
+  assert(/No Living Anatomy runtime is attested/i.test(definitions["living-anatomy"].boundary)
+    && /(?:is )?not brain authority/i.test(definitions["living-anatomy"].boundary)
+    && /authored geometry is not runtime proof/i.test(definitions["living-anatomy"].boundary), "Living Anatomy was granted present runtime or brain authority");
 
   const registry = manifest.registryClaimCut;
   exactKeys(registry, [
-    "status", "sourceCommit", "derivedAt", "authority", "runtimeEnabled", "servedInfluenceEnabled", "productLiveClaimAllowed",
-    "executeAuthorized", "permanentProductTurnWire", "safeToClaim100PercentProductLive", "reason", "boundary",
+    "status", "sourceCommit", "derivedAt", "authority", "matchingRows", "effectiveDisposition",
+    "executeAuthorized", "permanentProductTurnWire", "reason", "boundary",
   ], "registry claim cut");
   assert(registry.status === "HOLD"
-    && registry.sourceCommit === manifest.source.sourceCommit
-    && UTC_SECONDS.test(registry.derivedAt)
-    && registry.runtimeEnabled === tip.runtimeEnabled
-    && registry.servedInfluenceEnabled === tip.servedInfluenceEnabled
-    && registry.productLiveClaimAllowed === tip.productLiveClaimAllowed
+    && registry.sourceCommit === EVIDENCE_BASELINE_COMMIT
+    && registry.derivedAt === "2026-08-23T18:46:30Z"
+    && registry.matchingRows === tip.matchingRows
+    && registry.effectiveDisposition === "HOLD"
     && registry.executeAuthorized === false
     && registry.permanentProductTurnWire === false
-    && registry.safeToClaim100PercentProductLive === false
     && registry.reason === tip.reason
     && /not observation of an installed or running process/i.test(registry.boundary), "registry fixed-cut HOLD was promoted or mismatched");
 
@@ -737,18 +943,24 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   const platforms = Object.fromEntries(manifest.platforms.map((entry) => [entry.id, entry]));
 
   assert(platforms["windows-x64-remote"].subjectId === "released_tester_5"
-    && platforms["windows-x64-remote"].supportStatus === "PUBLIC_RELEASE_AVAILABLE_UNSIGNED"
-    && platforms["windows-x64-remote"].testStatus === "REMOTE_BYTES_VERIFIED_NOT_EXECUTED"
-    && platforms["windows-x64-remote"].signingStatus === "AUTHENTICODE_NOT_SIGNED"
-    && /Contents, install, execution, runtime, and behavior remain unproven/i.test(platforms["windows-x64-remote"].evidence)
-    && /embedded Hive-AI source is older than the atlas/i.test(platforms["windows-x64-remote"].evidence), "Windows tester row was promoted past verified outer bytes");
+    && platforms["windows-x64-remote"].supportStatus === "EVIDENCE_EXPIRED_HELD"
+    && platforms["windows-x64-remote"].testStatus === "HOLD_NOT_AUTHORIZED"
+    && platforms["windows-x64-remote"].packageStatus === "UNKNOWN"
+    && platforms["windows-x64-remote"].signingStatus === "HISTORICAL_AUTHENTICODE_NOT_SIGNED"
+    && /That evidence expired/i.test(platforms["windows-x64-remote"].evidence)
+    && /current retrievability, contents, install, execution, runtime, and behavior are UNKNOWN or HOLD/i.test(platforms["windows-x64-remote"].evidence), "Windows tester row was promoted past expired historical evidence");
 
   assert(platforms["windows-wsl-design"].subjectId === "windows_wsl_candidate_design"
-    && platforms["windows-wsl-design"].supportStatus === "DECLARED_INSIDE_WINDOWS_TESTER_PATH"
-    && platforms["windows-wsl-design"].testStatus === "NOT_A_SEPARATE_PUBLIC_PACKAGE"
-    && platforms["windows-wsl-design"].packageStatus === "BUNDLED_TOPOLOGY_NOT_PLATFORM_ARTIFACT"
+    && platforms["windows-wsl-design"].supportStatus === "HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK"
+    && platforms["windows-wsl-design"].testStatus === "SOURCE_OBSERVED_NOT_PACKAGE_INSPECTED"
+    && platforms["windows-wsl-design"].packageStatus === "TESTER5_UNKNOWN_NOT_INSPECTED"
     && platforms["windows-wsl-design"].signingStatus === "NOT_APPLICABLE"
-    && /not durable custody, a second package, landing, installation, or runtime proof/i.test(platforms["windows-wsl-design"].evidence), "Windows+WSL row was promoted into a separate package or runtime claim");
+    && /At 2026-08-23T18:46:30Z/i.test(platforms["windows-wsl-design"].evidence)
+    && /then-observed default tip 41df9be/i.test(platforms["windows-wsl-design"].evidence)
+    && /Current landing and current default-tip relation are UNKNOWN\/HOLD pending fresh owner-repository readback/i.test(platforms["windows-wsl-design"].evidence)
+    && !/remains unlanded|default-branch tip .* does not contain|current default tip/i.test(platforms["windows-wsl-design"].evidence)
+    && /Tester\.5 contents are UNKNOWN_NOT_INSPECTED/i.test(platforms["windows-wsl-design"].evidence),
+  "Hive IDE candidate source observation was promoted into default landing or package contents");
 
   // The two Linux rows are the whole point of the split: a source path is not a package.
   assert(platforms["linux-source"].subjectId === "source_atlas"
@@ -762,11 +974,16 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(platforms["macos-publication"].subjectId === "macos_hive_ide_publication", "macOS row is not bound to the macOS publication subject");
 
   exactKeys(manifest.integrityBoundary, [
-    "manifestSelfHashProvesSemanticTruth", "authorityConferred", "sourceCandidateNotLanded", "claim",
+    "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "manifestSelfHashProvesSemanticTruth", "authorityConferred", "claim",
   ], "manifest integrity boundary");
-  assert(manifest.integrityBoundary.manifestSelfHashProvesSemanticTruth === false
+  assert(manifest.integrityBoundary.integrityClass === "SELF_BOUND_INTEGRITY"
+    && manifest.integrityBoundary.independentTrustRoot === false
+    && manifest.integrityBoundary.authorizedPublicationAttested === false
+    && manifest.integrityBoundary.manifestSelfHashProvesSemanticTruth === false
     && manifest.integrityBoundary.authorityConferred === false
-    && manifest.integrityBoundary.sourceCandidateNotLanded === (canonicalManifest.status === "CANDIDATE_NOT_LANDED")
+    && /SELF_BOUND_INTEGRITY/.test(manifest.integrityBoundary.claim)
+    && /does not establish an INDEPENDENT_TRUST_ROOT/.test(manifest.integrityBoundary.claim)
+    && /does not .*attest authorized publication/i.test(manifest.integrityBoundary.claim)
     && /not a detached signature/i.test(manifest.integrityBoundary.claim)
     && /served\/main receipt/i.test(manifest.integrityBoundary.claim)
     && /runtime attestation/i.test(manifest.integrityBoundary.claim)
@@ -781,25 +998,8 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(HEX64.test(manifest.bindingDigest.value), "product truth digest is not an exact SHA-256");
   const { bindingDigest, ...digestBody } = manifest;
   assert(manifest.bindingDigest.value === sha256(canonicalJson(digestBody)), "product truth full-projection digest mismatch");
-  if (canonicalManifest.status === "CANDIDATE_NOT_LANDED") {
-    assert(manifest.bindingDigest.value === EXPECTED_CANDIDATE_BINDING_DIGEST, "candidate product truth projection drifted from the independently frozen full digest");
-  } else {
-    const candidateBaseline = structuredClone(manifest);
-    candidateBaseline.canonicalManifest.status = "CANDIDATE_NOT_LANDED";
-    candidateBaseline.canonicalManifest.landedCommit = null;
-    candidateBaseline.canonicalManifest.landedTree = null;
-    candidateBaseline.canonicalManifest.landedSha256 = null;
-    candidateBaseline.canonicalManifest.landedBytes = null;
-    candidateBaseline.canonicalManifest.landedGitBlobOid = null;
-    candidateBaseline.canonicalManifest.audit.bindingStatus = "CANDIDATE_NOT_LANDED";
-    candidateBaseline.integrityBoundary.sourceCandidateNotLanded = true;
-    candidateBaseline.relations.candidateServed.status = "CANDIDATE_NOT_LANDED";
-    candidateBaseline.relations.candidateServed.claim = CANDIDATE_SERVED_CLAIM;
-    candidateBaseline.truth_subjects.target_architecture.evidence = CANDIDATE_TARGET_EVIDENCE;
-    candidateBaseline.truth_subjects.target_architecture.evidenceRef = CANDIDATE_TARGET_EVIDENCE_REF;
-    delete candidateBaseline.bindingDigest;
-    assert(sha256(canonicalJson(candidateBaseline)) === EXPECTED_CANDIDATE_BINDING_DIGEST, "landed projection contains drift beyond the independently expected landing reconciliation");
-  }
+  assert(manifest.evidenceLedger.headEntryId === "current-public-unknown-hold-after-evidence-expiry-v2",
+    "current projection is not bound to the versioned append-only ledger-model head");
 
   const serialized = JSON.stringify(manifest);
   assert(!/releases\/download\/[^"']*tester\.6/i.test(serialized), "unpublished tester.6 URL leaked into product truth");
@@ -812,8 +1012,12 @@ function expectReject(label, manifest, context, mutate) {
   mutate(fixture);
   try {
     validateProductTruth(fixture, context);
-  } catch {
-    return { label, passed: true };
+  } catch (error) {
+    return {
+      label,
+      passed: error instanceof ProductTruthContractError && error.code === "PRODUCT_TRUTH_CONTRACT_VIOLATION",
+      observedCode: error?.code ?? error?.name ?? typeof error,
+    };
   }
   return { label, passed: false };
 }
@@ -837,15 +1041,28 @@ function validateLandingExpectation(expectedLanding) {
 export function projectVerifiedLanding(manifest, expectedLanding) {
   const landing = validateLandingExpectation(expectedLanding);
   const projected = structuredClone(manifest);
+  if (projected.canonicalManifest?.status === "LANDED_HASH_VERIFIED") {
+    assert(projected.canonicalManifest.landingStatus === "LANDED_HASH_VERIFIED"
+      && projected.canonicalManifest.publicRetrievability === "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
+      && projected.canonicalManifest.landedCommit === landing.commit
+      && projected.canonicalManifest.landedTree === landing.tree
+      && projected.canonicalManifest.landedSha256 === landing.sha256
+      && projected.canonicalManifest.landedBytes === landing.bytes
+      && projected.canonicalManifest.landedGitBlobOid === landing.blobOid
+      && projected.canonicalManifest.audit.bindingStatus === "SOURCE_BOUND_MATCH",
+    "existing landed projection does not match the exact external landing expectation");
+    return projected;
+  }
   assert(projected.canonicalManifest?.status === "CANDIDATE_NOT_LANDED", "only a candidate projection can be advanced in memory");
   projected.canonicalManifest.status = "LANDED_HASH_VERIFIED";
+  projected.canonicalManifest.landingStatus = "LANDED_HASH_VERIFIED";
+  projected.canonicalManifest.publicRetrievability = "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE";
   projected.canonicalManifest.landedCommit = landing.commit;
   projected.canonicalManifest.landedTree = landing.tree;
   projected.canonicalManifest.landedSha256 = landing.sha256;
   projected.canonicalManifest.landedBytes = landing.bytes;
   projected.canonicalManifest.landedGitBlobOid = landing.blobOid;
-  projected.canonicalManifest.audit.bindingStatus = "LANDED_HASH_VERIFIED";
-  projected.integrityBoundary.sourceCandidateNotLanded = false;
+  projected.canonicalManifest.audit.bindingStatus = "SOURCE_BOUND_MATCH";
   projected.relations.candidateServed.status = "LANDED_HASH_VERIFIED";
   projected.relations.candidateServed.claim = "The canonical source candidate is landed and hash-verified at the stated commit. No installed-runtime, behavior, authority, or product-live claim is allowed.";
   const target = projected.truth_subjects?.target_architecture;
@@ -865,8 +1082,39 @@ function expectRejectRebound(label, manifest, context, mutate) {
   });
 }
 
+function expectStrictJsonReject(label, source, expectedCode) {
+  try {
+    parseJsonStrict(source, `${label} fixture`);
+  } catch (error) {
+    return {
+      label,
+      passed: error instanceof StrictJsonError && error.code === expectedCode,
+      observedCode: error?.code ?? error?.name ?? typeof error,
+    };
+  }
+  return { label, passed: false };
+}
+
 export function runProductTruthSelfTests(manifest, context) {
   validateProductTruth(manifest, context);
+  const exactSemanticRelation = classifyProductTruthSemanticRelation(context.facts, context.semanticBaseline);
+  const effectiveRelation = classifyProductTruthSnapshot(context.facts, context.semanticBaseline);
+  const newSourceSnapshot = structuredClone(context.facts);
+  newSourceSnapshot.hiveAi.sourceCommit = "1".repeat(40);
+  const newRelation = classifyProductTruthSnapshot(newSourceSnapshot, context.semanticBaseline);
+  const inactiveSnapshot = structuredClone(context.facts);
+  inactiveSnapshot.refresh.latestRefreshObservation = {
+    observedAt: "2026-08-25T01:10:00Z",
+    disposition: "REFRESH_FAILED_LAST_GOOD_SOURCE_HELD",
+    reasonCode: "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
+    automaticBridgeConfiguredAtObservation: false,
+    executionObservationStatus: "NOT_ATTESTED",
+    currentOperationalStatus: "UNKNOWN",
+  };
+  const inactiveRelation = classifyProductTruthSnapshot(inactiveSnapshot, context.semanticBaseline);
+  const manualNewSnapshot = structuredClone(newSourceSnapshot);
+  manualNewSnapshot.refresh = structuredClone(inactiveSnapshot.refresh);
+  const manualNewRelation = classifyProductTruthSnapshot(manualNewSnapshot, context.semanticBaseline);
   const simulatedLandingExpectation = { commit: "1".repeat(40), tree: "3".repeat(40), sha256: "2".repeat(64), bytes: manifest.canonicalManifest.candidateBytes + 12, blobOid: "4".repeat(40) };
   let simulatedLandingPassed = false;
   if (manifest.canonicalManifest.status === "CANDIDATE_NOT_LANDED") {
@@ -882,6 +1130,12 @@ export function runProductTruthSelfTests(manifest, context) {
   }
   const tests = [
     { label: "valid_full_projection", passed: true },
+    { label: "exact_reviewed_semantic_baseline_relation", passed: exactSemanticRelation === "EXACT_REVIEWED_BASELINE_MATCH" },
+    { label: "checked_in_retired_bridge_effective_relation", passed: effectiveRelation === "BRIDGE_INACTIVE_LAST_GOOD_SOURCE" },
+    { label: "new_source_snapshot_unreviewed_hold_relation", passed: newRelation === "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD" },
+    { label: "manual_new_source_snapshot_unreviewed_hold_precedence", passed: manualNewRelation === "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD" },
+    { label: "inactive_bridge_last_good_relation", passed: inactiveRelation === "BRIDGE_INACTIVE_LAST_GOOD_SOURCE" },
+    { label: "invalid_snapshot_blocked_relation", passed: classifyProductTruthSnapshot({}, context.semanticBaseline) === "SNAPSHOT_INVALID_BLOCKED" },
     { label: "externally_expected_landing_projection", passed: simulatedLandingPassed },
     expectReject("full_digest_claim_tamper_refused", manifest, context, (value) => { value.truth_subjects.target_architecture.claim += " tampered"; }),
     expectReject("full_digest_platform_tamper_refused", manifest, context, (value) => { value.platforms.find((entry) => entry.id === "linux-source").evidence += " tampered"; }),
@@ -899,9 +1153,16 @@ export function runProductTruthSelfTests(manifest, context) {
       value.canonicalManifest.landedSha256 = "2".repeat(64);
       value.canonicalManifest.landedBytes = value.canonicalManifest.candidateBytes;
     }),
-    expectRejectRebound("stale_source_commit_refused", manifest, context, (value) => { value.source.sourceCommit = "0".repeat(40); }),
-    expectRejectRebound("stale_capture_refused", manifest, context, (value) => { value.source.capturedAt = "2026-08-22T04:59:30Z"; }),
-    expectRejectRebound("graph_mismatch_refused", manifest, context, (value) => { value.source.graphHash = "0".repeat(64); }),
+    expectRejectRebound("stale_source_commit_refused", manifest, context, (value) => { value.source.currentSnapshotIdentity.sourceCommit = "0".repeat(40); }),
+    expectRejectRebound("stale_capture_refused", manifest, context, (value) => { value.source.currentSnapshotIdentity.capturedAt = "2026-08-22T04:59:30Z"; }),
+    expectRejectRebound("ide_present_tense_remains_unlanded_refused", manifest, context, (value) => { value.truth_subjects.windows_wsl_candidate_design.claim = "Electron removal remains unlanded on the default branch."; }),
+    expectRejectRebound("ide_current_default_tip_assertion_refused", manifest, context, (value) => { value.truth_subjects.windows_wsl_candidate_design.claim = "The current default tip does not contain the candidate."; }),
+    expectRejectRebound("graph_mismatch_refused", manifest, context, (value) => { value.source.currentSnapshotIdentity.graphHash = "0".repeat(64); }),
+    expectRejectRebound("reviewed_commit_refused", manifest, context, (value) => { value.source.reviewedSemanticBaseline.reviewedCommit = "0".repeat(40); }),
+    expectRejectRebound("reviewed_path_refused", manifest, context, (value) => { value.source.reviewedSemanticBaseline.path = "hub-assets/hub-facts.json"; }),
+    expectRejectRebound("reviewed_blob_refused", manifest, context, (value) => { value.source.reviewedSemanticBaseline.gitBlobOid = "0".repeat(40); }),
+    expectRejectRebound("reviewed_hash_refused", manifest, context, (value) => { value.source.reviewedSemanticBaseline.sha256 = "0".repeat(64); }),
+    expectRejectRebound("reviewed_semantic_digest_refused", manifest, context, (value) => { value.source.reviewedSemanticBaseline.canonicalSemanticDigest = "0".repeat(64); }),
     expectRejectRebound("global_product_live_conflation_refused", manifest, context, (value) => { value.truth_subjects.installed_runtime.subject_status = "PRODUCT_LIVE"; }),
     expectRejectRebound("rehashed_false_target_claim_refused", manifest, context, (value) => { value.truth_subjects.target_architecture.claim = "Everything is product-live."; }),
     expectRejectRebound("rehashed_unfrozen_subject_evidence_ref_refused", manifest, context, (value) => { value.truth_subjects.source_atlas.evidenceRef = "self-attested"; }),
@@ -924,11 +1185,13 @@ export function runProductTruthSelfTests(manifest, context) {
       value.truth_subjects.candidate_tester_6_publication.githubReleaseApiStatus = 200;
       value.truth_subjects.candidate_tester_6_publication.url = "https://github.com/Dhenz14/Dhenz14.github.io/releases/download/hive-ide-v0.3.0-tester.6/Hive-IDE-OneClick-Windows-x64.exe";
     }),
-    expectRejectRebound("tester6_url_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.url = value.truth_subjects.released_tester_5.url.replace("tester.5", "tester.6"); }),
-    expectRejectRebound("tester6_receipt_reuse_refused", manifest, context, (value) => { value.truth_subjects.candidate_tester_6_publication.readbackReceiptSha256 = value.truth_subjects.released_tester_5.verificationReceiptSha256; }),
-    expectRejectRebound("tester5_execution_promotion_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.artifactExecuted = true; }),
-    expectRejectRebound("tester5_contents_promotion_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.packageContentsStatus = "VERIFIED"; }),
-    expectRejectRebound("tester5_atlas_join_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.representsCurrentSourceAtlas = true; }),
+    expectRejectRebound("tester6_url_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.outerExecutable.url = value.truth_subjects.released_tester_5.historicalEvidence.outerExecutable.url.replace("tester.5", "tester.6"); }),
+    expectRejectRebound("tester6_receipt_reuse_refused", manifest, context, (value) => { value.truth_subjects.candidate_tester_6_publication.readbackReceiptSha256 = value.truth_subjects.released_tester_5.historicalEvidence.receiptCustody.sha256; }),
+    expectRejectRebound("tester5_execution_promotion_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.outerExecutable.artifactExecuted = true; }),
+    expectRejectRebound("tester5_contents_promotion_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.currentPackageStatus = "VERIFIED"; }),
+    expectRejectRebound("tester5_atlas_join_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.outerExecutable.representsReviewedSourceAtlas = true; }),
+    expectRejectRebound("tester5_receipt_mixed_into_executable_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.outerExecutable.receiptSha256 = value.truth_subjects.released_tester_5.historicalEvidence.receiptCustody.sha256; }),
+    expectRejectRebound("tester5_executable_retrievability_mixed_with_private_receipt_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.outerExecutable.retrievabilityAtObservation = "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"; }),
     expectRejectRebound("macos_nonexistence_claim_refused", manifest, context, (value) => { value.truth_subjects.macos_hive_ide_publication.claim = "macOS is not supported and no package exists."; }),
     expectRejectRebound("linux_publication_invention_refused", manifest, context, (value) => {
       const row = value.platforms.find((entry) => entry.id === "linux-publication");
@@ -940,6 +1203,8 @@ export function runProductTruthSelfTests(manifest, context) {
     }),
     expectRejectRebound("wsl_durability_promotion_refused", manifest, context, (value) => { value.truth_subjects.windows_wsl_candidate_design.evidencePersistence = "SOURCE_CONTROLLED_RECEIPT"; }),
     expectRejectRebound("conferred_authority_refused", manifest, context, (value) => { value.integrityBoundary.authorityConferred = true; }),
+    expectRejectRebound("independent_trust_root_invention_refused", manifest, context, (value) => { value.integrityBoundary.independentTrustRoot = true; }),
+    expectRejectRebound("authorized_publication_invention_refused", manifest, context, (value) => { value.integrityBoundary.authorizedPublicationAttested = true; }),
     expectRejectRebound("canonical_audit_conferral_refused", manifest, context, (value) => { value.canonicalManifest.audit.authorityConferred = true; }),
     expectRejectRebound("canonical_audit_binding_split_refused", manifest, context, (value) => {
       value.canonicalManifest.audit.bindingStatus = value.canonicalManifest.status === "CANDIDATE_NOT_LANDED"
@@ -951,14 +1216,14 @@ export function runProductTruthSelfTests(manifest, context) {
     }),
     expectRejectRebound("malformed_release_expiry_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.validUntil = "never"; }),
     expectRejectRebound("non_advancing_release_expiry_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.validUntil = value.truth_subjects.released_tester_5.verifiedAt; }),
-    expectRejectRebound("signed_replay_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.publisherAuthenticated = true; }),
-    expectRejectRebound("release_byte_count_mismatch_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.bytes += 1; }),
-    expectRejectRebound("release_digest_mismatch_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.sha256 = "0".repeat(64); }),
+    expectRejectRebound("signed_replay_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.outerExecutable.publisherAuthenticated = true; }),
+    expectRejectRebound("release_byte_count_mismatch_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.outerExecutable.bytes += 1; }),
+    expectRejectRebound("release_digest_mismatch_refused", manifest, context, (value) => { value.truth_subjects.released_tester_5.historicalEvidence.outerExecutable.sha256 = "0".repeat(64); }),
     expectRejectRebound("metadata_promoted_to_remote_byte_verification_refused", manifest, context, (value) => {
       value.truth_subjects.released_tester_5.evidence = "Remote executable independently downloaded and hashed; PASS.";
       value.truth_subjects.released_tester_5.claim = "Public tester.5 executable bytes are verified and functionally certified.";
-      value.truth_subjects.released_tester_5.artifact_bytes_independently_verified = true;
-      value.truth_subjects.released_tester_5.artifact_sha256_independently_verified = true;
+      value.truth_subjects.released_tester_5.historicalEvidence.artifact_bytes_independently_verified = true;
+      value.truth_subjects.released_tester_5.historicalEvidence.artifact_sha256_independently_verified = true;
     }),
     expectRejectRebound("windows_metadata_promoted_to_verified_artifact_refused", manifest, context, (value) => {
       const windows = value.platforms.find((entry) => entry.id === "windows-x64-remote");
@@ -979,50 +1244,52 @@ export function runProductTruthSelfTests(manifest, context) {
     expectReject("digest_tamper_refused", manifest, context, (value) => { value.bindingDigest.value = "0".repeat(64); }),
     { label: "release_after_expiry_is_held", passed: releasedTesterAvailability(manifest, Date.parse(manifest.truth_subjects.released_tester_5.validUntil) + 1) === "PUBLICATION_FRESHNESS_EXPIRED_HELD" },
   ];
-  try {
-    parseJsonStrict('{"schema":"first","schema":"second"}', "duplicate-key fixture");
-    tests.push({ label: "duplicate_json_key_refused", passed: false });
-  } catch {
-    tests.push({ label: "duplicate_json_key_refused", passed: true });
-  }
-  try {
-    parseJsonStrict('{"truth_subjects":{"released_tester":{"claim":"first","claim":"second"}}}', "nested duplicate-key fixture");
-    tests.push({ label: "nested_duplicate_json_key_refused", passed: false });
-  } catch {
-    tests.push({ label: "nested_duplicate_json_key_refused", passed: true });
-  }
-  try {
-    parseJsonStrict('{"schema":', "malformed fixture");
-    tests.push({ label: "malformed_json_refused", passed: false });
-  } catch {
-    tests.push({ label: "malformed_json_refused", passed: true });
-  }
-  try {
-    parseJsonStrict('{"schema":"\uFFFD"}', "invalid UTF-8 fixture");
-    tests.push({ label: "utf8_replacement_bytes_refused", passed: false });
-  } catch {
-    tests.push({ label: "utf8_replacement_bytes_refused", passed: true });
-  }
+  tests.push(
+    expectStrictJsonReject("duplicate_json_key_refused", '{"schema":"first","schema":"second"}', "JSON_DUPLICATE_KEY"),
+    expectStrictJsonReject("nested_duplicate_json_key_refused", '{"truth_subjects":{"released_tester":{"claim":"first","claim":"second"}}}', "JSON_DUPLICATE_KEY"),
+    expectStrictJsonReject("malformed_json_refused", '{"schema":', "JSON_MISSING_VALUE"),
+    expectStrictJsonReject("utf8_replacement_bytes_refused", '{"schema":"\uFFFD"}', "JSON_INVALID_UTF8"),
+  );
   return tests;
 }
 
 function readStrictJson(filePath, maximumBytes, label) {
   const bytes = fs.readFileSync(filePath);
   assert(bytes.length > 0 && bytes.length <= maximumBytes, `${label} exceeds its static byte bounds`);
-  return parseJsonStrict(bytes.toString("utf8"), label);
+  return parseJsonBytesStrict(bytes, label);
 }
 
-export function validatePublishedProductTruth({ selfTest = false, expectedLanding } = {}) {
+export function validatePublishedProductTruth({ selfTest = false, expectedLanding, requireGitBinding = false } = {}) {
   const manifest = readStrictJson(productTruthPath, 128 * 1024, "published product truth");
   const facts = readStrictJson(factsPath, 8 * 1024 * 1024, "public source snapshot");
   const latest = readStrictJson(latestPath, 64 * 1024, "Hive IDE latest feed");
   const releaseManifest = readStrictJson(releaseManifestPath, 512 * 1024, "Hive IDE release manifest");
+  const ledgerBytes = fs.readFileSync(ledgerPath);
+  assert(ledgerBytes.length === manifest.evidenceLedger.bytes, "evidence ledger byte count drifted", "EVIDENCE_LEDGER_BYTES_MISMATCH");
+  assert(sha256(ledgerBytes) === manifest.evidenceLedger.sha256, "evidence ledger SHA-256 drifted", "EVIDENCE_LEDGER_SHA256_MISMATCH");
+  assert(crypto.createHash("sha1").update(`blob ${ledgerBytes.length}\0`).update(ledgerBytes).digest("hex") === manifest.evidenceLedger.gitBlobOid,
+    "evidence ledger Git blob OID drifted", "EVIDENCE_LEDGER_GIT_BLOB_MISMATCH");
+  const ledger = parseJsonBytesStrict(ledgerBytes, "product truth evidence ledger");
+  const privateLedgerBytes = fs.readFileSync(privateLedgerPath);
+  assert(privateLedgerBytes.length === ledger.sourceLedger.bytes, "private ledger byte count drifted", "PRIVATE_LEDGER_BYTES_MISMATCH");
+  assert(sha256(privateLedgerBytes) === ledger.sourceLedger.sha256,
+    "private ledger SHA-256 drifted", "PRIVATE_LEDGER_SHA256_MISMATCH");
+  assert(crypto.createHash("sha1").update(`blob ${privateLedgerBytes.length}\0`).update(privateLedgerBytes).digest("hex") === ledger.sourceLedger.gitBlobOid,
+    "private ledger Git blob OID drifted", "PRIVATE_LEDGER_GIT_BLOB_MISMATCH");
+  const privateLedger = parseJsonBytesStrict(privateLedgerBytes, "private product truth evidence ledger");
+  const semanticBaselineBytes = fs.readFileSync(semanticBaselinePath);
+  const semanticBaseline = validateSemanticBaseline(parseJsonBytesStrict(semanticBaselineBytes, "reviewed semantic baseline"));
+  const baselineGitBindingStatus = verifyReviewedBaselineBinding(
+    manifest.source.reviewedSemanticBaseline,
+    semanticBaselineBytes,
+    { requireGitBinding },
+  );
   if (expectedLanding) validateLandingExpectation(expectedLanding);
-  const context = { facts, latest, releaseManifest, expectedLanding };
+  const context = { facts, latest, releaseManifest, ledger, privateLedger, semanticBaseline, expectedLanding };
   validateProductTruth(manifest, context);
   const tests = selfTest ? runProductTruthSelfTests(manifest, context) : [];
   if (selfTest) assert(tests.every((test) => test.passed), `product truth hostile self-test failed: ${tests.filter((test) => !test.passed).map((test) => test.label).join(",")}`);
-  return { manifest, facts, latest, releaseManifest, tests };
+  return { manifest, facts, latest, releaseManifest, ledger, privateLedger, semanticBaseline, baselineGitBindingStatus, tests };
 }
 
 const isMain = Boolean(process.argv[1]) && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
@@ -1054,15 +1321,27 @@ if (isMain) {
     : PINNED_LANDING;
   if (process.argv.includes("--project-landing")) {
     assert(expectedLanding, "--project-landing requires every --expect-landing-* value");
-    const result = validatePublishedProductTruth({ expectedLanding: undefined });
+    const result = validatePublishedProductTruth({ expectedLanding });
     const projected = projectVerifiedLanding(result.manifest, expectedLanding);
-    validateProductTruth(projected, { facts: result.facts, latest: result.latest, releaseManifest: result.releaseManifest, expectedLanding });
+    validateProductTruth(projected, {
+      facts: result.facts,
+      latest: result.latest,
+      releaseManifest: result.releaseManifest,
+      ledger: result.ledger,
+      privateLedger: result.privateLedger,
+      semanticBaseline: result.semanticBaseline,
+      expectedLanding,
+    });
     console.log(JSON.stringify(projected, null, 2));
   } else {
-    const result = validatePublishedProductTruth({ selfTest: process.argv.includes("--self-test"), expectedLanding });
+    const result = validatePublishedProductTruth({
+      selfTest: process.argv.includes("--self-test"),
+      expectedLanding,
+      requireGitBinding: process.argv.includes("--require-git-binding"),
+    });
     if (result.tests.length) {
       console.log(JSON.stringify({ schema: "hive.ecosystem.product-truth-self-test.v1", ok: true, tests: result.tests }, null, 2));
     }
-    console.log(`PRODUCT_TRUTH_OK source=${result.manifest.source.sourceCommit.slice(0, 12)} canonical=${result.manifest.canonicalManifest.status} atlas_tester=${result.manifest.atlasTesterMatch} digest=${result.manifest.bindingDigest.value}`);
+    console.log(`PRODUCT_TRUTH_OK source=${result.manifest.source.currentSnapshotIdentity.sourceCommit.slice(0, 12)} canonical=${result.manifest.canonicalManifest.status} semantic_baseline=${result.baselineGitBindingStatus} atlas_tester=${result.manifest.atlasTesterMatch} digest=${result.manifest.bindingDigest.value}`);
   }
 }

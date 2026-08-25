@@ -1,6 +1,6 @@
 {
   "schema": "hive.ecosystem.public-source-snapshot.v3",
-  "snapshotVersion": "3.0.0",
+  "snapshotVersion": "3.1.0",
   "hiveAi": {
     "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
     "sourceBranch": "main",
@@ -26,7 +26,7 @@
   },
   "galaxy": {
     "schema": "hive.ecosystem.public-galaxy.v2",
-    "generatorVersion": "3.0.0",
+    "generatorVersion": "3.1.0",
     "sourceGraphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
     "representedNeurons": 640,
     "divisions": [
@@ -7647,65 +7647,91 @@
       "geometryHash": "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314"
     },
     "statusProjection": "none",
-    "claimBoundary": "The public atlas shows topology and family purpose only. Per-neuron Twitch proof, mastery, runtime, work-lane, mission, and urgency projections remain on the local read-only Living Anatomy surface; authority-bearing Mission Control mutations are credential-gated when configured.",
-    "projectionHash": "f9e4fd92a0d815f5b15b4ce7f6f986b03befeed550073a4089b20e35e97cf799"
+    "claimBoundary": "The public atlas shows topology and family purpose only. Per-neuron Twitch proof, mastery, runtime, work-lane, mission, and urgency projections require a future Living Anatomy surface with separate attestation; no local runtime or authority is inferred.",
+    "projectionHash": "58f8aa20d200bb4ec1bb6d13810bda85b6e1b7c189f8c070b3d9070d67b9d80b"
   },
   "ecosystem": {
-    "schema": "hive.ecosystem.public-organ-map.v1",
+    "schema": "hive.ecosystem.public-organ-map.v2",
     "primaryOrgans": [
       {
         "id": "hive-ai",
         "label": "Hive-AI",
-        "role": "reasoning brain",
-        "exposure": "private-source-local-runtime"
+        "targetRole": "reasoning brain",
+        "targetExposure": "private-source-local-runtime",
+        "effectivePublicDisposition": "SOURCE_ATLAS_PUBLIC_RUNTIME_NOT_ATTESTED"
       },
       {
         "id": "hivepoa",
         "label": "HivePoA",
-        "role": "proof and storage plane",
-        "exposure": "signed-public-distribution"
+        "targetRole": "proof and storage plane",
+        "targetExposure": "signed-public-distribution",
+        "effectivePublicDisposition": "HISTORICAL_QUARANTINE_PUBLIC_ACTIONS_HOLD"
       },
       {
         "id": "neurachain",
         "label": "NeuraChain",
-        "role": "durable coordination and settlement",
-        "exposure": "private-source-chain-surface"
+        "targetRole": "durable coordination and settlement",
+        "targetExposure": "private-source-chain-surface",
+        "effectivePublicDisposition": "SOURCE_RELATION_ONLY_RUNTIME_NOT_ATTESTED"
       },
       {
         "id": "hive-ide",
         "label": "Hive IDE",
-        "role": "operator hands",
-        "exposure": "private-tester-surface"
+        "targetRole": "operator hands",
+        "targetExposure": "private-tester-surface",
+        "effectivePublicDisposition": "INTEGRATION_WAIT_NO_CURRENT_PACKAGE_OR_RUNTIME_CLAIM"
       },
       {
         "id": "second-brain",
         "label": "Second Brain",
-        "role": "operator-owned knowledge memory",
-        "exposure": "local-private"
+        "targetRole": "operator-owned knowledge memory",
+        "targetExposure": "local-private",
+        "effectivePublicDisposition": "NOT_PUBLIC_RUNTIME_NOT_ATTESTED"
       },
       {
         "id": "compute-pool",
         "label": "Compute Pool",
-        "role": "guarded CPU and GPU capacity",
-        "exposure": "contract-routed"
+        "targetRole": "guarded CPU and GPU capacity",
+        "targetExposure": "contract-routed",
+        "effectivePublicDisposition": "SOURCE_ROLE_ONLY_RUNTIME_NOT_ATTESTED"
       }
     ],
     "federationRepositories": 20
   },
   "refresh": {
-    "privateSourceMode": "scheduled-living-main-publisher",
-    "automaticBridgeEnabled": true,
-    "reasonCode": "SCHEDULED_LIVING_MAIN_PUBLISHER",
-    "lastGoodBehavior": "retain_previous_snapshot"
+    "sourceAcquisitionModeAtCapture": "scheduled-living-main-publisher",
+    "automaticBridgeConfiguredAtCapture": true,
+    "configurationReasonCodeAtCapture": "SCHEDULED_LIVING_MAIN_PUBLISHER",
+    "latestRefreshObservation": {
+      "observedAt": "2026-08-25T01:09:50Z",
+      "disposition": "PUBLIC_PRIVATE_BRIDGE_RETIRED_PRESENTATION_RELEASE",
+      "reasonCode": "AUTOMATIC_PRIVATE_SOURCE_BRIDGE_INTENTIONALLY_DISABLED",
+      "automaticBridgeConfiguredAtObservation": false,
+      "executionObservationStatus": "NOT_ATTESTED",
+      "currentOperationalStatus": "UNKNOWN"
+    },
+    "lastGoodTopologyBehavior": "retain_previous_source_facts_and_topology_refresh_boundary_may_change"
   },
   "boundaries": {
     "snapshotOnly": true,
     "runtimeTelemetry": false,
     "grantsAuthority": false,
     "privateEvidencePublished": false,
-    "localChatUrl": "http://127.0.0.1:5002/chat",
-    "localGalaxyUrl": "http://127.0.0.1:5002/constellation/body?presentation=1"
+    "localPresentationContext": {
+      "protocol": "http",
+      "hostname": "127.0.0.1",
+      "port": 5002,
+      "pathname": "/constellation/body",
+      "presentation": "1",
+      "effectiveDisposition": "INERT_HOLD_REQUIRES_STRICT_RUNTIME_RECEIPT"
+    },
+    "operatorServiceContext": {
+      "hostname": "127.0.0.1",
+      "port": 5003,
+      "effectiveDisposition": "HOLD_REQUIRES_DISTINCT_RUNTIME_ATTESTATION"
+    },
+    "chatEffectiveDisposition": "WAIT_NOT_AVAILABLE"
   },
   "capturedAt": "2026-08-23T22:53:32Z",
-  "snapshotHash": "634524e22039c696387a455fe0c1bd1d04e544a5745967acf4d27509fd882088"
+  "snapshotHash": "a5385342050d2458105b007cc5a03d81afd2cd15a0e805d5e5050d2d7e9dd2a1"
 }

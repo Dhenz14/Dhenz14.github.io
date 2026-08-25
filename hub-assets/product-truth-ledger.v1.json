@@ -1,0 +1,115 @@
+{
+  "schema": "hive.ecosystem.product-truth.evidence-ledger.v1",
+  "version": 1,
+  "administrationModel": "APPEND_ONLY_LEDGER_MODEL_V1",
+  "integrityClass": "SELF_BOUND_INTEGRITY",
+  "independentTrustRoot": false,
+  "authorizedPublicationAttested": false,
+  "entries": [
+    {
+      "entryId": "canonical-candidate-genesis-v1",
+      "recordedAt": "2026-08-23T18:46:30Z",
+      "claimPlane": "SOURCE_CANDIDATE",
+      "status": "IMMUTABLE_CONTENT_ADDRESSED_CANDIDATE_GENESIS_PROVENANCE",
+      "reasonCodes": [
+        "ORIGINAL_CONTENT_ADDRESSED_CANDIDATE_GENESIS_IDENTITY"
+      ],
+      "evidence": {
+        "sourceCommit": "472131baa2bc212a043966773bd92477c3a8a16c",
+        "sourceTree": "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00",
+        "semanticSha256": "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791",
+        "physicalSha256": "9e324cae2a6b8975d0451a1343166d5c802397595fd4b89a8d4af091574b0948",
+        "bytes": 31198,
+        "gitBlobOid": "3cc7a08282dedaeb7c07a193dd3cc8a4a34124d6",
+        "firstGreenCommit": "5e3f974c8a80064d2388ea81cb151117555ff6b4",
+        "lastPrelandingCommit": "ade641d988e933be5441d7f5ec15bea616d2bda7"
+      }
+    },
+    {
+      "entryId": "candidate-reconstruction-diagnostic-v1",
+      "recordedAt": "2026-08-23T22:53:32Z",
+      "claimPlane": "DIAGNOSTIC_RECONSTRUCTION",
+      "status": "SUPERSEDED_RECONSTRUCTED_DIAGNOSTIC_NOT_INDEPENDENT_TRUST_ROOT",
+      "reasonCodes": [
+        "RECONSTRUCTED_AFTER_GENESIS",
+        "NOT_ORIGINAL_CANDIDATE_GENESIS_IDENTITY",
+        "NOT_INDEPENDENT_TRUST_ROOT"
+      ],
+      "evidence": {
+        "projectionBindingDigest": "40812261a20c7d10cd358b843154c19db793cea62d6db3e0081fb5b5c0a0f9ab",
+        "amendsEntryId": "canonical-candidate-genesis-v1"
+      }
+    },
+    {
+      "entryId": "canonical-landing-readback-0ab04f6c",
+      "recordedAt": "2026-08-23T22:53:32Z",
+      "claimPlane": "LANDING_CUSTODY",
+      "status": "LANDED_HASH_VERIFIED",
+      "reasonCodes": [
+        "LANDING_BYTES_HASH_AND_BLOB_MATCH",
+        "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
+      ],
+      "evidence": {
+        "landedCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+        "landedTree": "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
+        "sha256": "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056",
+        "bytes": 49342,
+        "gitBlobOid": "c1036d2fc877e058965688fe8da5097576a37826",
+        "canonicalAuditBindingStatus": "SOURCE_BOUND_MATCH",
+        "landingStatus": "LANDED_HASH_VERIFIED",
+        "publicRetrievability": "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE"
+      }
+    },
+    {
+      "entryId": "tester5-electron-claim-revocation-v1",
+      "recordedAt": "2026-08-23T22:53:32Z",
+      "claimPlane": "PUBLIC_RELEASE_PACKAGE_CONTENTS",
+      "status": "SUPERSEDED_REVOKED_UNSUPPORTED",
+      "reasonCodes": [
+        "TESTER5_PACKAGE_CONTENTS_UNKNOWN_NOT_INSPECTED",
+        "SOURCE_BRANCH_IS_NOT_PACKAGE_CONTENTS"
+      ],
+      "evidence": {
+        "revokedClaim": "The published tester.5 build still bundles Electron.",
+        "replacementClaim": "Tester.5 exact package contents are UNKNOWN_NOT_INSPECTED."
+      }
+    },
+    {
+      "entryId": "hive-ide-tauri-candidate-observation-v1",
+      "recordedAt": "2026-08-23T22:53:32Z",
+      "claimPlane": "EXTERNAL_SOURCE_OBSERVATION",
+      "status": "CANDIDATE_BRANCH_NOT_LANDED",
+      "reasonCodes": [
+        "TAURI_OBSERVED_ON_UNPROTECTED_CANDIDATE_BRANCH",
+        "DEFAULT_BRANCH_DOES_NOT_CONTAIN_CANDIDATE"
+      ],
+      "evidence": {
+        "repository": "Dhenz14/hive-ide",
+        "defaultBranchTip": "41df9be58ebb3696d00c08602c44c3b0abf3647d",
+        "candidateBranch": "hive/wt/theyc/ide-electron-final-20260822",
+        "candidateCommit": "f459e85cc71801afbed4a8579b31133b9ff58edd",
+        "aheadBy": 92,
+        "behindBy": 0,
+        "sourceObservation": "Electron-removal and Tauri/WebView2 source were observed on the candidate branch only."
+      }
+    },
+    {
+      "entryId": "local-body-handoff-boundary-v1",
+      "recordedAt": "2026-08-23T22:53:32Z",
+      "claimPlane": "LOCAL_RUNTIME_OBSERVATION",
+      "status": "UNKNOWN_UNPROBED_HOLD",
+      "reasonCodes": [
+        "LOCAL_BODY_NOT_PROBED_BY_PUBLIC_SITE",
+        "OPERATOR_BODY_5003_NOT_INDEPENDENTLY_OBSERVED",
+        "CHAT_DEFERRED"
+      ],
+      "evidence": {
+        "localBodyUrl": "http://127.0.0.1:5002/constellation/body?presentation=1",
+        "localBodyStatus": "UNKNOWN_UNPROBED",
+        "operatorBodyExpectedOrigin": "http://127.0.0.1:5003",
+        "operatorBodyStatus": "HOLD_NOT_INDEPENDENTLY_OBSERVED",
+        "chatStatus": "WAIT"
+      }
+    }
+  ]
+}

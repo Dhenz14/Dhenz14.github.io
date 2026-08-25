@@ -1,0 +1,483 @@
+name: Publish reviewed Pages artifact
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Bounded recovery for a replaced push signal or a failed same-SHA run.
+    - cron: "17,47 * * * *"
+
+permissions:
+  contents: read
+
+# GitHub retains one active and at most one pending run. A stale authority run
+# redispatches this workflow at main rather than treating this queue as lossless.
+concurrency:
+  group: reviewed-pages
+  cancel-in-progress: false
+
+env:
+  EXPECTED_REPOSITORY: Dhenz14/Dhenz14.github.io
+  EXPECTED_WORKFLOW_PATH: .github/workflows/publish-reviewed-pages.yml
+  PARITY_STATUS_CONTEXT: pages/parity/r8
+  PUBLIC_ORIGIN: https://dhenz14.github.io
+
+jobs:
+  resolve:
+    name: Resolve exact current main and durable state
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      statuses: read
+    outputs:
+      admitted: ${{ steps.resolve.outputs.admitted }}
+      stale: ${{ steps.resolve.outputs.stale }}
+      target_sha: ${{ steps.resolve.outputs.target_sha }}
+      workflow_sha: ${{ steps.resolve.outputs.workflow_sha }}
+      repository_id: ${{ steps.resolve.outputs.repository_id }}
+      workflow_file_path: ${{ steps.resolve.outputs.workflow_file_path }}
+      run_id: ${{ steps.resolve.outputs.run_id }}
+      run_attempt: ${{ steps.resolve.outputs.run_attempt }}
+      artifact_name: ${{ steps.resolve.outputs.artifact_name }}
+      candidate_noop: ${{ steps.resolve.outputs.candidate_noop }}
+      prior_run_id: ${{ steps.resolve.outputs.prior_run_id }}
+      prior_run_attempt: ${{ steps.resolve.outputs.prior_run_attempt }}
+      prior_artifact_id: ${{ steps.resolve.outputs.prior_artifact_id }}
+      prior_artifact_digest: ${{ steps.resolve.outputs.prior_artifact_digest }}
+    steps:
+      - name: Resolve current main and corroborate an exact durable watermark
+        id: resolve
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_REF: ${{ github.ref }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in push|workflow_dispatch|schedule) ;; *) exit 71 ;; esac
+          test "$REPOSITORY" = "$EXPECTED_REPOSITORY"
+          test "$EVENT_REF" = refs/heads/main
+          test "$REPOSITORY_ID" -gt 0
+          [[ "$EVENT_SHA" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$WORKFLOW_SHA" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]]
+          test "$WORKFLOW_REF" = "$EXPECTED_REPOSITORY/$EXPECTED_WORKFLOW_PATH@refs/heads/main"
+          api="https://api.github.com/repos/$REPOSITORY"
+          auth=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+          ref_json="$(curl --fail --silent --show-error --location "${auth[@]}" "$api/git/ref/heads/main")"
+          current_main="$(jq -er 'select(.object.type == "commit" and (.object.sha | test("^[a-f0-9]{40}$"))) | .object.sha' <<<"$ref_json")"
+          {
+            echo "target_sha=$current_main"
+            echo "workflow_sha=$WORKFLOW_SHA"
+            echo "repository_id=$REPOSITORY_ID"
+            echo "workflow_file_path=$EXPECTED_WORKFLOW_PATH"
+            echo "run_id=$RUN_ID"
+            echo "run_attempt=$RUN_ATTEMPT"
+            echo "artifact_name=github-pages-$RUN_ID-$RUN_ATTEMPT"
+          } >> "$GITHUB_OUTPUT"
+          if test "$EVENT_SHA" != "$WORKFLOW_SHA" || test "$WORKFLOW_SHA" != "$current_main"; then
+            {
+              echo "admitted=false"
+              echo "stale=true"
+              echo "candidate_noop=false"
+            } >> "$GITHUB_OUTPUT"
+            echo "Stale workflow authority; current_main=$current_main event=$EVENT_SHA workflow=$WORKFLOW_SHA"
+            exit 0
+          fi
+          echo "admitted=true" >> "$GITHUB_OUTPUT"
+          echo "stale=false" >> "$GITHUB_OUTPUT"
+
+          deployment_ok=false
+          deployments="$(curl --fail --silent --show-error --location "${auth[@]}" "$api/deployments?sha=$current_main&environment=github-pages&per_page=100")"
+          while IFS= read -r deployment_id; do
+            test -n "$deployment_id" || continue
+            states="$(curl --fail --silent --show-error --location "${auth[@]}" "$api/deployments/$deployment_id/statuses?per_page=100")"
+            if jq -e 'any(.[]; .state == "success")' >/dev/null <<<"$states"; then deployment_ok=true; break; fi
+          done < <(jq -r --arg sha "$current_main" '.[] | select(.sha == $sha and .environment == "github-pages") | .id' <<<"$deployments")
+
+          candidate_noop=false
+          statuses="$(curl --fail --silent --show-error --location "${auth[@]}" "$api/commits/$current_main/statuses?per_page=100")"
+          marker="$(jq -c --arg context "$PARITY_STATUS_CONTEXT" '[.[] | select(.context == $context)][0] // empty' <<<"$statuses")"
+          if test "$deployment_ok" = true && test -n "$marker"; then
+            state="$(jq -r '.state // ""' <<<"$marker")"
+            creator="$(jq -r '.creator.login // ""' <<<"$marker")"
+            description="$(jq -r '.description // ""' <<<"$marker")"
+            target_url="$(jq -r '.target_url // ""' <<<"$marker")"
+            if test "$state" = success && test "$creator" = 'github-actions[bot]' \
+              && [[ "$description" =~ ^r8\ run=([1-9][0-9]*)\ attempt=([1-9][0-9]*)\ artifact=([1-9][0-9]*)\ digest=([a-f0-9]{64})$ ]]; then
+              prior_run_id="${BASH_REMATCH[1]}"
+              prior_attempt="${BASH_REMATCH[2]}"
+              prior_artifact_id="${BASH_REMATCH[3]}"
+              prior_digest="${BASH_REMATCH[4]}"
+              prior_name="github-pages-$prior_run_id-$prior_attempt"
+              expected_url="https://github.com/$REPOSITORY/actions/runs/$prior_run_id/attempts/$prior_attempt"
+              run_meta="$(curl --fail --silent --show-error --location "${auth[@]}" "$api/actions/runs/$prior_run_id")"
+              artifacts="$(curl --fail --silent --show-error --location "${auth[@]}" "$api/actions/runs/$prior_run_id/artifacts?name=$prior_name&per_page=100")"
+              run_ok="$(jq -r --arg sha "$current_main" --argjson repo "$REPOSITORY_ID" --arg path "$EXPECTED_WORKFLOW_PATH" --argjson attempt "$prior_attempt" '(.head_sha == $sha and .repository.id == $repo and .run_attempt == $attempt and (.path | startswith($path)))' <<<"$run_meta")"
+              exact_count="$(jq --arg name "$prior_name" --argjson id "$prior_artifact_id" --arg digest "sha256:$prior_digest" --arg sha "$current_main" --argjson repo "$REPOSITORY_ID" --argjson run "$prior_run_id" '[.artifacts[] | select(.name == $name and .id == $id and .digest == $digest and .expired == false and .workflow_run.id == $run and .workflow_run.head_sha == $sha and .workflow_run.repository_id == $repo)] | length' <<<"$artifacts")"
+              if test "$target_url" = "$expected_url" && test "$run_ok" = true && test "$exact_count" = 1; then
+                candidate_noop=true
+                {
+                  echo "prior_run_id=$prior_run_id"
+                  echo "prior_run_attempt=$prior_attempt"
+                  echo "prior_artifact_id=$prior_artifact_id"
+                  echo "prior_artifact_digest=$prior_digest"
+                } >> "$GITHUB_OUTPUT"
+              fi
+            fi
+          fi
+          echo "candidate_noop=$candidate_noop" >> "$GITHUB_OUTPUT"
+
+  redispatch-stale:
+    name: Redispatch stale authority at current main
+    needs: resolve
+    if: needs.resolve.outputs.stale == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch this exact workflow once at main
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$REPOSITORY" = "$EXPECTED_REPOSITORY"
+          curl --fail --silent --show-error --request POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/$REPOSITORY/actions/workflows/publish-reviewed-pages.yml/dispatches" \
+            --data '{"ref":"main"}'
+
+  probe-published:
+    name: Probe exact live bytes before no-op
+    needs: resolve
+    if: needs.resolve.outputs.admitted == 'true' && needs.resolve.outputs.candidate_noop == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    outputs:
+      passed: ${{ steps.parity.outputs.passed }}
+    steps:
+      - name: Check out exact current target without credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.resolve.outputs.target_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Use Node.js 22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+      - name: Run fresh bounded live parity without mutating the watermark
+        id: parity
+        shell: bash
+        run: |
+          set +e
+          node script/check-live-parity.mjs --origin "$PUBLIC_ORIGIN" --expected-root . --expected-target-sha "${{ needs.resolve.outputs.target_sha }}"
+          result=$?
+          if test "$result" -eq 0; then echo "passed=true" >> "$GITHUB_OUTPUT"; else echo "passed=false" >> "$GITHUB_OUTPUT"; fi
+          exit 0
+
+  decide:
+    name: Decide no-op or repair
+    needs: [resolve, probe-published]
+    if: always() && needs.resolve.outputs.admitted == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    outputs:
+      action: ${{ steps.decide.outputs.action }}
+    steps:
+      - name: Require durable tuple and fresh parity for a no-op
+        id: decide
+        shell: bash
+        env:
+          CANDIDATE_NOOP: ${{ needs.resolve.outputs.candidate_noop }}
+          PROBE_RESULT: ${{ needs.probe-published.result }}
+          PROBE_PASSED: ${{ needs.probe-published.outputs.passed }}
+        run: |
+          set -euo pipefail
+          action=repair
+          if test "$CANDIDATE_NOOP" = true && test "$PROBE_RESULT" = success && test "$PROBE_PASSED" = true; then action=noop; fi
+          echo "action=$action" >> "$GITHUB_OUTPUT"
+          echo "Publication decision: $action"
+
+  build:
+    name: Build reviewed artifact
+    needs: [resolve, decide]
+    if: needs.decide.outputs.action == 'repair'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact_id }}
+      artifact_name: ${{ needs.resolve.outputs.artifact_name }}
+    steps:
+      - name: Check out exact target without credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.resolve.outputs.target_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Use Node.js 22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+      - name: Verify source and hostile publication contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ needs.resolve.outputs.target_sha }}"
+          for source in hub-assets/*.js hub-assets/*.mjs script/*.mjs; do node --check "$source"; done
+          node script/hub-facts-custody.mjs --self-test
+          node script/check-central-hub.mjs
+          node script/check-product-truth.mjs --self-test --require-git-binding
+          node script/check-ide-release.mjs --self-test
+          node script/check-browser-json-acquisition.mjs
+          node script/check-galaxy-bridge.mjs
+          node script/check-galaxy-core.mjs
+          node script/check-publisher-races.mjs
+          node script/check-signed-release.mjs
+          node script/check-signed-release.mjs --verify-git-provenance
+          node script/check-signed-release.mjs --self-test
+          node script/check-signed-release-portability.mjs --git-archive
+          node script/build-public-pages.mjs --self-test --require-link-tests
+          node script/verify-pages-artifact.mjs --self-test
+          git diff --check
+      - name: Build and exercise a brand-new exact public stage
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="${RUNNER_TEMP}/hive-pages-reviewed-${{ github.run_id }}-${{ github.run_attempt }}"
+          test ! -e "$stage"
+          node script/build-public-pages.mjs build --output "$stage"
+          node script/build-public-pages.mjs check --output "$stage"
+          node script/check-http-surface.mjs --root "$stage"
+      - name: Recheck exact current main immediately before upload
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          current="$(curl --fail --silent --show-error --location -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" "https://api.github.com/repos/$REPOSITORY/git/ref/heads/main" | jq -er '.object.sha')"
+          test "$current" = "${{ needs.resolve.outputs.target_sha }}"
+          test "$current" = "${{ needs.resolve.outputs.workflow_sha }}"
+      - name: Configure GitHub Actions Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - name: Upload the unique reviewed Pages artifact
+        id: upload
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
+        with:
+          name: ${{ needs.resolve.outputs.artifact_name }}
+          path: ${{ runner.temp }}/hive-pages-reviewed-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 1
+          include-hidden-files: true
+
+  verify-artifact:
+    name: Verify immutable Pages artifact
+    needs: [resolve, build]
+    if: needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      artifact_id: ${{ steps.verify.outputs.artifact_id }}
+      artifact_name: ${{ steps.verify.outputs.artifact_name }}
+      artifact_rest_digest: ${{ steps.verify.outputs.artifact_rest_digest }}
+      artifact_tar_sha256: ${{ steps.verify.outputs.artifact_tar_sha256 }}
+      membership_manifest_sha256: ${{ steps.verify.outputs.membership_manifest_sha256 }}
+      member_count: ${{ steps.verify.outputs.member_count }}
+    steps:
+      - name: Check out exact verifier source without credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.resolve.outputs.target_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Use Node.js 22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+      - name: Download exact artifact metadata and archive by ID
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
+          api="https://api.github.com/repos/$REPOSITORY/actions/artifacts/$ARTIFACT_ID"
+          auth=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+          curl --fail --silent --show-error --location "${auth[@]}" "$api" --output "$RUNNER_TEMP/pages-artifact-metadata.json"
+          curl --fail --silent --show-error --location "${auth[@]}" "$api/zip" --output "$RUNNER_TEMP/pages-artifact.zip"
+      - name: Verify exact REST tuple, ZIP, tar, types, links, and membership
+        id: verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          extract="${RUNNER_TEMP}/verified-pages-${{ github.run_id }}-${{ github.run_attempt }}"
+          test ! -e "$extract"
+          node script/verify-pages-artifact.mjs --zip "$RUNNER_TEMP/pages-artifact.zip" --metadata "$RUNNER_TEMP/pages-artifact-metadata.json" --extract-output "$extract" --expected-name "${{ needs.resolve.outputs.artifact_name }}" --expected-id "${{ needs.build.outputs.artifact_id }}" --expected-run-id "${{ needs.resolve.outputs.run_id }}" --expected-repository-id "${{ needs.resolve.outputs.repository_id }}" --expected-target-sha "${{ needs.resolve.outputs.target_sha }}" --github-output "$GITHUB_OUTPUT"
+          node script/build-public-pages.mjs check --output "$extract"
+          node script/check-http-surface.mjs --root "$extract"
+
+  pending-marker:
+    name: Mark exact target parity pending
+    needs: [resolve, verify-artifact]
+    if: needs.verify-artifact.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      statuses: write
+    steps:
+      - name: Invalidate any older success for this exact SHA
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TARGET_SHA: ${{ needs.resolve.outputs.target_sha }}
+          ARTIFACT_ID: ${{ needs.verify-artifact.outputs.artifact_id }}
+          ARTIFACT_DIGEST: ${{ needs.verify-artifact.outputs.artifact_rest_digest }}
+        run: |
+          set -euo pipefail
+          description="r8 pending run=${{ github.run_id }} attempt=${{ github.run_attempt }} artifact=$ARTIFACT_ID digest=$ARTIFACT_DIGEST"
+          target_url="https://github.com/$REPOSITORY/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}"
+          jq -nc --arg state pending --arg context "$PARITY_STATUS_CONTEXT" --arg description "$description" --arg target_url "$target_url" '{state:$state,context:$context,description:$description,target_url:$target_url}' > "$RUNNER_TEMP/status.json"
+          curl --fail --silent --show-error --request POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" "https://api.github.com/repos/$REPOSITORY/statuses/$TARGET_SHA" --data-binary @"$RUNNER_TEMP/status.json" >/dev/null
+
+  deploy:
+    name: Deploy exact verified artifact
+    needs: [resolve, build, verify-artifact, pending-marker]
+    if: needs.pending-marker.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      actions: read
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Revalidate current main and unique artifact immediately before deploy
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TARGET_SHA: ${{ needs.resolve.outputs.target_sha }}
+          ARTIFACT_NAME: ${{ needs.verify-artifact.outputs.artifact_name }}
+          ARTIFACT_ID: ${{ needs.verify-artifact.outputs.artifact_id }}
+          ARTIFACT_DIGEST: ${{ needs.verify-artifact.outputs.artifact_rest_digest }}
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/$REPOSITORY"
+          auth=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+          current="$(curl --fail --silent --show-error --location "${auth[@]}" "$api/git/ref/heads/main" | jq -er '.object.sha')"
+          test "$current" = "$TARGET_SHA"
+          test "$current" = "${{ needs.resolve.outputs.workflow_sha }}"
+          run_meta="$(curl --fail --silent --show-error --location "${auth[@]}" "$api/actions/runs/${{ github.run_id }}")"
+          jq -e --arg sha "$TARGET_SHA" --argjson repo "${{ needs.resolve.outputs.repository_id }}" --argjson attempt "${{ github.run_attempt }}" '.head_sha == $sha and .repository.id == $repo and .run_attempt == $attempt' >/dev/null <<<"$run_meta"
+          artifacts="$(curl --fail --silent --show-error --location "${auth[@]}" "$api/actions/runs/${{ github.run_id }}/artifacts?name=$ARTIFACT_NAME&per_page=100")"
+          jq -e --arg name "$ARTIFACT_NAME" --argjson id "$ARTIFACT_ID" --arg digest "sha256:$ARTIFACT_DIGEST" --arg sha "$TARGET_SHA" --argjson repo "${{ needs.resolve.outputs.repository_id }}" --argjson run "${{ github.run_id }}" '([.artifacts[] | select(.name == $name and .id == $id and .digest == $digest and .expired == false and .workflow_run.id == $run and .workflow_run.head_sha == $sha and .workflow_run.repository_id == $repo)] | length) == 1' >/dev/null <<<"$artifacts"
+          jobs="$(curl --fail --silent --show-error --location "${auth[@]}" "$api/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs?per_page=100")"
+          jq -e '([.jobs[] | select(.name == "Build reviewed artifact" or .name == "Verify immutable Pages artifact") | select(.status == "completed" and .conclusion == "success")] | length) == 2' >/dev/null <<<"$jobs"
+          jq -e '([.jobs[] | select((.name == "Build reviewed artifact" or .name == "Verify immutable Pages artifact") and .status != "completed")] | length) == 0' >/dev/null <<<"$jobs"
+      - name: Deploy the unique verified artifact without repository code
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+        with:
+          artifact_name: ${{ needs.verify-artifact.outputs.artifact_name }}
+
+  parity:
+    name: Verify deployed exact bytes
+    needs: [resolve, deploy]
+    if: needs.deploy.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    outputs:
+      current_main_still_target: ${{ steps.current.outputs.matches }}
+    steps:
+      - name: Check out exact target without credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.resolve.outputs.target_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Use Node.js 22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+      - name: Verify bounded deployed parity against the exact target
+        shell: bash
+        run: |
+          set -euo pipefail
+          node script/check-live-parity.mjs --origin "${{ needs.deploy.outputs.page_url }}" --expected-root . --expected-target-sha "${{ needs.resolve.outputs.target_sha }}"
+      - name: Observe whether main still names the deployed target
+        id: current
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          current="$(curl --fail --silent --show-error --location -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" "https://api.github.com/repos/$REPOSITORY/git/ref/heads/main" | jq -er '.object.sha')"
+          if test "$current" = "${{ needs.resolve.outputs.target_sha }}"; then echo "matches=true" >> "$GITHUB_OUTPUT"; else echo "matches=false" >> "$GITHUB_OUTPUT"; fi
+
+  final-marker:
+    name: Finalize exact target parity watermark
+    needs: [resolve, verify-artifact, pending-marker, deploy, parity]
+    if: always() && needs.pending-marker.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      statuses: write
+    steps:
+      - name: Record success only after exact deploy and parity
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TARGET_SHA: ${{ needs.resolve.outputs.target_sha }}
+          ARTIFACT_ID: ${{ needs.verify-artifact.outputs.artifact_id }}
+          ARTIFACT_DIGEST: ${{ needs.verify-artifact.outputs.artifact_rest_digest }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          PARITY_RESULT: ${{ needs.parity.result }}
+          CURRENT_MAIN_MATCH: ${{ needs.parity.outputs.current_main_still_target }}
+        run: |
+          set -euo pipefail
+          state=failure
+          if test "$DEPLOY_RESULT" = success && test "$PARITY_RESULT" = success && test "$CURRENT_MAIN_MATCH" = true; then state=success; fi
+          description="r8 run=${{ github.run_id }} attempt=${{ github.run_attempt }} artifact=$ARTIFACT_ID digest=$ARTIFACT_DIGEST"
+          target_url="https://github.com/$REPOSITORY/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}"
+          jq -nc --arg state "$state" --arg context "$PARITY_STATUS_CONTEXT" --arg description "$description" --arg target_url "$target_url" '{state:$state,context:$context,description:$description,target_url:$target_url}' > "$RUNNER_TEMP/status.json"
+          curl --fail --silent --show-error --request POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" "https://api.github.com/repos/$REPOSITORY/statuses/$TARGET_SHA" --data-binary @"$RUNNER_TEMP/status.json" >/dev/null
+          test "$state" = success

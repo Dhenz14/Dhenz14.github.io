@@ -18,8 +18,8 @@ export const GALAXY_RENDERER_CONTRACT = Object.freeze({
 
 export const GALAXY_RENDERER_CONTRACT_HASH = "698d9c371ebe98b47cffbf10643080cb06ccb2c06267d580349063fb992230ad";
 export const GALAXY_CANONICAL_GEOMETRY_HASH = "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314";
-export const GALAXY_GENERATOR_VERSION = "3.0.0";
-export const GALAXY_SNAPSHOT_VERSION = "3.0.0";
+export const GALAXY_GENERATOR_VERSION = "3.1.0";
+export const GALAXY_SNAPSHOT_VERSION = "3.1.0";
 
 export const GALAXY_PUBLIC_PALETTES = Object.freeze({
   mastery: Object.freeze([[104, 228, 255], [151, 205, 255], [109, 159, 255], [182, 205, 228]]),
@@ -77,13 +77,13 @@ const PUBLIC_HANDOFF_LEVELS = Object.freeze({
   interior: "interior",
 });
 
-export function buildPublicHandoffUrl({ presentation, sourceCommit, graphHash, lens, node, level }) {
+export function buildPublicHandoffContext({ presentation, sourceCommit, graphHash, lens, node, level }) {
   const route = String(presentation);
   const canonicalLens = PUBLIC_HANDOFF_LENSES[String(lens || "").toLowerCase()];
   const canonicalLevel = PUBLIC_HANDOFF_LEVELS[String(level || "").toLowerCase()];
   const rawNode = String(node || "");
   const canonicalNode = /^neuron:N\d{3}$/.test(rawNode) ? rawNode.slice("neuron:".length) : rawNode;
-  if (!["0", "1"].includes(route)
+  if (route !== "1"
     || !HEX40.test(String(sourceCommit || ""))
     || !HEX64.test(String(graphHash || ""))
     || !canonicalLens
@@ -91,20 +91,31 @@ export function buildPublicHandoffUrl({ presentation, sourceCommit, graphHash, l
     || (canonicalNode && !/^N(?:00[1-9]|0[1-9][0-9]|[1-5][0-9]{2}|6[0-3][0-9]|640)$/.test(canonicalNode)
       && !/^division:[A-P]$/.test(canonicalNode)
       && !/^family:[A-P][1-4]$/.test(canonicalNode))) return null;
-  const target = new URL("http://127.0.0.1:5002/constellation/body");
-  target.searchParams.set("presentation", route);
-  target.searchParams.set("publicContextVersion", "1");
-  target.searchParams.set("sourceCommit", sourceCommit);
-  target.searchParams.set("graphHash", graphHash);
-  target.searchParams.set("lens", canonicalLens);
-  target.searchParams.set("node", canonicalNode);
-  target.searchParams.set("level", canonicalLevel);
-  return target.href;
+  return Object.freeze({
+    publicContextVersion: 1,
+    presentation: route,
+    sourceCommit,
+    graphHash,
+    lens: canonicalLens,
+    node: canonicalNode,
+    level: canonicalLevel,
+    effectiveDisposition: "INERT_HOLD_REQUIRES_STRICT_RUNTIME_RECEIPT",
+  });
 }
 
-export function sourceSnapshotPresentation(capturedAt, automaticBridgeEnabled, now = Date.now()) {
+export const PRODUCT_TRUTH_SNAPSHOT_RELATIONS = Object.freeze([
+  "EXACT_REVIEWED_BASELINE_MATCH",
+  "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD",
+  "BRIDGE_INACTIVE_LAST_GOOD_SOURCE",
+  "SNAPSHOT_INVALID_BLOCKED",
+]);
+
+export function sourceSnapshotPresentation(capturedAt, refresh, now = Date.now()) {
   const freshness = snapshotFreshness(capturedAt, now);
-  const bridge = automaticBridgeEnabled ? "configured" : "manual";
+  const configuration = refresh?.automaticBridgeConfiguredAtCapture === true ? "configured_at_capture" : "not_configured_at_capture";
+  const latestConfiguration = refresh?.latestRefreshObservation?.automaticBridgeConfiguredAtObservation === true
+    ? "configured_at_latest_observation"
+    : "not_configured_at_latest_observation";
   const ageLabel = freshness.state === "historical"
     ? "Historical source capture"
     : freshness.state === "aged"
@@ -114,9 +125,13 @@ export function sourceSnapshotPresentation(capturedAt, automaticBridgeEnabled, n
         : "Invalid source capture";
   return Object.freeze({
     freshness: freshness.state,
-    bridge,
-    badgeState: freshness.state !== "invalid" && bridge === "configured" ? "" : "stale",
-    label: `${freshness.state === "invalid" ? ageLabel : "Verified source snapshot"} · ${bridge === "configured" ? "auto-sync configured" : "manual snapshot"}`,
+    configuration,
+    latestConfiguration,
+    executionObservationStatus: "NOT_ATTESTED",
+    currentOperationalStatus: "UNKNOWN",
+    freshnessDisposition: freshness.state === "recent" ? "CURRENT_EVIDENCE_OK" : "FRESHNESS_HOLD",
+    badgeState: freshness.state === "recent" ? "" : "stale",
+    label: `${ageLabel} · ${freshness.state === "invalid" ? "snapshot contract held" : "snapshot contract verified"} · ${freshness.state === "recent" ? "freshness recent" : "freshness HOLD"} · ${configuration === "configured_at_capture" ? "automation configured at capture" : "automation not configured at capture"} · ${latestConfiguration === "configured_at_latest_observation" ? "configured at latest observation" : "not configured at latest observation"} · execution not attested · current operation UNKNOWN`,
   });
 }
 
@@ -284,6 +299,10 @@ export function adaptiveGalaxyDpr({ devicePixelRatio = 1, width = 1, height = 1,
 
 export function snapshotResponseCanCommit({ requestGeneration, currentGeneration, aborted = false }) {
   return !aborted && requestGeneration === currentGeneration;
+}
+
+export function snapshotIdentityChanged(previous, next) {
+  return !previous || previous.snapshotHash !== next?.snapshotHash;
 }
 
 export function snapshotFreshness(capturedAt, now = Date.now()) {
@@ -604,8 +623,8 @@ export async function validGalaxyProjection(galaxy, facts) {
     || galaxy.sourceGraphHash !== facts?.graphHash
     || galaxy.representedNeurons !== GALAXY_PUBLIC_CONTRACT.neurons
     || typeof galaxy.claimBoundary !== "string"
-    || !galaxy.claimBoundary.includes("local read-only Living Anatomy surface")
-    || !galaxy.claimBoundary.includes("authority-bearing Mission Control mutations are credential-gated when configured")
+    || !galaxy.claimBoundary.includes("require a future Living Anatomy surface with separate attestation")
+    || !galaxy.claimBoundary.includes("no local runtime or authority is inferred")
     || !HEX64.test(galaxy.projectionHash || "")
     || !Array.isArray(galaxy.divisions)
     || galaxy.divisions.length !== GALAXY_PUBLIC_CONTRACT.divisions
@@ -680,39 +699,97 @@ export async function validSnapshot(snapshot) {
     || facts.purposeMastered > facts.neurons
     || facts.pmOnly !== facts.purposeMastered - facts.twitches
     || facts.notPurposeMastered !== facts.neurons - facts.purposeMastered
-    || !exactKeys(snapshot.boundaries, ["snapshotOnly", "runtimeTelemetry", "grantsAuthority", "privateEvidencePublished", "localChatUrl", "localGalaxyUrl"])
+    || !exactKeys(snapshot.boundaries, ["snapshotOnly", "runtimeTelemetry", "grantsAuthority", "privateEvidencePublished", "localPresentationContext", "operatorServiceContext", "chatEffectiveDisposition"])
     || snapshot.boundaries.snapshotOnly !== true
     || snapshot.boundaries.runtimeTelemetry !== false
     || snapshot.boundaries.grantsAuthority !== false
     || snapshot.boundaries.privateEvidencePublished !== false
-    || snapshot.boundaries.localChatUrl !== "http://127.0.0.1:5002/chat"
-    || snapshot.boundaries.localGalaxyUrl !== "http://127.0.0.1:5002/constellation/body?presentation=1"
+    || !exactKeys(snapshot.boundaries.localPresentationContext, ["protocol", "hostname", "port", "pathname", "presentation", "effectiveDisposition"])
+    || snapshot.boundaries.localPresentationContext.protocol !== "http"
+    || snapshot.boundaries.localPresentationContext.hostname !== "127.0.0.1"
+    || snapshot.boundaries.localPresentationContext.port !== 5002
+    || snapshot.boundaries.localPresentationContext.pathname !== "/constellation/body"
+    || snapshot.boundaries.localPresentationContext.presentation !== "1"
+    || snapshot.boundaries.localPresentationContext.effectiveDisposition !== "INERT_HOLD_REQUIRES_STRICT_RUNTIME_RECEIPT"
+    || !exactKeys(snapshot.boundaries.operatorServiceContext, ["hostname", "port", "effectiveDisposition"])
+    || snapshot.boundaries.operatorServiceContext.hostname !== "127.0.0.1"
+    || snapshot.boundaries.operatorServiceContext.port !== 5003
+    || snapshot.boundaries.operatorServiceContext.effectiveDisposition !== "HOLD_REQUIRES_DISTINCT_RUNTIME_ATTESTATION"
+    || snapshot.boundaries.chatEffectiveDisposition !== "WAIT_NOT_AVAILABLE"
     || !exactKeys(snapshot.ecosystem, ["schema", "primaryOrgans", "federationRepositories"])
-    || snapshot.ecosystem.schema !== "hive.ecosystem.public-organ-map.v1"
+    || snapshot.ecosystem.schema !== "hive.ecosystem.public-organ-map.v2"
     || snapshot.ecosystem.federationRepositories !== facts.federationRepositories
     || !Array.isArray(snapshot.ecosystem.primaryOrgans)
     || snapshot.ecosystem.primaryOrgans.length !== 6
-    || !exactKeys(snapshot.refresh, ["privateSourceMode", "automaticBridgeEnabled", "reasonCode", "lastGoodBehavior"])
-    || snapshot.refresh.lastGoodBehavior !== "retain_previous_snapshot") return false;
+    || !exactKeys(snapshot.refresh, ["sourceAcquisitionModeAtCapture", "automaticBridgeConfiguredAtCapture", "configurationReasonCodeAtCapture", "latestRefreshObservation", "lastGoodTopologyBehavior"])
+    || !exactKeys(snapshot.refresh.latestRefreshObservation, ["observedAt", "disposition", "reasonCode", "automaticBridgeConfiguredAtObservation", "executionObservationStatus", "currentOperationalStatus"])
+    || !Number.isFinite(Date.parse(snapshot.refresh.latestRefreshObservation.observedAt || ""))
+    || new Date(Date.parse(snapshot.refresh.latestRefreshObservation.observedAt || "")).toISOString().replace(".000Z", "Z") !== snapshot.refresh.latestRefreshObservation.observedAt
+    || typeof snapshot.refresh.latestRefreshObservation.automaticBridgeConfiguredAtObservation !== "boolean"
+    || snapshot.refresh.latestRefreshObservation.executionObservationStatus !== "NOT_ATTESTED"
+    || snapshot.refresh.latestRefreshObservation.currentOperationalStatus !== "UNKNOWN"
+    || ![
+      "PUBLIC_PRIVATE_BRIDGE_RETIRED_PRESENTATION_RELEASE",
+      "AUTOMATIC_BRIDGE_CONFIGURED_CURRENT_OPERATION_UNKNOWN",
+      "MANUAL_SOURCE_CAPTURE_CURRENT_OPERATION_UNKNOWN",
+      "REFRESH_FAILED_LAST_GOOD_SOURCE_HELD",
+    ].includes(snapshot.refresh.latestRefreshObservation.disposition)
+    || snapshot.refresh.lastGoodTopologyBehavior !== "retain_previous_source_facts_and_topology_refresh_boundary_may_change") return false;
 
   const organIds = ["hive-ai", "hivepoa", "neurachain", "hive-ide", "second-brain", "compute-pool"];
   for (const [index, organ] of snapshot.ecosystem.primaryOrgans.entries()) {
-    if (!exactKeys(organ, ["id", "label", "role", "exposure"]) || organ.id !== organIds[index]) return false;
-    if (!["label", "role", "exposure"].every((key) => typeof organ[key] === "string" && organ[key].length > 0)) return false;
+    if (!exactKeys(organ, ["id", "label", "targetRole", "targetExposure", "effectivePublicDisposition"]) || organ.id !== organIds[index]) return false;
+    if (!["label", "targetRole", "targetExposure", "effectivePublicDisposition"].every((key) => typeof organ[key] === "string" && organ[key].length > 0)) return false;
   }
-  const activeCloud = snapshot.refresh.automaticBridgeEnabled === true
-    && snapshot.refresh.privateSourceMode === "scheduled-living-main-publisher"
-    && snapshot.refresh.reasonCode === "SCHEDULED_LIVING_MAIN_PUBLISHER";
-  const activeLocal = snapshot.refresh.automaticBridgeEnabled === true
-    && snapshot.refresh.privateSourceMode === "local-living-main-publisher"
-    && snapshot.refresh.reasonCode === "LOCAL_LIVING_MAIN_PUBLISHER";
-  const inactive = snapshot.refresh.automaticBridgeEnabled === false
-    && snapshot.refresh.privateSourceMode === "manual-source-bound-snapshot"
-    && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED", "MANUAL_WORKFLOW_DISPATCH"].includes(snapshot.refresh.reasonCode);
+  if (snapshot.ecosystem.primaryOrgans[1].effectivePublicDisposition !== "HISTORICAL_QUARANTINE_PUBLIC_ACTIONS_HOLD"
+    || snapshot.ecosystem.primaryOrgans[3].effectivePublicDisposition !== "INTEGRATION_WAIT_NO_CURRENT_PACKAGE_OR_RUNTIME_CLAIM") return false;
+  const activeCloud = snapshot.refresh.automaticBridgeConfiguredAtCapture === true
+    && snapshot.refresh.sourceAcquisitionModeAtCapture === "scheduled-living-main-publisher"
+    && snapshot.refresh.configurationReasonCodeAtCapture === "SCHEDULED_LIVING_MAIN_PUBLISHER";
+  const activeLocal = snapshot.refresh.automaticBridgeConfiguredAtCapture === true
+    && snapshot.refresh.sourceAcquisitionModeAtCapture === "local-living-main-publisher"
+    && snapshot.refresh.configurationReasonCodeAtCapture === "LOCAL_LIVING_MAIN_PUBLISHER";
+  const inactive = snapshot.refresh.automaticBridgeConfiguredAtCapture === false
+    && snapshot.refresh.sourceAcquisitionModeAtCapture === "manual-source-bound-snapshot"
+    && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED", "MANUAL_WORKFLOW_DISPATCH", "MANUAL_SOURCE_SNAPSHOT"].includes(snapshot.refresh.configurationReasonCodeAtCapture);
   if (!activeCloud && !activeLocal && !inactive) return false;
   if (!await validGalaxyProjection(snapshot.galaxy, facts)) return false;
   const { snapshotHash, ...body } = snapshot;
   return snapshotHash === await sha256Hex(canonicalJson(body));
+}
+
+export async function productTruthSemanticRelation(snapshot, reviewedBaseline) {
+  if (!await validSnapshot(snapshot)) return "SNAPSHOT_INVALID_BLOCKED";
+  if (!isPlainObject(reviewedBaseline) || !exactKeys(reviewedBaseline, [
+    "schema", "version", "snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash",
+    "canonicalSemanticDigest",
+  ])) return "SNAPSHOT_INVALID_BLOCKED";
+  const semanticProjection = {
+    snapshotVersion: reviewedBaseline.snapshotVersion,
+    sourceCommit: reviewedBaseline.sourceCommit,
+    graphHash: reviewedBaseline.graphHash,
+    sourceFingerprint: reviewedBaseline.sourceFingerprint,
+    projectionHash: reviewedBaseline.projectionHash,
+    geometryHash: reviewedBaseline.geometryHash,
+  };
+  if (reviewedBaseline.schema !== "hive.ecosystem.product-truth.semantic-baseline.v1"
+    || reviewedBaseline.version !== 1
+    || reviewedBaseline.canonicalSemanticDigest !== await sha256Hex(canonicalJson(semanticProjection))) return "SNAPSHOT_INVALID_BLOCKED";
+  const exact = reviewedBaseline.snapshotVersion === snapshot.snapshotVersion
+    && reviewedBaseline.sourceCommit === snapshot.hiveAi.sourceCommit
+    && reviewedBaseline.graphHash === snapshot.hiveAi.graphHash
+    && reviewedBaseline.sourceFingerprint === snapshot.hiveAi.sourceFingerprint
+    && reviewedBaseline.projectionHash === snapshot.galaxy.projectionHash
+    && reviewedBaseline.geometryHash === snapshot.galaxy.geometry.geometryHash;
+  return exact ? "EXACT_REVIEWED_BASELINE_MATCH" : "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD";
+}
+
+export async function productTruthSnapshotRelation(snapshot, reviewedBaseline) {
+  const semanticRelation = await productTruthSemanticRelation(snapshot, reviewedBaseline);
+  if (semanticRelation !== "EXACT_REVIEWED_BASELINE_MATCH") return semanticRelation;
+  return snapshot.refresh.latestRefreshObservation.automaticBridgeConfiguredAtObservation === false
+    ? "BRIDGE_INACTIVE_LAST_GOOD_SOURCE"
+    : "EXACT_REVIEWED_BASELINE_MATCH";
 }
 
 function nearestProjected(points, pointer, radiusFor) {

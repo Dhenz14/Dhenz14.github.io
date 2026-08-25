@@ -1,0 +1,11 @@
+{
+  "schema": "hive.ecosystem.product-truth.semantic-baseline.v1",
+  "version": 1,
+  "snapshotVersion": "3.1.0",
+  "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+  "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
+  "sourceFingerprint": "f177f665aceb2689d69f7bbb283e9165380c306edced348312cd16fb47d4c8bb",
+  "projectionHash": "58f8aa20d200bb4ec1bb6d13810bda85b6e1b7c189f8c070b3d9070d67b9d80b",
+  "geometryHash": "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314",
+  "canonicalSemanticDigest": "f9022dca084c3fab57caa77a2782ac0d5a2e972d22f0f7d413464ba5ddab3b43"
+}

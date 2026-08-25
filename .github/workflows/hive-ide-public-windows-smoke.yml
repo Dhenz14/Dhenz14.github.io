@@ -1,53 +1,34 @@
-name: Hive IDE public Windows smoke
+name: Hive IDE public Windows smoke — HOLD
 
 on:
   workflow_dispatch:
-    inputs:
-      latest_url:
-        description: Canonical central Hive IDE latest feed
-        required: true
-        default: https://dhenz14.github.io/downloads/hive-ide/latest.json
-        type: string
-      expected_source_commit:
-        description: Exact landed Hive IDE source commit in the public release
-        required: true
-        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: hive-ide-public-windows-smoke-${{ inputs.expected_source_commit }}
-  cancel-in-progress: false
+  group: hive-ide-public-windows-smoke-hold
+  cancel-in-progress: true
 
 jobs:
-  fresh-windows-public-smoke:
-    runs-on: windows-latest
-    timeout-minutes: 45
+  evidence-expired-hold:
+    name: No installer action — evidence expired
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Check out central release contract
+      - name: Check out the held evidence contract
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-
-      - name: Validate landed release documents
-        shell: pwsh
-        run: node script/check-ide-release.mjs
-
-      - name: Verify exact public bytes, install, launch, close, and uninstall
-        shell: pwsh
-        env:
-          LATEST_URL: ${{ inputs.latest_url }}
-          EXPECTED_SOURCE_COMMIT: ${{ inputs.expected_source_commit }}
-        run: |
-          & script/run-ide-public-windows-smoke.ps1 `
-            -LatestUrl $env:LATEST_URL `
-            -ExpectedSourceCommit $env:EXPECTED_SOURCE_COMMIT `
-            -OutPath '${{ runner.temp }}\hive-ide-public-windows-smoke.json'
-
-      - name: Upload immutable Windows acceptance receipt
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: hive-ide-public-windows-smoke-${{ inputs.expected_source_commit }}
-          if-no-files-found: warn
-          retention-days: 30
-          path: ${{ runner.temp }}\hive-ide-public-windows-smoke.json
+          persist-credentials: false
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Validate the expired evidence and effective HOLD
+        shell: bash
+        run: |
+          set -euo pipefail
+          node script/check-ide-release.mjs --self-test
+          echo "EVIDENCE_EXPIRED_HELD: zero installer bytes fetched, executed, installed, launched, or tested."

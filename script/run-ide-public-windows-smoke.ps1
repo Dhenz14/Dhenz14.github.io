@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS
-Verifies, installs, launches, closes, and uninstalls the exact public Hive IDE
+DORMANT post-recertification harness for verifying, installing, launching,
+closing, and uninstalling an exact public Hive IDE
 tester release on a fresh GitHub-hosted Windows runner.
 
 .DESCRIPTION
@@ -8,6 +9,9 @@ This script is intentionally public-channel-only. It refuses non-hosted
 machines, pre-existing Hive IDE installs, non-canonical release URLs, hash or
 size drift, and installed executable drift. Cleanup is limited to the exact
 process, uninstall entry, and runner-temp directory created by this run.
+This harness is not invoked by the current public workflow. It may be re-enabled
+only after fresh package evidence and separate operator authorization replace
+the effective EVIDENCE_EXPIRED_HELD disposition.
 #>
 [CmdletBinding()]
 param(

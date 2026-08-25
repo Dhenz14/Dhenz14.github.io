@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#06131b">
+  <title>HivePoA // Historical Boundary Hold</title>
+  <meta name="description" content="HivePoA public actions are quarantined. Historical provenance is preserved; current delivery, coordinator, enrollment, execution, runtime, and product-live states are not observed.">
+  <style>
+    :root { color-scheme: dark; --void:#02080e; --deep:#06131b; --line:rgba(90,234,206,.28); --mint:#72f4d7; --cyan:#76d7ff; --amber:#ffc767; --text:#eaf7f5; --muted:#a8bfbe; }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--void); }
+    body { min-height:100vh; margin:0; display:grid; place-items:center; padding:clamp(1rem,4vw,3rem); color:var(--text); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:radial-gradient(circle at 18% 15%,rgba(35,216,182,.14),transparent 32rem),radial-gradient(circle at 82% 76%,rgba(69,143,255,.13),transparent 36rem),linear-gradient(145deg,var(--void),var(--deep) 58%,#041019); }
+    main { width:min(64rem,100%); padding:clamp(1.4rem,4vw,3.25rem); overflow:hidden; border:1px solid var(--line); border-radius:1.35rem; background:linear-gradient(155deg,rgba(12,38,49,.96),rgba(7,25,34,.96)); box-shadow:0 2rem 7rem rgba(0,0,0,.52),inset 0 1px rgba(255,255,255,.04); }
+    .eyebrow { margin:0 0 1rem; color:var(--mint); font:800 .875rem/1.4 ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.12em; text-transform:uppercase; }
+    .status { display:inline-flex; align-items:center; gap:.65rem; min-height:2.75rem; margin-bottom:1.2rem; padding:.55rem .9rem; border:1px solid rgba(255,199,103,.55); border-radius:999px; color:#ffe2aa; background:rgba(116,74,13,.28); font:800 .875rem/1.2 ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.08em; }
+    .status::before { width:.55rem; height:.55rem; border-radius:50%; content:""; background:var(--amber); box-shadow:0 0 1rem rgba(255,199,103,.9); }
+    h1 { max-width:17ch; margin:0; font-size:clamp(2.25rem,7vw,5.2rem); line-height:.98; letter-spacing:-.05em; text-wrap:balance; }
+    .lead { max-width:54rem; margin:1.4rem 0 0; color:#c9dcda; font-size:clamp(1rem,2vw,1.2rem); line-height:1.7; }
+    .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.85rem; margin-top:2rem; }
+    .grid article { padding:1.1rem; border:1px solid rgba(118,215,255,.17); border-radius:.95rem; background:rgba(1,11,17,.48); }
+    .grid span { color:var(--cyan); font:800 .8125rem/1.4 ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.08em; }
+    .grid strong { display:block; margin-top:.55rem; font-size:1.05rem; }
+    .grid p { margin:.45rem 0 0; color:var(--muted); font-size:.9375rem; line-height:1.6; }
+    .boundary { margin:1.4rem 0 0; padding:.1rem 0 .1rem 1rem; border-left:2px solid var(--amber); color:#d7e6e4; font-size:.9375rem; line-height:1.65; }
+    a { display:inline-flex; align-items:center; min-height:2.75rem; margin-top:1.5rem; padding:.7rem 1rem; border:1px solid rgba(114,244,215,.5); border-radius:999px; color:var(--mint); background:rgba(21,108,94,.18); font-weight:800; text-decoration:none; }
+    a:hover,a:focus-visible { outline:3px solid var(--mint); outline-offset:3px; color:#06131b; background:var(--mint); }
+    .foot { margin:1rem 0 0; color:#809b99; font:700 .8125rem/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.04em; text-transform:uppercase; }
+    @media (max-width:45rem) { body{place-items:start center;padding:.75rem}.grid{grid-template-columns:1fr}main{border-radius:1rem;padding:1.3rem} }
+  </style>
+</head>
+<body>
+  <main aria-labelledby="hold-title">
+    <p class="eyebrow">HivePoA // historical quarantine boundary</p>
+    <div class="status" role="status">HOLD · NO PUBLIC ACTIONS</div>
+    <h1 id="hold-title">History is preserved. Current operation is not claimed.</h1>
+    <p class="lead">This route is an actionless quarantine panel. Earlier operator-key metadata and candidate receipts remain provenance in repository history, but this public artifact exposes no package, verifier, installer, enrollment, credit, coordinator, or network action.</p>
+    <div class="grid">
+      <article><span>IMMUTABLE HISTORY</span><strong>Historical metadata preserved</strong><p>The earlier observation remains attributable to its own evidence window. It is not a current deployment readback or an independent trust root.</p></article>
+      <article><span>CURRENT EFFECTIVE STATE</span><strong>Delivery and network HOLD</strong><p>Package retrievability, coordinator reachability, enrollment, and execution are not currently observed by this artifact.</p></article>
+      <article><span>PRODUCT PLANE</span><strong>Runtime and product-live UNKNOWN</strong><p>No public runtime receipt or behavior observation is admitted. UNKNOWN is not silently converted to FALSE or PASS.</p></article>
+    </div>
+    <p class="boundary">Publication custody and product behavior are separate. A future HivePoA surface needs a fresh deployment/readback record, independent validation, and explicit authority before any action can be exposed.</p>
+    <a href="/#product-truth">Return to Product Truth</a>
+    <p class="foot">Authority: none · public actions: none · current deployment: unknown / hold</p>
+  </main>
+</body>
+</html>

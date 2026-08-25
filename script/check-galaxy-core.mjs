@@ -13,7 +13,7 @@ import {
   GALAXY_RENDERER_CONTRACT,
   GALAXY_RENDERER_CONTRACT_HASH,
   adaptiveGalaxyDpr,
-  buildPublicHandoffUrl,
+  buildPublicHandoffContext,
   buildGalaxyGeometry,
   canonicalJson,
   depthSortGalaxyPoints,
@@ -39,11 +39,12 @@ import {
   validPublicGeometryProjection,
   validSnapshot,
 } from "../hub-assets/galaxy-core.mjs";
+import { readHubFactsSync } from "./hub-facts-custody.mjs";
 
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const facts = JSON.parse(fs.readFileSync(path.join(root, "hub-assets", "hub-facts.json"), "utf8"));
+const facts = readHubFactsSync(path.join(root, "hub-assets", "hub-facts.json"), "galaxy core fixture");
 const clone = (value) => structuredClone(value);
 const TITLE_MINOR_WORDS = new Set(["a", "an", "and", "as", "at", "but", "by", "for", "in", "nor", "of", "on", "or", "per", "the", "to", "via", "with"]);
 const titleCase = (value) => String(value || "").toLowerCase().replace(/\b[a-z0-9']+/g, (word, offset) =>
@@ -197,50 +198,65 @@ assert(snapshotFreshness("2026-08-04T19:00:00Z", freshnessNow).state === "histor
 assert(snapshotFreshness("not-a-date", freshnessNow).state === "invalid", "invalid source capture accepted");
 assert(snapshotFreshness("2999-01-01T00:00:00Z", freshnessNow).state === "invalid", "far-future source capture marked recent");
 assert(snapshotFreshness("2026-08-04T21:04:00Z", freshnessNow).state === "recent", "bounded clock skew rejected");
-for (const automaticBridgeEnabled of [true, false]) {
-  const recent = sourceSnapshotPresentation("2026-08-04T20:50:00Z", automaticBridgeEnabled, freshnessNow);
-  const aged = sourceSnapshotPresentation("2026-08-04T20:40:00Z", automaticBridgeEnabled, freshnessNow);
-  const historical = sourceSnapshotPresentation("2026-08-04T19:00:00Z", automaticBridgeEnabled, freshnessNow);
-  assert(recent.freshness === "recent" && aged.freshness === "aged" && historical.freshness === "historical", `source age was coupled to bridge=${automaticBridgeEnabled}`);
-  const expectedBridge = automaticBridgeEnabled ? "configured" : "manual";
-  const expectedSuffix = automaticBridgeEnabled ? "auto-sync configured" : "manual snapshot";
-  assert([recent, aged, historical].every((value) => value.bridge === expectedBridge && value.label.endsWith(expectedSuffix)), `bridge=${automaticBridgeEnabled} was not reported separately`);
-  const expectedBadgeState = automaticBridgeEnabled ? "" : "stale";
-  assert([recent, aged, historical].every((value) => value.badgeState === expectedBadgeState && value.label.startsWith("Verified source snapshot")), `validated snapshot status was coupled to source age for bridge=${automaticBridgeEnabled}`);
+for (const configuredAtCapture of [true, false]) {
+  const refresh = {
+    automaticBridgeConfiguredAtCapture: configuredAtCapture,
+    latestRefreshObservation: { automaticBridgeConfiguredAtObservation: false },
+  };
+  const recent = sourceSnapshotPresentation("2026-08-04T20:50:00Z", refresh, freshnessNow);
+  const aged = sourceSnapshotPresentation("2026-08-04T20:40:00Z", refresh, freshnessNow);
+  const historical = sourceSnapshotPresentation("2026-08-04T19:00:00Z", refresh, freshnessNow);
+  assert(recent.freshness === "recent" && aged.freshness === "aged" && historical.freshness === "historical", `source age was coupled to configuration-at-capture=${configuredAtCapture}`);
+  const expectedConfiguration = configuredAtCapture ? "configured_at_capture" : "not_configured_at_capture";
+  const expectedLabel = configuredAtCapture ? "automation configured at capture" : "automation not configured at capture";
+  assert([recent, aged, historical].every((value) => value.configuration === expectedConfiguration
+    && value.executionObservationStatus === "NOT_ATTESTED"
+    && value.currentOperationalStatus === "UNKNOWN"
+    && value.label.includes(expectedLabel)
+    && value.label.endsWith("execution not attested · current operation UNKNOWN")), `configuration-at-capture=${configuredAtCapture} was not reported separately from current operation`);
+  assert(recent.badgeState === "" && recent.freshnessDisposition === "CURRENT_EVIDENCE_OK", `recent source capture was not current for configuration-at-capture=${configuredAtCapture}`);
+  assert([aged, historical].every((value) => value.badgeState === "stale" && value.freshnessDisposition === "FRESHNESS_HOLD" && value.label.includes("freshness HOLD")), `aged source capture escaped freshness HOLD for configuration-at-capture=${configuredAtCapture}`);
 }
-assert(sourceSnapshotPresentation("not-a-date", true, freshnessNow).badgeState === "stale", "invalid source capture received a verified badge");
+assert(sourceSnapshotPresentation("not-a-date", { automaticBridgeConfiguredAtCapture: true, latestRefreshObservation: { automaticBridgeConfiguredAtObservation: false } }, freshnessNow).badgeState === "stale", "invalid source capture received a verified badge");
 
 const handoffCommit = "a".repeat(40);
 const handoffGraph = "b".repeat(64);
 const handoffMatrix = [
   {
     input: { presentation: "1", lens: "mastery", node: "division:A", level: "division" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=mastery&node=division%3AA&level=district`,
+    expected: { lens: "mastery", node: "division:A", level: "district" },
   },
   {
-    input: { presentation: "0", lens: "artifact", node: "neuron:N640", level: "neuron" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=build&node=N640&level=neuron`,
+    input: { presentation: "1", lens: "artifact", node: "neuron:N640", level: "neuron" },
+    expected: { lens: "build", node: "N640", level: "neuron" },
   },
   {
     input: { presentation: "1", lens: "evidence", node: "family:P4", level: "family" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=evidence&node=family%3AP4&level=family`,
+    expected: { lens: "evidence", node: "family:P4", level: "family" },
   },
   {
-    input: { presentation: "0", lens: "runtime", node: "N001", level: "interior" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=0&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=runtime&node=N001&level=interior`,
+    input: { presentation: "1", lens: "runtime", node: "N001", level: "interior" },
+    expected: { lens: "runtime", node: "N001", level: "interior" },
   },
   {
     input: { presentation: "1", lens: "product", node: "", level: "body" },
-    expected: `http://127.0.0.1:5002/constellation/body?presentation=1&publicContextVersion=1&sourceCommit=${handoffCommit}&graphHash=${handoffGraph}&lens=product&node=&level=body`,
+    expected: { lens: "product", node: "", level: "body" },
   },
 ];
 for (const row of handoffMatrix) {
-  const actual = buildPublicHandoffUrl({ ...row.input, sourceCommit: handoffCommit, graphHash: handoffGraph });
-  assert(actual === row.expected, `canonical handoff URL drifted: ${actual}`);
-  const keys = [...new URL(actual).searchParams.keys()];
-  assert(keys.join(",") === "presentation,publicContextVersion,sourceCommit,graphHash,lens,node,level", "handoff query allowlist/order drifted");
+  const actual = buildPublicHandoffContext({ ...row.input, sourceCommit: handoffCommit, graphHash: handoffGraph });
+  assert(JSON.stringify(actual) === JSON.stringify({
+    publicContextVersion: 1,
+    presentation: "1",
+    sourceCommit: handoffCommit,
+    graphHash: handoffGraph,
+    ...row.expected,
+    effectiveDisposition: "INERT_HOLD_REQUIRES_STRICT_RUNTIME_RECEIPT",
+  }), `canonical inert handoff context drifted: ${JSON.stringify(actual)}`);
+  assert(!JSON.stringify(actual).includes("127.0.0.1") && !JSON.stringify(actual).includes("http"), "inert context constructed a loopback URL");
 }
-assert(buildPublicHandoffUrl({ ...handoffMatrix[0].input, sourceCommit: "main", graphHash: handoffGraph }) === null, "unbound source handoff was emitted");
+assert(buildPublicHandoffContext({ ...handoffMatrix[0].input, sourceCommit: "main", graphHash: handoffGraph }) === null, "unbound source handoff was emitted");
+assert(buildPublicHandoffContext({ ...handoffMatrix[0].input, presentation: "0", sourceCommit: handoffCommit, graphHash: handoffGraph }) === null, "operator mode was aliased onto the presentation service");
 
 const directorState = {
   lens: "evidence", activeDivision: 7, activeFamily: 29, activeNeuron: 298,
@@ -628,4 +644,4 @@ const normalHaloOutside = selectGalaxyHit({ pointer: { x: normalDivisionRadius +
 const selectedHaloInside = selectGalaxyHit({ pointer: { x: selectedDivisionRadius - 0.1, y: 0 }, zoom: 1, lens: "mastery", projectedDivisions: oneDivision, projectedFamilies: [], projectedNeurons: [], activeDivision: 0 });
 assert(normalHaloInside.divisionIndex === 0 && normalHaloOutside.divisionIndex === -1 && selectedHaloInside.divisionIndex === 0, "division hit radius diverged from its rendered halo");
 
-console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 division_nav_options=${divisionNavigatorLabels.length} division_nav_selections=${divisionNavigatorSelectionCases} overview_camera_cases=${overviewCameraCases} integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 handoff_urls=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} safe_frame_label_cases=${safeFrameLabelCases} exact_exit_fixture=1 pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6 bundled_membership_cases=${bundledMembershipCases}`);
+console.log(`GALAXY_CORE_OK negative_snapshots=23 authored=16/64/640 division_nav_options=${divisionNavigatorLabels.length} division_nav_selections=${divisionNavigatorSelectionCases} overview_camera_cases=${overviewCameraCases} integrated_center_hits=${exhaustiveCenterHits} representative_center_hits=${representativeCenterHits} depth_overlap_cases=1 finite_projections=${finiteProjections} fitted_selections=${fittedSelections} viewports=${viewports.length} zoom_levels=4 inert_handoff_contexts=${handoffMatrix.length} fixed_control_overlay_cases=${overlayCases} safe_frame_label_cases=${safeFrameLabelCases} exact_exit_fixture=1 pointer_policies=3 render_states=4 gesture_cases=2 freshness_bridge_cases=6 bundled_membership_cases=${bundledMembershipCases}`);

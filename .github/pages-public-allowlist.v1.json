@@ -1,0 +1,100 @@
+{
+  "schema": "hive.pages.reviewed-public-allowlist.v1",
+  "artifactPolicy": "BRAND_NEW_EMPTY_STAGE_EXACT_MEMBERSHIP",
+  "publicFiles": [
+    "404.html",
+    "downloads/hive-ide/hive-ide-release-manifest.json",
+    "downloads/hive-ide/latest.json",
+    "favicon.ico",
+    "favicon.svg",
+    "HivePoA/robots.txt",
+    "HivePoA/sitemap.xml",
+    "hub-assets/galaxy-core.mjs",
+    "hub-assets/hub-facts.json",
+    "hub-assets/hub.css",
+    "hub-assets/hub.js",
+    "hub-assets/ide-release-core.mjs",
+    "hub-assets/og.png",
+    "hub-assets/product-truth-ledger.public.v2.json",
+    "hub-assets/product-truth-semantic-baseline.v1.json",
+    "hub-assets/product-truth.json",
+    "hub-assets/strict-json-fetch.mjs",
+    "hub-assets/strict-json.mjs",
+    "index.html",
+    "robots.txt",
+    "site.webmanifest",
+    "sitemap.xml"
+  ],
+  "generatedFiles": [
+    {
+      "path": ".nojekyll",
+      "content": ""
+    }
+  ],
+  "generatedQuarantineRoutes": [
+    "HivePoA/distribution/index.html",
+    "HivePoA/download/index.html",
+    "HivePoA/get-started/index.html",
+    "HivePoA/index.html",
+    "HivePoA/releases/index.html",
+    "HivePoA/tester-network/index.html",
+    "HivePoA/verify/index.html"
+  ],
+  "deliberatePublicJson": [
+    "downloads/hive-ide/hive-ide-release-manifest.json",
+    "downloads/hive-ide/latest.json",
+    "hub-assets/hub-facts.json",
+    "hub-assets/product-truth-ledger.public.v2.json",
+    "hub-assets/product-truth-semantic-baseline.v1.json",
+    "hub-assets/product-truth.json"
+  ],
+  "forbiddenPrefixes": [
+    ".github/",
+    "docs/",
+    "fixtures/",
+    "HivePoA/cid-mirrors/",
+    "HivePoA/distribution-assets/",
+    "script/",
+    "tests/"
+  ],
+  "privateSourceOnlyPaths": [
+    ".github/test-fixtures/hivepoa/historical-quarantine-receipt-a4ff709e5310.json",
+    "HivePoA/.distribution-publish-receipt.json",
+    "HivePoA/.nojekyll",
+    "HivePoA/build-receipt.json",
+    "HivePoA/hivepoa-distribution-boundary.json",
+    "HivePoA/public-surface-quarantine-receipt.json",
+    "HivePoA/README.md",
+    "HivePoA/tester-network/STORAGE_POA_TESTER_NETWORK_RUNBOOK_20260802.md",
+    "hub-assets/product-truth-ledger.v1.json",
+    "README.md"
+  ],
+  "forbiddenExactPaths": [
+    ".github/test-fixtures/hivepoa/historical-index-1a607c451406.html",
+    ".github/test-fixtures/hivepoa/portable-signed-release-fixture.v1.json",
+    ".github/test-fixtures/hivepoa/tester-network-authorization-3f397e3bc3a6.js",
+    "HivePoA/.distribution-publish-receipt.json",
+    "HivePoA/.nojekyll",
+    "HivePoA/cid-mirrors/bafkreiatijblkzbvtdndxlme7rbx4r2zdfttoe44xahx7ab57fqplqshge.json",
+    "HivePoA/cid-mirrors/bafkreibdvxhdmkxbnf6iqnvmloc3q3t2ngq34psakn5ys26yddn3z7xr5q.json",
+    "HivePoA/cid-mirrors/bafkreicft4cqngoscw5c3st4bw6tvjc7a32gwhj2pysedmwedc7df7mu7y.json",
+    "HivePoA/cid-mirrors/bafkreicglv7rvpweykprefu72z742ynj6by3p6vmwtnnqzti553njjvg24.json",
+    "HivePoA/cid-mirrors/bafkreicnn2esivmzvtaqucmjcyysqixqaff2z32glicfs6ifsuckwvdc2a.json",
+    "HivePoA/cid-mirrors/bafkreidt6fnduic6wijlhhmv3cf7jj7e2o2z4cxyndksrl4jb6npbubqa4.json",
+    "HivePoA/cid-mirrors/bafkreiepwx7dxa4ljdfr2ygtclzfex7qhmwjpxdbgl54v6pcmdtjenpdaq.json",
+    "HivePoA/cid-mirrors/bafkreifzenpkcb4pcu7ih5j3eb4jf6ooki6vnunxqg3bjd5a4tmrwwguly.json",
+    "HivePoA/cid-mirrors/bafkreig7f36xgvlesj5htaobbdn6chigkp7jynselzxyqipo7ooa4fksqy.json",
+    "HivePoA/cid-mirrors/bafkreiglr46qzxtrwyib37e5yskwmldk5pmiduaz5rdp2flg2gfjsnxhvu.json",
+    "HivePoA/cid-mirrors/bafkreigztluszx7efo7h26g3k6fppisc6v5lgjeudld27typvtpjyc2mka.json",
+    "HivePoA/cid-mirrors/bafkreih656qofx55wbzf4bjprmfk4pl57puazqjw6ixpn7g6wcxlp64fki.json",
+    "HivePoA/cid-mirrors/bafkreihdfh5a2tig56aobhfmfjp5njxiguijg7ni2umy2bwxxigftaqeo4.json",
+    "HivePoA/cid-mirrors/bafkreihhvomr6ncawwsg6fd4ma5rkrtkpsqgqzdyu4w6yd7egdzh7rqqte.json",
+    "HivePoA/cid-mirrors/bafkreihnwn65vtnyrohj5vbi6efzv3vvlfholk7pz2nqirutic63qcevea.json",
+    "HivePoA/cid-mirrors/bafkreihsrbx7h4sycmuf5mkmogpbvhqtbbhp7lajwxulrvjslsslzmjjky.json",
+    "HivePoA/distribution-assets/distribution.css",
+    "HivePoA/distribution-assets/distribution.js",
+    "HivePoA/distribution-assets/tester-network-authorization.d.ts",
+    "HivePoA/distribution-assets/tester-network-authorization.js",
+    "hub-assets/product-truth-ledger.v1.json"
+  ]
+}

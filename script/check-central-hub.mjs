@@ -1423,7 +1423,7 @@ requireMatch(pagesWorkflow, /push:[\s\S]*branches: \[main\][\s\S]*workflow_dispa
 requireMatch(pagesWorkflow, /EVENT_SHA[\s\S]*WORKFLOW_SHA[\s\S]*git\/ref\/heads\/main[\s\S]*admitted=false[\s\S]*stale=true/, "exact current-main workflow authority gate");
 requireMatch(workflowJob("redispatch-stale"), /actions: write[\s\S]*publish-reviewed-pages\.yml\/dispatches[\s\S]*ref.*main/, "bounded stale-authority redispatch");
 requireMatch(pagesWorkflow, /pages\/parity\/r8[\s\S]*candidate_noop[\s\S]*Probe exact live bytes before no-op[\s\S]*action=noop/, "durable exact-SHA watermark plus fresh parity no-op gate");
-requireMatch(pagesWorkflow, /actions\/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b[\s\S]*actions\/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9[\s\S]*actions\/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128/, "pinned custom Pages action chain");
+requireMatch(pagesWorkflow, /actions\/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d[\s\S]*actions\/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9[\s\S]*actions\/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128/, "pinned custom Pages action chain");
 requireNoMatch(pagesWorkflow, /upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b/, "v4.0.0 upload-pages-artifact excludes .nojekyll");
 requireMatch(pagesWorkflow, /cron: "17 6 \* \* \*"[\s\S]*retention-days: 30/, "daily recovery schedule and 30-day artifact retention");
 requireNoMatch(pagesWorkflow, /cron: "17,47 \* \* \*"|retention-days: 1/, "aggressive twice-hourly churn or one-day artifact expiry");

@@ -24,7 +24,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="/hub-assets/hub.css?v=galaxy-stark-v19">
+    <link rel="stylesheet" href="/hub-assets/hub.css?v=galaxy-stark-v20">
     <title>Hive AI — One Constellation Brain, Visible Proof</title>
     <script type="application/ld+json">
       {
@@ -36,7 +36,7 @@
       }
     </script>
   </head>
-  <body>
+  <body data-surface-mode="presentation">
     <canvas class="field-canvas" data-field-canvas aria-hidden="true"></canvas>
     <div class="ambient ambient-a" aria-hidden="true"></div>
     <div class="ambient ambient-b" aria-hidden="true"></div>
@@ -58,6 +58,10 @@
         <a href="#product-truth" aria-label="Product Truth Manifest">Truth</a>
       </nav>
       <div class="topbar-tools">
+        <div class="surface-mode" role="group" aria-label="Surface mode">
+          <button type="button" data-surface-mode-button="presentation" aria-pressed="true">Presentation</button>
+          <button type="button" data-surface-mode-button="proof" aria-pressed="false">Proof</button>
+        </div>
         <a class="source-badge" href="#product-truth" title="JavaScript verifies the exact published source snapshot before showing freshness. Open the Product Truth Manifest.">
           <span class="pulse-dot" aria-hidden="true"></span>
           Snapshot pending
@@ -67,6 +71,15 @@
         </button>
       </div>
     </header>
+
+    <div class="system-state-strip" aria-label="Public system state">
+      <span><b>SOURCE</b> PRESENT</span>
+      <span><b>RUNTIME</b> NOT ATTESTED</span>
+      <span><b>LOCAL</b> HOLD</span>
+      <span><b>OPERATOR</b> HOLD</span>
+      <span><b>CHAT</b> WAIT</span>
+      <span><b>IDE</b> WAIT</span>
+    </div>
 
     <main id="main">
       <section class="hero section-shell" id="overview" aria-labelledby="hero-title">
@@ -93,6 +106,10 @@
             <span>LOCAL BODY HOLD · OPERATOR HOLD · CHAT WAIT · IDE WAIT · HIVEPOA QUARANTINED</span>
           </div>
           <p class="hero-doctrine"><strong>BOUNDARY:</strong> source-bound target; installed runtime and product-live behavior are not attested.</p>
+          <p class="hero-mode-hint" data-presentation-only>
+            Exact hashes, HOLD matrices, and publication receipts stay in
+            <button type="button" class="text-button" data-surface-mode-button="proof">Proof mode</button>.
+          </p>
         </div>
 
         <div class="hero-system" data-motion-scene data-hero-organism-preview aria-label="Target organism map: Hive-AI reasoning with a held historical HivePoA proof boundary">
@@ -313,7 +330,20 @@
         </div>
       </section>
 
-      <section class="product-truth section-pad" id="product-truth" aria-labelledby="product-truth-title" data-product-truth data-state="checking">
+      <section class="proof-teaser section-pad" data-presentation-only aria-labelledby="proof-teaser-title">
+        <div class="section-shell proof-teaser-shell" data-reveal>
+          <div>
+            <p class="eyebrow">Proof stays available</p>
+            <h2 id="proof-teaser-title">Need the exact digests and HOLD matrix?</h2>
+            <p>Presentation mode keeps the product story short. Proof mode restores Product Truth, IDE evidence, HivePoA quarantine detail, and the full claim ceiling.</p>
+          </div>
+          <button type="button" class="button button-quiet" data-surface-mode-button="proof">
+            <span>Open Proof mode</span><small>Hashes · HOLD/WAIT · receipts</small>
+          </button>
+        </div>
+      </section>
+
+      <section class="product-truth section-pad" id="product-truth" aria-labelledby="product-truth-title" data-product-truth data-state="checking" data-proof-depth>
         <div class="section-shell">
           <header class="section-heading product-truth-heading" data-reveal>
             <div>
@@ -401,7 +431,7 @@
         </div>
       </section>
 
-      <section class="ide-release section-pad" id="ide-download" aria-labelledby="ide-release-title" data-ide-release data-state="checking">
+      <section class="ide-release section-pad" id="ide-download" aria-labelledby="ide-release-title" data-ide-release data-state="checking" data-proof-depth>
         <div class="section-shell">
           <header class="section-heading ide-release-heading" data-reveal>
             <div>
@@ -505,6 +535,7 @@
               <button type="button" data-galaxy-zoom="in" aria-label="Zoom in" aria-disabled="true" disabled>+</button>
               <button type="button" data-galaxy-fullscreen aria-haspopup="dialog" aria-disabled="true" disabled>Full atlas</button>
             </div>
+            <p class="visually-hidden" data-galaxy-live role="status" aria-live="polite" aria-atomic="true"></p>
           </div>
 
           <div class="anatomy-workbench galaxy-workbench" data-motion-scene data-galaxy-dialog>
@@ -730,7 +761,7 @@
         </div>
       </section>
 
-      <section class="tester section-shell section-pad" id="tester" aria-labelledby="tester-title">
+      <section class="tester section-shell section-pad" id="tester" aria-labelledby="tester-title" data-proof-depth>
         <header class="section-heading tester-heading" data-reveal>
           <div>
             <p class="eyebrow">HivePoA / actionless historical boundary</p>
@@ -819,6 +850,6 @@
     <noscript>
       <div class="noscript-banner">Source freshness, manifest validation, and motion controls need JavaScript. All navigation remains available; no package or live-source claim is authorized by this fallback.</div>
     </noscript>
-    <script type="module" src="/hub-assets/hub.js?v=galaxy-stark-v19"></script>
+    <script type="module" src="/hub-assets/hub.js?v=galaxy-stark-v20"></script>
   </body>
 </html>

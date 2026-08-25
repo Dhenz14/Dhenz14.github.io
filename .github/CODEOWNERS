@@ -1,0 +1,12 @@
+# Publication and contract surfaces require explicit ownership review when
+# GitHub CODEOWNERS reviews are enabled. Solo-admin repos still document intent.
+.github/workflows/ @Dhenz14
+.github/pages-public-allowlist.v1.json @Dhenz14
+.github/pages-templates/ @Dhenz14
+.github/CODEOWNERS @Dhenz14
+script/ @Dhenz14
+docs/publication-receipts/ @Dhenz14
+hub-assets/product-truth.json @Dhenz14
+hub-assets/product-truth-semantic-baseline.v1.json @Dhenz14
+hub-assets/product-truth-ledger.v1.json @Dhenz14
+hub-assets/product-truth-ledger.public.v2.json @Dhenz14

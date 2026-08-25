@@ -26,7 +26,7 @@ import {
   snapshotIdentityChanged,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v19";
+} from "./galaxy-core.mjs?v=galaxy-stark-v20";
 import {
   IDE_RELEASE_LATEST_BYTES,
   IDE_RELEASE_LATEST_MAX_BYTES,
@@ -37,11 +37,11 @@ import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
   validateIdeReleaseTruthManifest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v19";
+} from "./ide-release-core.mjs?v=galaxy-stark-v20";
 import {
   parseJsonStrict,
-} from "./strict-json.mjs?v=galaxy-stark-v19";
-import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v19";
+} from "./strict-json.mjs?v=galaxy-stark-v20";
+import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v20";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 1;
 const HUB_FACTS_MAX_BYTES = 512 * 1024;
@@ -2638,6 +2638,8 @@ class GalaxyAtlas {
     }
     if (updateAccessibleName) {
       this.syncCanvasAccessibleName();
+      const live = `[Division ${division.code}] ${titleCase(division.name)}. ${division.neuronCount} neurons across ${division.families.length} families.`;
+      setText("[data-galaxy-live]", live);
     }
     if (index === this.activeDivision && this.activeFamily >= 0) {
       this.renderNeuronRoster(this.activeFamily);
@@ -2854,7 +2856,13 @@ class GalaxyAtlas {
     setText("[data-galaxy-hint-copy]", this.engaged ? "to dive" : "controls");
     this.syncCanvasAccessibleName();
     this.syncLabelSafeFrame();
-    if (announce) showToast(this.engaged ? "Atlas controls engaged. Press Escape to release page scroll." : "Atlas controls released. Page scroll restored.");
+    if (announce) {
+      const message = this.engaged
+        ? "Atlas controls engaged. Press Escape to release page scroll."
+        : "Atlas controls released. Page scroll restored.";
+      setText("[data-galaxy-live]", message);
+      showToast(message);
+    }
   }
 
   zoomAt(factor, pointerX, pointerY) {
@@ -4146,7 +4154,49 @@ function runAfterFirstPaint(label, start, delayMs = 0) {
   });
 }
 
+function wireSurfaceMode() {
+  const STORAGE_KEY = "hive.publicSurfaceMode";
+  const buttons = $$("[data-surface-mode-button]");
+  if (!buttons.length) return;
+  const apply = (mode, { persist = true, focusTarget = false } = {}) => {
+    const next = mode === "proof" ? "proof" : "presentation";
+    document.body.dataset.surfaceMode = next;
+    buttons.forEach((button) => {
+      const active = button.dataset.surfaceModeButton === next;
+      button.setAttribute("aria-pressed", String(active));
+    });
+    if (persist) {
+      try { window.localStorage.setItem(STORAGE_KEY, next); } catch { /* ignore quota/private mode */ }
+    }
+    if (focusTarget && next === "proof") {
+      const truth = $("#product-truth");
+      truth?.scrollIntoView({ block: "start" });
+      const heading = $("#product-truth-title");
+      heading?.setAttribute("tabindex", "-1");
+      heading?.focus({ preventScroll: true });
+    }
+  };
+  let initial = "presentation";
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored === "proof" || stored === "presentation") initial = stored;
+  } catch { /* ignore */ }
+  if (window.location.hash === "#product-truth" || window.location.hash === "#ide-download" || window.location.hash === "#tester") {
+    initial = "proof";
+  }
+  apply(initial, { persist: false });
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => apply(button.dataset.surfaceModeButton, { focusTarget: button.dataset.surfaceModeButton === "proof" }));
+  });
+  window.addEventListener("hashchange", () => {
+    if (["#product-truth", "#ide-download", "#tester", "#platforms"].includes(window.location.hash)) {
+      apply("proof", { persist: true });
+    }
+  });
+}
+
 runSafely("Motion controls", wireMotionToggle);
+runSafely("Surface mode", wireSurfaceMode);
 runSafely("Top navigation", wireTopbar);
 runSafely("Local context HOLD", enforceLocalContextInertness);
 runAfterFirstPaint("Section reveals", wireReveal, 0);

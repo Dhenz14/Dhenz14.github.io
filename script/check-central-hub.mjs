@@ -101,6 +101,7 @@ const required = [
   "script/check-signed-release-portability.mjs",
   "script/check-live-parity.mjs",
   "script/check-publisher-races.mjs",
+  "script/check-viewport-matrix.mjs",
   "script/check-product-truth.mjs",
   "script/check-browser-json-acquisition.mjs",
   "script/build-public-pages.mjs",
@@ -958,7 +959,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v19" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v20" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -1415,6 +1416,23 @@ requireMatch(workflowJob("redispatch-stale"), /actions: write[\s\S]*publish-revi
 requireMatch(pagesWorkflow, /pages\/parity\/r8[\s\S]*candidate_noop[\s\S]*Probe exact live bytes before no-op[\s\S]*action=noop/, "durable exact-SHA watermark plus fresh parity no-op gate");
 requireMatch(pagesWorkflow, /actions\/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b[\s\S]*actions\/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9[\s\S]*actions\/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128/, "pinned custom Pages action chain");
 requireNoMatch(pagesWorkflow, /upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b/, "v4.0.0 upload-pages-artifact excludes .nojekyll");
+requireMatch(pagesWorkflow, /cron: "17 6 \* \* \*"[\s\S]*retention-days: 30/, "daily recovery schedule and 30-day artifact retention");
+requireNoMatch(pagesWorkflow, /cron: "17,47 \* \* \*"|retention-days: 1/, "aggressive twice-hourly churn or one-day artifact expiry");
+requireMatch(workflowJob("deploy"), /Deploy the unique verified artifact without checkout or repository scripts[\s\S]*actions\/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128/, "deploy trust wording and pin");
+requireMatch(html, /data-surface-mode="presentation"[\s\S]*data-surface-mode-button="presentation"[\s\S]*data-surface-mode-button="proof"[\s\S]*system-state-strip[\s\S]*SOURCE[\s\S]*RUNTIME[\s\S]*LOCAL[\s\S]*OPERATOR/, "presentation/proof split and first-screen system state strip");
+requireMatch(html, /id="product-truth"[^>]*data-proof-depth[\s\S]*id="ide-download"[^>]*data-proof-depth[\s\S]*id="tester"[^>]*data-proof-depth/, "proof-depth sections exist");
+requireMatch(html, /data-galaxy-live[\s\S]*aria-live="polite"/, "atlas polite live region");
+requireMatch(js, /wireSurfaceMode[\s\S]*hive\.publicSurfaceMode[\s\S]*data-surface-mode/, "surface mode wiring");
+requireMatch(js, /setText\("\[data-galaxy-live\]"/, "atlas live announcements");
+requireMatch(css, /body\[data-surface-mode="presentation"\] \[data-proof-depth\][\s\S]*display:\s*none/, "presentation mode hides proof depth");
+requireMatch(read("docs/PUBLICATION_SCOPE.md"), /PUBLIC_HUB_R8_PUBLICATION: COMPLETE_SUPPORTED[\s\S]*Local Body runtime on `:5002`/, "publication claim boundary");
+requireMatch(read("docs/VIEWPORT_MATRIX.md"), /CDP `Emulation\.setPageScaleFactor\(1\.5\)`[\s\S]*AMBIGUOUS/, "1.5 page-scale definition");
+requireMatch(read("docs/GOVERNANCE.md"), /Hosted `contract` status check is required on `main`/, "main governance contract");
+if (!fs.existsSync(path.join(root, "docs/publication-receipts/r8-ecd8ac42.v1.json"))) {
+  throw new Error("durable R8 publication receipt is missing");
+}
+requireMatch(read("docs/publication-receipts/r8-ecd8ac42.v1.json"), /32815317619[\s\S]*steadyStateNoop|steadyStateNoop[\s\S]*32815317619/, "steady-state no-op run preserved in receipt");
+requireMatch(read(".github/CODEOWNERS"), /\.github\/workflows\/ @Dhenz14[\s\S]*script\/ @Dhenz14/, "CODEOWNERS for publisher surfaces");
 requireMatch(pagesWorkflow, /hive-pages-reviewed-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}[\s\S]*build-public-pages\.mjs build[\s\S]*check-http-surface\.mjs --root[\s\S]*include-hidden-files: true/, "fresh exact stage and hidden-file upload gate");
 requireMatch(pagesWorkflow, /github-pages-\$RUN_ID-\$RUN_ATTEMPT[\s\S]*steps\.upload\.outputs\.artifact_id[\s\S]*verify-pages-artifact\.mjs[\s\S]*artifact_rest_digest[\s\S]*artifact_tar_sha256[\s\S]*membership_manifest_sha256/, "one immutable run-attempt artifact tuple");
 requireMatch(workflowJob("deploy"), /actions: read[\s\S]*contents: read[\s\S]*pages: write[\s\S]*id-token: write[\s\S]*git\/ref\/heads\/main[\s\S]*\.artifacts\[\][\s\S]*artifact_name:/, "privileged exact-name predeploy recheck");

@@ -1,0 +1,285 @@
+{
+  "schema": "hive.public-pages.publication-receipt.v1",
+  "scope": "PUBLIC_HUB_R8_PUBLICATION",
+  "claim": "COMPLETE_SUPPORTED",
+  "claimBoundary": "The reviewed 30-member static GitHub Pages surface currently published at https://dhenz14.github.io/. Does NOT claim Local Body, Operator Body, Chat, IDE, Fable 3D, or whole-system runtime completion.",
+  "capturedAt": "2026-08-25T06:42:59Z",
+  "repository": "Dhenz14/Dhenz14.github.io",
+  "publicOrigin": "https://dhenz14.github.io",
+  "landedMain": {
+    "sha": "ecd8ac421aae27e3cd3923df680a1e309f52b788",
+    "tree": "d31d1092629ad9ad295e9346edd0c555613eb7d6",
+    "parents": [
+      "6ed673c66654abc38a47dff3d4a17d19b38b6084",
+      "71f918db4561576f458983cc43439bf74043db22"
+    ]
+  },
+  "preservedAncestors": {
+    "commitA": "b542be86ddf256bc767124f92d2b1e66c37236bb",
+    "commitB": "55410a1ddddc5714fbe557785ab99964c8c28700",
+    "commitC": "627c1edc13f125c8a8c9c24de2d9c790f6ee51aa",
+    "merge25": "18d6d692097b73ff44acc0c54a56e83b98a026bd",
+    "skipPoison": "6e2aac50f400fb3421030aac415b35cca55b63d4",
+    "merge26": "6ed673c66654abc38a47dff3d4a17d19b38b6084",
+    "hiddenNojekyll": "71f918db4561576f458983cc43439bf74043db22"
+  },
+  "productTruthDigest": "78ed09843aeaa94eb1053c92c0c13f12ff65591306905baf67f5ae8560a3d8bc",
+  "pages": {
+    "build_type": "workflow",
+    "status": "built"
+  },
+  "artifact": {
+    "id": 9550713012,
+    "name": "github-pages-32813807910-1",
+    "restDigest": "1c4831ccdb8ef6b9a9893abbdb46a66df261ae5da8de2408e160c0630e98e432",
+    "zipSha256": "1c4831ccdb8ef6b9a9893abbdb46a66df261ae5da8de2408e160c0630e98e432",
+    "tarSha256": "78042a097aa28dc6ade65b16f0e154662ed711f6bc6ec463cf112cf9cd17f078",
+    "sizeInBytes": 1130825,
+    "createdAt": "2026-08-25T05:41:44Z",
+    "expiresAt": "2026-08-26T05:41:42Z",
+    "memberCount": 30,
+    "directoryCount": 11,
+    "members": [
+      {
+        "path": "404.html",
+        "bytes": 2056,
+        "sha256": "b4c6b4f86dd06fe8c51b5c0e99f80877ca9738d4a236678e7d61369bc457cbf9",
+        "mode": "0o644"
+      },
+      {
+        "path": "HivePoA/distribution/index.html",
+        "bytes": 5775,
+        "sha256": "a63afde83a7e919fd902bfdf2317f2a9905a68fb115ee70b727e7f2f66e94a5b",
+        "mode": "0o644"
+      },
+      {
+        "path": "HivePoA/download/index.html",
+        "bytes": 5775,
+        "sha256": "a63afde83a7e919fd902bfdf2317f2a9905a68fb115ee70b727e7f2f66e94a5b",
+        "mode": "0o644"
+      },
+      {
+        "path": "HivePoA/get-started/index.html",
+        "bytes": 5775,
+        "sha256": "a63afde83a7e919fd902bfdf2317f2a9905a68fb115ee70b727e7f2f66e94a5b",
+        "mode": "0o644"
+      },
+      {
+        "path": "HivePoA/index.html",
+        "bytes": 5775,
+        "sha256": "a63afde83a7e919fd902bfdf2317f2a9905a68fb115ee70b727e7f2f66e94a5b",
+        "mode": "0o644"
+      },
+      {
+        "path": "HivePoA/releases/index.html",
+        "bytes": 5775,
+        "sha256": "a63afde83a7e919fd902bfdf2317f2a9905a68fb115ee70b727e7f2f66e94a5b",
+        "mode": "0o644"
+      },
+      {
+        "path": "HivePoA/robots.txt",
+        "bytes": 79,
+        "sha256": "749d159b0d3068f83220470435b22aad695510447282b2265136179b22ede4cc",
+        "mode": "0o644"
+      },
+      {
+        "path": "HivePoA/sitemap.xml",
+        "bytes": 177,
+        "sha256": "cbcbb711e725d094f96920bb64b8ede54a21ae7a76d8952ca50d673137cd3fc7",
+        "mode": "0o644"
+      },
+      {
+        "path": "HivePoA/tester-network/index.html",
+        "bytes": 5775,
+        "sha256": "a63afde83a7e919fd902bfdf2317f2a9905a68fb115ee70b727e7f2f66e94a5b",
+        "mode": "0o644"
+      },
+      {
+        "path": "HivePoA/verify/index.html",
+        "bytes": 5775,
+        "sha256": "a63afde83a7e919fd902bfdf2317f2a9905a68fb115ee70b727e7f2f66e94a5b",
+        "mode": "0o644"
+      },
+      {
+        "path": "downloads/hive-ide/hive-ide-release-manifest.json",
+        "bytes": 4390,
+        "sha256": "90172e421380e0d3dc193b8dbb9b89b5f165954afb6cd11ecc8b1b6509158413",
+        "mode": "0o644"
+      },
+      {
+        "path": "downloads/hive-ide/latest.json",
+        "bytes": 2927,
+        "sha256": "077c5010c1d590424b47366c75d8af3fa3bb96e9638dc31ae5cfc43731d22900",
+        "mode": "0o644"
+      },
+      {
+        "path": "favicon.ico",
+        "bytes": 34494,
+        "sha256": "ef26ed4c776ff2cc0427fbc2e8e807252cf2fd185507f319c793f662d4856605",
+        "mode": "0o644"
+      },
+      {
+        "path": "favicon.svg",
+        "bytes": 626,
+        "sha256": "9778659d9fc0d975e292e133cc535652d908d9146a886bce0e1b88c09d68dc1f",
+        "mode": "0o644"
+      },
+      {
+        "path": "hub-assets/galaxy-core.mjs",
+        "bytes": 40284,
+        "sha256": "8ab5f79896649f1903496aaf7efc01c8123460c6977c6492c44cd123d14a5ad7",
+        "mode": "0o644"
+      },
+      {
+        "path": "hub-assets/hub-facts.json",
+        "bytes": 129870,
+        "sha256": "5950405aef729ef6768e3a08c9ef5748e05c6b60dae02cb1cf4f711e6142b917",
+        "mode": "0o644"
+      },
+      {
+        "path": "hub-assets/hub.css",
+        "bytes": 203409,
+        "sha256": "02cc3f4d9f0c38766ae0868bd32ebea9331b55ff1febf1f9c34de5a12b413f4d",
+        "mode": "0o644"
+      },
+      {
+        "path": "hub-assets/hub.js",
+        "bytes": 208069,
+        "sha256": "fbcb88e6232e236886926369f8338bc3129a5247ee013ad21de001a5c34a378a",
+        "mode": "0o644"
+      },
+      {
+        "path": "hub-assets/ide-release-core.mjs",
+        "bytes": 12614,
+        "sha256": "125abd70f23e0e397a65997db5c948724b88184ab30b2627b488a6fd68de74ce",
+        "mode": "0o644"
+      },
+      {
+        "path": "hub-assets/og.png",
+        "bytes": 963871,
+        "sha256": "dbdc9803c3e11380b16c8d5c352713fd369b2ff3996fc148ba6de4dbb3e66c5a",
+        "mode": "0o644"
+      },
+      {
+        "path": "hub-assets/product-truth-ledger.public.v2.json",
+        "bytes": 7181,
+        "sha256": "e623836c21581035e9dd4d5fb2e11abfb3a5e18baf30ef16ce527fdfc74c7f24",
+        "mode": "0o644"
+      },
+      {
+        "path": "hub-assets/product-truth-semantic-baseline.v1.json",
+        "bytes": 621,
+        "sha256": "31a060917fc5aac5dc964cd2db0465eb44881a4a2eb9b36fc3459f61bbc58155",
+        "mode": "0o644"
+      },
+      {
+        "path": "hub-assets/product-truth.json",
+        "bytes": 37439,
+        "sha256": "65035a17d1eaa5aa3953b230fa444553bc4c83ddcf623b3405cb5777fe1d0514",
+        "mode": "0o644"
+      },
+      {
+        "path": "hub-assets/strict-json-fetch.mjs",
+        "bytes": 9669,
+        "sha256": "849031337e93d3e08dede4dd02b56e7648a472d855d6da74a5044f78ecbb14e4",
+        "mode": "0o644"
+      },
+      {
+        "path": "hub-assets/strict-json.mjs",
+        "bytes": 6296,
+        "sha256": "8f7d5ec5b191026ba6ef0eab64557a17c26c621f39f72a6919dc26c72c1e1836",
+        "mode": "0o644"
+      },
+      {
+        "path": "index.html",
+        "bytes": 68593,
+        "sha256": "bbc38855cd5ee84ff03d8631b5c16275d2870da40243b914c88abdbf1f49ec20",
+        "mode": "0o644"
+      },
+      {
+        "path": ".nojekyll",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "mode": "0o644"
+      },
+      {
+        "path": "robots.txt",
+        "bytes": 71,
+        "sha256": "7bd54d0c1d0ee13b442b0d81f4753e87f1a7bb9d3389c7529356655353798280",
+        "mode": "0o644"
+      },
+      {
+        "path": "site.webmanifest",
+        "bytes": 481,
+        "sha256": "4be2611b76a8a54276728b08aa62c6f746cc0f31bb063193d05b851d07266513",
+        "mode": "0o644"
+      },
+      {
+        "path": "sitemap.xml",
+        "bytes": 203,
+        "sha256": "c3864979fbea4648eb029e0a01760b67c40b37c16bfcab392eb35eb19f619511",
+        "mode": "0o644"
+      }
+    ]
+  },
+  "deployment": {
+    "id": 6077244356,
+    "sha": "ecd8ac421aae27e3cd3923df680a1e309f52b788",
+    "environment": "github-pages",
+    "createdAt": "2026-08-25T05:42:07Z",
+    "url": "https://api.github.com/repos/Dhenz14/Dhenz14.github.io/deployments/6077244356"
+  },
+  "parityStatus": {
+    "context": "pages/parity/r8",
+    "state": "success",
+    "description": "r8 run=32813807910 attempt=1 artifact=9550713012 digest=1c4831ccdb8ef6b9a9893abbdb46a66df261ae5da8de2408e160c0630e98e432",
+    "targetUrl": "https://github.com/Dhenz14/Dhenz14.github.io/actions/runs/32813807910/attempts/1",
+    "creator": "github-actions[bot]"
+  },
+  "runs": {
+    "falseGreenSkipPoison": {
+      "conclusion": "success",
+      "displayTitle": "Merge pull request #25 from Dhenz14/fix/a-plus-plus-20260823",
+      "event": "push",
+      "headSha": "18d6d692097b73ff44acc0c54a56e83b98a026bd",
+      "url": "https://github.com/Dhenz14/Dhenz14.github.io/actions/runs/32813061089"
+    },
+    "failClosedMissingNojekyll": {
+      "conclusion": "failure",
+      "displayTitle": "Merge pull request #26 from Dhenz14/fix/publisher-skip-poison-20260825",
+      "event": "push",
+      "headSha": "6ed673c66654abc38a47dff3d4a17d19b38b6084",
+      "url": "https://github.com/Dhenz14/Dhenz14.github.io/actions/runs/32813547948"
+    },
+    "repairDeploy": {
+      "conclusion": "success",
+      "displayTitle": "Merge pull request #27 from Dhenz14/fix/pages-hidden-nojekyll-20260825",
+      "event": "push",
+      "headSha": "ecd8ac421aae27e3cd3923df680a1e309f52b788",
+      "url": "https://github.com/Dhenz14/Dhenz14.github.io/actions/runs/32813807910"
+    },
+    "hostedVerify": {
+      "conclusion": "success",
+      "displayTitle": "Merge pull request #27 from Dhenz14/fix/pages-hidden-nojekyll-20260825",
+      "event": "push",
+      "headSha": "ecd8ac421aae27e3cd3923df680a1e309f52b788",
+      "url": "https://github.com/Dhenz14/Dhenz14.github.io/actions/runs/32813807722"
+    },
+    "steadyStateNoop": {
+      "conclusion": "success",
+      "displayTitle": "Publish reviewed Pages artifact",
+      "event": "schedule",
+      "headSha": "ecd8ac421aae27e3cd3923df680a1e309f52b788",
+      "url": "https://github.com/Dhenz14/Dhenz14.github.io/actions/runs/32815317619"
+    }
+  },
+  "liveParity": "LIVE_PARITY_OK origin=https://dhenz14.github.io target=ecd8ac421aae27e3cd3923df680a1e309f52b788 positive=30 negative=48 forbidden_exact=26 source=0ab04f6c19ff streamed=true residue=none",
+  "deferredExplicitly": [
+    "Local Body :5002 HOLD",
+    "Operator Body :5003 HOLD",
+    "Chat WAIT",
+    "IDE WAIT",
+    "Fable Three.js living-anatomy repair",
+    "Whole-system runtime integration"
+  ]
+}

@@ -207,6 +207,10 @@ assert(/include-hidden-files:\s*true/u.test(workflow), "hidden-file artifact adm
 assert(/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9/u.test(workflow), "hidden-file-capable upload-pages-artifact pin drifted");
 assert(!/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b/u.test(workflow), "v4.0.0 upload-pages-artifact excludes .nojekyll");
 assert(/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128/u.test(workflow), "deploy-pages v5 pin drifted");
+assert(/retention-days:\s*30/u.test(workflow), "Pages artifact retention is shorter than 30 days");
+assert(/cron:\s*"17 6 \* \* \*"/u.test(workflow), "publisher recovery schedule is not daily");
+assert(!/cron:\s*"17,47 \* \* \*"/u.test(workflow), "twice-hourly publisher churn remains");
+assert(/without checkout or repository scripts/u.test(workflow), "deploy trust wording drifted");
 assert(/verify-pages-artifact\.mjs[\s\S]*--expected-id[\s\S]*--expected-target-sha/u.test(workflow), "fresh exact-ID artifact verifier is not invoked");
 assert(/artifact_rest_digest[\s\S]*artifact_tar_sha256[\s\S]*membership_manifest_sha256[\s\S]*member_count/u.test(workflow), "verified artifact tuple outputs are incomplete");
 assert(/pages\/parity\/r8/u.test(workflow) && /r8 pending run=/u.test(workflow) && /r8 run=/u.test(workflow), "versioned pending/final marker lifecycle is incomplete");

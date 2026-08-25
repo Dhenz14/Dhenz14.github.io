@@ -3,16 +3,16 @@
   "version": "2.0.0",
   "status": "SOURCE_BOUND_TRUTH_WITH_SUBJECT_SCOPED_RUNTIME_UNKNOWNS",
   "evidenceLedger": {
-    "schema": "hive.ecosystem.product-truth.evidence-ledger.ref.v1",
-    "path": "hub-assets/product-truth-ledger.v1.json",
-    "version": 1,
+    "schema": "hive.ecosystem.product-truth.public-evidence-projection.ref.v2",
+    "path": "hub-assets/product-truth-ledger.public.v2.json",
+    "version": 2,
     "integrityClass": "SELF_BOUND_INTEGRITY",
     "independentTrustRoot": false,
     "authorizedPublicationAttested": false,
-    "bytes": 4653,
-    "sha256": "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259",
-    "gitBlobOid": "943db0a4b30bb4dba38de3db62c5898fd9785e5c",
-    "headEntryId": "local-body-handoff-boundary-v1"
+    "bytes": 7001,
+    "sha256": "787b5e3a19c5025bf7e914f31dbf02b02b04cafb4b9625cd6022c9746815af44",
+    "gitBlobOid": "3d26b94e40f618dd2d65251e628461ffbfe8bf11",
+    "headEntryId": "current-public-unknown-hold-after-evidence-expiry-v2"
   },
   "canonicalManifest": {
     "status": "LANDED_HASH_VERIFIED",
@@ -53,7 +53,7 @@
     "projectionRole": "stable reviewed semantic baseline for the published source atlas; mutable source snapshots may display topology but cannot rewrite reviewed semantic, runtime, product, or authority claims without a fresh review",
     "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
     "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
-    "snapshotHash": "81fee0f0b751c5c17ace278cf17fe7f373041f6a239957e7e9b22b9cdc409602",
+    "snapshotHash": "23d2456bc77574491279af30b129aced09358944159a7ad6857565e49732c33e",
     "capturedAt": "2026-08-23T22:53:32Z",
     "reviewedBaseline": {
       "snapshotVersion": "3.1.0",
@@ -61,7 +61,10 @@
       "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
       "sourceFingerprint": "f177f665aceb2689d69f7bbb283e9165380c306edced348312cd16fb47d4c8bb",
       "projectionHash": "58f8aa20d200bb4ec1bb6d13810bda85b6e1b7c189f8c070b3d9070d67b9d80b",
-      "geometryHash": "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314"
+      "geometryHash": "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314",
+      "reviewedSiteCommit": "db2f240efd3be938e9e888a3aa5f5af0b9c522e3",
+      "reviewedFactsGitBlobOid": "e5962434b1864a60082bb9a732fd7a87acf29a11",
+      "immutableRawReference": "https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/db2f240efd3be938e9e888a3aa5f5af0b9c522e3/hub-assets/hub-facts.json"
     },
     "allowedSnapshotRelations": [
       "EXACT_REVIEWED_BASELINE_MATCH",
@@ -82,7 +85,7 @@
     },
     "currentVsLegacy": {
       "status": "SUBJECT_SCOPED_DISPOSITIONS",
-      "claim": "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. At 2026-08-23T18:46:30Z, Electron-removal and Tauri/WebView2 source were observed on the unprotected Hive IDE candidate branch hive/wt/theyc/ide-electron-final-20260822 at f459e85. Current landing is UNKNOWN/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK. Tester.5 exact package contents are UNKNOWN_NOT_INSPECTED. The prior claim that tester.5 still bundles Electron is SUPERSEDED_REVOKED_UNSUPPORTED. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST; tester.6 publication is held."
+      "claim": "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. At 2026-08-23T18:46:30Z, Electron-removal and Tauri/WebView2 source were observed on the unprotected Hive IDE candidate branch hive/wt/theyc/ide-electron-final-20260822 at f459e85; at that same observation, the candidate was not present at the then-observed default tip. Current landing and current default-tip relation are UNKNOWN/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK. Tester.5 exact package contents are UNKNOWN_NOT_INSPECTED. The prior claim that tester.5 still bundles Electron is SUPERSEDED_REVOKED_UNSUPPORTED. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST; tester.6 publication is held."
     },
     "noLlmClaim": {
       "status": "HOLD",
@@ -169,7 +172,7 @@
       "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
       "sourceTree": "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
       "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
-      "snapshotHash": "81fee0f0b751c5c17ace278cf17fe7f373041f6a239957e7e9b22b9cdc409602",
+      "snapshotHash": "23d2456bc77574491279af30b129aced09358944159a7ad6857565e49732c33e",
       "neurons": 640,
       "trainable": 448,
       "deterministic": 192,
@@ -369,7 +372,7 @@
         "contradictory owner-repository observation",
         "durable receipt supersedes this observation"
       ],
-      "claim": "At 2026-08-23T18:46:30Z, a bounded external source observation found Electron-removal and Tauri/WebView2 on the unprotected Hive IDE candidate branch at f459e85, then 92 commits ahead and 0 behind default tip 41df9be. Current landing is UNKNOWN and HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK. This historical source observation is not tester.5 package, installation, or runtime proof.",
+      "claim": "At 2026-08-23T18:46:30Z, a bounded external source observation found Electron-removal and Tauri/WebView2 on the unprotected Hive IDE candidate branch at f459e85; at that time it was observed 92 commits ahead and 0 behind the then-observed default tip 41df9be. Current landing and current default-tip relation are UNKNOWN and HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK. This historical source observation is not tester.5 package, installation, or runtime proof.",
       "doesNotProve": [
         "a second platform package",
         "landing",
@@ -388,7 +391,7 @@
       "ownerRepository": "Dhenz14/hive-ide",
       "repositoryRef": "hive/wt/theyc/ide-electron-final-20260822",
       "repositoryCommit": "f459e85cc71801afbed4a8579b31133b9ff58edd",
-      "designTopology": "Historical Tauri/WebView2 candidate-source observation; current default-branch landing UNKNOWN/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK.",
+      "designTopology": "Historical Tauri/WebView2 candidate-source observation as of 2026-08-23T18:46:30Z; current default-branch relation and landing are UNKNOWN/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK.",
       "evidencePersistence": "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT"
     },
     "linux_hive_ide_publication": {
@@ -604,7 +607,7 @@
       "testStatus": "SOURCE_OBSERVED_NOT_PACKAGE_INSPECTED",
       "packageStatus": "TESTER5_UNKNOWN_NOT_INSPECTED",
       "signingStatus": "NOT_APPLICABLE",
-      "evidence": "At 2026-08-23T18:46:30Z, a bounded external source observation found Electron-removal and Tauri/WebView2 at candidate commit f459e85 on an unprotected branch and did not find it at then-default tip 41df9be. Current landing is UNKNOWN/HOLD pending fresh owner-repository readback. Tester.5 contents are UNKNOWN_NOT_INSPECTED.",
+      "evidence": "At 2026-08-23T18:46:30Z, a bounded external source observation found Electron-removal and Tauri/WebView2 at candidate commit f459e85 on an unprotected branch and did not find it at the then-observed default tip 41df9be. Current landing and current default-tip relation are UNKNOWN/HOLD pending fresh owner-repository readback. Tester.5 contents are UNKNOWN_NOT_INSPECTED.",
       "evidenceRef": "truth_subjects.windows_wsl_candidate_design",
       "verifiedAt": "2026-08-23T18:46:30Z",
       "validUntil": null,
@@ -676,6 +679,6 @@
     "excluded": [
       "bindingDigest"
     ],
-    "value": "b0734b021b63c0c74289af6f3c1c2509450f85fc47e8f094acec0e09e62d44f7"
+    "value": "5c9b7cd069933a272b0fb2a8d5a4afa8e1854b67dfb81955f94a5b2d242fdfa7"
   }
 }

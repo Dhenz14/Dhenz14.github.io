@@ -83,6 +83,7 @@ const required = [
   "hub-assets/ide-release-core.mjs",
   "hub-assets/hub-facts.json",
   "hub-assets/product-truth.json",
+  "hub-assets/product-truth-ledger.public.v2.json",
   "hub-assets/product-truth-ledger.v1.json",
   "hub-assets/strict-json.mjs",
   "hub-assets/strict-json-fetch.mjs",
@@ -106,6 +107,7 @@ const required = [
   "script/check-public-pages-artifact.mjs",
   "script/hub-facts-custody.mjs",
   "script/publisher-candidate-policy.mjs",
+  "script/private-source-bundle.mjs",
   "script/requirements-galaxy-sync.txt",
   "HivePoA/index.html",
   "HivePoA/download/index.html",
@@ -116,6 +118,7 @@ const required = [
   "HivePoA/distribution/index.html",
   "HivePoA/public-surface-quarantine-receipt.json",
   ".github/test-fixtures/hivepoa/portable-signed-release-fixture.v1.json",
+  ".github/test-fixtures/hivepoa/historical-quarantine-receipt-a4ff709e5310.json",
   ".github/test-fixtures/hivepoa/historical-index-1a607c451406.html",
   ".github/test-fixtures/hivepoa/tester-network-authorization-3f397e3bc3a6.js",
 ];
@@ -162,16 +165,16 @@ for (const relative of hivePoaQuarantineRoutes) {
   const bytes = fs.readFileSync(path.join(root, relative));
   const source = bytes.toString("utf8");
   const gitBlobOid = crypto.createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
-  if (bytes.length !== 9138
-    || sha256(bytes) !== "568d50cb18499b975f4584b3c9b8b490c6e4ae9d44becec38078a23988472d78"
-    || gitBlobOid !== "5b24c91992413d92781508bdd042e7030dea1e17") {
+  if (bytes.length !== 9183
+    || sha256(bytes) !== "1aecb058207e1df8ee5728f98f9c7a1e55ddb84930f9452faab5dae5e4e78da5"
+    || gitBlobOid !== "ff838cdaa7a3fbffd28832ba811bc77181d921f2") {
     throw new Error(`HivePoA quarantine route identity drifted: ${relative}`);
   }
   requireMatch(source, /default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'/, `${relative} fail-closed CSP`);
-  requireMatch(source, /HOLD · ACTIONS DISABLED[\s\S]*provenance only:[\s\S]*not current proof of package delivery, a live coordinator, public enrollment, execution, runtime acceptance, public-network availability, or product-live behavior/i, `${relative} all-plane HOLD`);
+  requireMatch(source, /HOLD · NO PUBLIC ACTIONS[\s\S]*provenance only;[\s\S]*current delivery, network, runtime, and product-live states are UNKNOWN or HOLD/i, `${relative} all-plane HOLD`);
   requireMatch(source, /No action surface[\s\S]*No download, verifier, installer, enrollment, credit, or network action is exposed/i, `${relative} action quarantine`);
-  requireMatch(source, /<strong>DELIVERY<\/strong>HOLD[\s\S]*<strong>COORDINATOR<\/strong>NOT PROVEN[\s\S]*<strong>ENROLLMENT<\/strong>NOT PUBLISHED[\s\S]*<strong>PRODUCT LIVE<\/strong>FALSE/, `${relative} evidence-plane status`);
-  requireMatch(source, /Authority: none · public actions: none · source repair: held/i, `${relative} authority ceiling`);
+  requireMatch(source, /<strong>DELIVERY<\/strong>HOLD[\s\S]*<strong>NETWORK<\/strong>HOLD[\s\S]*<strong>RUNTIME<\/strong>UNKNOWN[\s\S]*<strong>PRODUCT LIVE<\/strong>UNKNOWN/, `${relative} evidence-plane status`);
+  requireMatch(source, /Authority: none · public actions: none · current deployment: unknown \/ hold/i, `${relative} authority ceiling`);
   const hrefs = [...source.matchAll(/\shref=["']([^"']+)["']/gi)].map((match) => match[1]);
   if (JSON.stringify(hrefs) !== JSON.stringify(["/#product-truth"])) {
     throw new Error(`HivePoA quarantine route must expose only the Product Truth link: ${relative}`);
@@ -180,19 +183,28 @@ for (const relative of hivePoaQuarantineRoutes) {
 }
 const quarantineReceiptBytes = fs.readFileSync(path.join(root, "HivePoA", "public-surface-quarantine-receipt.json"));
 const quarantineReceiptBlob = crypto.createHash("sha1").update(`blob ${quarantineReceiptBytes.length}\0`).update(quarantineReceiptBytes).digest("hex");
-if (quarantineReceiptBytes.length !== 5310
-  || sha256(quarantineReceiptBytes) !== "ac1cd5ac2a678b5bb46e2503c90ab9364b80cd562f2725039137ab74da94ec1a"
-  || quarantineReceiptBlob !== "a4ff709e53106fd932224c6d7a6f2e48ee13e7e0") {
+if (quarantineReceiptBytes.length !== 5768
+  || sha256(quarantineReceiptBytes) !== "34688b7aeed7a2e68c94a72d76626f03896e622b73f1636eff2059a6025c2fd7"
+  || quarantineReceiptBlob !== "646b2c5753be9cb9e635619e2d5b47029982b287") {
   throw new Error("HivePoA quarantine receipt physical identity drifted");
 }
 const quarantineReceipt = parseJsonBytesStrict(quarantineReceiptBytes, "HivePoA quarantine receipt");
 const quarantinedReceiptPaths = quarantineReceipt.quarantinedEntries?.map((entry) => entry.path).sort();
-if (quarantineReceipt.schema !== "hivepoa.public_surface_quarantine.v1"
-  || quarantineReceipt.status !== "ACTIVE_CANDIDATE_NOT_DEPLOYED"
+if (quarantineReceipt.schema !== "hivepoa.public_surface_quarantine.v2"
+  || quarantineReceipt.status !== "HISTORICAL_RECEIPT_CURRENT_EFFECTIVE_UNKNOWN_HOLD"
   || quarantineReceipt.mode !== "REVERSIBLE_PUBLIC_SITE_QUARANTINE"
-  || quarantineReceipt.sharedReplacement?.bytes !== 9138
-  || quarantineReceipt.sharedReplacement?.sha256 !== "568d50cb18499b975f4584b3c9b8b490c6e4ae9d44becec38078a23988472d78"
-  || quarantineReceipt.sharedReplacement?.gitBlobOid !== "5b24c91992413d92781508bdd042e7030dea1e17"
+  || quarantineReceipt.historicalObservation?.previousReceiptStatus !== "ACTIVE_CANDIDATE_NOT_DEPLOYED"
+  || quarantineReceipt.historicalObservation?.previousProductLiveValue !== false
+  || quarantineReceipt.historicalObservation?.temporalBoundary !== "HISTORICAL_RECEIPT_VALUE_NOT_CURRENT_OPERATIONAL_OBSERVATION"
+  || quarantineReceipt.effectiveCurrentDisposition?.status !== "UNKNOWN_HOLD"
+  || quarantineReceipt.effectiveCurrentDisposition?.delivery !== "HOLD"
+  || quarantineReceipt.effectiveCurrentDisposition?.network !== "HOLD"
+  || quarantineReceipt.effectiveCurrentDisposition?.runtime !== "UNKNOWN"
+  || quarantineReceipt.effectiveCurrentDisposition?.productLive !== "UNKNOWN"
+  || quarantineReceipt.effectiveCurrentDisposition?.publicActions !== "HOLD"
+  || quarantineReceipt.sharedReplacement?.bytes !== 9183
+  || quarantineReceipt.sharedReplacement?.sha256 !== "1aecb058207e1df8ee5728f98f9c7a1e55ddb84930f9452faab5dae5e4e78da5"
+  || quarantineReceipt.sharedReplacement?.gitBlobOid !== "ff838cdaa7a3fbffd28832ba811bc77181d921f2"
   || JSON.stringify(quarantineReceipt.sharedReplacement?.scriptsLoaded) !== "[]"
   || JSON.stringify(quarantineReceipt.sharedReplacement?.externalAssetsLoaded) !== "[]"
   || quarantineReceipt.sharedReplacement?.onlyLink !== "/#product-truth"
@@ -200,11 +212,12 @@ if (quarantineReceipt.schema !== "hivepoa.public_surface_quarantine.v1"
   || quarantineReceipt.preservedGeneratedAssets?.distributionScript?.servedByQuarantineEntries !== false
   || quarantineReceipt.preservedGeneratedAssets?.authorizationModule?.servedByQuarantineEntries !== false
   || quarantineReceipt.publicClaimBoundary?.packageDelivery !== "HOLD"
-  || quarantineReceipt.publicClaimBoundary?.liveCoordinator !== "NOT_PROVEN"
-  || quarantineReceipt.publicClaimBoundary?.publicEnrollment !== "NOT_PUBLISHED"
-  || quarantineReceipt.publicClaimBoundary?.execution !== "NOT_PROVEN"
-  || quarantineReceipt.publicClaimBoundary?.publicNetworkAvailability !== "NOT_PROVEN"
-  || quarantineReceipt.publicClaimBoundary?.productLive !== false
+  || quarantineReceipt.publicClaimBoundary?.liveCoordinator !== "UNKNOWN"
+  || quarantineReceipt.publicClaimBoundary?.publicEnrollment !== "UNKNOWN"
+  || quarantineReceipt.publicClaimBoundary?.execution !== "UNKNOWN"
+  || quarantineReceipt.publicClaimBoundary?.runtimeAcceptance !== "UNKNOWN"
+  || quarantineReceipt.publicClaimBoundary?.publicNetworkAvailability !== "UNKNOWN_HOLD"
+  || quarantineReceipt.publicClaimBoundary?.productLive !== "UNKNOWN"
   || quarantineReceipt.publicClaimBoundary?.downloadAction !== false
   || quarantineReceipt.publicClaimBoundary?.verificationAction !== false
   || quarantineReceipt.publicClaimBoundary?.enrollmentAction !== false
@@ -705,7 +718,8 @@ requireMatch(html, /data-metaphor-definitions[\s\S]*<h3>Neuron<\/h3>[\s\S]*448 t
 const publishedSnapshotSummary = boundedBlock(html, '<article class="constellation-core"', '<div class="doctrine-grid"', "published-snapshot summary");
 requireNoMatch(publishedSnapshotSummary, /\b37\b/, "misleading baseline influence count in published-snapshot summary");
 requireMatch(html, /data-architecture-live-boundary[\s\S]*Source architecture[\s\S]*Presentation body[\s\S]*No local runtime PASS is claimed[\s\S]*Dedicated Operator body[\s\S]*127\.0\.0\.1:5003[\s\S]*not been independently observed or deployed/i, "architecture-versus-local surfaces boundary");
-requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ 0ab04f6c · HISTORICAL CAPTURE[\s\S]*freshness HOLD[\s\S]*SUBJECT-SCOPED DISPOSITIONS[\s\S]*Electron removal remains an unlanded IDE candidate[\s\S]*hive\/wt\/theyc\/ide-electron-final-20260822[\s\S]*41df9be[\s\S]*UNKNOWN_NOT_INSPECTED[\s\S]*GENERATION BOUNDARY · HOLD[\s\S]*blind evaluation, causal ablation, independent verification, and rollback-safe promotion[\s\S]*Full source-doctrine term[\s\S]*centralized AI-as-user traffic until H10/i, "subject-scoped IDE and generation boundary translation");
+requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ 0ab04f6c · HISTORICAL CAPTURE[\s\S]*freshness HOLD[\s\S]*SUBJECT-SCOPED DISPOSITIONS[\s\S]*IDE landing is currently UNKNOWN \/ HOLD[\s\S]*2026-08-23 18:46:30 UTC[\s\S]*hive\/wt\/theyc\/ide-electron-final-20260822[\s\S]*then-observed default tip[\s\S]*41df9be[\s\S]*fresh owner-repository readback[\s\S]*UNKNOWN_NOT_INSPECTED[\s\S]*GENERATION BOUNDARY · HOLD[\s\S]*blind evaluation, causal ablation, independent verification, and rollback-safe promotion[\s\S]*Full source-doctrine term[\s\S]*centralized AI-as-user traffic until H10/i, "subject-scoped historical IDE and generation boundary translation");
+requireNoMatch(html, /Electron removal remains unlanded|current default tip is 41df9be/i, "unfresh IDE landing or default-tip assertion");
 requireNoMatch(html, /current Hive IDE trunk uses Tauri|Electron is removed on the current Hive IDE trunk|tester\.5[^<]{0,120}bundles Electron/i, "unsupported current-trunk or package-content claim");
 requireMatch(html, /id="product-truth"[^>]+data-product-truth[^>]+data-state="checking"/, "fail-closed Product Truth root");
 requireMatch(html, /data-product-truth-status[^>]+role="status"[^>]+aria-live="polite"/, "Product Truth live validation status");
@@ -911,7 +925,7 @@ requireMatch(js, /EVIDENCE EXPIRED · integration WAIT · every action held/, "e
 requireMatch(js, /Hive IDE integration is not available from this public candidate\. Status: WAIT\./, "expired tester public WAIT boundary");
 requireMatch(js, /Current retrievability and installer identity are UNKNOWN; no download, install, or test action is authorized\./, "expired tester current-state ceiling");
 requireMatch(js, /bindingDigest[\s\S]*recursive-key-sort-json-utf8[\s\S]*delete projection\.bindingDigest[\s\S]*sha256Text\(canonicalJson\(projection\)\)[\s\S]*projection digest mismatch/, "browser full-projection digest gate");
-requireMatch(js, /PRODUCT_TRUTH_MAX_BYTES = 128 \* 1024[\s\S]*acquireStrictJson[\s\S]*\/hub-assets\/product-truth\.json[\s\S]*\/hub-assets\/product-truth-ledger\.v1\.json[\s\S]*expectedBytes: 4653[\s\S]*expectedSha256: "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259"[\s\S]*blockProductTruth/, "shared strict fail-closed Product Truth and ledger acquisition");
+requireMatch(js, /PRODUCT_TRUTH_MAX_BYTES = 128 \* 1024[\s\S]*acquireStrictJson[\s\S]*\/hub-assets\/product-truth\.json[\s\S]*\/hub-assets\/product-truth-ledger\.public\.v2\.json[\s\S]*expectedBytes: 7001[\s\S]*expectedSha256: "787b5e3a19c5025bf7e914f31dbf02b02b04cafb4b9625cd6022c9746815af44"[\s\S]*blockProductTruth/, "shared strict fail-closed Product Truth and public ledger acquisition");
 const csp = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i;
 const expectedPolicies = new Map([
   ["index.html", "default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; manifest-src 'self'; media-src 'none'; object-src 'none'; script-src 'self' 'sha256-l94tK8KZPMJt+24bRg6GwPWYVibNwz/ut7jTWq7f1Lw='; style-src 'self' 'unsafe-inline'; worker-src 'none'"],
@@ -1074,7 +1088,7 @@ requireMatch(galaxyCore, /captured - now > 5 \* 60_000[\s\S]*snapshotFreshness\(
 const loadSourceSnapshotBlock = boundedBlock(js, "async function loadSourceSnapshot()", "function scheduleSnapshotRefresh()", "source snapshot loading");
 requireMatch(js, /const HUB_FACTS_MAX_BYTES = 512 \* 1024;/, "hub-facts browser byte ceiling");
 requireMatch(loadSourceSnapshotBlock, /acquireStrictJson\([\s\S]*\/hub-assets\/hub-facts\.json[\s\S]*HUB_FACTS_MAX_BYTES[\s\S]*hub-facts source snapshot[\s\S]*validSnapshot\(value\)/, "shared bounded raw-byte strict hub-facts browser custody");
-requireMatch(strictJsonFetch, /STRICT_JSON_FETCH_DEADLINE_MS = 8_000[\s\S]*headers\?\.get\?\.\("content-length"\)[\s\S]*response\.body\.getReader\(\)[\s\S]*reader\.cancel\([\s\S]*AbortController[\s\S]*parseJsonBytesStrict/, "shared streamed strict JSON acquisition primitive");
+requireMatch(strictJsonFetch, /STRICT_JSON_FETCH_DEADLINE_MS = 8_000[\s\S]*headers\?\.get\?\.\("content-length"\)[\s\S]*content-encoding[\s\S]*response\.body\.getReader\(\)[\s\S]*received > maximumBytes[\s\S]*abortAndCancel[\s\S]*Promise\.race[\s\S]*parseJsonBytesStrict/, "shared streamed strict JSON acquisition primitive");
 requireMatch(generator, /COMPILED_SNAPSHOT_MAX_BYTES = 512 \* 1024[\s\S]*runCompiledJson[\s\S]*parseJsonBytesStrict\(bytes, "compiled source snapshot"\)/, "bounded strict compiler-to-hub-facts custody");
 requireNoMatch(generator, /JSON\.parse\(run\(/, "permissive compiler-to-hub-facts JSON boundary");
 requireNoMatch(loadSourceSnapshotBlock, /response\.json\(\)|JSON\.parse/, "loose hub-facts browser parsing");
@@ -1083,7 +1097,7 @@ requireMatch(js, /Last-good snapshot/, "last-good refresh behavior");
 requireMatch(strictJsonFetch, /AbortController/, "shared strict acquisition cancellation");
 requireMatch(js, /snapshotRequestGeneration/, "snapshot response generation gate");
 requireMatch(js, /snapshotResponseCanCommit\([\s\S]*aborted:/, "behavioral snapshot response gate integration");
-requireMatch(js, /sourceSnapshotPresentation\([\s\S]*automaticBridgeEnabled === true[\s\S]*presentation\.freshness === "historical"[\s\S]*presentation\.freshness === "aged"[\s\S]*presentation\.bridge === "configured"/, "source-age and bridge-configuration separation");
+requireMatch(js, /sourceSnapshotPresentation\([\s\S]*automaticBridgeConfiguredAtCapture === true[\s\S]*presentation\.freshness === "historical"[\s\S]*presentation\.freshness === "aged"[\s\S]*presentation\.configuration === "configured_at_capture"/, "source-age and at-capture configuration separation");
 requireMatch(galaxyCore, /freshnessDisposition: freshness\.state === "recent" \? "CURRENT_EVIDENCE_OK" : "FRESHNESS_HOLD"[\s\S]*badgeState: freshness\.state === "recent" \? "" : "stale"/, "aged source capture always holds freshness independently of bridge state");
 requireMatch(js, /freshnessHeld = presentation\.freshnessDisposition === "FRESHNESS_HOLD"[\s\S]*HISTORICAL · \$\{facts\.sourceCommit\.slice\(0, 8\)\.toUpperCase\(\)\}[\s\S]*data-galaxy-snapshot-state[\s\S]*freshnessHeld \? "historical" : "recent"[\s\S]*Source binding PASS\. Freshness \$\{freshnessHeld \? "HOLD" : "recent"\}/, "compact source-binding and freshness badge separation");
 requireMatch(forcedColorsWiring, /const onForcedColorsChange = \(event\) => this\.applyRenderAvailability\(Boolean\(event\.matches\)\);/, "live forced-colors transition callback");
@@ -1145,7 +1159,11 @@ requireMatch(js, /this\.glideStickyBox\(`f\$\{familyGeometryIndex\}`, point, wid
 requireMatch(css, /\.hero\s*{[\s\S]*grid-template-rows:\s*auto auto;[\s\S]*min-height:\s*calc\(100svh - 5\.25rem\)[\s\S]*\.hero-outcomes\s*{[\s\S]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/, "outcome-first hero layout contract");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.hero-system\s*{[\s\S]*grid-template-columns:\s*repeat\(2,[\s\S]*min-height:\s*11\.5rem;[\s\S]*\.hero-system \.satellite-core,[\s\S]*display:\s*none;/, "recognizable compact mobile organism");
 requireMatch(css, /@media \(max-width: 42rem\)[\s\S]*\.hero-primary-action \.hero-enter\s*{[\s\S]*flex:\s*none;[\s\S]*width:\s*100%;/, "mobile primary CTA uses intrinsic height");
-requireMatch(css, /@media \(max-width: 24rem\) and \(max-height: 36rem\)[\s\S]*\.primary-nav,[\s\S]*\.hero-copy > \.eyebrow[\s\S]*display:\s*none;[\s\S]*\.hero-system\s*{[\s\S]*min-height:\s*5\.75rem;/, "short mobile first-frame hierarchy");
+requireMatch(css, /@media \(max-width: 34rem\) and \(max-height: 40rem\)[\s\S]*\.primary-nav\s*{[\s\S]*display:\s*grid;[\s\S]*grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\);[\s\S]*\.primary-nav a\s*{[\s\S]*min-height:\s*2\.75rem;/, "short mobile two-row five-target header");
+const finalCompactPhoneRules = css.slice(css.lastIndexOf("@media (max-width: 24rem) and (max-height: 36rem)"));
+requireNoMatch(finalCompactPhoneRules, /\.primary-nav\s*{[^}]*display:\s*none;/, "final compact phone rule crushes the five-target navigation");
+requireMatch(finalCompactPhoneRules, /\.hero\s*{[^}]*padding-block:\s*0\.4rem;[\s\S]*\.hero-copy h1\s*{[^}]*font-size:\s*clamp\(1\.8rem, 9\.4vw, 2rem\);[\s\S]*\.hero-lede\s*{[^}]*font-size:\s*0\.875rem;[\s\S]*\.hero-primary-action \.hero-enter\s*{[^}]*min-height:\s*2\.75rem;/, "320x568 primary-CTA compact hierarchy");
+requireMatch(css, /\.site-footer nav a\s*{[^}]*display:\s*inline-flex;[^}]*min-height:\s*2\.75rem;[^}]*font-size:\s*0\.875rem;/, "footer touch-target geometry");
 requireMatch(css, /\.hero-lede\s*{[\s\S]*font-size:\s*clamp\(1rem,[\s\S]*\.primary-nav a,[\s\S]*font-size:\s*0\.875rem;[\s\S]*\.hero-outcomes b\s*{[\s\S]*font-size:\s*0\.9375rem;/, "zero-squint hero and navigation typography");
 requireMatch(css, /@media \(max-width: 62rem\)[\s\S]*\.platform-table-scroll\s*{[\s\S]*overflow:\s*visible;[\s\S]*\.platform-table tbody td\s*{[\s\S]*grid-template-columns:/, "tablet platform matrix semantic cards");
 requireMatch(css, /@media \(min-width: 42\.01rem\) and \(max-width: 62rem\)[\s\S]*\.roadmap-rail\s*{[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/, "tablet two-column roadmap cards");
@@ -1220,7 +1238,7 @@ exactKeys(facts.boundaries, ["snapshotOnly", "runtimeTelemetry", "grantsAuthorit
 exactKeys(facts.ecosystem, ["schema", "primaryOrgans", "federationRepositories"], "public ecosystem");
 if (!Array.isArray(facts.ecosystem.primaryOrgans) || facts.ecosystem.primaryOrgans.length !== 6) throw new Error("public organ roster drifted");
 for (const organ of facts.ecosystem.primaryOrgans) exactKeys(organ, ["id", "label", "targetRole", "targetExposure", "effectivePublicDisposition"], `public organ ${organ?.id || "unknown"}`);
-exactKeys(facts.refresh, ["privateSourceMode", "automaticBridgeEnabled", "reasonCode", "lastGoodBehavior"], "refresh boundary");
+exactKeys(facts.refresh, ["sourceAcquisitionModeAtCapture", "automaticBridgeConfiguredAtCapture", "configurationReasonCodeAtCapture", "executionObservationStatus", "currentOperationalStatus", "lastGoodTopologyBehavior"], "refresh boundary");
 if (!facts.boundaries?.snapshotOnly || facts.boundaries?.runtimeTelemetry || facts.boundaries?.grantsAuthority || facts.boundaries?.privateEvidencePublished) {
   throw new Error("source snapshot boundaries are not fail-closed");
 }
@@ -1316,16 +1334,21 @@ const serializedFacts = JSON.stringify(facts);
 for (const forbidden of ["/home/", "C:\\\\"]) {
   if (serializedFacts.includes(forbidden)) throw new Error(`private public-snapshot field leaked: ${forbidden}`);
 }
-const activeRefresh = facts.refresh?.automaticBridgeEnabled === true
-  && facts.refresh?.privateSourceMode === "scheduled-living-main-publisher"
-  && facts.refresh?.reasonCode === "SCHEDULED_LIVING_MAIN_PUBLISHER";
-const activeLocalRefresh = facts.refresh?.automaticBridgeEnabled === true
-  && facts.refresh?.privateSourceMode === "local-living-main-publisher"
-  && facts.refresh?.reasonCode === "LOCAL_LIVING_MAIN_PUBLISHER";
-const inactiveRefresh = facts.refresh?.automaticBridgeEnabled === false
-  && facts.refresh?.privateSourceMode === "manual-source-bound-snapshot"
-  && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED", "MANUAL_WORKFLOW_DISPATCH"].includes(facts.refresh?.reasonCode);
+const activeRefresh = facts.refresh?.automaticBridgeConfiguredAtCapture === true
+  && facts.refresh?.sourceAcquisitionModeAtCapture === "scheduled-living-main-publisher"
+  && facts.refresh?.configurationReasonCodeAtCapture === "SCHEDULED_LIVING_MAIN_PUBLISHER";
+const activeLocalRefresh = facts.refresh?.automaticBridgeConfiguredAtCapture === true
+  && facts.refresh?.sourceAcquisitionModeAtCapture === "local-living-main-publisher"
+  && facts.refresh?.configurationReasonCodeAtCapture === "LOCAL_LIVING_MAIN_PUBLISHER";
+const inactiveRefresh = facts.refresh?.automaticBridgeConfiguredAtCapture === false
+  && facts.refresh?.sourceAcquisitionModeAtCapture === "manual-source-bound-snapshot"
+  && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED", "MANUAL_WORKFLOW_DISPATCH"].includes(facts.refresh?.configurationReasonCodeAtCapture);
 if (!activeRefresh && !activeLocalRefresh && !inactiveRefresh) throw new Error("refresh automation boundary drifted");
+if (facts.refresh.executionObservationStatus !== "NOT_ATTESTED"
+  || facts.refresh.currentOperationalStatus !== "UNKNOWN"
+  || facts.refresh.lastGoodTopologyBehavior !== "retain_previous_source_facts_and_topology_refresh_boundary_may_change") {
+  throw new Error("refresh operation or last-good boundary drifted");
+}
 
 const syncWorkflow = read(".github/workflows/sync-living-galaxy.yml");
 const verifyWorkflow = read(".github/workflows/verify-public-hub.yml");
@@ -1338,11 +1361,18 @@ const ideSmokeWorkflow = read(".github/workflows/hive-ide-public-windows-smoke.y
 const ideSmokeScript = read("script/run-ide-public-windows-smoke.ps1");
 const syncDocs = read("docs/PUBLIC_GALAXY_SYNC.md");
 const requirements = read("script/requirements-galaxy-sync.txt");
+const privateSourceBundle = read("script/private-source-bundle.mjs");
+const materializeStart = syncWorkflow.indexOf("  materialize-private-source:\n");
 const compileStart = syncWorkflow.indexOf("  compile:\n");
 const publishStart = syncWorkflow.indexOf("  publish:\n");
-if (compileStart === -1 || publishStart <= compileStart) throw new Error("split compiler/publisher jobs are missing");
+const deployCallStart = syncWorkflow.indexOf("  deploy-changed-snapshot:\n");
+if (materializeStart === -1 || compileStart <= materializeStart || publishStart <= compileStart || deployCallStart <= publishStart) {
+  throw new Error("materializer/compiler/publisher/direct-handoff job split is missing");
+}
+const materializeJob = syncWorkflow.slice(materializeStart, compileStart);
 const compileJob = syncWorkflow.slice(compileStart, publishStart);
-const publishJob = syncWorkflow.slice(publishStart);
+const publishJob = syncWorkflow.slice(publishStart, deployCallStart);
+const deployCallJob = syncWorkflow.slice(deployCallStart);
 requireMatch(syncWorkflow, /cron:\s*["']\*\/5 \* \* \* \*["']/, "five-minute living-main schedule");
 requireMatch(syncWorkflow, /workflow_dispatch:/, "manual living-main refresh");
 requireMatch(syncWorkflow, /vars\.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true'/, "explicit cloud publisher activation gate");
@@ -1374,31 +1404,36 @@ requireMatch(ideSmokeScript, /expectedTempPrefix[\s\S]*hive-ide-public-smoke-\*[
 requireNoMatch(`${syncWorkflow}\n${verifyWorkflow}`, /11d5960a326750d5838078e36cf38b85af677262|49933ea5288caeca8642d1e84afbd3f7d6820020/, "deprecated Node-20 action pin");
 requireMatch(compileJob, /permissions:\s*\n\s+contents:\s*read/, "credential-free compiler authority");
 requireNoMatch(compileJob, /contents:\s*write|pages:\s*write/, "compiler publication authority");
+requireMatch(materializeJob, /permissions:\s*\n\s+contents:\s*read/, "credentialed materializer read-only authority");
+requireNoMatch(materializeJob, /contents:\s*write|pages:\s*write|id-token:\s*write/, "credentialed materializer publication authority");
 requireMatch(publishJob, /permissions:\s*\n\s+contents:\s*write/, "isolated snapshot publisher authority");
 requireNoMatch(publishJob, /pages:\s*write|id-token:\s*write/, "snapshot publisher Pages deployment authority");
 requireMatch(compileJob, /persist-credentials:\s*false/, "trusted Pages compiler checkout credential removal");
 requireMatch(compileJob, /sync-galaxy-snapshot\.mjs/, "living-main snapshot compiler call");
 requireMatch(compileJob, /actions\/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4/, "pinned inert candidate upload");
 requireMatch(publishJob, /actions\/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0/, "pinned inert candidate download");
-requireMatch(publishJob, /candidate_bytes[\s\S]*524288[\s\S]*candidate_sha[\s\S]*installed_sha/, "bounded artifact admission and copy hash proof");
+requireMatch(publishJob, /candidate_bytes[\s\S]*524288[\s\S]*candidate_sha[\s\S]*sha256sum site\/hub-assets\/hub-facts\.json/, "bounded artifact admission and copy hash proof");
 requireNoMatch(publishJob, /repository:\s*Dhenz14\/Hive-AI|HIVE_AI_READ_DEPLOY_KEY|GALAXY_BRIDGE_MODE|python\s+-m\s+pip/, "publisher private compiler execution");
 requireNoMatch(publishJob, /git rebase/, "candidate-mutating Pages reconciliation");
-requireMatch(publishJob, /base_sha[\s\S]*remote_sha[\s\S]*publisher-candidate-policy\.mjs[\s\S]*CONCURRENT_FACTS_WINNER/, "immutable candidate moving-main policy");
-requireMatch(publishJob, /committed_candidate_sha[\s\S]*candidate_sha[\s\S]*git diff --name-only origin\/main\.\.\.HEAD/, "post-reconstruction candidate and path proof");
+requireMatch(publishJob, /COMPILER_BASE_SHA[\s\S]*remote_commit[\s\S]*publisher-candidate-policy\.mjs[\s\S]*REBUILD_EXACT/, "immutable candidate moving-main transition policy");
+requireMatch(publishJob, /git show HEAD:hub-assets\/hub-facts\.json[\s\S]*candidate_sha[\s\S]*git diff --name-only origin\/main\.\.\.HEAD/, "post-reconstruction candidate and path proof");
 requireMatch(publishJob, /check-central-hub\.mjs/, "trusted pre-publish hub verification");
 requireMatch(compileJob, /check-publisher-races\.mjs/, "credential-free publisher race verification");
 requireMatch(publishJob, /check-publisher-races\.mjs/, "current-main publisher race verification");
 requireMatch(publishJob, /git push origin HEAD:main/, "atomic Pages main publication");
-requireNoMatch(syncWorkflow, /pages\/builds|pages:\s*write|id-token:\s*write/, "legacy or direct Pages deployment from snapshot publisher");
-requireMatch(pagesWorkflow, /workflow_run:[\s\S]*workflows: \["Sync living galaxy"\][\s\S]*conclusion == 'success'[\s\S]*head_branch == 'main'/, "GITHUB_TOKEN snapshot push deployment route");
-requireMatch(pagesWorkflow, /cancel-in-progress:\s*true[\s\S]*ref:\s*main[\s\S]*target_sha="\$\(git rev-parse HEAD\)"[\s\S]*should_publish=false[\s\S]*test "\$\(git rev-parse HEAD\)" = "\$\{\{ needs\.resolve-publication\.outputs\.target-sha \}\}"[\s\S]*Refuse a stale main artifact/, "current-main monotonic Pages custody");
+requireNoMatch(syncWorkflow, /pages\/builds/, "legacy Pages build request from snapshot publisher");
+requireMatch(deployCallJob, /changed == 'true'[\s\S]*uses: \.\/\.github\/workflows\/publish-reviewed-pages\.yml[\s\S]*requested_sha: \$\{\{ needs\.publish\.outputs\.target_sha \}\}[\s\S]*signal_kind: sync-direct-handoff/, "changed-only direct Pages handoff");
+requireNoMatch(pagesWorkflow, /workflow_run:/, "ambiguous workflow-run Pages inference");
+requireMatch(pagesWorkflow, /workflow_call:[\s\S]*requested_sha:[\s\S]*signal_kind:[\s\S]*deploy-reviewed-pages:[\s\S]*concurrency:[\s\S]*group: reviewed-pages[\s\S]*cancel-in-progress: false/, "reusable non-cancelling deployment-only lock");
+requireMatch(pagesWorkflow, /REQUESTED_SHA[\s\S]*git merge-base --is-ancestor "\$REQUESTED_SHA" "\$target_sha"[\s\S]*Refuse a stale main artifact immediately before upload[\s\S]*refs\/remotes\/origin\/main/, "current-main lower-bound and stale-artifact custody");
 requireMatch(pagesWorkflow, /actions\/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b[\s\S]*actions\/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b[\s\S]*actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e/, "pinned custom Pages action chain");
 requireMatch(pagesWorkflow, /stage="\$\{RUNNER_TEMP\}\/hive-pages-reviewed"[\s\S]*test ! -e "\$stage"[\s\S]*build-public-pages\.mjs build[\s\S]*check-http-surface\.mjs --root "\$stage"/, "fresh allowlisted Pages stage and staged HTTP gate");
-requireMatch(pagesBuilder, /REQUIRED_FORBIDDEN_EXACT[\s\S]*HivePoA\/\.distribution-publish-receipt\.json[\s\S]*HivePoA\/\.nojekyll[\s\S]*forbiddenExactPaths\.length !== 25/, "Pages builder exact forbidden-path gate");
+requireMatch(pagesBuilder, /REQUIRED_FORBIDDEN_EXACT[\s\S]*HivePoA\/\.distribution-publish-receipt\.json[\s\S]*HivePoA\/\.nojekyll[\s\S]*product-truth-ledger\.v1\.json[\s\S]*forbiddenExactPaths\.length !== 26/, "Pages builder exact forbidden-path gate");
 requireMatch(pagesBuilder, /lstat[\s\S]*isSymbolicLink[\s\S]*nlink[\s\S]*PUBLIC_ARTIFACT_MEMBERSHIP_MISMATCH/, "Pages builder unsafe-member and exact-membership gate");
+requireMatch(pagesBuilder, /exactAncestorDirectories[\s\S]*PUBLIC_ARTIFACT_DIRECTORY_MEMBERSHIP_MISMATCH[\s\S]*unlisted empty directory refused[\s\S]*forbidden-prefix empty directory refused/, "Pages builder exact directory-membership gate");
 requireMatch(pagesArtifactCheck, /mkdtemp[\s\S]*check-http-surface\.mjs[\s\S]*rm\(resolvedTemporaryRoot, \{ recursive: true, force: true \}\)/, "self-cleaning staged HTTP integration wrapper");
-requireMatch(liveParity, /generatedQuarantineRoutes[\s\S]*forbiddenExactPaths\.length !== 25[\s\S]*content-length[\s\S]*BODY_SIZE_OUT_OF_BOUNDS_OR_MISMATCHED[\s\S]*EXPECTED_404_OR_410/, "bounded deployed allowlist parity and retired-path negative gate");
-if (pagesAllowlist.forbiddenExactPaths?.length !== 25
+requireMatch(liveParity, /generatedQuarantineRoutes[\s\S]*forbiddenExactPaths\.length !== 26[\s\S]*response\.body\.getReader[\s\S]*received > maximumBytes[\s\S]*admittedStatuses: \[404, 410\]/, "bounded streamed deployed allowlist parity and retired-path negative gate");
+if (pagesAllowlist.forbiddenExactPaths?.length !== 26
   || !pagesAllowlist.forbiddenPrefixes?.includes(".github/")
   || !pagesAllowlist.forbiddenPrefixes?.includes("docs/")
   || !pagesAllowlist.forbiddenPrefixes?.includes("fixtures/")
@@ -1407,20 +1442,25 @@ if (pagesAllowlist.forbiddenExactPaths?.length !== 25
   || !pagesAllowlist.privateSourceOnlyPaths?.includes("README.md")
   || !pagesAllowlist.privateSourceOnlyPaths?.includes("HivePoA/.distribution-publish-receipt.json")
   || !pagesAllowlist.privateSourceOnlyPaths?.includes("HivePoA/.nojekyll")
+  || !pagesAllowlist.privateSourceOnlyPaths?.includes("hub-assets/product-truth-ledger.v1.json")
   || !pagesAllowlist.forbiddenExactPaths?.includes("HivePoA/.distribution-publish-receipt.json")
-  || !pagesAllowlist.forbiddenExactPaths?.includes("HivePoA/.nojekyll")) {
+  || !pagesAllowlist.forbiddenExactPaths?.includes("HivePoA/.nojekyll")
+  || !pagesAllowlist.forbiddenExactPaths?.includes("hub-assets/product-truth-ledger.v1.json")) {
   throw new Error("Pages allowlist does not freeze the exact private publication boundary");
 }
-requireMatch(compileJob, /secrets\.HIVE_AI_READ_DEPLOY_KEY/, "read-only private-source deploy key");
+requireMatch(materializeJob, /secrets\.HIVE_AI_READ_DEPLOY_KEY/, "read-only private-source deploy key");
+requireNoMatch(compileJob, /secrets\.HIVE_AI_READ_DEPLOY_KEY/, "credential-free compiler deploy-key isolation");
+requireMatch(materializeJob, /persist-credentials:\s*false[\s\S]*private-source-bundle\.mjs create[\s\S]*private-source-bundle\.mjs inactive/, "inert credentialed source materialization");
+requireMatch(compileJob, /HIVE_AI_READ_DEPLOY_KEY[\s\S]*GIT_SSH_COMMAND[\s\S]*private-source-bundle\.mjs verify[\s\S]*private-source-bundle\.mjs prepare[\s\S]*sync-galaxy-snapshot\.mjs --source-bundle/, "credential-free verified compiler execution boundary");
 requireMatch(compileJob, /mark-galaxy-bridge-inactive\.mjs --credential-missing/, "credential-removal fail-closed path");
 requireMatch(compileJob, /mark-galaxy-bridge-inactive\.mjs --checkout-failed/, "credential-failure fail-closed path");
 const secretNames = [...syncWorkflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((match) => match[1]);
 if (secretNames.some((name) => name !== "HIVE_AI_READ_DEPLOY_KEY")) throw new Error("unexpected workflow secret authority");
 requireNoMatch(syncWorkflow, /personal_access_token|\bPAT\b/i, "broad sync credential");
-requireMatch(syncDocs, /read-only `compile` job[\s\S]*separate `publish` job[\s\S]*never checks out Hive-AI or executes its\s+code/, "documented split publisher trust boundary");
-requireMatch(syncDocs, /remote `main` both before and after compilation[\s\S]*never a mixed-era artifact/, "documented living-main race boundary");
-requireMatch(syncDocs, /never rebases[\s\S]*reconstructs the exact candidate bytes[\s\S]*concurrent writer changed the facts/, "documented immutable candidate reconciliation");
-requireMatch(syncDocs, /never requests a legacy branch-root Pages build[\s\S]*workflow_run[\s\S]*exact current Pages `main`[\s\S]*without a PAT/, "documented allowlisted Pages deployment recovery");
+requireMatch(syncDocs, /materialize-private-source[\s\S]*no private Python or JavaScript module[\s\S]*fresh read-only `compile` job[\s\S]*no deploy key/, "documented credential/materialization split");
+requireMatch(syncDocs, /exact source commit\/tree[\s\S]*file's bytes, SHA-256, and Git[\s\S]*blob OID/, "documented private source artifact binding");
+requireMatch(syncDocs, /never rebases or merges[\s\S]*compiler base to remain an[\s\S]*ancestor[\s\S]*reconstructing the exact candidate bytes/, "documented immutable candidate reconciliation");
+requireMatch(syncDocs, /never requests a legacy branch-root Pages build[\s\S]*directly invokes the reusable Pages workflow[\s\S]*exact current Pages `main`[\s\S]*without a PAT or `workflow_run` inference/, "documented allowlisted direct Pages deployment recovery");
 requireMatch(compileJob, /actions\/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1/, "pinned Python runtime");
 requireMatch(compileJob, /pip install --require-hashes --only-binary=:all:/, "hash-locked binary-only Python install");
 for (const requiredPath of [
@@ -1428,7 +1468,7 @@ for (const requiredPath of [
   "/tests/fixtures/physiology/formal_l3_e01_v2/RATIFY_L3_E01_V2.json",
   "/tests/fixtures/physiology/formal_l3_e02/window_seal/RATIFY_L3_E02_V1.json",
 ]) {
-  if (!compileJob.includes(requiredPath)) throw new Error(`publisher sparse evidence path missing: ${requiredPath}`);
+  if (!materializeJob.includes(requiredPath)) throw new Error(`publisher sparse evidence path missing: ${requiredPath}`);
 }
 const requirementSpecs = requirements.split(/\r?\n/).filter((line) => /^[a-z0-9-]+==/i.test(line));
 const requirementHashes = [...requirements.matchAll(/--hash=sha256:[a-f0-9]{64}/g)];
@@ -1440,6 +1480,8 @@ requireMatch(generator, /"-C", hiveAiRepo, "ls-remote", "origin"/, "credential-p
 requireMatch(generator, /rev-parse", "HEAD\^\{commit\}"[\s\S]*checkoutCommit !== sourceCommit/, "exact compiled checkout identity");
 requireMatch(generator, /--ignored=matching/, "ignored-input refusal");
 requireMatch(generator, /truth-input commit[\s\S]*shallow boundary/, "shallow provenance refusal");
+requireMatch(generator, /sourceBundleOption[\s\S]*readAndVerifyBundle\(sourceBundle, \{ allowPreparedGit: true \}\)[\s\S]*sourceBinding\.files/, "credential-free source bundle binding mode");
+requireMatch(privateSourceBundle, /MAX_FILES = 12_000[\s\S]*MAX_TOTAL_BYTES = 256 \* 1024 \* 1024[\s\S]*gitBlobOid[\s\S]*manifestSha256[\s\S]*ambiguous link entry[\s\S]*forbidden \.git directory[\s\S]*unexpected or empty directory/, "bounded private source materialization contract");
 requireMatch(generator, /fs\.fsyncSync/, "atomic durable snapshot write");
 requireMatch(generator, /process\.argv\.includes\("--check"\)/, "snapshot check mode");
 requireMatch(generator, /statusProjection:\s*"none"/, "no status projection");
@@ -1448,7 +1490,7 @@ requireMatch(generator, /REQUIRED_PUBLISHER_EVIDENCE_PATHS[\s\S]*portable_green_
 requireMatch(generator, /graph\.evidence[\s\S]*evidenceByPath[\s\S]*sourceTreeEntries\.has\(repositoryPath\)[\s\S]*verifyMaterializedSource\(repositoryPath, expected\)/, "generic tracked evidence closure");
 requireMatch(generator, /required publisher evidence did not enter the compiled closure/, "required evidence compiler inclusion gate");
 const compiledIndex = generator.indexOf("const compiled =");
-const postCompileRaceIndex = generator.indexOf("const remoteMainAfterCompile = remoteMainCommit();");
+const postCompileRaceIndex = generator.indexOf("const remoteMainAfterCompile = sourceBinding ? sourceCommit : remoteMainCommit();");
 const snapshotAssemblyIndex = generator.indexOf("const galaxyWithoutHash =");
 const snapshotDecisionIndex = generator.indexOf("if (checkOnly) {");
 if (compiledIndex === -1
@@ -1458,9 +1500,9 @@ if (compiledIndex === -1
   throw new Error("post-compile living-main race gate is missing or out of order");
 }
 requireMatch(generator, /Hive-AI main moved during compilation/, "moving-main retry signal");
-requireMatch(generator, /GALAXY_AUTOMATIC_BRIDGE === "true"/, "explicit bridge activation input");
-requireMatch(generator, /GALAXY_BRIDGE_MODE === "local"/, "local convergence mode");
-requireNoMatch(bridgeFailClosed, /automaticBridgeEnabled:\s*true/, "fail-closed script authority escalation");
+requireMatch(generator, /GALAXY_AUTOMATIC_BRIDGE_CONFIGURED_AT_CAPTURE === "true"/, "explicit at-capture bridge configuration input");
+requireMatch(generator, /GALAXY_SOURCE_ACQUISITION_MODE_AT_CAPTURE === "local"/, "local acquisition mode");
+requireNoMatch(bridgeFailClosed, /automaticBridgeConfiguredAtCapture:\s*true/, "fail-closed script authority escalation");
 requireMatch(bridgeFailClosed, /CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED/, "missing-credential fail-closed reason");
 requireMatch(bridgeFailClosed, /PRIVATE_SOURCE_CHECKOUT_FAILED/, "failed-checkout fail-closed reason");
 requireMatch(galaxyCore, /galaxy\.sourceGraphHash !== facts\?\.graphHash/, "runtime graph binding");
@@ -1471,9 +1513,8 @@ requireMatch(galaxyCore, /export function galaxyRenderState/, "testable render f
 requireMatch(galaxyCore, /export function placeCanvasLabel/, "testable collision-aware labels");
 requireMatch(galaxyCore, /export function resolveGalaxySelection/, "testable semantic selection continuity");
 requireMatch(galaxyCore, /export function snapshotFreshness/, "testable snapshot freshness state");
-requireMatch(compileJob, /fetch-depth:\s*128/, "bounded initial source history");
-requireMatch(compileJob, /persist-credentials:\s*true/, "authenticated post-checkout source proof");
-requireMatch(compileJob, /--deepen=896[\s\S]*--unshallow/, "progressive source history proof");
+requireMatch(materializeJob, /fetch-depth:\s*128/, "bounded initial source history");
+requireMatch(materializeJob, /persist-credentials:\s*false/, "private checkout credential removal");
 
 const png = fs.readFileSync(path.join(root, "hub-assets/og.png"));
 if (png.subarray(1, 4).toString("ascii") !== "PNG" || png.readUInt32BE(16) !== 1200 || png.readUInt32BE(20) !== 630) {

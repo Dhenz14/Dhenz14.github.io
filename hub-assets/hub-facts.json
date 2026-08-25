@@ -7699,10 +7699,12 @@
     "federationRepositories": 20
   },
   "refresh": {
-    "privateSourceMode": "scheduled-living-main-publisher",
-    "automaticBridgeEnabled": true,
-    "reasonCode": "SCHEDULED_LIVING_MAIN_PUBLISHER",
-    "lastGoodBehavior": "retain_previous_snapshot"
+    "sourceAcquisitionModeAtCapture": "scheduled-living-main-publisher",
+    "automaticBridgeConfiguredAtCapture": true,
+    "configurationReasonCodeAtCapture": "SCHEDULED_LIVING_MAIN_PUBLISHER",
+    "executionObservationStatus": "NOT_ATTESTED",
+    "currentOperationalStatus": "UNKNOWN",
+    "lastGoodTopologyBehavior": "retain_previous_source_facts_and_topology_refresh_boundary_may_change"
   },
   "boundaries": {
     "snapshotOnly": true,
@@ -7725,5 +7727,5 @@
     "chatEffectiveDisposition": "WAIT_NOT_AVAILABLE"
   },
   "capturedAt": "2026-08-23T22:53:32Z",
-  "snapshotHash": "81fee0f0b751c5c17ace278cf17fe7f373041f6a239957e7e9b22b9cdc409602"
+  "snapshotHash": "23d2456bc77574491279af30b129aced09358944159a7ad6857565e49732c33e"
 }

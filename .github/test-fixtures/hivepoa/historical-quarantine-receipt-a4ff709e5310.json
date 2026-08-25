@@ -1,7 +1,7 @@
 {
-  "schema": "hivepoa.public_surface_quarantine.v2",
+  "schema": "hivepoa.public_surface_quarantine.v1",
   "createdAtUtc": "2026-08-23T19:57:05.9237200Z",
-  "status": "HISTORICAL_RECEIPT_CURRENT_EFFECTIVE_UNKNOWN_HOLD",
+  "status": "ACTIVE_CANDIDATE_NOT_DEPLOYED",
   "mode": "REVERSIBLE_PUBLIC_SITE_QUARANTINE",
   "targetRepository": "Dhenz14/Dhenz14.github.io",
   "targetBaseCommit": "6826152c63e05c4c77fcaf5941ca1e2c27bd47f8",
@@ -22,24 +22,10 @@
     "NO_CURRENT_PUBLIC_COORDINATOR_OR_ENROLLMENT_PROOF",
     "CANONICAL_REGENERATION_BLOCKED_BY_CUSTODY_GATE"
   ],
-  "historicalObservation": {
-    "recordedAtUtc": "2026-08-23T19:57:05.9237200Z",
-    "previousReceiptStatus": "ACTIVE_CANDIDATE_NOT_DEPLOYED",
-    "previousProductLiveValue": false,
-    "temporalBoundary": "HISTORICAL_RECEIPT_VALUE_NOT_CURRENT_OPERATIONAL_OBSERVATION"
-  },
-  "effectiveCurrentDisposition": {
-    "status": "UNKNOWN_HOLD",
-    "delivery": "HOLD",
-    "network": "HOLD",
-    "runtime": "UNKNOWN",
-    "productLive": "UNKNOWN",
-    "publicActions": "HOLD"
-  },
   "sharedReplacement": {
-    "bytes": 9183,
-    "sha256": "1aecb058207e1df8ee5728f98f9c7a1e55ddb84930f9452faab5dae5e4e78da5",
-    "gitBlobOid": "ff838cdaa7a3fbffd28832ba811bc77181d921f2",
+    "bytes": 9138,
+    "sha256": "568d50cb18499b975f4584b3c9b8b490c6e4ae9d44becec38078a23988472d78",
+    "gitBlobOid": "5b24c91992413d92781508bdd042e7030dea1e17",
     "robots": "noindex, nofollow, noarchive, noimageindex",
     "contentSecurityPolicy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
     "scriptsLoaded": [],
@@ -118,12 +104,12 @@
   "publicClaimBoundary": {
     "historicalOperatorKeyMetadata": "PRESERVED_PROVENANCE_ONLY",
     "packageDelivery": "HOLD",
-    "liveCoordinator": "UNKNOWN",
-    "publicEnrollment": "UNKNOWN",
-    "execution": "UNKNOWN",
-    "runtimeAcceptance": "UNKNOWN",
-    "publicNetworkAvailability": "UNKNOWN_HOLD",
-    "productLive": "UNKNOWN",
+    "liveCoordinator": "NOT_PROVEN",
+    "publicEnrollment": "NOT_PUBLISHED",
+    "execution": "NOT_PROVEN",
+    "runtimeAcceptance": "HISTORICAL_POINTER_NOT_BROWSER_VERIFIED",
+    "publicNetworkAvailability": "NOT_PROVEN",
+    "productLive": false,
     "downloadAction": false,
     "verificationAction": false,
     "enrollmentAction": false,

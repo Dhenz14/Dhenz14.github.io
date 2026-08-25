@@ -13,24 +13,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  compile:
+  materialize-private-source:
     if: github.repository == 'Dhenz14/Dhenz14.github.io' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true')
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     permissions:
       contents: read
+    outputs:
+      source_ready: ${{ steps.classify.outputs.source_ready }}
+      inactive_reason: ${{ steps.classify.outputs.inactive_reason }}
     steps:
-      - name: Check out trusted Pages compiler
+      - name: Check out the exact trusted Pages compiler
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: main
+          ref: ${{ github.sha }}
           path: site
-          # Default signed-release verification is archive-portable. Full history is
-          # fetched independently to verify the same fixture against historical OIDs.
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Check private-source credential availability
+      - name: Use Node.js 22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Check private-source credential availability without exporting it
         id: source-auth
         env:
           HIVE_AI_READ_DEPLOY_KEY: ${{ secrets.HIVE_AI_READ_DEPLOY_KEY }}
@@ -41,10 +47,9 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "The read-only Hive-AI deploy key is not configured; retaining the last source snapshot behind an inactive bridge boundary."
           fi
 
-      - name: Check out the living Hive-AI source
+      - name: Materialize the exact private main checkout without persistent credentials
         id: source-checkout
         if: steps.source-auth.outputs.configured == 'true'
         continue-on-error: true
@@ -57,7 +62,7 @@ jobs:
           ssh-strict: true
           fetch-depth: 128
           filter: blob:none
-          persist-credentials: true
+          persist-credentials: false
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /hiveai/__init__.py
@@ -91,13 +96,99 @@ jobs:
             /tests/fixtures/physiology/formal_l3_e01_v2/RATIFY_L3_E01_V2.json
             /tests/fixtures/physiology/formal_l3_e02/window_seal/RATIFY_L3_E02_V1.json
 
+      - name: Build a byte-bound inert source materialization
+        if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git -C hive-ai config --local --get core.sshCommand || true)"
+          node site/script/private-source-bundle.mjs create --source hive-ai --output materialized
+
+      - name: Emit a credential-missing inactive materialization
+        if: steps.source-auth.outputs.configured != 'true'
+        shell: bash
+        run: node site/script/private-source-bundle.mjs inactive --output materialized --reason CREDENTIAL_NOT_CONFIGURED
+
+      - name: Emit a checkout-failed inactive materialization
+        if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome != 'success'
+        shell: bash
+        run: node site/script/private-source-bundle.mjs inactive --output materialized --reason CHECKOUT_FAILED
+
+      - name: Verify and classify the bounded materialization
+        id: classify
+        shell: bash
+        run: |
+          set -euo pipefail
+          node site/script/private-source-bundle.mjs verify --bundle materialized
+          status="$(node site/script/private-source-bundle.mjs field --bundle materialized --name status)"
+          if [[ "$status" == "SOURCE_MATERIALIZED" ]]; then
+            echo "source_ready=true" >> "$GITHUB_OUTPUT"
+            echo "inactive_reason=" >> "$GITHUB_OUTPUT"
+          else
+            echo "source_ready=false" >> "$GITHUB_OUTPUT"
+            echo "inactive_reason=$(node site/script/private-source-bundle.mjs field --bundle materialized --name reason)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload only the inert bound source materialization
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: private-source-materialization
+          path: materialized
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
+          compression-level: 0
+
+  compile:
+    needs: materialize-private-source
+    if: needs.materialize-private-source.result == 'success' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      base_sha: ${{ steps.site-base.outputs.base_sha }}
+    steps:
+      - name: Check out the same trusted Pages compiler without credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          path: site
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Bind the exact compiler base
+        id: site-base
+        working-directory: site
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "base_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Download the inert private-source materialization
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: private-source-materialization
+          path: materialized
+
       - name: Use Node.js 22
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
 
-      - name: Use Python 3.12
-        if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome == 'success'
+      - name: Prove the compiler job has no private checkout credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "${HIVE_AI_READ_DEPLOY_KEY:-}"
+          test -z "${GIT_SSH_COMMAND:-}"
+          test -z "$(git config --global --get core.sshCommand || true)"
+          test -z "$(find materialized -type d -name .git -print -quit)"
+          node site/script/private-source-bundle.mjs verify --bundle materialized
+
+      - name: Use Python 3.12 for a verified materialized source
+        if: needs.materialize-private-source.outputs.source_ready == 'true'
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.12'
@@ -105,46 +196,31 @@ jobs:
           cache-dependency-path: site/script/requirements-galaxy-sync.txt
 
       - name: Install the hash-locked compiler dependency
-        if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome == 'success'
+        if: needs.materialize-private-source.outputs.source_ready == 'true'
         shell: bash
         run: "python -m pip install --require-hashes --only-binary=:all: -r site/script/requirements-galaxy-sync.txt"
 
-      - name: Compile one coherent observation of living main
-        if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome == 'success'
-        env:
-          GALAXY_AUTOMATIC_BRIDGE: ${{ vars.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true' && 'true' || 'false' }}
-          GALAXY_BRIDGE_MODE: "cloud"
-          GALAXY_BRIDGE_INACTIVE_REASON: "MANUAL_WORKFLOW_DISPATCH"
+      - name: Prepare an ephemeral credential-free compiler checkout
+        if: needs.materialize-private-source.outputs.source_ready == 'true'
         shell: bash
-        run: |
-          set -euo pipefail
-          source_repo="$GITHUB_WORKSPACE/hive-ai"
-          for attempt in 1 2 3; do
-            git -C "$source_repo" fetch --filter=blob:none origin main
-            git -C "$source_repo" switch --detach FETCH_HEAD
-            if node site/script/sync-galaxy-snapshot.mjs \
-              --hive-ai-repo "$source_repo" \
-              --hive-ai-ref HEAD; then
-              exit 0
-            fi
-            if [[ "$attempt" == 3 ]]; then
-              echo "Hive-AI main kept moving or stayed unprovable through all bounded attempts; no candidate will be published."
-              exit 1
-            fi
-            if [[ "$attempt" == 1 ]]; then
-              git -C "$source_repo" fetch --filter=blob:none --deepen=896 origin main
-            elif git -C "$source_repo" rev-parse --is-shallow-repository | grep -qx true; then
-              git -C "$source_repo" fetch --filter=blob:none --unshallow origin main
-            fi
-          done
+        run: node site/script/private-source-bundle.mjs prepare --bundle materialized
 
-      - name: Fail closed when the source credential is absent
-        if: steps.source-auth.outputs.configured != 'true'
+      - name: Compile one bound private-main source observation
+        if: needs.materialize-private-source.outputs.source_ready == 'true'
+        env:
+          GALAXY_AUTOMATIC_BRIDGE_CONFIGURED_AT_CAPTURE: ${{ vars.LIVING_GALAXY_CLOUD_SYNC_ENABLED == 'true' && 'true' || 'false' }}
+          GALAXY_SOURCE_ACQUISITION_MODE_AT_CAPTURE: cloud
+          GALAXY_BRIDGE_INACTIVE_REASON: MANUAL_WORKFLOW_DISPATCH
+        shell: bash
+        run: node site/script/sync-galaxy-snapshot.mjs --source-bundle materialized
+
+      - name: Retain last-good topology behind a credential-missing HOLD
+        if: needs.materialize-private-source.outputs.source_ready != 'true' && needs.materialize-private-source.outputs.inactive_reason == 'CREDENTIAL_NOT_CONFIGURED'
         shell: bash
         run: node site/script/mark-galaxy-bridge-inactive.mjs --credential-missing
 
-      - name: Fail closed when private-source checkout fails
-        if: steps.source-auth.outputs.configured == 'true' && steps.source-checkout.outcome != 'success'
+      - name: Retain last-good topology behind a checkout-failed HOLD
+        if: needs.materialize-private-source.outputs.source_ready != 'true' && needs.materialize-private-source.outputs.inactive_reason == 'CHECKOUT_FAILED'
         shell: bash
         run: node site/script/mark-galaxy-bridge-inactive.mjs --checkout-failed
 
@@ -155,7 +231,7 @@ jobs:
           set -euo pipefail
           changed="$(git status --porcelain | sed -E 's/^...//' | sort -u)"
           if [[ -z "$changed" ]]; then
-            echo "Snapshot already represents the newest coherent observation."
+            echo "Snapshot already represents this bounded observation."
           elif [[ "$changed" != "hub-assets/hub-facts.json" ]]; then
             printf 'Unexpected generated paths:\n%s\n' "$changed" >&2
             exit 1
@@ -166,14 +242,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node --check hub-assets/hub.js
-          node --check hub-assets/galaxy-core.mjs
-          node --check hub-assets/strict-json-fetch.mjs
-          node --check script/check-browser-json-acquisition.mjs
-          node --check script/sync-galaxy-snapshot.mjs
-          node --check script/mark-galaxy-bridge-inactive.mjs
-          node --check script/hub-facts-custody.mjs
+          for source in hub-assets/*.js hub-assets/*.mjs script/*.mjs; do node --check "$source"; done
           node script/hub-facts-custody.mjs --self-test
+          node script/private-source-bundle.mjs --self-test
           node script/check-central-hub.mjs
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
@@ -202,6 +273,9 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+    outputs:
+      changed: ${{ steps.publish.outputs.changed }}
+      target_sha: ${{ steps.publish.outputs.target_sha }}
     steps:
       - name: Check out current Pages main
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -237,11 +311,7 @@ jobs:
           fi
           candidate_sha="$(sha256sum candidate/hub-facts.json | cut -d' ' -f1)"
           install -m 0644 candidate/hub-facts.json site/hub-assets/hub-facts.json
-          installed_sha="$(sha256sum site/hub-assets/hub-facts.json | cut -d' ' -f1)"
-          if [[ "$candidate_sha" != "$installed_sha" ]]; then
-            echo "Candidate changed while crossing the publisher boundary." >&2
-            exit 1
-          fi
+          test "$candidate_sha" = "$(sha256sum site/hub-assets/hub-facts.json | cut -d' ' -f1)"
           echo "Admitted hub-facts.json sha256=$candidate_sha bytes=$candidate_bytes"
 
       - name: Refuse every path except the public facts file
@@ -250,9 +320,7 @@ jobs:
         run: |
           set -euo pipefail
           changed="$(git status --porcelain | sed -E 's/^...//' | sort -u)"
-          if [[ -z "$changed" ]]; then
-            echo "Current Pages main already contains this candidate."
-          elif [[ "$changed" != "hub-assets/hub-facts.json" ]]; then
+          if [[ -n "$changed" && "$changed" != "hub-assets/hub-facts.json" ]]; then
             printf 'Unexpected publication paths:\n%s\n' "$changed" >&2
             exit 1
           fi
@@ -262,12 +330,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node --check hub-assets/hub.js
-          node --check hub-assets/galaxy-core.mjs
-          node --check hub-assets/strict-json-fetch.mjs
-          node --check script/sync-galaxy-snapshot.mjs
-          node --check script/mark-galaxy-bridge-inactive.mjs
-          node --check script/hub-facts-custody.mjs
           node script/hub-facts-custody.mjs --self-test
           node script/check-central-hub.mjs
           node script/check-galaxy-bridge.mjs
@@ -275,60 +337,55 @@ jobs:
           node script/check-browser-json-acquisition.mjs
           node script/check-public-pages-artifact.mjs
           node script/check-publisher-races.mjs
-          node script/check-signed-release.mjs
-          node script/check-signed-release.mjs --verify-git-provenance
-          node script/check-signed-release.mjs --self-test
-          node script/check-signed-release-portability.mjs --git-archive
           git diff --check
 
       - name: Publish one exact snapshot commit onto living Pages main
         id: publish
         working-directory: site
+        env:
+          COMPILER_BASE_SHA: ${{ needs.compile.outputs.base_sha }}
         shell: bash
         run: |
           set -euo pipefail
           candidate_path="$GITHUB_WORKSPACE/candidate/hub-facts.json"
           candidate_sha="$(sha256sum "$candidate_path" | cut -d' ' -f1)"
-          base_sha="$(git show HEAD:hub-assets/hub-facts.json | sha256sum | cut -d' ' -f1)"
           observed_sha="$(node script/hub-facts-custody.mjs --file "$candidate_path" --field hiveAi.sourceCommit)"
-          bridge_enabled="$(node script/hub-facts-custody.mjs --file "$candidate_path" --field refresh.automaticBridgeEnabled)"
-          if [[ "$bridge_enabled" == "true" ]]; then
+          bridge_configured="$(node script/hub-facts-custody.mjs --file "$candidate_path" --field refresh.automaticBridgeConfiguredAtCapture)"
+          if [[ "$bridge_configured" == "true" ]]; then
             commit_subject="chore(galaxy): absorb Hive-AI ${observed_sha:0:12}"
           else
             commit_subject="chore(galaxy): mark private source bridge inactive"
           fi
           git config user.name "hive-living-main[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git cat-file -e "$COMPILER_BASE_SHA^{commit}"
 
           for attempt in 1 2 3; do
             git fetch origin main
-            remote_sha="$(git show origin/main:hub-assets/hub-facts.json | sha256sum | cut -d' ' -f1)"
+            remote_commit="$(git rev-parse origin/main)"
             decision="$(node script/publisher-candidate-policy.mjs \
-              --base "$base_sha" --remote "$remote_sha" --candidate "$candidate_sha")"
+              --repository . \
+              --base-commit "$COMPILER_BASE_SHA" \
+              --remote-commit "$remote_commit" \
+              --candidate "$candidate_sha")"
             if [[ "$decision" == "ALREADY_LANDED" ]]; then
               git restore --source=HEAD --staged --worktree hub-assets/hub-facts.json
               git switch --detach origin/main
               echo "changed=false" >> "$GITHUB_OUTPUT"
+              echo "target_sha=$remote_commit" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            if [[ "$decision" == "CONCURRENT_FACTS_WINNER" ]]; then
-              echo "A concurrent Pages writer changed the facts artifact; preserving that winner for a fresh source compilation." >&2
+            if [[ "$decision" != "REBUILD_EXACT" ]]; then
+              echo "Publisher transition refused: $decision" >&2
               exit 1
             fi
 
             git restore --source=HEAD --staged --worktree hub-assets/hub-facts.json
             git switch --detach origin/main
             install -m 0644 "$candidate_path" hub-assets/hub-facts.json
-            installed_sha="$(sha256sum hub-assets/hub-facts.json | cut -d' ' -f1)"
-            if [[ "$installed_sha" != "$candidate_sha" ]]; then
-              echo "Exact candidate bytes changed during current-main reconstruction." >&2
-              exit 1
-            fi
+            test "$(sha256sum hub-assets/hub-facts.json | cut -d' ' -f1)" = "$candidate_sha"
             changed_paths="$(git status --porcelain | sed -E 's/^...//' | sort -u)"
-            if [[ "$changed_paths" != "hub-assets/hub-facts.json" ]]; then
-              printf 'Reconstructed candidate changed an unexpected path:\n%s\n' "$changed_paths" >&2
-              exit 1
-            fi
+            test "$changed_paths" = "hub-assets/hub-facts.json"
 
             node script/check-central-hub.mjs
             node script/check-galaxy-bridge.mjs
@@ -336,27 +393,28 @@ jobs:
             node script/check-browser-json-acquisition.mjs
             node script/check-public-pages-artifact.mjs
             node script/check-publisher-races.mjs
-            node script/check-signed-release.mjs
-            node script/check-signed-release.mjs --verify-git-provenance
-            node script/check-signed-release.mjs --self-test
-            node script/check-signed-release-portability.mjs --git-archive
             git diff --check
             git add hub-assets/hub-facts.json
             git commit -m "$commit_subject"
-            committed_candidate_sha="$(git show HEAD:hub-assets/hub-facts.json | sha256sum | cut -d' ' -f1)"
-            if [[ "$committed_candidate_sha" != "$candidate_sha" ]]; then
-              echo "Committed snapshot does not equal the admitted candidate." >&2
-              exit 1
-            fi
-            changed_paths="$(git diff --name-only origin/main...HEAD)"
-            if [[ "$changed_paths" != "hub-assets/hub-facts.json" ]]; then
-              printf 'Snapshot commit contains unexpected paths:\n%s\n' "$changed_paths" >&2
-              exit 1
-            fi
+            test "$(git show HEAD:hub-assets/hub-facts.json | sha256sum | cut -d' ' -f1)" = "$candidate_sha"
+            test "$(git diff --name-only origin/main...HEAD)" = "hub-assets/hub-facts.json"
             if git push origin HEAD:main; then
               echo "changed=true" >> "$GITHUB_OUTPUT"
+              echo "target_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
               exit 0
             fi
           done
-          echo "Pages main moved through all bounded pushes; the next scheduled run will reconcile again."
+          echo "Pages main moved through all bounded pushes; a later scheduled run will reconcile again."
           exit 1
+
+  deploy-changed-snapshot:
+    needs: publish
+    if: needs.publish.result == 'success' && needs.publish.outputs.changed == 'true' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/publish-reviewed-pages.yml
+    with:
+      requested_sha: ${{ needs.publish.outputs.target_sha }}
+      signal_kind: sync-direct-handoff

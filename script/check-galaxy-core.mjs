@@ -198,16 +198,20 @@ assert(snapshotFreshness("2026-08-04T19:00:00Z", freshnessNow).state === "histor
 assert(snapshotFreshness("not-a-date", freshnessNow).state === "invalid", "invalid source capture accepted");
 assert(snapshotFreshness("2999-01-01T00:00:00Z", freshnessNow).state === "invalid", "far-future source capture marked recent");
 assert(snapshotFreshness("2026-08-04T21:04:00Z", freshnessNow).state === "recent", "bounded clock skew rejected");
-for (const automaticBridgeEnabled of [true, false]) {
-  const recent = sourceSnapshotPresentation("2026-08-04T20:50:00Z", automaticBridgeEnabled, freshnessNow);
-  const aged = sourceSnapshotPresentation("2026-08-04T20:40:00Z", automaticBridgeEnabled, freshnessNow);
-  const historical = sourceSnapshotPresentation("2026-08-04T19:00:00Z", automaticBridgeEnabled, freshnessNow);
-  assert(recent.freshness === "recent" && aged.freshness === "aged" && historical.freshness === "historical", `source age was coupled to bridge=${automaticBridgeEnabled}`);
-  const expectedBridge = automaticBridgeEnabled ? "configured" : "manual";
-  const expectedSuffix = automaticBridgeEnabled ? "auto-sync configured" : "manual snapshot";
-  assert([recent, aged, historical].every((value) => value.bridge === expectedBridge && value.label.endsWith(expectedSuffix)), `bridge=${automaticBridgeEnabled} was not reported separately`);
-  assert(recent.badgeState === "" && recent.freshnessDisposition === "CURRENT_EVIDENCE_OK", `recent source capture was not current for bridge=${automaticBridgeEnabled}`);
-  assert([aged, historical].every((value) => value.badgeState === "stale" && value.freshnessDisposition === "FRESHNESS_HOLD" && value.label.includes("freshness HOLD")), `aged source capture escaped freshness HOLD for bridge=${automaticBridgeEnabled}`);
+for (const configuredAtCapture of [true, false]) {
+  const recent = sourceSnapshotPresentation("2026-08-04T20:50:00Z", configuredAtCapture, freshnessNow);
+  const aged = sourceSnapshotPresentation("2026-08-04T20:40:00Z", configuredAtCapture, freshnessNow);
+  const historical = sourceSnapshotPresentation("2026-08-04T19:00:00Z", configuredAtCapture, freshnessNow);
+  assert(recent.freshness === "recent" && aged.freshness === "aged" && historical.freshness === "historical", `source age was coupled to configuration-at-capture=${configuredAtCapture}`);
+  const expectedConfiguration = configuredAtCapture ? "configured_at_capture" : "not_configured_at_capture";
+  const expectedLabel = configuredAtCapture ? "automation configured at capture" : "automation not configured at capture";
+  assert([recent, aged, historical].every((value) => value.configuration === expectedConfiguration
+    && value.executionObservationStatus === "NOT_ATTESTED"
+    && value.currentOperationalStatus === "UNKNOWN"
+    && value.label.includes(expectedLabel)
+    && value.label.endsWith("execution not attested · current operation UNKNOWN")), `configuration-at-capture=${configuredAtCapture} was not reported separately from current operation`);
+  assert(recent.badgeState === "" && recent.freshnessDisposition === "CURRENT_EVIDENCE_OK", `recent source capture was not current for configuration-at-capture=${configuredAtCapture}`);
+  assert([aged, historical].every((value) => value.badgeState === "stale" && value.freshnessDisposition === "FRESHNESS_HOLD" && value.label.includes("freshness HOLD")), `aged source capture escaped freshness HOLD for configuration-at-capture=${configuredAtCapture}`);
 }
 assert(sourceSnapshotPresentation("not-a-date", true, freshnessNow).badgeState === "stale", "invalid source capture received a verified badge");
 

@@ -10,7 +10,7 @@ import { parseJsonBytesStrict, parseJsonStrict } from "../hub-assets/strict-json
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const fixtureManifestPath = path.join(root, ".github", "test-fixtures", "hivepoa", "portable-signed-release-fixture.v1.json");
 const EXACT_PATHS = Object.freeze({
-  receipt: "HivePoA/public-surface-quarantine-receipt.json",
+  receipt: ".github/test-fixtures/hivepoa/historical-quarantine-receipt-a4ff709e5310.json",
   historicalIndex: ".github/test-fixtures/hivepoa/historical-index-1a607c451406.html",
   authorizationModule: ".github/test-fixtures/hivepoa/tester-network-authorization-3f397e3bc3a6.js",
 });

@@ -110,9 +110,9 @@ export const PRODUCT_TRUTH_SNAPSHOT_RELATIONS = Object.freeze([
   "SNAPSHOT_INVALID_BLOCKED",
 ]);
 
-export function sourceSnapshotPresentation(capturedAt, automaticBridgeEnabled, now = Date.now()) {
+export function sourceSnapshotPresentation(capturedAt, automaticBridgeConfiguredAtCapture, now = Date.now()) {
   const freshness = snapshotFreshness(capturedAt, now);
-  const bridge = automaticBridgeEnabled ? "configured" : "manual";
+  const configuration = automaticBridgeConfiguredAtCapture ? "configured_at_capture" : "not_configured_at_capture";
   const ageLabel = freshness.state === "historical"
     ? "Historical source capture"
     : freshness.state === "aged"
@@ -122,10 +122,12 @@ export function sourceSnapshotPresentation(capturedAt, automaticBridgeEnabled, n
         : "Invalid source capture";
   return Object.freeze({
     freshness: freshness.state,
-    bridge,
+    configuration,
+    executionObservationStatus: "NOT_ATTESTED",
+    currentOperationalStatus: "UNKNOWN",
     freshnessDisposition: freshness.state === "recent" ? "CURRENT_EVIDENCE_OK" : "FRESHNESS_HOLD",
     badgeState: freshness.state === "recent" ? "" : "stale",
-    label: `${ageLabel} · ${freshness.state === "invalid" ? "source binding held" : "source binding verified"} · ${freshness.state === "recent" ? "freshness recent" : "freshness HOLD"} · ${bridge === "configured" ? "auto-sync configured" : "manual snapshot"}`,
+    label: `${ageLabel} · ${freshness.state === "invalid" ? "source binding held" : "source binding verified"} · ${freshness.state === "recent" ? "freshness recent" : "freshness HOLD"} · ${configuration === "configured_at_capture" ? "automation configured at capture" : "automation not configured at capture"} · execution not attested · current operation UNKNOWN`,
   });
 }
 
@@ -293,6 +295,10 @@ export function adaptiveGalaxyDpr({ devicePixelRatio = 1, width = 1, height = 1,
 
 export function snapshotResponseCanCommit({ requestGeneration, currentGeneration, aborted = false }) {
   return !aborted && requestGeneration === currentGeneration;
+}
+
+export function snapshotIdentityChanged(previous, next) {
+  return !previous || previous.snapshotHash !== next?.snapshotHash;
 }
 
 export function snapshotFreshness(capturedAt, now = Date.now()) {
@@ -711,8 +717,10 @@ export async function validSnapshot(snapshot) {
     || snapshot.ecosystem.federationRepositories !== facts.federationRepositories
     || !Array.isArray(snapshot.ecosystem.primaryOrgans)
     || snapshot.ecosystem.primaryOrgans.length !== 6
-    || !exactKeys(snapshot.refresh, ["privateSourceMode", "automaticBridgeEnabled", "reasonCode", "lastGoodBehavior"])
-    || snapshot.refresh.lastGoodBehavior !== "retain_previous_snapshot") return false;
+    || !exactKeys(snapshot.refresh, ["sourceAcquisitionModeAtCapture", "automaticBridgeConfiguredAtCapture", "configurationReasonCodeAtCapture", "executionObservationStatus", "currentOperationalStatus", "lastGoodTopologyBehavior"])
+    || snapshot.refresh.executionObservationStatus !== "NOT_ATTESTED"
+    || snapshot.refresh.currentOperationalStatus !== "UNKNOWN"
+    || snapshot.refresh.lastGoodTopologyBehavior !== "retain_previous_source_facts_and_topology_refresh_boundary_may_change") return false;
 
   const organIds = ["hive-ai", "hivepoa", "neurachain", "hive-ide", "second-brain", "compute-pool"];
   for (const [index, organ] of snapshot.ecosystem.primaryOrgans.entries()) {
@@ -721,15 +729,15 @@ export async function validSnapshot(snapshot) {
   }
   if (snapshot.ecosystem.primaryOrgans[1].effectivePublicDisposition !== "HISTORICAL_QUARANTINE_PUBLIC_ACTIONS_HOLD"
     || snapshot.ecosystem.primaryOrgans[3].effectivePublicDisposition !== "INTEGRATION_WAIT_NO_CURRENT_PACKAGE_OR_RUNTIME_CLAIM") return false;
-  const activeCloud = snapshot.refresh.automaticBridgeEnabled === true
-    && snapshot.refresh.privateSourceMode === "scheduled-living-main-publisher"
-    && snapshot.refresh.reasonCode === "SCHEDULED_LIVING_MAIN_PUBLISHER";
-  const activeLocal = snapshot.refresh.automaticBridgeEnabled === true
-    && snapshot.refresh.privateSourceMode === "local-living-main-publisher"
-    && snapshot.refresh.reasonCode === "LOCAL_LIVING_MAIN_PUBLISHER";
-  const inactive = snapshot.refresh.automaticBridgeEnabled === false
-    && snapshot.refresh.privateSourceMode === "manual-source-bound-snapshot"
-    && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED", "MANUAL_WORKFLOW_DISPATCH"].includes(snapshot.refresh.reasonCode);
+  const activeCloud = snapshot.refresh.automaticBridgeConfiguredAtCapture === true
+    && snapshot.refresh.sourceAcquisitionModeAtCapture === "scheduled-living-main-publisher"
+    && snapshot.refresh.configurationReasonCodeAtCapture === "SCHEDULED_LIVING_MAIN_PUBLISHER";
+  const activeLocal = snapshot.refresh.automaticBridgeConfiguredAtCapture === true
+    && snapshot.refresh.sourceAcquisitionModeAtCapture === "local-living-main-publisher"
+    && snapshot.refresh.configurationReasonCodeAtCapture === "LOCAL_LIVING_MAIN_PUBLISHER";
+  const inactive = snapshot.refresh.automaticBridgeConfiguredAtCapture === false
+    && snapshot.refresh.sourceAcquisitionModeAtCapture === "manual-source-bound-snapshot"
+    && ["CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED", "PRIVATE_SOURCE_CHECKOUT_FAILED", "MANUAL_WORKFLOW_DISPATCH"].includes(snapshot.refresh.configurationReasonCodeAtCapture);
   if (!activeCloud && !activeLocal && !inactive) return false;
   if (!await validGalaxyProjection(snapshot.galaxy, facts)) return false;
   const { snapshotHash, ...body } = snapshot;
@@ -740,15 +748,18 @@ export async function productTruthSnapshotRelation(snapshot, reviewedBaseline) {
   if (!await validSnapshot(snapshot)) return "SNAPSHOT_INVALID_BLOCKED";
   if (!isPlainObject(reviewedBaseline) || !exactKeys(reviewedBaseline, [
     "snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash",
+    "reviewedSiteCommit", "reviewedFactsGitBlobOid", "immutableRawReference",
   ])) return "SNAPSHOT_INVALID_BLOCKED";
-  if (snapshot.refresh.automaticBridgeEnabled === false) return "BRIDGE_INACTIVE_LAST_GOOD_SOURCE";
   const exact = reviewedBaseline.snapshotVersion === snapshot.snapshotVersion
     && reviewedBaseline.sourceCommit === snapshot.hiveAi.sourceCommit
     && reviewedBaseline.graphHash === snapshot.hiveAi.graphHash
     && reviewedBaseline.sourceFingerprint === snapshot.hiveAi.sourceFingerprint
     && reviewedBaseline.projectionHash === snapshot.galaxy.projectionHash
     && reviewedBaseline.geometryHash === snapshot.galaxy.geometry.geometryHash;
-  return exact ? "EXACT_REVIEWED_BASELINE_MATCH" : "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD";
+  if (!exact) return "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD";
+  return snapshot.refresh.automaticBridgeConfiguredAtCapture === false
+    ? "BRIDGE_INACTIVE_LAST_GOOD_SOURCE"
+    : "EXACT_REVIEWED_BASELINE_MATCH";
 }
 
 function nearestProjected(points, pointer, radiusFor) {

@@ -15,7 +15,7 @@
     "hub-assets/hub.js",
     "hub-assets/ide-release-core.mjs",
     "hub-assets/og.png",
-    "hub-assets/product-truth-ledger.v1.json",
+    "hub-assets/product-truth-ledger.public.v2.json",
     "hub-assets/product-truth.json",
     "hub-assets/strict-json-fetch.mjs",
     "hub-assets/strict-json.mjs",
@@ -43,7 +43,7 @@
     "downloads/hive-ide/hive-ide-release-manifest.json",
     "downloads/hive-ide/latest.json",
     "hub-assets/hub-facts.json",
-    "hub-assets/product-truth-ledger.v1.json",
+    "hub-assets/product-truth-ledger.public.v2.json",
     "hub-assets/product-truth.json"
   ],
   "forbiddenPrefixes": [
@@ -56,6 +56,7 @@
     "tests/"
   ],
   "privateSourceOnlyPaths": [
+    ".github/test-fixtures/hivepoa/historical-quarantine-receipt-a4ff709e5310.json",
     "HivePoA/.distribution-publish-receipt.json",
     "HivePoA/.nojekyll",
     "HivePoA/build-receipt.json",
@@ -63,6 +64,7 @@
     "HivePoA/public-surface-quarantine-receipt.json",
     "HivePoA/README.md",
     "HivePoA/tester-network/STORAGE_POA_TESTER_NETWORK_RUNBOOK_20260802.md",
+    "hub-assets/product-truth-ledger.v1.json",
     "README.md"
   ],
   "forbiddenExactPaths": [
@@ -90,6 +92,7 @@
     "HivePoA/distribution-assets/distribution.css",
     "HivePoA/distribution-assets/distribution.js",
     "HivePoA/distribution-assets/tester-network-authorization.d.ts",
-    "HivePoA/distribution-assets/tester-network-authorization.js"
+    "HivePoA/distribution-assets/tester-network-authorization.js",
+    "hub-assets/product-truth-ledger.v1.json"
   ]
 }

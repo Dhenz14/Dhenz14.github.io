@@ -50,6 +50,7 @@ jobs:
           node --check script/sync-galaxy-snapshot.mjs
           node --check script/mark-galaxy-bridge-inactive.mjs
           node --check script/publisher-candidate-policy.mjs
+          node --check script/private-source-bundle.mjs
       - name: Verify Windows smoke PowerShell syntax
         shell: pwsh
         run: |
@@ -73,6 +74,7 @@ jobs:
           node script/check-galaxy-bridge.mjs
           node script/check-galaxy-core.mjs
           node script/hub-facts-custody.mjs --self-test
+          node script/private-source-bundle.mjs --self-test
           node script/build-public-pages.mjs --self-test
           node script/check-public-pages-artifact.mjs
           node script/check-publisher-races.mjs

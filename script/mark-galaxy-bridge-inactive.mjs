@@ -30,10 +30,12 @@ const reasonCode = checkoutFailed
   : "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED";
 const current = readHubFactsSync(outputPath, "bridge marker hub-facts input");
 const nextRefresh = {
-  privateSourceMode: "manual-source-bound-snapshot",
-  automaticBridgeEnabled: false,
-  reasonCode,
-  lastGoodBehavior: "retain_previous_snapshot",
+  sourceAcquisitionModeAtCapture: "manual-source-bound-snapshot",
+  automaticBridgeConfiguredAtCapture: false,
+  configurationReasonCodeAtCapture: reasonCode,
+  executionObservationStatus: "NOT_ATTESTED",
+  currentOperationalStatus: "UNKNOWN",
+  lastGoodTopologyBehavior: "retain_previous_source_facts_and_topology_refresh_boundary_may_change",
 };
 
 if (JSON.stringify(current.refresh) === JSON.stringify(nextRefresh)) {

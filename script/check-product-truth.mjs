@@ -13,7 +13,8 @@ const productTruthPath = path.join(root, "hub-assets", "product-truth.json");
 const factsPath = path.join(root, "hub-assets", "hub-facts.json");
 const latestPath = path.join(root, "downloads", "hive-ide", "latest.json");
 const releaseManifestPath = path.join(root, "downloads", "hive-ide", "hive-ide-release-manifest.json");
-const ledgerPath = path.join(root, "hub-assets", "product-truth-ledger.v1.json");
+const ledgerPath = path.join(root, "hub-assets", "product-truth-ledger.public.v2.json");
+const privateLedgerPath = path.join(root, "hub-assets", "product-truth-ledger.v1.json");
 const HEX40 = /^[a-f0-9]{40}$/;
 const HEX64 = /^[a-f0-9]{64}$/;
 const UTC_SECONDS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
@@ -117,14 +118,16 @@ export function releasedTesterAvailability(manifest, now = Date.now()) {
 export function classifyProductTruthSnapshot(snapshot, reviewedBaseline, { snapshotValid = true } = {}) {
   if (!snapshotValid || !isPlainObject(snapshot) || !isPlainObject(reviewedBaseline)
     || !isPlainObject(snapshot.hiveAi) || !isPlainObject(snapshot.galaxy) || !isPlainObject(snapshot.refresh)) return "SNAPSHOT_INVALID_BLOCKED";
-  if (snapshot.refresh.automaticBridgeEnabled === false) return "BRIDGE_INACTIVE_LAST_GOOD_SOURCE";
   const exact = reviewedBaseline.snapshotVersion === snapshot.snapshotVersion
     && reviewedBaseline.sourceCommit === snapshot.hiveAi.sourceCommit
     && reviewedBaseline.graphHash === snapshot.hiveAi.graphHash
     && reviewedBaseline.sourceFingerprint === snapshot.hiveAi.sourceFingerprint
     && reviewedBaseline.projectionHash === snapshot.galaxy.projectionHash
     && reviewedBaseline.geometryHash === snapshot.galaxy.geometry?.geometryHash;
-  return exact ? "EXACT_REVIEWED_BASELINE_MATCH" : "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD";
+  if (!exact) return "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD";
+  return snapshot.refresh.automaticBridgeConfiguredAtCapture === false
+    ? "BRIDGE_INACTIVE_LAST_GOOD_SOURCE"
+    : "EXACT_REVIEWED_BASELINE_MATCH";
 }
 
 export function validateProductTruth(manifest, { facts, latest, releaseManifest, ledger, expectedLanding } = {}) {
@@ -136,27 +139,32 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(manifest.version === "2.0.0", "product truth version drifted");
   assert(manifest.status === "SOURCE_BOUND_TRUTH_WITH_SUBJECT_SCOPED_RUNTIME_UNKNOWNS", "product truth projection status drifted");
   exactKeys(manifest.evidenceLedger, ["schema", "path", "version", "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "bytes", "sha256", "gitBlobOid", "headEntryId"], "evidence ledger reference");
-  assert(manifest.evidenceLedger.schema === "hive.ecosystem.product-truth.evidence-ledger.ref.v1"
-    && manifest.evidenceLedger.path === "hub-assets/product-truth-ledger.v1.json"
-    && manifest.evidenceLedger.version === 1
+  assert(manifest.evidenceLedger.schema === "hive.ecosystem.product-truth.public-evidence-projection.ref.v2"
+    && manifest.evidenceLedger.path === "hub-assets/product-truth-ledger.public.v2.json"
+    && manifest.evidenceLedger.version === 2
     && manifest.evidenceLedger.integrityClass === "SELF_BOUND_INTEGRITY"
     && manifest.evidenceLedger.independentTrustRoot === false
     && manifest.evidenceLedger.authorizedPublicationAttested === false
-    && manifest.evidenceLedger.bytes === 4653
-    && manifest.evidenceLedger.sha256 === "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259"
-    && manifest.evidenceLedger.gitBlobOid === "943db0a4b30bb4dba38de3db62c5898fd9785e5c"
-    && manifest.evidenceLedger.headEntryId === "local-body-handoff-boundary-v1", "evidence ledger reference drifted");
+    && manifest.evidenceLedger.bytes === 7001
+    && manifest.evidenceLedger.sha256 === "787b5e3a19c5025bf7e914f31dbf02b02b04cafb4b9625cd6022c9746815af44"
+    && manifest.evidenceLedger.gitBlobOid === "3d26b94e40f618dd2d65251e628461ffbfe8bf11"
+    && manifest.evidenceLedger.headEntryId === "current-public-unknown-hold-after-evidence-expiry-v2", "evidence ledger reference drifted");
   if (ledger) {
-    exactKeys(ledger, ["schema", "version", "administrationModel", "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "entries"], "evidence ledger");
-    assert(ledger.schema === "hive.ecosystem.product-truth.evidence-ledger.v1"
-      && ledger.version === 1
-      && ledger.administrationModel === "APPEND_ONLY_LEDGER_MODEL_V1"
+    exactKeys(ledger, ["schema", "version", "projectionClass", "sourceLedger", "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "entries"], "public evidence projection");
+    exactKeys(ledger.sourceLedger, ["schema", "version", "publicationDisposition", "projectionRule"], "private ledger projection boundary");
+    assert(ledger.schema === "hive.ecosystem.product-truth.public-evidence-projection.v2"
+      && ledger.version === 2
+      && ledger.projectionClass === "PUBLIC_SANITIZED_HISTORICAL_EVIDENCE_WITH_CURRENT_HOLD"
+      && ledger.sourceLedger.schema === "hive.ecosystem.product-truth.evidence-ledger.v1"
+      && ledger.sourceLedger.version === 1
+      && ledger.sourceLedger.publicationDisposition === "PRIVATE_NOT_PUBLISHED"
+      && /remove actionable local endpoints/i.test(ledger.sourceLedger.projectionRule)
       && ledger.integrityClass === "SELF_BOUND_INTEGRITY"
       && ledger.independentTrustRoot === false
       && ledger.authorizedPublicationAttested === false
-      && Array.isArray(ledger.entries) && ledger.entries.length === 6
+      && Array.isArray(ledger.entries) && ledger.entries.length === 7
       && ledger.entries.at(-1)?.entryId === manifest.evidenceLedger.headEntryId,
-    "evidence ledger envelope drifted", "EVIDENCE_LEDGER_INVALID");
+    "public evidence projection envelope drifted", "EVIDENCE_LEDGER_INVALID");
     const genesis = ledger.entries.find((entry) => entry.entryId === "canonical-candidate-genesis-v1");
     assert(genesis?.status === "IMMUTABLE_CONTENT_ADDRESSED_CANDIDATE_GENESIS_PROVENANCE"
       && genesis.reasonCodes?.includes("ORIGINAL_CONTENT_ADDRESSED_CANDIDATE_GENESIS_IDENTITY")
@@ -176,6 +184,31 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     assert(revoked?.status === "SUPERSEDED_REVOKED_UNSUPPORTED"
       && revoked.reasonCodes?.includes("TESTER5_PACKAGE_CONTENTS_UNKNOWN_NOT_INSPECTED"),
     "unsupported Electron history was not revoked", "ELECTRON_CLAIM_REVOCATION_INVALID");
+    const ideHistory = ledger.entries.find((entry) => entry.entryId === "hive-ide-tauri-candidate-observation-v1");
+    assert(ideHistory?.temporalDisposition === "HISTORICAL_EVIDENCE_ONLY"
+      && ideHistory.status === "HISTORICAL_CANDIDATE_BRANCH_RELATION_CURRENT_LANDING_UNKNOWN_HOLD"
+      && ideHistory.evidence?.observedAt === "2026-08-23T18:46:30Z"
+      && ideHistory.evidence?.thenObservedDefaultBranchTip === "41df9be58ebb3696d00c08602c44c3b0abf3647d"
+      && ideHistory.evidence?.currentLandingStatus === "UNKNOWN_HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK",
+    "historical IDE branch observation escaped its current UNKNOWN/HOLD ceiling", "IDE_HISTORY_INVALID");
+    const localBoundary = ledger.entries.find((entry) => entry.entryId === "local-body-handoff-boundary-v1");
+    assert(localBoundary?.evidence?.localBodyContext?.loopbackHost === "127.0.0.1"
+      && localBoundary.evidence.localBodyContext.port === 5002
+      && localBoundary.evidence.operatorBodyContext?.port === 5003
+      && localBoundary.evidence.localBodyStatus === "UNKNOWN_UNPROBED"
+      && localBoundary.evidence.operatorBodyStatus === "HOLD_NOT_INDEPENDENTLY_OBSERVED",
+    "sanitized local handoff context drifted", "LOCAL_HANDOFF_BOUNDARY_INVALID");
+    const current = ledger.entries.at(-1);
+    assert(current.temporalDisposition === "CURRENT_EFFECTIVE_DISPOSITION"
+      && current.status === "UNKNOWN_HOLD"
+      && current.effectiveState?.hiveIdeLanding === "UNKNOWN_HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK"
+      && current.effectiveState?.localBody === "HOLD_REQUIRES_SEPARATE_ATTESTATION"
+      && current.effectiveState?.operatorBody === "HOLD_REQUIRES_DISTINCT_RUNTIME_ATTESTATION"
+      && current.effectiveState?.chat === "WAIT_NOT_AVAILABLE"
+      && current.effectiveState?.publicActionsAuthorized === false,
+    "current public supersession escaped UNKNOWN/HOLD", "CURRENT_PUBLIC_DISPOSITION_INVALID");
+    assert(!/https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\])/i.test(JSON.stringify(ledger)),
+      "public evidence projection contains a complete loopback URL", "PUBLIC_LOOPBACK_URL_FORBIDDEN");
   }
   exactKeys(manifest.canonicalManifest, [
     "status", "landingStatus", "publicRetrievability", "repository", "path", "evidenceSourceCommit", "evidenceSourceTree",
@@ -241,7 +274,10 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && architectureIdentity.claim_plane === "TARGET", "canonical architecture answer or identity material drifted");
 
   exactKeys(manifest.source, ["projectionRole", "sourceCommit", "graphHash", "snapshotHash", "capturedAt", "reviewedBaseline", "allowedSnapshotRelations"], "product truth source");
-  exactKeys(manifest.source.reviewedBaseline, ["snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash"], "reviewed source baseline");
+  exactKeys(manifest.source.reviewedBaseline, [
+    "snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash",
+    "reviewedSiteCommit", "reviewedFactsGitBlobOid", "immutableRawReference",
+  ], "reviewed source baseline");
   assert(/stable reviewed semantic baseline/i.test(manifest.source.projectionRole)
     && /mutable source snapshots may display topology/i.test(manifest.source.projectionRole)
     && /cannot rewrite reviewed semantic, runtime, product, or authority claims/i.test(manifest.source.projectionRole), "public projection role is not fail-closed");
@@ -251,7 +287,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(UTC_SECONDS.test(manifest.source.capturedAt), "product truth capture time is not canonical UTC seconds");
   assert(manifest.source.sourceCommit === manifest.source.reviewedBaseline.sourceCommit
     && manifest.source.graphHash === manifest.source.reviewedBaseline.graphHash
-    && manifest.source.snapshotHash === "81fee0f0b751c5c17ace278cf17fe7f373041f6a239957e7e9b22b9cdc409602"
+    && manifest.source.snapshotHash === "23d2456bc77574491279af30b129aced09358944159a7ad6857565e49732c33e"
     && manifest.source.capturedAt === "2026-08-23T22:53:32Z"
     && manifest.source.reviewedBaseline.snapshotVersion === "3.1.0"
     && manifest.source.reviewedBaseline.sourceCommit === "0ab04f6c19ffd41bb162bea674e77853fb27cc0e"
@@ -259,6 +295,11 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && manifest.source.reviewedBaseline.sourceFingerprint === "f177f665aceb2689d69f7bbb283e9165380c306edced348312cd16fb47d4c8bb"
     && manifest.source.reviewedBaseline.projectionHash === "58f8aa20d200bb4ec1bb6d13810bda85b6e1b7c189f8c070b3d9070d67b9d80b"
     && manifest.source.reviewedBaseline.geometryHash === "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314"
+    && manifest.source.reviewedBaseline.reviewedSiteCommit === "db2f240efd3be938e9e888a3aa5f5af0b9c522e3"
+    && manifest.source.reviewedBaseline.reviewedFactsGitBlobOid === "e5962434b1864a60082bb9a732fd7a87acf29a11"
+    && manifest.source.reviewedBaseline.immutableRawReference === "https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/db2f240efd3be938e9e888a3aa5f5af0b9c522e3/hub-assets/hub-facts.json"
+    && HEX40.test(manifest.source.reviewedBaseline.reviewedSiteCommit)
+    && HEX40.test(manifest.source.reviewedBaseline.reviewedFactsGitBlobOid)
     && HEX64.test(manifest.source.reviewedBaseline.sourceFingerprint)
     && HEX64.test(manifest.source.reviewedBaseline.projectionHash)
     && HEX64.test(manifest.source.reviewedBaseline.geometryHash), "reviewed source baseline drifted");
@@ -299,7 +340,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && /require independent evidence/i.test(manifest.boundaries.architectureVsLive.claim), "architecture and local live truth were conflated");
   assert(manifest.boundaries.currentVsLegacy.status === "SUBJECT_SCOPED_DISPOSITIONS"
     && /At 2026-08-23T18:46:30Z, Electron-removal and Tauri\/WebView2 source were observed on the unprotected Hive IDE candidate branch/i.test(manifest.boundaries.currentVsLegacy.claim)
-    && /Current landing is UNKNOWN\/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK/i.test(manifest.boundaries.currentVsLegacy.claim)
+    && /Current landing and current default-tip relation are UNKNOWN\/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK/i.test(manifest.boundaries.currentVsLegacy.claim)
     && /Tester\.5 exact package contents are UNKNOWN_NOT_INSPECTED/i.test(manifest.boundaries.currentVsLegacy.claim)
     && /SUPERSEDED_REVOKED_UNSUPPORTED/i.test(manifest.boundaries.currentVsLegacy.claim),
   "current and legacy subject dispositions drifted");
@@ -558,7 +599,9 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && wsl.repositoryCommit === "f459e85cc71801afbed4a8579b31133b9ff58edd"
     && wsl.evidencePersistence === "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT"
     && /^At 2026-08-23T18:46:30Z,/.test(wsl.claim)
-    && /Current landing is UNKNOWN and HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK/i.test(wsl.claim)
+    && /at that time it was observed 92 commits ahead and 0 behind the then-observed default tip 41df9be/i.test(wsl.claim)
+    && /Current landing and current default-tip relation are UNKNOWN and HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK/i.test(wsl.claim)
+    && !/remains unlanded|default-branch tip .* does not contain|current default tip/i.test(wsl.claim)
     && /not tester\.5 package, installation, or runtime proof/i.test(wsl.claim)
     && wsl.recertification?.expiryAction === "HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK",
   "Hive IDE candidate source observation was promoted beyond its evidence");
@@ -715,7 +758,9 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && platforms["windows-wsl-design"].packageStatus === "TESTER5_UNKNOWN_NOT_INSPECTED"
     && platforms["windows-wsl-design"].signingStatus === "NOT_APPLICABLE"
     && /At 2026-08-23T18:46:30Z/i.test(platforms["windows-wsl-design"].evidence)
-    && /Current landing is UNKNOWN\/HOLD pending fresh owner-repository readback/i.test(platforms["windows-wsl-design"].evidence)
+    && /then-observed default tip 41df9be/i.test(platforms["windows-wsl-design"].evidence)
+    && /Current landing and current default-tip relation are UNKNOWN\/HOLD pending fresh owner-repository readback/i.test(platforms["windows-wsl-design"].evidence)
+    && !/remains unlanded|default-branch tip .* does not contain|current default tip/i.test(platforms["windows-wsl-design"].evidence)
     && /Tester\.5 contents are UNKNOWN_NOT_INSPECTED/i.test(platforms["windows-wsl-design"].evidence),
   "Hive IDE candidate source observation was promoted into default landing or package contents");
 
@@ -755,7 +800,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(HEX64.test(manifest.bindingDigest.value), "product truth digest is not an exact SHA-256");
   const { bindingDigest, ...digestBody } = manifest;
   assert(manifest.bindingDigest.value === sha256(canonicalJson(digestBody)), "product truth full-projection digest mismatch");
-  assert(manifest.evidenceLedger.headEntryId === "local-body-handoff-boundary-v1",
+  assert(manifest.evidenceLedger.headEntryId === "current-public-unknown-hold-after-evidence-expiry-v2",
     "current projection is not bound to the versioned append-only ledger-model head");
 
   const serialized = JSON.stringify(manifest);
@@ -860,12 +905,17 @@ export function runProductTruthSelfTests(manifest, context) {
   const newRelation = classifyProductTruthSnapshot(newSourceSnapshot, manifest.source.reviewedBaseline);
   const inactiveSnapshot = structuredClone(context.facts);
   inactiveSnapshot.refresh = {
-    privateSourceMode: "manual-source-bound-snapshot",
-    automaticBridgeEnabled: false,
-    reasonCode: "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
-    lastGoodBehavior: "retain_previous_snapshot",
+    sourceAcquisitionModeAtCapture: "manual-source-bound-snapshot",
+    automaticBridgeConfiguredAtCapture: false,
+    configurationReasonCodeAtCapture: "CROSS_REPOSITORY_CREDENTIAL_NOT_CONFIGURED",
+    executionObservationStatus: "NOT_ATTESTED",
+    currentOperationalStatus: "UNKNOWN",
+    lastGoodTopologyBehavior: "retain_previous_source_facts_and_topology_refresh_boundary_may_change",
   };
   const inactiveRelation = classifyProductTruthSnapshot(inactiveSnapshot, manifest.source.reviewedBaseline);
+  const manualNewSnapshot = structuredClone(newSourceSnapshot);
+  manualNewSnapshot.refresh = structuredClone(inactiveSnapshot.refresh);
+  const manualNewRelation = classifyProductTruthSnapshot(manualNewSnapshot, manifest.source.reviewedBaseline);
   const simulatedLandingExpectation = { commit: "1".repeat(40), tree: "3".repeat(40), sha256: "2".repeat(64), bytes: manifest.canonicalManifest.candidateBytes + 12, blobOid: "4".repeat(40) };
   let simulatedLandingPassed = false;
   if (manifest.canonicalManifest.status === "CANDIDATE_NOT_LANDED") {
@@ -883,6 +933,7 @@ export function runProductTruthSelfTests(manifest, context) {
     { label: "valid_full_projection", passed: true },
     { label: "exact_reviewed_baseline_relation", passed: exactRelation === "EXACT_REVIEWED_BASELINE_MATCH" },
     { label: "new_source_snapshot_unreviewed_hold_relation", passed: newRelation === "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD" },
+    { label: "manual_new_source_snapshot_unreviewed_hold_precedence", passed: manualNewRelation === "NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD" },
     { label: "inactive_bridge_last_good_relation", passed: inactiveRelation === "BRIDGE_INACTIVE_LAST_GOOD_SOURCE" },
     { label: "invalid_snapshot_blocked_relation", passed: classifyProductTruthSnapshot({}, manifest.source.reviewedBaseline) === "SNAPSHOT_INVALID_BLOCKED" },
     { label: "externally_expected_landing_projection", passed: simulatedLandingPassed },
@@ -904,6 +955,8 @@ export function runProductTruthSelfTests(manifest, context) {
     }),
     expectRejectRebound("stale_source_commit_refused", manifest, context, (value) => { value.source.sourceCommit = "0".repeat(40); }),
     expectRejectRebound("stale_capture_refused", manifest, context, (value) => { value.source.capturedAt = "2026-08-22T04:59:30Z"; }),
+    expectRejectRebound("ide_present_tense_remains_unlanded_refused", manifest, context, (value) => { value.truth_subjects.windows_wsl_candidate_design.claim = "Electron removal remains unlanded on the default branch."; }),
+    expectRejectRebound("ide_current_default_tip_assertion_refused", manifest, context, (value) => { value.truth_subjects.windows_wsl_candidate_design.claim = "The current default tip does not contain the candidate."; }),
     expectRejectRebound("graph_mismatch_refused", manifest, context, (value) => { value.source.graphHash = "0".repeat(64); }),
     expectRejectRebound("global_product_live_conflation_refused", manifest, context, (value) => { value.truth_subjects.installed_runtime.subject_status = "PRODUCT_LIVE"; }),
     expectRejectRebound("rehashed_false_target_claim_refused", manifest, context, (value) => { value.truth_subjects.target_architecture.claim = "Everything is product-live."; }),
@@ -1010,6 +1063,12 @@ export function validatePublishedProductTruth({ selfTest = false, expectedLandin
   assert(crypto.createHash("sha1").update(`blob ${ledgerBytes.length}\0`).update(ledgerBytes).digest("hex") === manifest.evidenceLedger.gitBlobOid,
     "evidence ledger Git blob OID drifted", "EVIDENCE_LEDGER_GIT_BLOB_MISMATCH");
   const ledger = parseJsonBytesStrict(ledgerBytes, "product truth evidence ledger");
+  const privateLedgerBytes = fs.readFileSync(privateLedgerPath);
+  assert(privateLedgerBytes.length === 4653, "private ledger byte count drifted", "PRIVATE_LEDGER_BYTES_MISMATCH");
+  assert(sha256(privateLedgerBytes) === "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259",
+    "private ledger SHA-256 drifted", "PRIVATE_LEDGER_SHA256_MISMATCH");
+  assert(crypto.createHash("sha1").update(`blob ${privateLedgerBytes.length}\0`).update(privateLedgerBytes).digest("hex") === "943db0a4b30bb4dba38de3db62c5898fd9785e5c",
+    "private ledger Git blob OID drifted", "PRIVATE_LEDGER_GIT_BLOB_MISMATCH");
   if (expectedLanding) validateLandingExpectation(expectedLanding);
   const context = { facts, latest, releaseManifest, ledger, expectedLanding };
   validateProductTruth(manifest, context);

@@ -220,9 +220,9 @@
 <body>
   <main id="hivepoa-public-hold" aria-labelledby="hold-title">
     <p class="eyebrow">HivePoA // public surface quarantine</p>
-    <div class="status" role="status">HOLD · ACTIONS DISABLED</div>
-    <h1 id="hold-title">The gate is closed until the proof chain is current.</h1>
-    <p class="lead">This mirror preserves historical operator-key-signed release-index metadata. That metadata is provenance only: it is not current proof of package delivery, a live coordinator, public enrollment, execution, runtime acceptance, public-network availability, or product-live behavior.</p>
+    <div class="status" role="status">HOLD · NO PUBLIC ACTIONS</div>
+    <h1 id="hold-title">History is preserved. Current operation is not claimed.</h1>
+    <p class="lead">This route is an actionless historical quarantine panel. Earlier operator-key metadata and candidate receipts remain provenance only; current delivery, network, runtime, and product-live states are UNKNOWN or HOLD, never silently converted to FALSE or PASS.</p>
 
     <div class="grid">
       <section>
@@ -241,14 +241,14 @@
 
     <div class="telemetry" aria-label="Current HivePoA public status">
       <span><strong>DELIVERY</strong>HOLD</span>
-      <span><strong>COORDINATOR</strong>NOT PROVEN</span>
-      <span><strong>ENROLLMENT</strong>NOT PUBLISHED</span>
-      <span><strong>PRODUCT LIVE</strong>FALSE</span>
+      <span><strong>NETWORK</strong>HOLD</span>
+      <span><strong>RUNTIME</strong>UNKNOWN</span>
+      <span><strong>PRODUCT LIVE</strong>UNKNOWN</span>
     </div>
 
-    <p class="boundary">This is a reversible deployment quarantine, not a canonical HivePoA source repair. Historical assets remain preserved in repository custody and are not executed or trusted by this page.</p>
+    <p class="boundary">Publication custody and product behavior are separate. Historical assets remain preserved in repository custody and are not executed or trusted by this page; a future action surface needs fresh readback, independent validation, and explicit authority.</p>
     <a class="truth" href="/#product-truth">Return to Product Truth</a>
-    <p class="foot">Authority: none · public actions: none · source repair: held</p>
+    <p class="foot">Authority: none · public actions: none · current deployment: unknown / hold</p>
   </main>
 </body>
 </html>

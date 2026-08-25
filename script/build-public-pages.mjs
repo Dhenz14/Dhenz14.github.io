@@ -20,6 +20,7 @@ const REQUIRED_FORBIDDEN_PREFIXES = Object.freeze([
   "tests/",
 ]);
 const REQUIRED_PRIVATE_SOURCE_PATHS = Object.freeze([
+  ".github/test-fixtures/hivepoa/historical-quarantine-receipt-a4ff709e5310.json",
   "HivePoA/.distribution-publish-receipt.json",
   "HivePoA/.nojekyll",
   "HivePoA/build-receipt.json",
@@ -27,6 +28,7 @@ const REQUIRED_PRIVATE_SOURCE_PATHS = Object.freeze([
   "HivePoA/public-surface-quarantine-receipt.json",
   "HivePoA/README.md",
   "HivePoA/tester-network/STORAGE_POA_TESTER_NETWORK_RUNBOOK_20260802.md",
+  "hub-assets/product-truth-ledger.v1.json",
   "README.md",
 ]);
 const REQUIRED_FORBIDDEN_EXACT = Object.freeze([
@@ -55,6 +57,7 @@ const REQUIRED_FORBIDDEN_EXACT = Object.freeze([
   "HivePoA/distribution-assets/distribution.js",
   "HivePoA/distribution-assets/tester-network-authorization.d.ts",
   "HivePoA/distribution-assets/tester-network-authorization.js",
+  "hub-assets/product-truth-ledger.v1.json",
 ]);
 const REQUIRED_QUARANTINE_ROUTES = Object.freeze([
   "HivePoA/distribution/index.html",
@@ -135,9 +138,9 @@ function validateManifest(value) {
   const forbiddenExactPaths = exactSortedUnique(value.forbiddenExactPaths, "forbiddenExactPaths");
   exactSequence(forbiddenPrefixes, REQUIRED_FORBIDDEN_PREFIXES, "PUBLIC_ALLOWLIST_REQUIRED_PREFIX_MISSING", "required forbidden prefixes");
   exactSequence(privateSourceOnlyPaths, REQUIRED_PRIVATE_SOURCE_PATHS, "PUBLIC_ALLOWLIST_PRIVATE_PATH_MISSING", "private source-only paths");
-  exactSequence(forbiddenExactPaths, REQUIRED_FORBIDDEN_EXACT, "PUBLIC_ALLOWLIST_FORBIDDEN_PATH_MISSING", "25 exact forbidden publication paths");
+  exactSequence(forbiddenExactPaths, REQUIRED_FORBIDDEN_EXACT, "PUBLIC_ALLOWLIST_FORBIDDEN_PATH_MISSING", "26 exact forbidden publication paths");
   exactSequence(generatedQuarantineRoutes, REQUIRED_QUARANTINE_ROUTES, "PUBLIC_ALLOWLIST_QUARANTINE_ROUTE_DRIFT", "generated HivePoA quarantine routes");
-  if (forbiddenExactPaths.length !== 25) reject("PUBLIC_ALLOWLIST_FORBIDDEN_PATH_MISSING", "the original 23 retired/fixture paths plus two private HivePoA control files must remain forbidden");
+  if (forbiddenExactPaths.length !== 26) reject("PUBLIC_ALLOWLIST_FORBIDDEN_PATH_MISSING", "the original 25 retired/fixture/private control paths plus the private Product Truth ledger must remain forbidden");
   if (!Array.isArray(value.generatedFiles) || value.generatedFiles.length !== 1) reject("PUBLIC_ALLOWLIST_SCHEMA_INVALID", "generatedFiles must contain only .nojekyll");
   exactKeys(value.generatedFiles[0], ["path", "content"], "generatedFiles[0]");
   if (canonicalPublicPath(value.generatedFiles[0].path, "generatedFiles[0].path") !== ".nojekyll" || value.generatedFiles[0].content !== "") {

@@ -22,6 +22,7 @@ import {
   resolveGalaxySelection,
   selectGalaxyHit,
   sourceSnapshotPresentation,
+  snapshotIdentityChanged,
   snapshotResponseCanCommit,
   validSnapshot,
 } from "./galaxy-core.mjs?v=galaxy-stark-v19";
@@ -724,7 +725,7 @@ function enforceLocalContextInertness() {
 }
 
 const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v2";
-const PRODUCT_TRUTH_PROJECTION_DIGEST = "b0734b021b63c0c74289af6f3c1c2509450f85fc47e8f094acec0e09e62d44f7";
+const PRODUCT_TRUTH_PROJECTION_DIGEST = "5c9b7cd069933a272b0fb2a8d5a4afa8e1854b67dfb81955f94a5b2d242fdfa7";
 const PRODUCT_TRUTH_MAX_BYTES = 128 * 1024;
 const PRODUCT_TRUTH_SUBJECTS = Object.freeze({
   target_architecture: { label: "Target architecture", kind: "ARCHITECTURE_TARGET", status: "SOURCE_BOUND_DOCTRINE", plane: "TARGET" },
@@ -759,7 +760,7 @@ const CANONICAL_LANDED_COMMIT = "0ab04f6c19ffd41bb162bea674e77853fb27cc0e";
 const CANONICAL_LANDED_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
 const TARGET_SERVING_BOUNDARY = "The source-bound target path is hive-runtime: a constellation-local in-process deterministic scaffold. The doctrine has no BYOM product lane, no implicit external-checkpoint fallback, and no local-model product serve path. An explicitly user-directed external agent may be the inbound caller; that is not a hidden Hive-selected backend fallback. None of this attests an installed runtime or observed behavior.";
 const ARCHITECTURE_LIVE_BOUNDARY = "The public atlas and this projection describe source-bound architecture. The explicit local presentation handoff at 127.0.0.1:5002 is UNKNOWN_UNPROBED_HOLD. A dedicated Operator Body is expected as a distinct 127.0.0.1:5003 service but is HOLD_NOT_INDEPENDENTLY_OBSERVED and disabled here; it is never aliased to the presentation route. Chat is WAIT. Installed runtime, route availability, observed behavior, and product-live state require independent evidence.";
-const CURRENT_LEGACY_BOUNDARY = "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. At 2026-08-23T18:46:30Z, Electron-removal and Tauri/WebView2 source were observed on the unprotected Hive IDE candidate branch hive/wt/theyc/ide-electron-final-20260822 at f459e85. Current landing is UNKNOWN/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK. Tester.5 exact package contents are UNKNOWN_NOT_INSPECTED. The prior claim that tester.5 still bundles Electron is SUPERSEDED_REVOKED_UNSUPPORTED. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST; tester.6 publication is held.";
+const CURRENT_LEGACY_BOUNDARY = "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. At 2026-08-23T18:46:30Z, Electron-removal and Tauri/WebView2 source were observed on the unprotected Hive IDE candidate branch hive/wt/theyc/ide-electron-final-20260822 at f459e85; at that same observation, the candidate was not present at the then-observed default tip. Current landing and current default-tip relation are UNKNOWN/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK. Tester.5 exact package contents are UNKNOWN_NOT_INSPECTED. The prior claim that tester.5 still bundles Electron is SUPERSEDED_REVOKED_UNSUPPORTED. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST; tester.6 publication is held.";
 const NO_LLM_BOUNDARY = "At the evidence baseline, doctrine permits an authorized external agent such as Codex or Claude to supply fluent generation as the explicit inbound caller while Hive is assigned local retrieval, routing, verification, and proof gating. The declared route is not an implicit outbound fallback selected by Hive, and it is not current runtime or network-egress proof.";
 let productTruthManifest = null;
 let productTruthLedger = null;
@@ -818,23 +819,24 @@ async function validateProductTruthManifest(manifest, snapshot, ledger) {
   assertProductTruth(manifest.schema === PRODUCT_TRUTH_SCHEMA && manifest.version === "2.0.0", "manifest identity rejected");
   assertProductTruth(manifest.status === "SOURCE_BOUND_TRUTH_WITH_SUBJECT_SCOPED_RUNTIME_UNKNOWNS", "manifest status rejected");
   assertProductTruthKeys(manifest.evidenceLedger, ["schema", "path", "version", "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "bytes", "sha256", "gitBlobOid", "headEntryId"], "evidence ledger reference");
-  assertProductTruth(manifest.evidenceLedger.schema === "hive.ecosystem.product-truth.evidence-ledger.ref.v1"
-    && manifest.evidenceLedger.path === "hub-assets/product-truth-ledger.v1.json"
-    && manifest.evidenceLedger.version === 1
+  assertProductTruth(manifest.evidenceLedger.schema === "hive.ecosystem.product-truth.public-evidence-projection.ref.v2"
+    && manifest.evidenceLedger.path === "hub-assets/product-truth-ledger.public.v2.json"
+    && manifest.evidenceLedger.version === 2
     && manifest.evidenceLedger.integrityClass === "SELF_BOUND_INTEGRITY"
     && manifest.evidenceLedger.independentTrustRoot === false
     && manifest.evidenceLedger.authorizedPublicationAttested === false
-    && manifest.evidenceLedger.bytes === 4653
-    && manifest.evidenceLedger.sha256 === "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259"
-    && manifest.evidenceLedger.gitBlobOid === "943db0a4b30bb4dba38de3db62c5898fd9785e5c"
-    && manifest.evidenceLedger.headEntryId === "local-body-handoff-boundary-v1", "evidence ledger reference rejected");
-  assertProductTruth(ledger?.schema === "hive.ecosystem.product-truth.evidence-ledger.v1"
-    && ledger.version === 1
-    && ledger.administrationModel === "APPEND_ONLY_LEDGER_MODEL_V1"
+    && manifest.evidenceLedger.bytes === 7001
+    && manifest.evidenceLedger.sha256 === "787b5e3a19c5025bf7e914f31dbf02b02b04cafb4b9625cd6022c9746815af44"
+    && manifest.evidenceLedger.gitBlobOid === "3d26b94e40f618dd2d65251e628461ffbfe8bf11"
+    && manifest.evidenceLedger.headEntryId === "current-public-unknown-hold-after-evidence-expiry-v2", "evidence ledger reference rejected");
+  assertProductTruth(ledger?.schema === "hive.ecosystem.product-truth.public-evidence-projection.v2"
+    && ledger.version === 2
+    && ledger.projectionClass === "PUBLIC_SANITIZED_HISTORICAL_EVIDENCE_WITH_CURRENT_HOLD"
+    && ledger.sourceLedger?.publicationDisposition === "PRIVATE_NOT_PUBLISHED"
     && ledger.integrityClass === "SELF_BOUND_INTEGRITY"
     && ledger.independentTrustRoot === false
     && ledger.authorizedPublicationAttested === false
-    && Array.isArray(ledger.entries) && ledger.entries.length === 6
+    && Array.isArray(ledger.entries) && ledger.entries.length === 7
     && ledger.entries.at(-1)?.entryId === manifest.evidenceLedger.headEntryId, "evidence ledger rejected");
   const genesisEntry = ledger.entries.find((entry) => entry.entryId === "canonical-candidate-genesis-v1");
   assertProductTruth(genesisEntry?.status === "IMMUTABLE_CONTENT_ADDRESSED_CANDIDATE_GENESIS_PROVENANCE"
@@ -843,13 +845,28 @@ async function validateProductTruthManifest(manifest, snapshot, ledger) {
     && genesisEntry.evidence?.physicalSha256 === CANONICAL_GENESIS_SHA256
     && genesisEntry.evidence?.bytes === CANONICAL_GENESIS_BYTES
     && genesisEntry.evidence?.gitBlobOid === CANONICAL_GENESIS_BLOB, "candidate genesis ledger entry rejected");
+  const currentLedgerEntry = ledger.entries.at(-1);
+  assertProductTruth(currentLedgerEntry?.temporalDisposition === "CURRENT_EFFECTIVE_DISPOSITION"
+    && currentLedgerEntry.status === "UNKNOWN_HOLD"
+    && currentLedgerEntry.effectiveState?.hiveIdeLanding === "UNKNOWN_HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK"
+    && currentLedgerEntry.effectiveState?.localBody === "HOLD_REQUIRES_SEPARATE_ATTESTATION"
+    && currentLedgerEntry.effectiveState?.operatorBody === "HOLD_REQUIRES_DISTINCT_RUNTIME_ATTESTATION"
+    && currentLedgerEntry.effectiveState?.chat === "WAIT_NOT_AVAILABLE"
+    && currentLedgerEntry.effectiveState?.publicActionsAuthorized === false
+    && !/https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\])/i.test(JSON.stringify(ledger)), "public ledger current HOLD or endpoint sanitization rejected");
 
   assertProductTruthKeys(manifest.source, ["projectionRole", "sourceCommit", "graphHash", "snapshotHash", "capturedAt", "reviewedBaseline", "allowedSnapshotRelations"], "manifest source");
-  assertProductTruthKeys(manifest.source.reviewedBaseline, ["snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash"], "reviewed source baseline");
+  assertProductTruthKeys(manifest.source.reviewedBaseline, [
+    "snapshotVersion", "sourceCommit", "graphHash", "sourceFingerprint", "projectionHash", "geometryHash",
+    "reviewedSiteCommit", "reviewedFactsGitBlobOid", "immutableRawReference",
+  ], "reviewed source baseline");
   assertProductTruth(manifest.source.sourceCommit === manifest.source.reviewedBaseline.sourceCommit
     && manifest.source.graphHash === manifest.source.reviewedBaseline.graphHash
-    && manifest.source.snapshotHash === "81fee0f0b751c5c17ace278cf17fe7f373041f6a239957e7e9b22b9cdc409602"
-    && manifest.source.capturedAt === "2026-08-23T22:53:32Z", "reviewed source baseline identity rejected");
+    && manifest.source.snapshotHash === "23d2456bc77574491279af30b129aced09358944159a7ad6857565e49732c33e"
+    && manifest.source.capturedAt === "2026-08-23T22:53:32Z"
+    && manifest.source.reviewedBaseline.reviewedSiteCommit === "db2f240efd3be938e9e888a3aa5f5af0b9c522e3"
+    && manifest.source.reviewedBaseline.reviewedFactsGitBlobOid === "e5962434b1864a60082bb9a732fd7a87acf29a11"
+    && manifest.source.reviewedBaseline.immutableRawReference === "https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/db2f240efd3be938e9e888a3aa5f5af0b9c522e3/hub-assets/hub-facts.json", "reviewed source baseline identity rejected");
   assertProductTruth(manifest.source.projectionRole === "stable reviewed semantic baseline for the published source atlas; mutable source snapshots may display topology but cannot rewrite reviewed semantic, runtime, product, or authority claims without a fresh review", "projection role rejected");
   assertProductTruth(Array.isArray(manifest.source.allowedSnapshotRelations)
     && manifest.source.allowedSnapshotRelations.join("|") === "EXACT_REVIEWED_BASELINE_MATCH|NEW_SOURCE_SNAPSHOT_UNREVIEWED_HOLD|BRIDGE_INACTIVE_LAST_GOOD_SOURCE|SNAPSHOT_INVALID_BLOCKED", "snapshot relation set rejected");
@@ -1010,6 +1027,10 @@ async function validateProductTruthManifest(manifest, snapshot, ledger) {
     && wsl.ownerRepository === "Dhenz14/hive-ide"
     && wsl.evidencePersistence === "NON_DURABLE_REVIEWER_OBSERVATION_NO_SOURCE_CONTROLLED_RECEIPT"
     && /Historical Tauri\/WebView2 candidate-source observation/.test(wsl.designTopology)
+    && /^At 2026-08-23T18:46:30Z,/.test(wsl.claim)
+    && /then-observed default tip 41df9be/.test(wsl.claim)
+    && /Current landing and current default-tip relation are UNKNOWN/.test(wsl.claim)
+    && !/remains unlanded|current default tip/i.test(wsl.claim)
     && /HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK/.test(wsl.designTopology),
   "Hive IDE candidate source observation rejected");
   assertProductTruth(subjects.linux_hive_ide_publication.url === null && /UNKNOWN/.test(subjects.linux_hive_ide_publication.claim), "Linux publication UNKNOWN rejected");
@@ -1169,7 +1190,7 @@ async function renderProductTruthManifest(manifest, snapshot, ledger = productTr
     const cut = manifest.registryClaimCut;
     const cutRoot = $("[data-registry-claim-cut]", root);
     if (cutRoot) cutRoot.hidden = false;
-    setText("[data-registry-product-live]", String(cut.matchingRows));
+    setText("[data-registry-matching-rows]", String(cut.matchingRows));
     setText("[data-registry-source]", cut.sourceCommit);
     setText("[data-registry-derived]", cut.derivedAt);
     setText("[data-registry-status]", cut.status);
@@ -1190,10 +1211,10 @@ function wireProductTruthManifest() {
   void Promise.all([
     acquireStrictJson({ url: "/hub-assets/product-truth.json", maximumBytes: PRODUCT_TRUTH_MAX_BYTES, label: "product truth manifest" }),
     acquireStrictJson({
-      url: "/hub-assets/product-truth-ledger.v1.json",
+      url: "/hub-assets/product-truth-ledger.public.v2.json",
       maximumBytes: 32 * 1024,
-      expectedBytes: 4653,
-      expectedSha256: "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259",
+      expectedBytes: 7001,
+      expectedSha256: "787b5e3a19c5025bf7e914f31dbf02b02b04cafb4b9625cd6022c9746815af44",
       sha256: sha256Bytes,
       label: "product truth evidence ledger",
     }),
@@ -1272,16 +1293,16 @@ async function loadSourceSnapshot() {
     document.body.classList.remove("snapshot-unavailable");
     const presentation = sourceSnapshotPresentation(
       snapshot.capturedAt,
-      snapshot.refresh?.automaticBridgeEnabled === true,
+      snapshot.refresh?.automaticBridgeConfiguredAtCapture === true,
     );
     const ageTruth = presentation.freshness === "historical"
       ? `The represented source capture is more than one hour old (${snapshot.capturedAt}).`
       : presentation.freshness === "aged"
         ? `The represented source capture is more than fifteen minutes old (${snapshot.capturedAt}).`
         : `The represented source capture is recent (${snapshot.capturedAt}).`;
-    const bridgeTruth = presentation.bridge === "configured"
-      ? "Automatic publication is configured; that configuration does not make an aged capture current."
-      : "This is a manual source-bound snapshot; source binding and freshness remain separate.";
+    const bridgeTruth = presentation.configuration === "configured_at_capture"
+      ? "Automatic publication was configured at capture; current operation is UNKNOWN and execution is not attested."
+      : "Automatic publication was not configured at capture; current operation is UNKNOWN and execution is not attested.";
     const freshnessHeld = presentation.freshnessDisposition === "FRESHNESS_HOLD";
     const sourceBadgeLabel = freshnessHeld
       ? `HISTORICAL · ${facts.sourceCommit.slice(0, 8).toUpperCase()}`
@@ -1292,9 +1313,7 @@ async function loadSourceSnapshot() {
       sourceBadgeLabel,
       `${ageTruth} Source binding PASS. Freshness ${freshnessHeld ? "HOLD" : "recent"}. ${bridgeTruth} Capture age is provenance, not runtime or publisher health.`,
     );
-    if (!previous
-      || previous.hiveAi?.sourceCommit !== snapshot.hiveAi.sourceCommit
-      || previous.galaxy?.projectionHash !== snapshot.galaxy.projectionHash) {
+    if (snapshotIdentityChanged(previous, snapshot)) {
       window.dispatchEvent(new CustomEvent("hive:snapshot", { detail: { snapshot, previous } }));
     }
     return true;

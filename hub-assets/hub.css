@@ -9376,4 +9376,55 @@ main > section,
   }
 }
 
+/* Keep the primary request handoff wholly visible on the shortest phone frame.
+   The five navigation targets remain present and retain their 44px geometry. */
+@media (max-width: 24rem) and (max-height: 36rem) {
+  .hero {
+    gap: 0.35rem;
+    padding-block: 0.4rem;
+  }
+
+  .hero-copy > .eyebrow {
+    display: none;
+  }
+
+  .hero-copy h1 {
+    margin-bottom: 0.35rem;
+    font-size: clamp(1.8rem, 9.4vw, 2rem);
+    line-height: 0.96;
+  }
+
+  .hero-lede {
+    display: -webkit-box;
+    overflow: hidden;
+    margin-bottom: 0;
+    font-size: 0.875rem;
+    line-height: 1.28;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .hero-primary-action {
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+  }
+
+  .hero-primary-action .hero-enter {
+    min-height: 2.75rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .hero-primary-action .hero-enter small {
+    display: none;
+  }
+}
+
+.site-footer nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.25rem;
+  font-size: 0.875rem;
+}
+
 /* GALAXY_STARK_V18_PRESENTATION_CONTRACT_END */

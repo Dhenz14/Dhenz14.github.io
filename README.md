@@ -58,9 +58,10 @@ The published artifact intentionally excludes:
 - `script/**`, `docs/**`, `README.md`, tests, receipts, and runbooks;
 - retired `HivePoA/cid-mirrors/**` and
   `HivePoA/distribution-assets/**` delivery/authorization files; and
-- the original 23 exact forbidden fixture/retired raw paths plus
-  `HivePoA/.distribution-publish-receipt.json` and `HivePoA/.nojekyll`, all
-  frozen as negative routes in the allowlist.
+- the original 23 exact forbidden fixture/retired raw paths,
+  `HivePoA/.distribution-publish-receipt.json`, `HivePoA/.nojekyll`, and the
+  private Product Truth ledger v1, all frozen as 26 exact negative routes in
+  the allowlist.
 
 Seven legacy HivePoA routes remain as byte-identical, scriptless, CSP-bound
 quarantine pages so old links fail safely. They expose no download, verification,
@@ -74,27 +75,38 @@ claim the allowlisted workflow is product-live.
 ## Source snapshot refresh
 
 `.github/workflows/sync-living-galaxy.yml` compiles and admits only one bounded
-`hub-assets/hub-facts.json` candidate. Its publisher reconstructs from current
-`main`, applies the tested concurrent-writer policy, validates exact bytes and
-paths, and pushes only the facts file. It never requests a legacy Pages build.
+`hub-assets/hub-facts.json` candidate. A credentialed job may materialize exact
+private-main source bytes, but it executes no private module and persists no
+checkout credential. A fresh credential-free job verifies the bounded path,
+byte, SHA-256, Git-blob, commit, and tree binding before it runs the compiler.
+Credential or checkout failure retains last-good source facts and topology while
+updating only the refresh boundary to `HOLD`; it does not leave the entire prior
+facts file untouched.
 
-Because a push made with `GITHUB_TOKEN` does not trigger another push workflow,
-the Pages workflow also listens for the successful completion of `Sync living
-galaxy`. That route checks out exact current `main`, refuses a stale artifact,
-proves the workflow-start commit is the sole parent of an admitted facts-only
-update, skips a no-change completion, and uses the same allowlisted build. This
-is a source design contract, not proof that a scheduled run, deployment, or
-public readback succeeded.
+The publisher reconstructs from current `main`, applies the executable
+concurrent-writer policy, validates exact bytes and paths, and pushes only the
+facts file. A successful changed push directly calls the reusable Pages
+workflow with its exact pushed SHA; a no-change, failed, or ineligible sync does
+not enter the Pages concurrency lock. Under its non-cancelling lock, the Pages
+workflow treats that SHA as an ancestor lower-bound, resolves and builds exact
+current `main`, rechecks it immediately before upload, and then runs bounded
+target-bound live parity. It never infers a deployment from `workflow_run` and
+never requests a legacy Pages build. This is a source design contract, not proof
+that a scheduled run, deployment, Pages setting, or public readback succeeded.
 
 The browser acquires `hub-facts.json`, Product Truth, its evidence ledger, and
-both Hive IDE evidence documents through one shared streaming primitive. It
-requires a canonical `Content-Length`, enforces declared and actual byte counts,
-cancels at the supplied limit plus one byte, uses an eight-second request/body
-deadline, performs fatal UTF-8 decoding, and then invokes the shared strict JSON
-parser. Missing, malformed, or lying lengths; early disconnects; stalls; BOMs;
-duplicate keys; NFC-colliding keys; non-RFC8259 whitespace; unpaired surrogates;
-trailing content; invalid UTF-8; empty bodies; and oversized bodies fail closed.
-Snapshot retries are scheduled independently of the first request settling.
+both Hive IDE evidence documents through one shared streaming primitive.
+`Content-Length` is optional; when present it must be canonical, and it is
+compared with received bytes only for an identity representation. For gzip or
+Brotli, expected bytes and SHA-256 bind the decoded body rather than the encoded
+header length. The reader rejects the first chunk that crosses its decoded-byte
+ceiling, applies one eight-second fetch-and-body deadline, aborts and
+best-effort-cancels every rejection without awaiting an unbounded cancel, then
+performs fatal UTF-8 and strict JSON validation. Malformed or lying identity
+lengths; early disconnects; stalls; BOMs; duplicate or NFC-colliding keys;
+non-RFC8259 whitespace; unpaired surrogates; trailing content; invalid UTF-8;
+empty bodies; and oversized decoded bodies fail closed. Snapshot retries are
+scheduled independently of the first request settling.
 
 ## Dependency-free verification
 
@@ -109,6 +121,7 @@ node --check hub-assets/strict-json-fetch.mjs
 node --check script/check-browser-json-acquisition.mjs
 node --check script/hub-facts-custody.mjs
 node script/hub-facts-custody.mjs --self-test
+node script/private-source-bundle.mjs --self-test
 node script/check-central-hub.mjs
 node script/check-product-truth.mjs --self-test
 node script/check-ide-release.mjs --self-test

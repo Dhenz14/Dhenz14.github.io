@@ -24,9 +24,10 @@ The homepage separates these planes deliberately:
   sync configuration cannot make old evidence current.
 - **Local Living Anatomy** — the preserved separate 3D presentation surface.
   The public hub exposes one exact, user-initiated `:5002` navigation in its
-  five visible body doorways, but it never probes, starts, or attests that
-  runtime and sends no selected Atlas context. The retained context tuple is a
-  non-executing preview until a strict-runtime receipt authorizes more.
+  five source-preserved body doorways across Presentation and Proof; three stay
+  visible in Presentation. It never probes, starts, or attests that runtime and
+  sends no selected Atlas context. The retained context tuple is a non-executing
+  preview until a strict-runtime receipt authorizes more.
 - **Operator Body** — a distinct intended `127.0.0.1:5003` service. It is never
   aliased to the Local Body and remains `HOLD` until separately deployed and
   observed.

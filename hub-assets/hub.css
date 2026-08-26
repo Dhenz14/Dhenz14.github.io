@@ -405,12 +405,6 @@ body.galaxy-fullscreen-open .anatomy {
   color: var(--cyan);
 }
 
-.hero-copy > .eyebrow span + span::before {
-  margin-right: 1rem;
-  color: var(--dim);
-  content: "/";
-}
-
 h1,
 h2,
 h3,
@@ -5326,8 +5320,8 @@ body.command-flightdeck-open::after {
     gap: 0.25rem;
   }
 
-  .hero-copy > .eyebrow span + span::before {
-    display: none;
+  .hero-copy > .eyebrow span + span {
+    margin-left: 0;
   }
 
   .hero-actions,
@@ -7823,11 +7817,9 @@ body.motion-paused *::after {
     display: inline;
   }
 
-  /* Narrow-width rules hide this slash for the stacked-flex layout;
-     inline spans need it back or the phrases run together. */
-  .hero-copy > .eyebrow span + span::before {
-    display: inline;
-    margin-right: 1rem;
+  /* Inline proof metadata keeps its authored boundary in the same hidden row;
+     hidden pseudo-content can leak into accessibility snapshots. */
+  .hero-copy > .eyebrow span + span {
     margin-left: 1rem;
   }
 
@@ -7887,7 +7879,7 @@ body.motion-paused *::after {
     display: inline;
   }
 
-  .hero-copy > .eyebrow span + span::before {
+  .hero-copy > .eyebrow span + span {
     margin-left: 1rem;
   }
 
@@ -11485,3 +11477,9 @@ body[data-surface-mode="presentation"] .hero-copy > .eyebrow[data-proof-depth] +
 }
 
 /* GALAXY_STARK_V25_HERO_DEDUP_END */
+
+/* GALAXY_STARK_V26_HERO_A11Y_DEDUP
+   The Proof-only metadata boundary is authored text inside the hidden row;
+   Presentation has no generated separator in its rendered or accessible tree. */
+
+/* GALAXY_STARK_V26_HERO_A11Y_DEDUP_END */

@@ -977,7 +977,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v25" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v26" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -1446,7 +1446,7 @@ requireMatch(workflowJob("deploy"), /Deploy the unique verified artifact without
 requireMatch(html, /data-surface-mode="presentation"[\s\S]*data-surface-mode-button="presentation"[\s\S]*data-surface-mode-button="proof"[\s\S]*system-state-strip[\s\S]*SOURCE[\s\S]*RUNTIME[\s\S]*LOCAL[\s\S]*OPERATOR/, "presentation/proof split and first-screen system state strip");
 requireMatch(html, /id="product-truth"[^>]*data-proof-depth[\s\S]*id="ide-download"[^>]*data-proof-depth[\s\S]*id="tester"[^>]*data-proof-depth/, "proof-depth sections exist");
 requireMatch(html, /class="hero-outcomes"[^>]*data-proof-depth[\s\S]*class="hero-status-rail"[^>]*data-proof-depth/, "repeated hero labels move behind Proof mode");
-requireMatch(html, /<p class="eyebrow" data-proof-depth><span>Hive AI · TARGET EXPERIENCE<\/span><span>Source-present · runtime not attested<\/span><\/p>/, "redundant hero identity and status eyebrow moves behind Proof mode");
+requireMatch(html, /<p class="eyebrow" data-proof-depth><span>Hive AI · TARGET EXPERIENCE<\/span><span>— Source-present · runtime not attested<\/span><\/p>/, "complete redundant hero eyebrow and its authored separator move behind Proof mode");
 requireMatch(html, /id="availability"[^>]*data-presentation-only[\s\S]*What you can open today\.[\s\S]*PUBLIC WEB[\s\S]*AVAILABLE[\s\S]*THIS COMPUTER[\s\S]*USER INITIATED[\s\S]*DESKTOP PACKAGE[\s\S]*WAIT/, "concise honest Presentation availability summary");
 requireMatch(html, /class="benefit-browser"[^>]*data-presentation-only[\s\S]*01 · ASK[\s\S]*Know why an answer is grounded\.[\s\S]*02 · BUILD[\s\S]*Inspect the route, not a black box\.[\s\S]*03 · IMPROVE[\s\S]*Promote only after proof\./, "benefit-first browser presentation");
 requireMatch(html, /class="constellation-brief"[^>]*data-proof-depth[\s\S]*class="mechanism-grid"[^>]*data-proof-depth[\s\S]*class="architecture-live-boundary"[^>]*data-proof-depth/, "dense architecture evidence remains in Proof mode");
@@ -1460,6 +1460,8 @@ requireMatch(css, /GALAXY_STARK_V24_PUBLIC_HUB_POLISH[\s\S]*body:not\(\[data-sur
 requireMatch(css, /@media \(min-width: 42\.01rem\)[\s\S]*\.hero-primary-action[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/, "side-by-side desktop hero calls to action");
 requireMatch(css, /@media \(min-width: 68rem\) and \(min-height: 40\.01rem\)[\s\S]*\.topbar,[\s\S]*grid-template-columns:\s*auto minmax\(0, 1fr\) auto;[\s\S]*\.hero[\s\S]*grid-template-columns:\s*minmax\(0, 0\.86fr\) minmax\(31rem, 1\.14fr\)/, "compact desktop header and two-column hero");
 requireMatch(css, /GALAXY_STARK_V25_HERO_DEDUP[\s\S]*body\[data-surface-mode="presentation"\] \.hero-copy > \.eyebrow\[data-proof-depth\] \+ h1/, "presentation hero deduplication marker");
+requireNoMatch(css, /\.hero-copy\s*>\s*\.eyebrow[^,{]*::(?:before|after)|\.hero-copy\s*>\s*\.eyebrow\s+span\s*\+\s*span::(?:before|after)/, "hidden hero eyebrow generated-content separator");
+requireMatch(css, /GALAXY_STARK_V26_HERO_A11Y_DEDUP[\s\S]*Presentation has no generated separator/, "accessible hero deduplication generation marker");
 requireMatch(css, /\.availability-grid[\s\S]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)[\s\S]*\.benefit-browser-body[\s\S]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/, "availability cards and browser-like benefit layout");
 requireMatch(read("docs/PUBLICATION_SCOPE.md"), /PUBLIC_HUB_R8_PUBLICATION: COMPLETE_SUPPORTED[\s\S]*Local Body runtime on `:5002`/, "publication claim boundary");
 requireMatch(read("docs/VIEWPORT_MATRIX.md"), /CDP `Emulation\.setPageScaleFactor\(1\.5\)`[\s\S]*AMBIGUOUS/, "1.5 page-scale definition");

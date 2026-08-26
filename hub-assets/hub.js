@@ -26,7 +26,7 @@ import {
   snapshotIdentityChanged,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v22";
+} from "./galaxy-core.mjs?v=galaxy-stark-v23";
 import {
   IDE_RELEASE_LATEST_BYTES,
   IDE_RELEASE_LATEST_MAX_BYTES,
@@ -37,11 +37,11 @@ import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
   validateIdeReleaseTruthManifest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v22";
+} from "./ide-release-core.mjs?v=galaxy-stark-v23";
 import {
   parseJsonStrict,
-} from "./strict-json.mjs?v=galaxy-stark-v22";
-import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v22";
+} from "./strict-json.mjs?v=galaxy-stark-v23";
+import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v23";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 1;
 const HUB_FACTS_MAX_BYTES = 512 * 1024;
@@ -1753,6 +1753,345 @@ class FieldRenderer {
       context.fill();
     });
     context.shadowBlur = 0;
+  }
+}
+
+class CosmicReefRenderer {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.stage = canvas.closest("[data-hero-organism-preview]");
+    this.context = canvas.getContext("2d", { alpha: true, desynchronized: true });
+    if (!this.context || !this.stage) return;
+    this.width = 0;
+    this.height = 0;
+    this.dpr = 1;
+    this.seed = 0x52454546;
+    this.motes = [];
+    this.spores = [];
+    this.anchors = {};
+    this.pointer = { x: 0.5, y: 0.5, active: false };
+    this.raf = 0;
+    this.lastFrame = 0;
+    this.storyEpoch = Number.NEGATIVE_INFINITY;
+    this.storyActive = false;
+    this.paused = reduceMotion.matches || document.body.classList.contains("motion-paused");
+    this.intersecting = true;
+    this.documentVisible = !document.hidden;
+
+    this.resizeObserver = new ResizeObserver(() => this.resize());
+    this.resizeObserver.observe(this.stage);
+
+    this.stage.addEventListener("pointerenter", (event) => {
+      this.storyActive = true;
+      this.beginStory(event.timeStamp);
+    }, { passive: true });
+    this.stage.addEventListener("pointermove", (event) => {
+      const rect = this.stage.getBoundingClientRect();
+      this.pointer.x = (event.clientX - rect.left) / Math.max(rect.width, 1);
+      this.pointer.y = (event.clientY - rect.top) / Math.max(rect.height, 1);
+      this.pointer.active = true;
+    }, { passive: true });
+    this.stage.addEventListener("pointerleave", () => {
+      this.pointer.active = false;
+      this.storyActive = false;
+    }, { passive: true });
+    this.stage.addEventListener("focusin", (event) => {
+      this.storyActive = true;
+      this.beginStory(event.timeStamp);
+    });
+    this.stage.addEventListener("focusout", (event) => {
+      if (!this.stage.contains(event.relatedTarget)) this.storyActive = false;
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      this.documentVisible = !document.hidden;
+      this.syncLoop();
+    });
+    window.addEventListener("hive:motion", (event) => {
+      this.paused = Boolean(event.detail?.paused) || reduceMotion.matches;
+      this.syncLoop();
+    });
+
+    if ("IntersectionObserver" in window) {
+      this.intersectionObserver = new IntersectionObserver(([entry]) => {
+        this.intersecting = Boolean(entry?.isIntersecting);
+        this.syncLoop();
+      }, { rootMargin: "120px 0px", threshold: 0.01 });
+      this.intersectionObserver.observe(this.stage);
+    }
+    this.resize();
+  }
+
+  random() {
+    this.seed = (1664525 * this.seed + 1013904223) >>> 0;
+    return this.seed / 4294967296;
+  }
+
+  createMote() {
+    const depth = 0.18 + this.random() * 0.82;
+    const palette = this.random();
+    return {
+      x: this.random(),
+      y: this.random(),
+      depth,
+      radius: 0.35 + depth * (0.55 + this.random() * 1.35),
+      drift: 2 + this.random() * 8,
+      speed: 0.12 + this.random() * 0.34,
+      phase: this.random() * Math.PI * 2,
+      color: palette > 0.86 ? "255, 210, 122" : palette > 0.64 ? "175, 123, 255" : palette > 0.16 ? "104, 228, 255" : "232, 251, 255",
+    };
+  }
+
+  createSpore() {
+    return {
+      x: this.random(),
+      y: this.random(),
+      radius: 2.5 + this.random() * 7.5,
+      speed: 0.025 + this.random() * 0.055,
+      sway: 5 + this.random() * 15,
+      phase: this.random() * Math.PI * 2,
+      alpha: 0.025 + this.random() * 0.055,
+    };
+  }
+
+  rebuildParticles() {
+    const moteCount = this.width < 520 ? 42 : this.width < 820 ? 68 : 96;
+    const sporeCount = this.width < 520 ? 6 : this.width < 820 ? 9 : 13;
+    this.seed = 0x52454546;
+    this.motes = Array.from({ length: moteCount }, () => this.createMote());
+    this.spores = Array.from({ length: sporeCount }, () => this.createSpore());
+  }
+
+  anchorFor(selector, fallbackX, fallbackY) {
+    const element = this.stage.querySelector(selector);
+    if (!element) return { x: this.width * fallbackX, y: this.height * fallbackY };
+    const stageRect = this.stage.getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
+    return {
+      x: rect.left - stageRect.left + rect.width / 2,
+      y: rect.top - stageRect.top + rect.height / 2,
+    };
+  }
+
+  syncAnchors() {
+    this.anchors = {
+      evidence: this.anchorFor(".stage-label-a", 0.53, 0.14),
+      ai: this.anchorFor(".core-ai", 0.31, 0.42),
+      body: this.anchorFor(".hero-body-gate", 0.5, 0.52),
+      history: this.anchorFor(".core-poa", 0.71, 0.62),
+    };
+  }
+
+  resize() {
+    const rect = this.stage.getBoundingClientRect();
+    this.width = Math.max(1, rect.width);
+    this.height = Math.max(1, rect.height);
+    this.dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    this.canvas.width = Math.max(1, Math.round(this.width * this.dpr));
+    this.canvas.height = Math.max(1, Math.round(this.height * this.dpr));
+    this.canvas.style.width = `${this.width}px`;
+    this.canvas.style.height = `${this.height}px`;
+    this.context.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.rebuildParticles();
+    this.syncAnchors();
+    this.draw(this.paused ? 0 : performance.now());
+    this.syncLoop();
+  }
+
+  beginStory(time) {
+    this.syncAnchors();
+    const now = Number.isFinite(time) ? time : performance.now();
+    if (now - this.storyEpoch > 3600) this.storyEpoch = now;
+  }
+
+  syncLoop() {
+    window.cancelAnimationFrame(this.raf);
+    this.raf = 0;
+    if (this.paused || !this.intersecting || !this.documentVisible) {
+      this.draw(0);
+      return;
+    }
+    this.raf = window.requestAnimationFrame((time) => this.frame(time));
+  }
+
+  frame(time) {
+    if (time - this.lastFrame >= 1000 / 30) {
+      this.lastFrame = time;
+      this.draw(time);
+    }
+    this.raf = window.requestAnimationFrame((next) => this.frame(next));
+  }
+
+  quadraticPoint(start, control, end, progress) {
+    const inverse = 1 - progress;
+    return {
+      x: inverse * inverse * start.x + 2 * inverse * progress * control.x + progress * progress * end.x,
+      y: inverse * inverse * start.y + 2 * inverse * progress * control.y + progress * progress * end.y,
+    };
+  }
+
+  drawGlow(anchor, radius, rgb, alpha) {
+    const gradient = this.context.createRadialGradient(anchor.x, anchor.y, 0, anchor.x, anchor.y, radius);
+    gradient.addColorStop(0, `rgba(${rgb}, ${alpha})`);
+    gradient.addColorStop(0.34, `rgba(${rgb}, ${alpha * 0.34})`);
+    gradient.addColorStop(1, `rgba(${rgb}, 0)`);
+    this.context.fillStyle = gradient;
+    this.context.fillRect(anchor.x - radius, anchor.y - radius, radius * 2, radius * 2);
+  }
+
+  drawCaustics(time) {
+    const context = this.context;
+    context.save();
+    context.globalCompositeOperation = "screen";
+    for (let index = 0; index < 6; index += 1) {
+      const phase = index * 1.37 + time * 0.000045;
+      const y = this.height * (0.15 + index * 0.135) + Math.sin(phase) * 14;
+      const bend = Math.cos(phase * 0.71) * this.height * 0.09;
+      const gradient = context.createLinearGradient(0, y, this.width, y + bend);
+      gradient.addColorStop(0, "rgba(104, 228, 255, 0)");
+      gradient.addColorStop(0.34, `rgba(104, 228, 255, ${0.018 + index * 0.002})`);
+      gradient.addColorStop(0.62, "rgba(175, 123, 255, 0.016)");
+      gradient.addColorStop(1, "rgba(104, 228, 255, 0)");
+      context.strokeStyle = gradient;
+      context.lineWidth = 0.65 + (index % 2) * 0.45;
+      context.beginPath();
+      context.moveTo(-20, y);
+      context.bezierCurveTo(this.width * 0.28, y - bend, this.width * 0.66, y + bend, this.width + 20, y - bend * 0.25);
+      context.stroke();
+    }
+    context.restore();
+  }
+
+  drawFilament(start, end, rgb, alpha, bend = -0.16) {
+    const context = this.context;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.hypot(dx, dy) || 1;
+    const control = {
+      x: (start.x + end.x) / 2 - (dy / length) * length * bend,
+      y: (start.y + end.y) / 2 + (dx / length) * length * bend,
+    };
+    const gradient = context.createLinearGradient(start.x, start.y, end.x, end.y);
+    gradient.addColorStop(0, `rgba(${rgb}, 0)`);
+    gradient.addColorStop(0.2, `rgba(${rgb}, ${alpha})`);
+    gradient.addColorStop(0.78, `rgba(${rgb}, ${alpha * 0.82})`);
+    gradient.addColorStop(1, `rgba(${rgb}, 0)`);
+    context.strokeStyle = gradient;
+    context.lineWidth = 0.8;
+    context.beginPath();
+    context.moveTo(start.x, start.y);
+    context.quadraticCurveTo(control.x, control.y, end.x, end.y);
+    context.stroke();
+    return control;
+  }
+
+  drawStory(time, controls) {
+    if (!Number.isFinite(this.storyEpoch)) return;
+    const elapsed = Math.max(0, time - this.storyEpoch);
+    if (!this.storyActive && elapsed > 3200) return;
+    const phase = this.storyActive ? (elapsed % 5200) / 5200 : Math.min(1, elapsed / 3200);
+    if (phase > 0.78) return;
+    const context = this.context;
+    const firstEnd = 0.44;
+    const secondEnd = 0.76;
+    let point;
+    let color;
+    if (phase <= firstEnd) {
+      point = this.quadraticPoint(this.anchors.evidence, controls.evidenceAi, this.anchors.ai, phase / firstEnd);
+      color = "185, 245, 255";
+    } else {
+      point = this.quadraticPoint(this.anchors.ai, controls.aiBody, this.anchors.body, (phase - firstEnd) / (secondEnd - firstEnd));
+      color = "255, 255, 255";
+    }
+    const pulse = 0.78 + Math.sin(time * 0.012) * 0.18;
+    context.save();
+    context.globalCompositeOperation = "screen";
+    context.shadowColor = `rgba(${color}, 0.95)`;
+    context.shadowBlur = 16;
+    context.fillStyle = `rgba(${color}, ${pulse})`;
+    context.beginPath();
+    context.arc(point.x, point.y, 2.15, 0, Math.PI * 2);
+    context.fill();
+    context.shadowBlur = 0;
+    context.strokeStyle = `rgba(${color}, 0.34)`;
+    context.lineWidth = 1;
+    context.beginPath();
+    context.arc(point.x, point.y, 5.2 + pulse * 2, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+  }
+
+  drawMotes(time) {
+    const context = this.context;
+    const pointerX = this.pointer.x * this.width;
+    const pointerY = this.pointer.y * this.height;
+    for (const mote of this.motes) {
+      const travel = time * 0.000006 * mote.speed;
+      let x = mote.x * this.width + Math.sin(time * 0.00008 * mote.speed + mote.phase) * mote.drift;
+      let y = ((mote.y - travel + 1) % 1) * this.height + Math.cos(time * 0.00006 + mote.phase) * mote.drift * 0.42;
+      if (this.pointer.active) {
+        const dx = x - pointerX;
+        const dy = y - pointerY;
+        const distance = Math.hypot(dx, dy) || 1;
+        const radius = 105 + mote.depth * 75;
+        if (distance < radius) {
+          const influence = ((radius - distance) / radius) ** 2;
+          x += (-dy / distance) * influence * (5 + mote.depth * 7);
+          y += (dx / distance) * influence * (5 + mote.depth * 7);
+        }
+      }
+      const shimmer = 0.44 + Math.sin(time * 0.0007 + mote.phase) * 0.16;
+      context.fillStyle = `rgba(${mote.color}, ${Math.max(0.08, shimmer) * (0.32 + mote.depth * 0.48)})`;
+      if (mote.radius > 1.55) {
+        context.shadowColor = `rgba(${mote.color}, 0.46)`;
+        context.shadowBlur = 7;
+      }
+      context.beginPath();
+      context.arc(x, y, mote.radius, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+    }
+  }
+
+  drawSpores(time) {
+    const context = this.context;
+    context.save();
+    for (const spore of this.spores) {
+      const travel = time * 0.00001 * spore.speed;
+      const x = spore.x * this.width + Math.sin(time * 0.00005 + spore.phase) * spore.sway;
+      const y = ((spore.y - travel + 1) % 1) * this.height;
+      const gradient = context.createRadialGradient(x - spore.radius * 0.28, y - spore.radius * 0.3, 0, x, y, spore.radius);
+      gradient.addColorStop(0, `rgba(232, 251, 255, ${spore.alpha * 1.5})`);
+      gradient.addColorStop(0.5, `rgba(104, 228, 255, ${spore.alpha * 0.34})`);
+      gradient.addColorStop(1, "rgba(104, 228, 255, 0)");
+      context.fillStyle = gradient;
+      context.beginPath();
+      context.arc(x, y, spore.radius, 0, Math.PI * 2);
+      context.fill();
+      context.strokeStyle = `rgba(185, 245, 255, ${spore.alpha * 0.72})`;
+      context.lineWidth = 0.55;
+      context.beginPath();
+      context.arc(x, y, spore.radius * 0.82, Math.PI * 1.08, Math.PI * 1.78);
+      context.stroke();
+    }
+    context.restore();
+  }
+
+  draw(time = 0) {
+    const context = this.context;
+    context.clearRect(0, 0, this.width, this.height);
+    this.drawGlow(this.anchors.ai, Math.min(this.width, this.height) * 0.34, "48, 192, 255", 0.115);
+    this.drawGlow(this.anchors.body, Math.min(this.width, this.height) * 0.24, "104, 228, 255", 0.16);
+    this.drawGlow(this.anchors.history, Math.min(this.width, this.height) * 0.28, "255, 196, 92", 0.07);
+    this.drawCaustics(time);
+    const controls = {
+      evidenceAi: this.drawFilament(this.anchors.evidence, this.anchors.ai, "104, 228, 255", 0.22, -0.14),
+      aiBody: this.drawFilament(this.anchors.ai, this.anchors.body, "185, 245, 255", 0.25, 0.12),
+    };
+    this.drawFilament(this.anchors.body, this.anchors.history, "255, 210, 122", 0.11, -0.1);
+    this.drawSpores(time);
+    this.drawMotes(time);
+    if (!this.paused) this.drawStory(time, controls);
   }
 }
 
@@ -4151,6 +4490,12 @@ function startField() {
   new FieldRenderer(canvas);
 }
 
+function startCosmicReef() {
+  const canvas = $("[data-hero-reef]");
+  if (!canvas || !("ResizeObserver" in window)) return;
+  new CosmicReefRenderer(canvas);
+}
+
 function runSafely(label, start) {
   try {
     start();
@@ -4215,6 +4560,7 @@ runSafely("Top navigation", wireTopbar);
 runSafely("Local Body handoff boundary", enforceLocalHandoffBoundary);
 runAfterFirstPaint("Section reveals", wireReveal, 0);
 runAfterFirstPaint("Constellation Atlas", startGalaxy, 20);
+runAfterFirstPaint("Cosmic reef hero", startCosmicReef, 30);
 runAfterFirstPaint("Offscreen scene control", wireSceneActivity, 40);
 runAfterFirstPaint("Ambient field", startField, 60);
 runAfterFirstPaint("Section navigation", wireSectionNav, 80);

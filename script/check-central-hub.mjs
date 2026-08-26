@@ -686,6 +686,19 @@ requireMatch(html, /<title>Hive AI — One Constellation Brain, Visible Proof<\/
 requireMatch(html, /property="og:site_name" content="Hive Ecosystem"[\s\S]*property="og:title" content="Hive AI — One Constellation Brain, Visible Proof"[\s\S]*name="twitter:title" content="Hive AI — One Constellation Brain, Visible Proof"/, "exact social product identity");
 requireMatch(html, /Reasoning layer[\s\S]*Hive-AI[\s\S]*Historical boundary · HOLD[\s\S]*HivePoA[\s\S]*No public actions · runtime unknown/, "held HivePoA system boundary");
 requireMatch(html, /Held proof boundary[\s\S]*Boundary[\s\S]*HivePoA · HOLD/, "held HivePoA hero readout");
+requireMatch(html, /class="hero-reef-canvas" data-hero-reef aria-hidden="true"[\s\S]*class="hero-ambient-truth" aria-hidden="true"[\s\S]*Ambient field[\s\S]*Zero effects[\s\S]*class="core-organelles" aria-hidden="true"[\s\S]*class="core-sediment" aria-hidden="true"/, "truth-scoped Cosmic Reef hero structure");
+const cosmicReefBlock = boundedBlock(js, "class CosmicReefRenderer", "const clamp =", "Cosmic Reef renderer");
+requireMatch(cosmicReefBlock, /getContext\("2d", \{ alpha: true, desynchronized: true \}\)/, "lightweight transparent Cosmic Reef canvas");
+requireMatch(cosmicReefBlock, /Math\.min\(window\.devicePixelRatio \|\| 1, 1\.5\)/, "Cosmic Reef device-pixel-ratio ceiling");
+requireMatch(cosmicReefBlock, /visibilitychange[\s\S]*hive:motion[\s\S]*IntersectionObserver/, "Cosmic Reef visibility and motion lifecycle");
+requireMatch(cosmicReefBlock, /1000 \/ 30[\s\S]*requestAnimationFrame/, "Cosmic Reef ambient frame-rate ceiling");
+requireMatch(cosmicReefBlock, /pointerenter[\s\S]*storyActive = true[\s\S]*pointerleave[\s\S]*storyActive = false/, "user-invoked evidence choreography");
+requireNoMatch(cosmicReefBlock, /Math\.random/, "nondeterministic Cosmic Reef geometry");
+requireMatch(js, /function startCosmicReef\(\)[\s\S]*\[data-hero-reef\][\s\S]*new CosmicReefRenderer\(canvas\)[\s\S]*runAfterFirstPaint\("Cosmic reef hero", startCosmicReef, 30\)/, "reachable Cosmic Reef startup");
+const cosmicReefCss = boundedBlock(css, "/* GALAXY_STARK_V23_COSMIC_REEF", "/* GALAXY_STARK_V23_COSMIC_REEF_END */", "Cosmic Reef stylesheet");
+requireMatch(cosmicReefCss, /\.hero-system:is\(:hover, :focus-within\) \.bridge span[\s\S]*animation: packet-flow/, "interaction-scoped evidence packet motion");
+requireMatch(cosmicReefCss, /@media \(max-width: 42rem\)[\s\S]*grid-template-columns: repeat\(4[\s\S]*@media \(max-width: 30rem\)/, "Cosmic Reef narrow-layout recomposition");
+requireMatch(cosmicReefCss, /@media \(prefers-reduced-motion: reduce\)[\s\S]*animation: none[\s\S]*@media \(forced-colors: active\)[\s\S]*hero-reef-canvas/, "Cosmic Reef reduced-motion and forced-color fallbacks");
 requireMatch(html, /source-badge[^>]+title="JavaScript verifies[^>]*>[\s\S]*Snapshot pending/, "truthful no-JS source state");
 requireMatch(html, /data-motion-toggle[^>]+aria-disabled="true"[^>]+disabled[^>]*>[\s\S]*Motion control pending/, "inert no-JS motion control");
 requireMatch(html, /<noscript>[\s\S]*no package or live-source claim is authorized/, "explicit no-JS truth boundary");
@@ -964,7 +977,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v22" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v23" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)

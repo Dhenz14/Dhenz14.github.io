@@ -24,7 +24,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="/hub-assets/hub.css?v=galaxy-stark-v23">
+    <link rel="stylesheet" href="/hub-assets/hub.css?v=galaxy-stark-v24">
     <title>Hive AI — One Constellation Brain, Visible Proof</title>
     <script type="application/ld+json">
       {
@@ -96,12 +96,12 @@
             </a>
             <a class="button button-quiet" data-hero-atlas-cta href="#galaxy"><span>Explore the Constellation Atlas</span><small>640 source-authored capabilities</small></a>
           </div>
-          <div class="hero-outcomes" aria-label="Hive target experiences">
+          <div class="hero-outcomes" aria-label="Hive target experiences" data-proof-depth>
             <span><b>Ask Hive</b><small>Ground answers in visible evidence.</small></span>
             <span><b>Build with Hive</b><small>Shape changes you can inspect.</small></span>
             <span><b>Improve Hive</b><small>Promote only after proof.</small></span>
           </div>
-          <div class="hero-status-rail" aria-label="Current public evidence boundaries">
+          <div class="hero-status-rail" aria-label="Current public evidence boundaries" data-proof-depth>
             <span>SOURCE ATLAS PRESENT · SNAPSHOT FRESHNESS HOLD · RUNTIME NOT ATTESTED</span>
             <span>LOCAL BODY LINK · USER INITIATED · OPERATOR HOLD · CHAT WAIT · IDE WAIT · HIVEPOA QUARANTINED</span>
           </div>
@@ -181,11 +181,52 @@
         </div>
       </section>
 
+      <section class="availability-summary section-pad" id="availability" data-presentation-only aria-labelledby="availability-title">
+        <div class="section-shell availability-shell">
+          <header class="section-heading availability-heading" data-reveal>
+            <div>
+              <p class="eyebrow">Open surfaces / honest availability</p>
+              <h2 id="availability-title">What you can open today.</h2>
+            </div>
+            <p>Start in the public browser experience. Local and desktop surfaces keep their own evidence boundaries, so a visible link never turns into an invented availability claim.</p>
+          </header>
+
+          <div class="availability-grid" role="list" aria-label="Hive surface availability summary">
+            <article data-state="available" role="listitem" data-reveal>
+              <span class="availability-mark" aria-hidden="true">
+                <svg viewBox="0 0 48 48" focusable="false"><rect x="5" y="7" width="38" height="34" rx="6"></rect><path d="M5 16h38M12 12h.01M18 12h.01M24 12h.01"></path><circle cx="24" cy="28" r="8"></circle><path d="M16 28h16M24 20c2.8 2.2 4.2 4.9 4.2 8s-1.4 5.8-4.2 8c-2.8-2.2-4.2-4.9-4.2-8s1.4-5.8 4.2-8Z"></path></svg>
+              </span>
+              <div><small>PUBLIC WEB</small><h3>Constellation Atlas</h3><p>Available now in a modern browser as a public-safe, source-authored map.</p></div>
+              <strong>AVAILABLE</strong>
+            </article>
+            <article data-state="local" role="listitem" data-reveal>
+              <span class="availability-mark" aria-hidden="true">
+                <svg viewBox="0 0 48 48" focusable="false"><circle cx="24" cy="10" r="5"></circle><path d="M24 15v14M14 20l10 5 10-5M18 43l6-14 6 14M9 31l15-6 15 6"></path><circle cx="9" cy="31" r="3"></circle><circle cx="39" cy="31" r="3"></circle></svg>
+              </span>
+              <div><small>THIS COMPUTER</small><h3>Local 3D Body</h3><p>The doorway is present and opens only after your click; the separate localhost runtime is not probed here.</p></div>
+              <strong>USER INITIATED</strong>
+            </article>
+            <article data-state="wait" role="listitem" data-reveal>
+              <span class="availability-mark" aria-hidden="true">
+                <svg viewBox="0 0 48 48" focusable="false"><rect x="6" y="7" width="36" height="26" rx="4"></rect><path d="M18 41h12M24 33v8M16 20h16"></path></svg>
+              </span>
+              <div><small>DESKTOP PACKAGE</small><h3>Hive IDE</h3><p>WAIT. No current public package, installation, or runtime behavior is claimed by this page.</p></div>
+              <strong>WAIT</strong>
+            </article>
+          </div>
+
+          <div class="availability-proof" data-reveal>
+            <span>Need the exact operating-system and package evidence ceiling?</span>
+            <button type="button" class="text-button" data-surface-mode-button="proof">Open the proof matrix</button>
+          </div>
+        </div>
+      </section>
+
       <section class="pipeline section-shell section-pad" id="pipeline" aria-labelledby="pipeline-title">
         <header class="section-heading compact" data-reveal>
           <p class="eyebrow">Target doctrine / accountable flight path</p>
           <h2 id="pipeline-title">One request. Seven bounded decisions.</h2>
-          <p>This is the target architecture contract—not a claim that an installed runtime executed it now. Any absent evidence, route, or authority becomes a HOLD.</p>
+          <p>See where a request goes, why each decision exists, and where missing evidence or authority stops the route instead of hiding uncertainty.</p>
         </header>
         <ol class="pipeline-rail" data-reveal>
           <li><span>01</span><strong>Intent</strong><small>Resolve purpose</small></li>
@@ -198,8 +239,8 @@
         </ol>
         <div class="pipeline-note" data-motion-scene data-reveal>
           <span class="pipeline-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-          <p><strong>The hub shows the target flight plan.</strong> A halo with zero admitted evidence cannot pretend it retrieved anything. The local body exposes what actually routed, what held, and which proof or authority was absent when its separate runtime is running.</p>
-          <div class="pipeline-actions">
+          <p><strong>The benefit is an inspectable flight plan.</strong> A route cannot pretend that missing evidence exists, and every HOLD remains visible before a change can move forward.</p>
+          <div class="pipeline-actions" data-proof-depth>
             <a class="button button-quiet local-body-link" data-local-context-link data-local-presentation="1" href="http://127.0.0.1:5002/constellation/body?presentation=1" target="hive-local-body" rel="noopener noreferrer"><span>Open Local Body</span><small>:5002 · user initiated · unprobed here</small></a>
             <span class="is-disabled" aria-disabled="true">Operator body HOLD · distinct :5003 service not observed</span>
           </div>
@@ -211,12 +252,26 @@
           <header class="section-heading architecture-heading" data-reveal>
             <div>
               <p class="eyebrow">Published source architecture / translated</p>
-              <h2 id="architecture-title">The atlas is a map of machinery.</h2>
+              <h2 id="architecture-title">See how Hive turns a request into accountable work.</h2>
             </div>
-            <p>Hive keeps its own vocabulary because the architecture is different. Every metaphor below names a bounded mechanism, status, or interface—not decorative lore.</p>
+            <p>The landing view explains the benefit in plain language. Proof mode keeps the exact source terms, historical cuts, matrices, and evidence ceilings available when you need them.</p>
           </header>
 
-          <div class="constellation-brief" data-reveal>
+          <div class="benefit-browser" data-presentation-only data-reveal aria-label="Request benefits overview">
+            <div class="benefit-browser-bar" aria-hidden="true">
+              <span><i></i><i></i><i></i></span>
+              <strong>HIVE / REQUEST TRACE</strong>
+              <em>READ ONLY</em>
+            </div>
+            <div class="benefit-browser-body">
+              <article><span>01 · ASK</span><h3>Know why an answer is grounded.</h3><p>See which evidence supports the response and which missing source keeps it on HOLD.</p></article>
+              <article><span>02 · BUILD</span><h3>Inspect the route, not a black box.</h3><p>Follow bounded specialist work from intent through composition without inventing hidden effects.</p></article>
+              <article><span>03 · IMPROVE</span><h3>Promote only after proof.</h3><p>Keep validation, human approval, release, and observed behavior as separate gates.</p></article>
+            </div>
+            <p class="benefit-browser-footer">The exact source vocabulary and forensic detail remain intact in <button type="button" class="text-button" data-surface-mode-button="proof">Proof mode</button>.</p>
+          </div>
+
+          <div class="constellation-brief" data-reveal data-proof-depth>
             <article class="constellation-core" data-motion-scene>
               <div class="constellation-core-orbits" aria-hidden="true"><i></i><i></i><i></i></div>
               <p class="eyebrow">PUBLISHED SOURCE SNAPSHOT @ 0ab04f6c · captured 2026-08-23 22:53:32 UTC</p>
@@ -251,7 +306,7 @@
             </div>
           </div>
 
-          <div class="mechanism-grid" data-metaphor-definitions aria-label="Hive metaphor to mechanism definitions">
+          <div class="mechanism-grid" data-metaphor-definitions aria-label="Hive metaphor to mechanism definitions" data-proof-depth>
             <article data-reveal><span>01 / CAPABILITY</span><h3>Neuron</h3><p>A stable narrow-purpose capability address. Its substrate can be fitted, neural, or deterministic, with explicit implementation, evidence, and lifecycle identity.</p><small>Not one scalar model weight. At this source cut: 448 trainable-classified · 192 deterministic-classified.</small></article>
             <article data-reveal><span>02 / EVIDENCE</span><h3>Halo</h3><p>The declared bounded retrieval-and-evidence contract attached to a neuron.</p><small>EVIDENCE BASELINE @ 472131baa: zero populated Halo sections and zero indexes. This says nothing about a current installed service.</small></article>
             <article data-reveal><span>03 / TAXONOMY</span><h3>Division + family</h3><p>The stable hierarchy that groups related capabilities and keeps routing legible.</p><small>The atlas division ring is visual geometry—not a halo.</small></article>
@@ -260,7 +315,7 @@
             <article data-reveal><span>06 / INTERFACE</span><h3>Living Anatomy</h3><p>A future reserved local visual and operator overlay for constellation state that requires separate attestation.</p><small>The public Atlas is source-authored; Living Anatomy requires its own local runtime evidence and never becomes brain authority.</small></article>
           </div>
 
-          <div class="architecture-live-boundary" data-architecture-live-boundary data-reveal aria-label="Architecture versus live product surfaces">
+          <div class="architecture-live-boundary" data-architecture-live-boundary data-reveal aria-label="Architecture versus live product surfaces" data-proof-depth>
             <article><span>01 · PUBLIC</span><strong>Source architecture</strong><p>Topology, vocabulary, source commit, graph binding, and bounded public claims.</p><small>Never local runtime telemetry.</small></article>
             <i aria-hidden="true">→</i>
              <article><span>02 · LOCAL · HOLD</span><strong>Presentation body</strong><p>An explicit local route whose availability and generation are not probed by this page.</p><small>No local runtime PASS is claimed.</small></article>
@@ -288,7 +343,7 @@
         <p class="truth-boundary">Twitch-proven means formal row-backed source proof at this capture—not current execution, runtime availability, served influence, or product-live behavior.</p>
       </section>
 
-      <section class="systems section-shell section-pad" id="systems" aria-labelledby="systems-title">
+      <section class="systems section-shell section-pad" id="systems" aria-labelledby="systems-title" data-proof-depth>
         <header class="section-heading" data-reveal>
           <p class="eyebrow">Target body / two distinct planes</p>
           <h2 id="systems-title">The brain and proof plane have different jobs.</h2>
@@ -411,7 +466,7 @@
         </div>
       </section>
 
-      <section class="organism section-pad" id="ecosystem" aria-labelledby="ecosystem-title">
+      <section class="organism section-pad" id="ecosystem" aria-labelledby="ecosystem-title" data-proof-depth>
         <div class="section-shell">
           <header class="section-heading" data-reveal>
             <p class="eyebrow">Target organ constellation / one body</p>
@@ -532,7 +587,7 @@
           <header class="section-heading compact" data-reveal>
             <p class="eyebrow">Constellation Atlas / published source snapshot</p>
             <h2 id="anatomy-title">Explore 640 source-authored capabilities.</h2>
-            <p>Open the full atlas, then orbit, pan, pinch, or pointer-zoom through exact authored division, family, and neuron coordinates. Every public point remains neutral. The local <code>:5002</code> presentation route is a fixed, user-initiated, unprobed handoff; a distinct Operator Body may carry current state only after separate <code>:5003</code> deployment and observation.</p>
+            <p>Orbit, pan, pinch, or pointer-zoom through exact authored division, family, and neuron coordinates. The map explains how Hive is organized; its Local 3D Body doorway remains an explicit user click, never an automatic runtime claim.</p>
           </header>
 
           <div class="galaxy-commandbar">
@@ -701,7 +756,7 @@
               <p class="eyebrow">Mission Control / living command cycle</p>
               <h2 id="mission-title">From one signal to a verified change.</h2>
             </div>
-            <p>Walk the complete zero-effect presentation story here. The local <code>:5002</code> presentation route is available only through a user-initiated, unprobed doorway; the distinct <code>:5003</code> Operator Body is disabled until it is independently observed. Chat remains WAIT.</p>
+            <p>Walk a zero-effect story from source signal to reviewed change. Each missing proof or authority gate pauses visibly, so the presentation never confuses a compelling route with an executed one.</p>
           </header>
 
           <div class="mission-machine" data-command-cycle data-command-state="idle" data-motion-scene data-reveal>
@@ -825,7 +880,7 @@
           </div>
         </article>
       </section>
-      <section class="access section-pad" id="access" aria-labelledby="access-title">
+      <section class="access section-pad" id="access" aria-labelledby="access-title" data-proof-depth>
         <div class="section-shell access-shell" data-reveal>
           <div class="access-visual" aria-hidden="true">
             <div class="terminal-dots"><i></i><i></i><i></i></div>
@@ -862,8 +917,8 @@
 
     <div class="toast" data-toast role="status" aria-live="polite" aria-atomic="true"></div>
     <noscript>
-      <div class="noscript-banner">Source freshness, manifest validation, and motion controls need JavaScript. All navigation remains available; no package or live-source claim is authorized by this fallback.</div>
+      <div class="noscript-banner">Source freshness, manifest validation, and motion controls need JavaScript. Source and proof sections remain readable, interactive mode controls stay hidden, and no package or live-source claim is authorized by this fallback.</div>
     </noscript>
-    <script type="module" src="/hub-assets/hub.js?v=galaxy-stark-v23"></script>
+    <script type="module" src="/hub-assets/hub.js?v=galaxy-stark-v24"></script>
   </body>
 </html>

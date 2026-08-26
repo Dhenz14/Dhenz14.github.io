@@ -26,7 +26,7 @@ import {
   snapshotIdentityChanged,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v25";
+} from "./galaxy-core.mjs?v=galaxy-stark-v26";
 import {
   IDE_RELEASE_LATEST_BYTES,
   IDE_RELEASE_LATEST_MAX_BYTES,
@@ -37,11 +37,11 @@ import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
   validateIdeReleaseTruthManifest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v25";
+} from "./ide-release-core.mjs?v=galaxy-stark-v26";
 import {
   parseJsonStrict,
-} from "./strict-json.mjs?v=galaxy-stark-v25";
-import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v25";
+} from "./strict-json.mjs?v=galaxy-stark-v26";
+import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v26";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 1;
 const HUB_FACTS_MAX_BYTES = 512 * 1024;

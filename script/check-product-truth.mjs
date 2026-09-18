@@ -101,11 +101,11 @@ export function verifyReviewedBaselineBinding(reference, localBytes, { requireGi
   ], "reviewed semantic baseline reference");
   assert(reference.schema === "hive.ecosystem.product-truth.semantic-baseline.ref.v1"
     && reference.path === "hub-assets/product-truth-semantic-baseline.v1.json"
-    && reference.reviewedCommit === "fbc56dc4a02ba06a30a03673acbf9f183081074c"
+    && reference.reviewedCommit === "6c45eb58054e9c50bd0df86f9ea8dc34c92bf688"
     && reference.bytes === 621
-    && reference.sha256 === "7c901753a1559048c0adb1d20b082cf687c6554d89957470e606cc6e0a54dd33"
-    && reference.gitBlobOid === "3c45f40d7fd3cc6f5620f7112b835c1d2dd855fb"
-    && reference.canonicalSemanticDigest === "94a306e12f793c698a60f7d45a2fbff1ac0e0bc8163201d0042a07505bf0c616"
+    && reference.sha256 === "35de25896823d3d83ae29938cd3b7fcabfa738e2d827dda5ba5d841608752716"
+    && reference.gitBlobOid === "c0695d03b19786c400c4d3dc98bc9b3cc9a6713f"
+    && reference.canonicalSemanticDigest === "c5bc7681e65e7b374d16a4bceef75efe26ba5ac6a092db7331851c81be35cc13"
     && reference.immutableRawReference === `https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/${reference.reviewedCommit}/${reference.path}`
     && /not verified by the browser/i.test(reference.portableVerificationBoundary),
   "reviewed semantic baseline reference drifted", "SEMANTIC_BASELINE_REFERENCE_INVALID");
@@ -175,15 +175,15 @@ const EXPECTED_DEFINITION_IDS = Object.freeze([
 const EXPECTED_PLATFORM_IDS = Object.freeze([
   "windows-x64-remote", "windows-wsl-design", "linux-source", "linux-publication", "macos-publication",
 ]);
-const ATLAS_SOURCE_TREE = "20963bcda2ed945fc8374181be59412845e9c44f";
-const EVIDENCE_BASELINE_COMMIT = "472131baa2bc212a043966773bd92477c3a8a16c";
-const EVIDENCE_BASELINE_TREE = "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00";
-const SOURCE_ATLAS_EVIDENCE_REF = "hub-assets/hub-facts.json; Dhenz14/Hive-AI@3caf771dc7e63f161522b76295413818198b9641 configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 01818c3a6ade67946d53e1c2634dc27f28412a912182b0f75f9f9f2092389ec0";
+const ATLAS_SOURCE_TREE = "9f37ca9524c7bab809c7327cf141f0ec96a5f1f8";
+const EVIDENCE_BASELINE_COMMIT = "3caf771dc7e63f161522b76295413818198b9641";
+const EVIDENCE_BASELINE_TREE = "20963bcda2ed945fc8374181be59412845e9c44f";
+const SOURCE_ATLAS_EVIDENCE_REF = "hub-assets/hub-facts.json; Dhenz14/Hive-AI@e6067ff955b67a02d0c6f309f776afbb84b2d271 configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 01818c3a6ade67946d53e1c2634dc27f28412a912182b0f75f9f9f2092389ec0";
 // The exact candidate-state strings that landing is allowed to replace. A landed
 // manifest must rebuild to this baseline digest, proving the landing changed the
 // custody fields and nothing else.
 const CANDIDATE_TARGET_EVIDENCE = "Exact source-doctrine files and the strict canonical candidate audit at the evidence baseline; candidate not landed";
-const CANDIDATE_TARGET_EVIDENCE_REF = "Dhenz14/Hive-AI source baseline 472131baa2bc212a043966773bd92477c3a8a16c: AGENTS.md sha256 ceb29594ec3948243924c2c6529e19a341d0bed6f14702347a793a3d1b0a0ef6; README.md sha256 7f31169a6aa6ce05bc130b9c595688f6dba27f0cd5c397d712f3223a90d1f827; configs/external_agent_first_policy.json sha256 b142036b547c0a0b5800e428af7cb0bfa0957ecd467bf20e7c1a52847bbd258c";
+const CANDIDATE_TARGET_EVIDENCE_REF = "Dhenz14/Hive-AI source baseline 3caf771dc7e63f161522b76295413818198b9641: AGENTS.md sha256 df72fc21ad4b636fd5b2acd0fd34f8e9df45c09dc72dc0ab730f5436e3cc21d6; README.md sha256 9e4e6ae3fda1dccb5288f218e4aacb1dbd7783b8b26a51de93a19375f4f4bb90; configs/external_agent_first_policy.json sha256 65d3c36fd884a8479aedcead29241074f896c965d0d88b45ab8b85a23006f1bb; docs/decisions/0001-operator-supplied-model-harness.md sha256 1ac448998081e23a2e6d3c5d1b0c92232877fc31b9764da5350e1ce45ad912b1";
 const CANDIDATE_SERVED_CLAIM = "The canonical source candidate has not been committed or proven on a served release. No landing, main, installed-runtime, behavior, authority, or product-live claim is allowed.";
 
 export function releasedTesterAvailability(manifest, now = Date.now()) {
@@ -250,7 +250,7 @@ export function projectPrivateLedgerEntries(privateLedger) {
     && privateLedger.integrityClass === "SELF_BOUND_INTEGRITY"
     && privateLedger.independentTrustRoot === false
     && privateLedger.authorizedPublicationAttested === false
-    && Array.isArray(privateLedger.entries) && privateLedger.entries.length === 6,
+    && Array.isArray(privateLedger.entries) && privateLedger.entries.length === 7,
   "private evidence ledger envelope drifted", "PRIVATE_LEDGER_INVALID");
   const projected = privateLedger.entries.map((sourceEntry) => {
     const entry = structuredClone(sourceEntry);
@@ -303,9 +303,9 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && manifest.evidenceLedger.integrityClass === "SELF_BOUND_INTEGRITY"
     && manifest.evidenceLedger.independentTrustRoot === false
     && manifest.evidenceLedger.authorizedPublicationAttested === false
-    && manifest.evidenceLedger.bytes === 7181
-    && manifest.evidenceLedger.sha256 === "e623836c21581035e9dd4d5fb2e11abfb3a5e18baf30ef16ce527fdfc74c7f24"
-    && manifest.evidenceLedger.gitBlobOid === "249276fd196998fa6b2f3de614f550febfc394ce"
+    && manifest.evidenceLedger.bytes === 8451
+    && manifest.evidenceLedger.sha256 === "7445193e21bc87563555acba81f5ef5d781c44a5e654b4eae1742216ead7fad8"
+    && manifest.evidenceLedger.gitBlobOid === "87dd8028e70e5607102d767ee9029642c2ecc4aa"
     && manifest.evidenceLedger.headEntryId === "current-public-unknown-hold-after-evidence-expiry-v2", "evidence ledger reference drifted");
   if (ledger) {
     exactKeys(ledger, ["schema", "version", "projectionClass", "sourceLedger", "integrityClass", "independentTrustRoot", "authorizedPublicationAttested", "entries"], "public evidence projection");
@@ -316,9 +316,9 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
       && ledger.sourceLedger.schema === "hive.ecosystem.product-truth.evidence-ledger.v1"
       && ledger.sourceLedger.version === 1
       && ledger.sourceLedger.path === "hub-assets/product-truth-ledger.v1.json"
-      && ledger.sourceLedger.bytes === 4653
-      && ledger.sourceLedger.sha256 === "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259"
-      && ledger.sourceLedger.gitBlobOid === "943db0a4b30bb4dba38de3db62c5898fd9785e5c"
+      && ledger.sourceLedger.bytes === 5866
+      && ledger.sourceLedger.sha256 === "c8cd901ce6fc424549eb1be32b2316f9dc27fd4db6b2a1994bffb82bb7fae2ce"
+      && ledger.sourceLedger.gitBlobOid === "154cd81e93f8119fb263ff18851de7e57e68f7ee"
       && ledger.sourceLedger.publicationDisposition === "PRIVATE_NOT_PUBLISHED"
       && ledger.sourceLedger.projectionAlgorithm === "hive.product-truth.private-v1-to-public-v2.v1"
       && /remove every local scheme, host, port, path, query, and presentation-mode field/i.test(ledger.sourceLedger.projectionRule)
@@ -326,7 +326,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
       && ledger.integrityClass === "SELF_BOUND_INTEGRITY"
       && ledger.independentTrustRoot === false
       && ledger.authorizedPublicationAttested === false
-      && Array.isArray(ledger.entries) && ledger.entries.length === 7
+      && Array.isArray(ledger.entries) && ledger.entries.length === 8
       && ledger.entries.at(-1)?.entryId === manifest.evidenceLedger.headEntryId,
     "public evidence projection envelope drifted", "EVIDENCE_LEDGER_INVALID");
     const genesis = ledger.entries.find((entry) => entry.entryId === "canonical-candidate-genesis-v1");
@@ -386,8 +386,8 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   const canonicalManifest = manifest.canonicalManifest;
   assert(canonicalManifest.repository === "Dhenz14/Hive-AI"
     && canonicalManifest.path === "configs/public/constellation_architecture_v1.json"
-    && canonicalManifest.evidenceSourceCommit === "472131baa2bc212a043966773bd92477c3a8a16c"
-    && canonicalManifest.evidenceSourceTree === "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00"
+    && canonicalManifest.evidenceSourceCommit === EVIDENCE_BASELINE_COMMIT
+    && canonicalManifest.evidenceSourceTree === EVIDENCE_BASELINE_TREE
     && canonicalManifest.candidateSemanticSha256 === "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791"
     && canonicalManifest.candidateSha256 === "9e324cae2a6b8975d0451a1343166d5c802397595fd4b89a8d4af091574b0948"
     && canonicalManifest.candidateBytes === 31198
@@ -434,8 +434,8 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
     && architectureIdentity.answer === "SOVEREIGN_HIVEBRAIN_CONSTELLATION"
     && architectureIdentity.architecture_id === "hiveai.sovereign_hivebrain_constellation.v1"
     && architectureIdentity.architecture_version === "1.0.0"
-    && architectureIdentity.identity_material === "hiveai.sovereign_hivebrain_constellation.v1|1.0.0|472131baa2bc212a043966773bd92477c3a8a16c|1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00"
-    && architectureIdentity.identity_sha256 === "971437dd8d1474262627881e6c2d4baef9b0d705424d7eb4abd09a5d2baf5b61"
+    && architectureIdentity.identity_material === "hiveai.sovereign_hivebrain_constellation.v1|1.0.0|3caf771dc7e63f161522b76295413818198b9641|20963bcda2ed945fc8374181be59412845e9c44f"
+    && architectureIdentity.identity_sha256 === "cf202f6f9e55ccf75257413dc43387e57c8e8e0ef155929eec65a443f2ef5f8b"
     && architectureIdentity.identity_sha256 === sha256(architectureIdentity.identity_material)
     && architectureIdentity.subject_id === "target_architecture"
     && architectureIdentity.claim_plane === "TARGET", "canonical architecture answer or identity material drifted");
@@ -453,11 +453,11 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   const baselineReference = manifest.source.reviewedSemanticBaseline;
   assert(baselineReference.schema === "hive.ecosystem.product-truth.semantic-baseline.ref.v1"
     && baselineReference.path === "hub-assets/product-truth-semantic-baseline.v1.json"
-    && baselineReference.reviewedCommit === "fbc56dc4a02ba06a30a03673acbf9f183081074c"
+    && baselineReference.reviewedCommit === "6c45eb58054e9c50bd0df86f9ea8dc34c92bf688"
     && baselineReference.bytes === 621
-    && baselineReference.sha256 === "7c901753a1559048c0adb1d20b082cf687c6554d89957470e606cc6e0a54dd33"
-    && baselineReference.gitBlobOid === "3c45f40d7fd3cc6f5620f7112b835c1d2dd855fb"
-    && baselineReference.canonicalSemanticDigest === "94a306e12f793c698a60f7d45a2fbff1ac0e0bc8163201d0042a07505bf0c616"
+    && baselineReference.sha256 === "35de25896823d3d83ae29938cd3b7fcabfa738e2d827dda5ba5d841608752716"
+    && baselineReference.gitBlobOid === "c0695d03b19786c400c4d3dc98bc9b3cc9a6713f"
+    && baselineReference.canonicalSemanticDigest === "c5bc7681e65e7b374d16a4bceef75efe26ba5ac6a092db7331851c81be35cc13"
     && baselineReference.immutableRawReference === `https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/${baselineReference.reviewedCommit}/${baselineReference.path}`
     && /not verified by the browser/i.test(baselineReference.portableVerificationBoundary),
   "reviewed semantic baseline reference drifted");
@@ -465,10 +465,10 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(HEX64.test(snapshotIdentity.graphHash), "product truth graph hash is not exact");
   assert(HEX64.test(snapshotIdentity.snapshotHash), "product truth snapshot hash is not exact");
   assert(UTC_SECONDS.test(snapshotIdentity.capturedAt), "product truth capture time is not canonical UTC seconds");
-  assert(snapshotIdentity.sourceCommit === "3caf771dc7e63f161522b76295413818198b9641"
+  assert(snapshotIdentity.sourceCommit === "e6067ff955b67a02d0c6f309f776afbb84b2d271"
     && snapshotIdentity.graphHash === "57079aa1effd1841ae3509911f2213f3548cc2643dcf17b95e10a4f5a46cc13a"
-    && snapshotIdentity.snapshotHash === "03b8e3635380912d57be960b4cb8f06d90f960150ccd6f9e130c60b1d8e05cc2"
-    && snapshotIdentity.capturedAt === "2026-09-18T19:38:46Z", "mutable snapshot identity drifted");
+    && snapshotIdentity.snapshotHash === "f51ea1949e6d5d2e360bbb6104ea98eb55d61a6a24ff80ff49fcb9e893444cf5"
+    && snapshotIdentity.capturedAt === "2026-09-18T20:12:10Z", "mutable snapshot identity drifted");
   assert(semanticBaseline && validateSemanticBaseline(semanticBaseline)
     && manifest.source.reviewedSemanticBaseline.canonicalSemanticDigest === semanticBaseline.canonicalSemanticDigest,
   "reviewed semantic baseline was not supplied or digest-bound", "SEMANTIC_BASELINE_NOT_BOUND");
@@ -494,9 +494,9 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(manifest.architecture.status === "SOURCE_BOUND_DOCTRINE", "target architecture display status drifted");
   assert(/hive-runtime/i.test(manifest.architecture.servingBoundary)
     && /deterministic scaffold/i.test(manifest.architecture.servingBoundary)
-    && /No BYOM/i.test(manifest.architecture.servingBoundary)
-    && /no implicit external-checkpoint fallback/i.test(manifest.architecture.servingBoundary)
-    && /no local-model product serve path/i.test(manifest.architecture.servingBoundary)
+    && /no operator-supplied-model product lane/i.test(manifest.architecture.servingBoundary)
+    && /no implicit external-checkpoint rescue/i.test(manifest.architecture.servingBoundary)
+    && /no outside model on the serve path/i.test(manifest.architecture.servingBoundary)
     && /explicitly user-directed external agent may be the inbound caller/i.test(manifest.architecture.servingBoundary)
     && /not a hidden Hive-selected backend fallback/i.test(manifest.architecture.servingBoundary)
     && /None of this attests an installed runtime or observed behaviou?r/i.test(manifest.architecture.servingBoundary), "serving boundary lost required qualifications");
@@ -569,12 +569,12 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
 
   const target = manifest.truth_subjects.target_architecture;
   exactKeys(target, [
-    ...SUBJECT_BASE_KEYS, "productLaneByom", "legacyApiNamesPresent", "implicitExternalFallback",
+    ...SUBJECT_BASE_KEYS, "productLaneOperatorSuppliedModel", "legacyApiNamesPresent", "implicitExternalFallback",
     "outboundCentralizedModelDependency", "externalCheckpointFallback", "localModelProductServePath",
     "externalAgentIsClientNotBackend", "directPersonClientsSupported", "customNeuralArtifactsExist",
     "bareNoLlmClaimAllowed", "defaultPath", "inboundGenerationDoctrineAtPin", "publicGenerationExplanation",
   ], "target architecture subject");
-  assert(target.productLaneByom === false
+  assert(target.productLaneOperatorSuppliedModel === false
     && target.legacyApiNamesPresent === true
     && target.implicitExternalFallback === false
     && target.outboundCentralizedModelDependency === false
@@ -899,7 +899,7 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   ], "registry claim cut");
   assert(registry.status === "HOLD"
     && registry.sourceCommit === EVIDENCE_BASELINE_COMMIT
-    && registry.derivedAt === "2026-08-23T18:46:30Z"
+    && registry.derivedAt === "2026-09-18T20:08:45Z"
     && registry.matchingRows === tip.matchingRows
     && registry.effectiveDisposition === "HOLD"
     && registry.executeAuthorized === false
@@ -1301,11 +1301,11 @@ if (isMain) {
   // The landing this checkout is built to expect. Pinned so a bare run still verifies a
   // landed manifest against exact independent identities instead of skipping the check.
   const PINNED_LANDING = Object.freeze({
-    commit: "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
-    tree: "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
-    sha256: "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056",
-    bytes: 49342,
-    blobOid: "c1036d2fc877e058965688fe8da5097576a37826",
+    commit: "e6067ff955b67a02d0c6f309f776afbb84b2d271",
+    tree: "9f37ca9524c7bab809c7327cf141f0ec96a5f1f8",
+    sha256: "965b8a604c2cf235bc53571afe75662686aefcbb92fabef08c66cfaa06224583",
+    bytes: 49492,
+    blobOid: "337ffab25d7fd58785e0cf129f856495778d324b",
   });
   const landingFlags = ["--expect-landing-commit", "--expect-landing-tree", "--expect-landing-sha256", "--expect-landing-bytes", "--expect-landing-blob"];
   const landingFlagCount = landingFlags.filter((flag) => process.argv.includes(flag)).length;

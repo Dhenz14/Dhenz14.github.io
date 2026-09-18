@@ -26,7 +26,7 @@ import {
   snapshotIdentityChanged,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v27";
+} from "./galaxy-core.mjs?v=galaxy-stark-v28";
 import {
   IDE_RELEASE_LATEST_BYTES,
   IDE_RELEASE_LATEST_MAX_BYTES,
@@ -37,11 +37,11 @@ import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
   validateIdeReleaseTruthManifest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v27";
+} from "./ide-release-core.mjs?v=galaxy-stark-v28";
 import {
   parseJsonStrict,
-} from "./strict-json.mjs?v=galaxy-stark-v27";
-import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v27";
+} from "./strict-json.mjs?v=galaxy-stark-v28";
+import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v28";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 1;
 const HUB_FACTS_MAX_BYTES = 512 * 1024;
@@ -740,7 +740,7 @@ function enforceLocalHandoffBoundary() {
 }
 
 const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v2";
-const PRODUCT_TRUTH_PROJECTION_DIGEST = "1d214bd2d51f1de1125906472e003f923978987d103734b6812849d36fcd3662";
+const PRODUCT_TRUTH_PROJECTION_DIGEST = "06db23a666a9386da80196d9680d7f2405bafab2a242737ce2020ef8a78c8d4e";
 const PRODUCT_TRUTH_MAX_BYTES = 128 * 1024;
 const PRODUCT_TRUTH_SUBJECTS = Object.freeze({
   target_architecture: { label: "Target architecture", kind: "ARCHITECTURE_TARGET", status: "SOURCE_BOUND_DOCTRINE", plane: "TARGET" },
@@ -762,20 +762,20 @@ const PRODUCT_TRUTH_SUBJECT_BASE_KEYS = Object.freeze([
 // The atlas advances with main; the evidence baseline is where the doctrine files were
 // hashed. They are separate planes and may legitimately differ, so each is pinned against
 // its own producer rather than being forced equal to the other.
-const EVIDENCE_BASELINE_COMMIT = "472131baa2bc212a043966773bd92477c3a8a16c";
-const ATLAS_SOURCE_TREE = "20963bcda2ed945fc8374181be59412845e9c44f";
+const EVIDENCE_BASELINE_COMMIT = "3caf771dc7e63f161522b76295413818198b9641";
+const ATLAS_SOURCE_TREE = "9f37ca9524c7bab809c7327cf141f0ec96a5f1f8";
 const CANONICAL_GENESIS_SEMANTIC_SHA256 = "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791";
 const CANONICAL_GENESIS_SHA256 = "9e324cae2a6b8975d0451a1343166d5c802397595fd4b89a8d4af091574b0948";
 const CANONICAL_GENESIS_BYTES = 31198;
 const CANONICAL_GENESIS_BLOB = "3cc7a08282dedaeb7c07a193dd3cc8a4a34124d6";
-const CANONICAL_MANIFEST_SHA256 = "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056";
-const CANONICAL_MANIFEST_BYTES = 49342;
-const CANONICAL_MANIFEST_BLOB = "c1036d2fc877e058965688fe8da5097576a37826";
-const CANONICAL_LANDED_COMMIT = "0ab04f6c19ffd41bb162bea674e77853fb27cc0e";
-const CANONICAL_LANDED_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
-const TARGET_SERVING_BOUNDARY = "The source-bound target path is hive-runtime: a constellation-local in-process deterministic scaffold. The doctrine has no BYOM product lane, no implicit external-checkpoint fallback, and no local-model product serve path. An explicitly user-directed external agent may be the inbound caller; that is not a hidden Hive-selected backend fallback. None of this attests an installed runtime or observed behavior.";
+const CANONICAL_MANIFEST_SHA256 = "965b8a604c2cf235bc53571afe75662686aefcbb92fabef08c66cfaa06224583";
+const CANONICAL_MANIFEST_BYTES = 49492;
+const CANONICAL_MANIFEST_BLOB = "337ffab25d7fd58785e0cf129f856495778d324b";
+const CANONICAL_LANDED_COMMIT = "e6067ff955b67a02d0c6f309f776afbb84b2d271";
+const CANONICAL_LANDED_TREE = "9f37ca9524c7bab809c7327cf141f0ec96a5f1f8";
+const TARGET_SERVING_BOUNDARY = "The source-bound target path is hive-runtime: a constellation-local in-process deterministic scaffold. The doctrine has no operator-supplied-model product lane, no implicit external-checkpoint rescue, and no outside model on the serve path. An explicitly user-directed external agent may be the inbound caller; that is not a hidden Hive-selected backend fallback. None of this attests an installed runtime or observed behavior.";
 const ARCHITECTURE_LIVE_BOUNDARY = "The public atlas and this projection describe source-bound architecture. The explicit local presentation handoff at 127.0.0.1:5002 is UNKNOWN_UNPROBED_HOLD. A dedicated Operator Body is expected as a distinct 127.0.0.1:5003 service but is HOLD_NOT_INDEPENDENTLY_OBSERVED and disabled here; it is never aliased to the presentation route. Chat is WAIT. Installed runtime, route availability, observed behavior, and product-live state require independent evidence.";
-const CURRENT_LEGACY_BOUNDARY = "BYOM is RETIRED and implicit external-checkpoint fallback is FORBIDDEN in the source-bound target doctrine. At 2026-08-23T18:46:30Z, Electron-removal and Tauri/WebView2 source were observed on the unprotected Hive IDE candidate branch hive/wt/theyc/ide-electron-final-20260822 at f459e85; at that same observation, the candidate was not present at the then-observed default tip. Current landing and current default-tip relation are UNKNOWN/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK. Tester.5 exact package contents are UNKNOWN_NOT_INSPECTED. The prior claim that tester.5 still bundles Electron is SUPERSEDED_REVOKED_UNSUPPORTED. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST; tester.6 publication is held.";
+const CURRENT_LEGACY_BOUNDARY = "The operator-supplied-model product lane is RETIRED and implicit external-checkpoint rescue is FORBIDDEN in the source-bound target doctrine. At 2026-08-23T18:46:30Z, Electron-removal and Tauri/WebView2 source were observed on the unprotected Hive IDE candidate branch hive/wt/theyc/ide-electron-final-20260822 at f459e85; at that same observation, the candidate was not present at the then-observed default tip. Current landing and current default-tip relation are UNKNOWN/HOLD_PENDING_FRESH_OWNER_REPOSITORY_READBACK. Tester.5 exact package contents are UNKNOWN_NOT_INSPECTED. The prior claim that tester.5 still bundles Electron is SUPERSEDED_REVOKED_UNSUPPORTED. Docker client requirements are NOT_ADJUDICATED_BY_THIS_MANIFEST; tester.6 publication is held.";
 const NO_LLM_BOUNDARY = "At the evidence baseline, doctrine permits an authorized external agent such as Codex or Claude to supply fluent generation as the explicit inbound caller while Hive is assigned local retrieval, routing, verification, and proof gating. The declared route is not an implicit outbound fallback selected by Hive, and it is not current runtime or network-egress proof.";
 let productTruthManifest = null;
 let productTruthLedger = null;
@@ -841,23 +841,23 @@ async function validateProductTruthManifest(manifest, snapshot, ledger, semantic
     && manifest.evidenceLedger.integrityClass === "SELF_BOUND_INTEGRITY"
     && manifest.evidenceLedger.independentTrustRoot === false
     && manifest.evidenceLedger.authorizedPublicationAttested === false
-    && manifest.evidenceLedger.bytes === 7181
-    && manifest.evidenceLedger.sha256 === "e623836c21581035e9dd4d5fb2e11abfb3a5e18baf30ef16ce527fdfc74c7f24"
-    && manifest.evidenceLedger.gitBlobOid === "249276fd196998fa6b2f3de614f550febfc394ce"
+    && manifest.evidenceLedger.bytes === 8451
+    && manifest.evidenceLedger.sha256 === "7445193e21bc87563555acba81f5ef5d781c44a5e654b4eae1742216ead7fad8"
+    && manifest.evidenceLedger.gitBlobOid === "87dd8028e70e5607102d767ee9029642c2ecc4aa"
     && manifest.evidenceLedger.headEntryId === "current-public-unknown-hold-after-evidence-expiry-v2", "evidence ledger reference rejected");
   assertProductTruth(ledger?.schema === "hive.ecosystem.product-truth.public-evidence-projection.v2"
     && ledger.version === 2
     && ledger.projectionClass === "PUBLIC_SANITIZED_HISTORICAL_EVIDENCE_WITH_CURRENT_HOLD"
     && ledger.sourceLedger?.publicationDisposition === "PRIVATE_NOT_PUBLISHED"
     && ledger.sourceLedger?.path === "hub-assets/product-truth-ledger.v1.json"
-    && ledger.sourceLedger?.bytes === 4653
-    && ledger.sourceLedger?.sha256 === "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259"
-    && ledger.sourceLedger?.gitBlobOid === "943db0a4b30bb4dba38de3db62c5898fd9785e5c"
+    && ledger.sourceLedger?.bytes === 5866
+    && ledger.sourceLedger?.sha256 === "c8cd901ce6fc424549eb1be32b2316f9dc27fd4db6b2a1994bffb82bb7fae2ce"
+    && ledger.sourceLedger?.gitBlobOid === "154cd81e93f8119fb263ff18851de7e57e68f7ee"
     && ledger.sourceLedger?.projectionAlgorithm === "hive.product-truth.private-v1-to-public-v2.v1"
     && ledger.integrityClass === "SELF_BOUND_INTEGRITY"
     && ledger.independentTrustRoot === false
     && ledger.authorizedPublicationAttested === false
-    && Array.isArray(ledger.entries) && ledger.entries.length === 7
+    && Array.isArray(ledger.entries) && ledger.entries.length === 8
     && ledger.entries.at(-1)?.entryId === manifest.evidenceLedger.headEntryId, "evidence ledger rejected");
   const genesisEntry = ledger.entries.find((entry) => entry.entryId === "canonical-candidate-genesis-v1");
   assertProductTruth(genesisEntry?.status === "IMMUTABLE_CONTENT_ADDRESSED_CANDIDATE_GENESIS_PROVENANCE"
@@ -899,10 +899,10 @@ async function validateProductTruthManifest(manifest, snapshot, ledger, semantic
     && semanticBaseline.canonicalSemanticDigest === await sha256Text(canonicalJson(semanticProjection))
     && manifest.source.reviewedSemanticBaseline.schema === "hive.ecosystem.product-truth.semantic-baseline.ref.v1"
     && manifest.source.reviewedSemanticBaseline.path === "hub-assets/product-truth-semantic-baseline.v1.json"
-    && manifest.source.reviewedSemanticBaseline.reviewedCommit === "fbc56dc4a02ba06a30a03673acbf9f183081074c"
+    && manifest.source.reviewedSemanticBaseline.reviewedCommit === "6c45eb58054e9c50bd0df86f9ea8dc34c92bf688"
     && manifest.source.reviewedSemanticBaseline.bytes === 621
-    && manifest.source.reviewedSemanticBaseline.sha256 === "7c901753a1559048c0adb1d20b082cf687c6554d89957470e606cc6e0a54dd33"
-    && manifest.source.reviewedSemanticBaseline.gitBlobOid === "3c45f40d7fd3cc6f5620f7112b835c1d2dd855fb"
+    && manifest.source.reviewedSemanticBaseline.sha256 === "35de25896823d3d83ae29938cd3b7fcabfa738e2d827dda5ba5d841608752716"
+    && manifest.source.reviewedSemanticBaseline.gitBlobOid === "c0695d03b19786c400c4d3dc98bc9b3cc9a6713f"
     && manifest.source.reviewedSemanticBaseline.canonicalSemanticDigest === semanticBaseline.canonicalSemanticDigest
     && /not verified by the browser/i.test(manifest.source.reviewedSemanticBaseline.portableVerificationBoundary), "reviewed semantic baseline identity rejected");
   assertProductTruth(manifest.source.currentSnapshotIdentity.sourceCommit === snapshot.hiveAi.sourceCommit
@@ -929,7 +929,7 @@ async function validateProductTruthManifest(manifest, snapshot, ledger, semantic
     canonicalManifest.repository === "Dhenz14/Hive-AI"
       && canonicalManifest.path === "configs/public/constellation_architecture_v1.json"
       && canonicalManifest.evidenceSourceCommit === EVIDENCE_BASELINE_COMMIT
-      && canonicalManifest.evidenceSourceTree === "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00"
+      && canonicalManifest.evidenceSourceTree === "20963bcda2ed945fc8374181be59412845e9c44f"
       && canonicalManifest.candidateSemanticSha256 === CANONICAL_GENESIS_SEMANTIC_SHA256
       && canonicalManifest.candidateSha256 === CANONICAL_GENESIS_SHA256
       && canonicalManifest.candidateBytes === CANONICAL_GENESIS_BYTES
@@ -974,8 +974,8 @@ async function validateProductTruthManifest(manifest, snapshot, ledger, semantic
       && identity.answer === "SOVEREIGN_HIVEBRAIN_CONSTELLATION"
       && identity.architecture_id === "hiveai.sovereign_hivebrain_constellation.v1"
       && identity.architecture_version === "1.0.0"
-      && identity.identity_material === "hiveai.sovereign_hivebrain_constellation.v1|1.0.0|472131baa2bc212a043966773bd92477c3a8a16c|1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00"
-      && identity.identity_sha256 === "971437dd8d1474262627881e6c2d4baef9b0d705424d7eb4abd09a5d2baf5b61"
+      && identity.identity_material === "hiveai.sovereign_hivebrain_constellation.v1|1.0.0|3caf771dc7e63f161522b76295413818198b9641|20963bcda2ed945fc8374181be59412845e9c44f"
+      && identity.identity_sha256 === "cf202f6f9e55ccf75257413dc43387e57c8e8e0ef155929eec65a443f2ef5f8b"
       && identity.subject_id === "target_architecture"
       && identity.claim_plane === "TARGET",
     "architecture identity rejected",
@@ -994,7 +994,7 @@ async function validateProductTruthManifest(manifest, snapshot, ledger, semantic
   const subjects = manifest.truth_subjects;
   assertProductTruthKeys(subjects, Object.keys(PRODUCT_TRUTH_SUBJECTS), "truth subject set");
   const subjectSpecificKeys = {
-    target_architecture: ["productLaneByom", "legacyApiNamesPresent", "implicitExternalFallback", "outboundCentralizedModelDependency", "externalCheckpointFallback", "localModelProductServePath", "externalAgentIsClientNotBackend", "directPersonClientsSupported", "customNeuralArtifactsExist", "bareNoLlmClaimAllowed", "defaultPath", "inboundGenerationDoctrineAtPin", "publicGenerationExplanation"],
+    target_architecture: ["productLaneOperatorSuppliedModel", "legacyApiNamesPresent", "implicitExternalFallback", "outboundCentralizedModelDependency", "externalCheckpointFallback", "localModelProductServePath", "externalAgentIsClientNotBackend", "directPersonClientsSupported", "customNeuralArtifactsExist", "bareNoLlmClaimAllowed", "defaultPath", "inboundGenerationDoctrineAtPin", "publicGenerationExplanation"],
     source_atlas: ["sourceCommit", "sourceTree", "graphHash", "snapshotHash", "neurons", "trainable", "deterministic", "divisions", "families", "rowBackedTwitchProofs"],
     tip_influence: ["matchingRows", "effectiveDisposition", "executeAuthorized", "permanentProductTurnWire", "reason"],
     fleet_halos: ["declared", "admitted", "indexed", "runtime", "served", "productLive"],
@@ -1024,7 +1024,7 @@ async function validateProductTruthManifest(manifest, snapshot, ledger, semantic
 
   const target = subjects.target_architecture;
   assertProductTruth(
-    target.productLaneByom === false && target.legacyApiNamesPresent === true && target.implicitExternalFallback === false
+    target.productLaneOperatorSuppliedModel === false && target.legacyApiNamesPresent === true && target.implicitExternalFallback === false
       && target.outboundCentralizedModelDependency === false && target.externalCheckpointFallback === false
       && target.localModelProductServePath === false && target.externalAgentIsClientNotBackend === true
       && target.directPersonClientsSupported === true && target.customNeuralArtifactsExist === true
@@ -1045,7 +1045,7 @@ async function validateProductTruthManifest(manifest, snapshot, ledger, semantic
   assertProductTruth(tip.matchingRows === 37 && tip.effectiveDisposition === "HOLD" && tip.executeAuthorized === false && tip.permanentProductTurnWire === false && tip.reason === "TIP_FUSE_CODE_BINDING_BYTES_MISMATCH_FAIL_CLOSED", "TIP source-predicate ceiling rejected");
   const halos = subjects.fleet_halos;
   assertProductTruth(halos.declared === 640 && halos.admitted === 0 && halos.indexed === 0 && halos.runtime === false && halos.served === false && halos.productLive === false, "halo hard-off ceiling rejected");
-  assertProductTruth(/9fd9d11b2cf595b51e80b05ba4ec76d7d07a55023159756127f6cf61a17d3e49/.test(halos.evidenceRef) && /ef804428576068626aa85230821633daf04371ec23f4e4540aa5aff0d408396c/.test(halos.evidenceRef), "halo evidence refs rejected");
+  assertProductTruth(/9fd9d11b2cf595b51e80b05ba4ec76d7d07a55023159756127f6cf61a17d3e49/.test(halos.evidenceRef) && /c385f6ff2690d77fd71202b37f3f8f7cbc770015cfb8c26e03ac52553fe61f86/.test(halos.evidenceRef), "halo evidence refs rejected");
 
   const tester5 = subjects.released_tester_5;
   assertProductTruthKeys(tester5.historicalEvidence, ["outerExecutable", "receiptCustody"], "tester.5 historical planes");
@@ -1118,7 +1118,7 @@ async function validateProductTruthManifest(manifest, snapshot, ledger, semantic
 
   const registry = manifest.registryClaimCut;
   assertProductTruthKeys(registry, ["status", "sourceCommit", "derivedAt", "authority", "matchingRows", "effectiveDisposition", "executeAuthorized", "permanentProductTurnWire", "reason", "boundary"], "registry claim cut");
-  assertProductTruth(registry.status === "HOLD" && registry.sourceCommit === EVIDENCE_BASELINE_COMMIT && registry.derivedAt === "2026-08-23T18:46:30Z" && registry.authority === "full_catalog_grant_bound_influence_accounting_via_agent_query" && registry.matchingRows === 37 && registry.effectiveDisposition === "HOLD" && registry.executeAuthorized === false && registry.permanentProductTurnWire === false && registry.reason === tip.reason, "registry fixed cut rejected");
+  assertProductTruth(registry.status === "HOLD" && registry.sourceCommit === EVIDENCE_BASELINE_COMMIT && registry.derivedAt === "2026-09-18T20:08:45Z" && registry.authority === "full_catalog_grant_bound_influence_accounting_via_agent_query" && registry.matchingRows === 37 && registry.effectiveDisposition === "HOLD" && registry.executeAuthorized === false && registry.permanentProductTurnWire === false && registry.reason === tip.reason, "registry fixed cut rejected");
 
   const platformIds = "windows-x64-remote|windows-wsl-design|linux-source|linux-publication|macos-publication";
   assertProductTruth(Array.isArray(manifest.platforms) && manifest.platforms.map((item) => item.id).join("|") === platformIds, "platform set rejected");
@@ -1273,8 +1273,8 @@ function wireProductTruthManifest() {
     acquireStrictJson({
       url: "/hub-assets/product-truth-ledger.public.v2.json",
       maximumBytes: 32 * 1024,
-      expectedBytes: 7181,
-      expectedSha256: "e623836c21581035e9dd4d5fb2e11abfb3a5e18baf30ef16ce527fdfc74c7f24",
+      expectedBytes: 8451,
+      expectedSha256: "7445193e21bc87563555acba81f5ef5d781c44a5e654b4eae1742216ead7fad8",
       sha256: sha256Bytes,
       label: "product truth evidence ledger",
     }),
@@ -1282,7 +1282,7 @@ function wireProductTruthManifest() {
       url: "/hub-assets/product-truth-semantic-baseline.v1.json",
       maximumBytes: 4 * 1024,
       expectedBytes: 621,
-      expectedSha256: "7c901753a1559048c0adb1d20b082cf687c6554d89957470e606cc6e0a54dd33",
+      expectedSha256: "35de25896823d3d83ae29938cd3b7fcabfa738e2d827dda5ba5d841608752716",
       sha256: sha256Bytes,
       label: "reviewed semantic baseline",
     }),

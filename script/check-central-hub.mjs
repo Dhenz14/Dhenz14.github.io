@@ -436,11 +436,11 @@ if (landingFlagCount !== 0 && landingFlagCount !== landingFlags.length) {
 // manifest it is checking. A manifest that claims a different landing must fail even
 // when no flags are supplied, so the default run is the strict one.
 const PINNED_LANDING = Object.freeze({
-  commit: "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
-  tree: "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
-  sha256: "a4a336b47c3a28da3c08c79b07ff2ef92702dc35c09f8a330df74368faf7f056",
-  bytes: 49342,
-  blobOid: "c1036d2fc877e058965688fe8da5097576a37826",
+  commit: "e6067ff955b67a02d0c6f309f776afbb84b2d271",
+  tree: "9f37ca9524c7bab809c7327cf141f0ec96a5f1f8",
+  sha256: "965b8a604c2cf235bc53571afe75662686aefcbb92fabef08c66cfaa06224583",
+  bytes: 49492,
+  blobOid: "337ffab25d7fd58785e0cf129f856495778d324b",
 });
 const expectedLanding = landingFlagCount
   ? {
@@ -716,7 +716,7 @@ const heroCopyStart = html.indexOf('<div class="hero-copy"');
 const heroCopyEnd = html.indexOf('<div class="hero-system"', heroCopyStart);
 if (heroCopyStart < 0 || heroCopyEnd <= heroCopyStart) throw new Error("bounded opening hero copy is missing");
 const openingHeroCopy = html.slice(heroCopyStart, heroCopyEnd);
-requireNoMatch(openingHeroCopy, /\b(?:H10|BYOM|tester\.\d+|SHA-256|workflow history)\b|472131baa|0ab04f6c/i, "plain-language opening before forensic detail");
+requireNoMatch(openingHeroCopy, /\b(?:H10|BYOM|tester\.\d+|SHA-256|workflow history)\b|472131baa|0ab04f6c|3caf771d|e6067ff9/i, "plain-language opening before forensic detail");
 requireNoMatch(html, /class="outcome-grid"/, "duplicate post-hero Ask/Build/Improve outcome grid");
 requireMatch(html, /class="roadmap-rail"[\s\S]*SOURCE-PRESENT[\s\S]*source-authored Constellation Atlas[\s\S]*NEXT PROOF GATES[\s\S]*installed-process evidence[\s\S]*LONG-TERM TARGET[\s\S]*Hive-native generation[\s\S]*explicitly operator-invoked caller/i, "source-present proof-gates long-term roadmap");
 requireMatch(html, /class="hero-status-rail"[\s\S]*SOURCE ATLAS PRESENT · SNAPSHOT FRESHNESS HOLD · RUNTIME NOT ATTESTED[\s\S]*LOCAL BODY LINK · USER INITIATED · OPERATOR HOLD · CHAT WAIT · IDE WAIT · HIVEPOA QUARANTINED/, "compact first-screen truth rail");
@@ -735,12 +735,12 @@ if (constellationIdentityIndex < 0 || publicGalaxyIndex < 0 || constellationIden
   throw new Error("HiveBrain Constellation identity must be explained before the public galaxy");
 }
 requireMatch(html, /id="architecture"[^>]+data-current-legacy-boundary/, "current-versus-legacy architecture section");
-requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ 0ab04f6c · captured 2026-08-23 22:53:32 UTC[\s\S]*640[\s\S]*cataloged capabilities[\s\S]*636[\s\S]*unique row-backed Twitch records[\s\S]*448[\s\S]*trainable-classified identities/i, "published source snapshot metrics");
-requireMatch(html, /data-metaphor-definitions[\s\S]*<h3>Neuron<\/h3>[\s\S]*448 trainable-classified[\s\S]*192 deterministic-classified[\s\S]*<h3>Halo<\/h3>[\s\S]*EVIDENCE BASELINE @ 472131baa:[\s\S]*zero populated Halo sections and zero indexes/i, "separately cut neuron and Halo evidence ceilings");
+requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ e6067ff9 · captured 2026-09-18 20:12:10 UTC[\s\S]*640[\s\S]*cataloged capabilities[\s\S]*636[\s\S]*unique row-backed Twitch records[\s\S]*448[\s\S]*trainable-classified identities/i, "published source snapshot metrics");
+requireMatch(html, /data-metaphor-definitions[\s\S]*<h3>Neuron<\/h3>[\s\S]*448 trainable-classified[\s\S]*192 deterministic-classified[\s\S]*<h3>Halo<\/h3>[\s\S]*EVIDENCE BASELINE @ 3caf771dc:[\s\S]*zero populated Halo sections and zero indexes/i, "separately cut neuron and Halo evidence ceilings");
 const publishedSnapshotSummary = boundedBlock(html, '<article class="constellation-core"', '<div class="doctrine-grid"', "published-snapshot summary");
 requireNoMatch(publishedSnapshotSummary, /\b37\b/, "misleading baseline influence count in published-snapshot summary");
 requireMatch(html, /data-architecture-live-boundary[\s\S]*Source architecture[\s\S]*Presentation body[\s\S]*No local runtime PASS is claimed[\s\S]*Dedicated Operator body[\s\S]*127\.0\.0\.1:5003[\s\S]*not been independently observed or deployed/i, "architecture-versus-local surfaces boundary");
-requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ 0ab04f6c · HISTORICAL CAPTURE[\s\S]*freshness HOLD[\s\S]*SUBJECT-SCOPED DISPOSITIONS[\s\S]*IDE landing is currently UNKNOWN \/ HOLD[\s\S]*2026-08-23 18:46:30 UTC[\s\S]*hive\/wt\/theyc\/ide-electron-final-20260822[\s\S]*then-observed default tip[\s\S]*41df9be[\s\S]*fresh owner-repository readback[\s\S]*UNKNOWN_NOT_INSPECTED[\s\S]*GENERATION BOUNDARY · HOLD[\s\S]*blind evaluation, causal ablation, independent verification, and rollback-safe promotion[\s\S]*Full source-doctrine term[\s\S]*centralized AI-as-user traffic until H10/i, "subject-scoped historical IDE and generation boundary translation");
+requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ e6067ff9 · HISTORICAL CAPTURE[\s\S]*freshness HOLD[\s\S]*SUBJECT-SCOPED DISPOSITIONS[\s\S]*IDE landing is currently UNKNOWN \/ HOLD[\s\S]*2026-08-23 18:46:30 UTC[\s\S]*hive\/wt\/theyc\/ide-electron-final-20260822[\s\S]*then-observed default tip[\s\S]*41df9be[\s\S]*fresh owner-repository readback[\s\S]*UNKNOWN_NOT_INSPECTED[\s\S]*GENERATION BOUNDARY · HOLD[\s\S]*blind evaluation, causal ablation, independent verification, and rollback-safe promotion[\s\S]*Full source-doctrine term[\s\S]*centralized AI-as-user traffic until H10/i, "subject-scoped historical IDE and generation boundary translation");
 requireNoMatch(html, /Electron removal remains unlanded|current default tip is 41df9be/i, "unfresh IDE landing or default-tip assertion");
 requireNoMatch(html, /current Hive IDE trunk uses Tauri|Electron is removed on the current Hive IDE trunk|tester\.5[^<]{0,120}bundles Electron/i, "unsupported current-trunk or package-content claim");
 requireMatch(html, /id="product-truth"[^>]+data-product-truth[^>]+data-state="checking"/, "fail-closed Product Truth root");
@@ -827,7 +827,7 @@ const ideDownloadBlock = boundedBlock(html, '<section class="ide-release', '<sec
 requireMatch(ideDownloadBlock, /Hive IDE integration \/ WAIT[\s\S]*Hive IDE is not available from this public candidate\.[\s\S]*Hive IDE integration is not available from this public candidate\. Status: WAIT\./, "IDE effective WAIT headline");
 requireMatch(ideDownloadBlock, /historical independent observation[\s\S]*outer bytes[\s\S]*evidence window has expired[\s\S]*Current package identity, retrievability, installation, runtime, and product state remain[\s\S]*(?:UNKNOWN|HOLD)/i, "expired outer-byte observation scoped to historical bytes only");
 requireMatch(ideDownloadBlock, /authorizes no download\./, "evidence-only download boundary");
-requireMatch(ideDownloadBlock, /DIFFERENT GENERATION[\s\S]*Tester\.5 must not be presented as realizing the mapped HiveBrain Constellation[\s\S]*0ab04f6c[\s\S]*a0fe6483/, "tester/atlas generation mismatch disclosed at the download surface");
+requireMatch(ideDownloadBlock, /DIFFERENT GENERATION[\s\S]*Tester\.5 must not be presented as realizing the mapped HiveBrain Constellation[\s\S]*e6067ff9[\s\S]*a0fe6483/, "tester/atlas generation mismatch disclosed at the download surface");
 requireMatch(ideDownloadBlock, /tester\.6 absence\/readback evidence is also expired[\s\S]*publication remains a separate HOLD pending fresh evidence and authority/i, "expired tester.6 readback remains visible and held");
 requireMatch(ideDownloadBlock, /EVIDENCE LADDER[\s\S]*Remote outer bytes[\s\S]*HISTORICAL \/ EXPIRED[\s\S]*Publisher authentication[\s\S]*NOT SIGNED[\s\S]*Package contents[\s\S]*UNKNOWN[\s\S]*Installation \+ runtime[\s\S]*UNKNOWN[\s\S]*Public functional testing[\s\S]*HOLD/, "five-plane expired evidence ladder");
 requireMatch(html, /A separate, unexpired operator authorization is required before this truth contract can expose an active download\./, "download requires separate operator authority");
@@ -925,7 +925,7 @@ for (const [attribute, expectedCount] of [["data-ide-download", 1], ["data-ide-s
 requireNoMatch(html, /galaxy-inspector["'][^>]*aria-live/, "hover-driven live-region noise");
 requireMatch(js, /PRODUCT_TRUTH_SCHEMA = "hive\.ecosystem\.product-truth\.public-projection\.v2"/, "browser Product Truth schema gate");
 requireMatch(js, /PRODUCT_TRUTH_SUBJECTS[\s\S]*target_architecture:[\s\S]*SOURCE_BOUND_DOCTRINE[\s\S]*source_atlas:[\s\S]*SOURCE_PRESENT_AT_PIN[\s\S]*tip_influence:[\s\S]*SOURCE_GOVERNED_HOLD[\s\S]*fleet_halos:[\s\S]*DECLARED_HARD_OFF[\s\S]*released_tester_5:[\s\S]*EVIDENCE_EXPIRED_HELD[\s\S]*candidate_tester_6_publication:[\s\S]*EVIDENCE_EXPIRED_HELD[\s\S]*windows_wsl_candidate_design:[\s\S]*DECLARED_AT_PIN_BY_NON_DURABLE_EXTERNAL_OBSERVATION[\s\S]*linux_hive_ide_publication:[\s\S]*UNKNOWN_NO_ADMISSIBLE_PUBLICATION_OBSERVATION[\s\S]*macos_hive_ide_publication:[\s\S]*HELD_MISSING_ADMISSIBLE_PUBLICATION_OBSERVATION[\s\S]*installed_runtime:[\s\S]*UNKNOWN[\s\S]*observed_behavior:[\s\S]*UNKNOWN/, "browser subject-scoped truth status gate");
-requireMatch(js, /WHAT_ARCHITECTURE_AM_I\?[\s\S]*SOVEREIGN_HIVEBRAIN_CONSTELLATION[\s\S]*hiveai\.sovereign_hivebrain_constellation\.v1[\s\S]*971437dd8d1474262627881e6c2d4baef9b0d705424d7eb4abd09a5d2baf5b61/, "browser canonical architecture identity gate");
+requireMatch(js, /WHAT_ARCHITECTURE_AM_I\?[\s\S]*SOVEREIGN_HIVEBRAIN_CONSTELLATION[\s\S]*hiveai\.sovereign_hivebrain_constellation\.v1[\s\S]*cf202f6f9e55ccf75257413dc43387e57c8e8e0ef155929eec65a443f2ef5f8b/, "browser canonical architecture identity gate");
 // Order-free: the browser must independently gate every piece of subject evidence
 // metadata, including the newer doesNotProve and recertification contracts.
 for (const field of ["evidence", "claim", "invalidators", "doesNotProve", "evidenceRef", "verifiedAt", "validUntil", "freshness", "recertification"]) {
@@ -952,7 +952,7 @@ requireMatch(js, /EVIDENCE EXPIRED · integration WAIT · every action held/, "e
 requireMatch(js, /Hive IDE integration is not available from this public candidate\. Status: WAIT\./, "expired tester public WAIT boundary");
 requireMatch(js, /Current retrievability and installer identity are UNKNOWN; no download, install, or test action is authorized\./, "expired tester current-state ceiling");
 requireMatch(js, /bindingDigest[\s\S]*recursive-key-sort-json-utf8[\s\S]*delete projection\.bindingDigest[\s\S]*sha256Text\(canonicalJson\(projection\)\)[\s\S]*projection digest mismatch/, "browser full-projection digest gate");
-requireMatch(js, /PRODUCT_TRUTH_MAX_BYTES = 128 \* 1024[\s\S]*acquireStrictJson[\s\S]*\/hub-assets\/product-truth\.json[\s\S]*\/hub-assets\/product-truth-ledger\.public\.v2\.json[\s\S]*expectedBytes: 7181[\s\S]*expectedSha256: "e623836c21581035e9dd4d5fb2e11abfb3a5e18baf30ef16ce527fdfc74c7f24"[\s\S]*\/hub-assets\/product-truth-semantic-baseline\.v1\.json[\s\S]*expectedBytes: 621[\s\S]*blockProductTruth/, "shared strict fail-closed Product Truth, ledger, and semantic baseline acquisition");
+requireMatch(js, /PRODUCT_TRUTH_MAX_BYTES = 128 \* 1024[\s\S]*acquireStrictJson[\s\S]*\/hub-assets\/product-truth\.json[\s\S]*\/hub-assets\/product-truth-ledger\.public\.v2\.json[\s\S]*expectedBytes: 8451[\s\S]*expectedSha256: "7445193e21bc87563555acba81f5ef5d781c44a5e654b4eae1742216ead7fad8"[\s\S]*\/hub-assets\/product-truth-semantic-baseline\.v1\.json[\s\S]*expectedBytes: 621[\s\S]*blockProductTruth/, "shared strict fail-closed Product Truth, ledger, and semantic baseline acquisition");
 const csp = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i;
 const expectedPolicies = new Map([
   ["index.html", "default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; manifest-src 'self'; media-src 'none'; object-src 'none'; script-src 'self' 'sha256-l94tK8KZPMJt+24bRg6GwPWYVibNwz/ut7jTWq7f1Lw='; style-src 'self' 'unsafe-inline'; worker-src 'none'"],
@@ -977,7 +977,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v26" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v28" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -1116,7 +1116,7 @@ const loadSourceSnapshotBlock = boundedBlock(js, "async function loadSourceSnaps
 requireMatch(js, /const HUB_FACTS_MAX_BYTES = 512 \* 1024;/, "hub-facts browser byte ceiling");
 requireMatch(loadSourceSnapshotBlock, /acquireStrictJson\([\s\S]*\/hub-assets\/hub-facts\.json[\s\S]*HUB_FACTS_MAX_BYTES[\s\S]*hub-facts source snapshot[\s\S]*validSnapshot\(value\)/, "shared bounded raw-byte strict hub-facts browser custody");
 requireMatch(strictJsonFetch, /STRICT_JSON_FETCH_DEADLINE_MS = 8_000[\s\S]*headers\?\.get\?\.\("content-length"\)[\s\S]*content-encoding[\s\S]*response\.body\.getReader\(\)[\s\S]*received > maximumBytes[\s\S]*abortAndCancel[\s\S]*Promise\.race[\s\S]*parseJsonBytesStrict/, "shared streamed strict JSON acquisition primitive");
-requireMatch(generator, /COMPILED_SNAPSHOT_MAX_BYTES = 512 \* 1024[\s\S]*runCompiledJson[\s\S]*parseJsonBytesStrict\(bytes, "compiled source snapshot"\)/, "bounded strict compiler-to-hub-facts custody");
+requireMatch(generator, /COMPILED_SNAPSHOT_MAX_BYTES = 16 \* 1024 \* 1024[\s\S]*runCompiledJson[\s\S]*parseJsonBytesStrict\(bytes, "compiled source snapshot"\)/, "bounded strict compiler-to-hub-facts custody");
 requireNoMatch(generator, /JSON\.parse\(run\(/, "permissive compiler-to-hub-facts JSON boundary");
 requireNoMatch(loadSourceSnapshotBlock, /response\.json\(\)|JSON\.parse/, "loose hub-facts browser parsing");
 requireMatch(js, /SNAPSHOT_REFRESH_MS = 60_000/, "visibility-aware snapshot refresh interval");
@@ -1369,13 +1369,24 @@ const serializedFacts = JSON.stringify(facts);
 for (const forbidden of ["/home/", "C:\\\\"]) {
   if (serializedFacts.includes(forbidden)) throw new Error(`private public-snapshot field leaked: ${forbidden}`);
 }
-const capturedRefresh = facts.refresh?.automaticBridgeConfiguredAtCapture === true
-  && facts.refresh?.sourceAcquisitionModeAtCapture === "scheduled-living-main-publisher"
-  && facts.refresh?.configurationReasonCodeAtCapture === "SCHEDULED_LIVING_MAIN_PUBLISHER";
+// Two capture planes are admitted, and only these two: the retired scheduled bridge
+// (a historical capture with a later "bridge retired" observation) or the manual
+// source-bound compiler (`sync-galaxy-snapshot.mjs --captured-at`), whose only
+// observation is the capture instant itself. Either way the bridge is not configured
+// at the latest observation, execution is not attested, and operation is UNKNOWN.
 const latestRefresh = facts.refresh?.latestRefreshObservation;
-if (!capturedRefresh
-  || latestRefresh?.disposition !== "PUBLIC_PRIVATE_BRIDGE_RETIRED_PRESENTATION_RELEASE"
-  || latestRefresh?.reasonCode !== "AUTOMATIC_PRIVATE_SOURCE_BRIDGE_INTENTIONALLY_DISABLED"
+const retiredScheduledCapture = facts.refresh?.automaticBridgeConfiguredAtCapture === true
+  && facts.refresh?.sourceAcquisitionModeAtCapture === "scheduled-living-main-publisher"
+  && facts.refresh?.configurationReasonCodeAtCapture === "SCHEDULED_LIVING_MAIN_PUBLISHER"
+  && latestRefresh?.disposition === "PUBLIC_PRIVATE_BRIDGE_RETIRED_PRESENTATION_RELEASE"
+  && latestRefresh?.reasonCode === "AUTOMATIC_PRIVATE_SOURCE_BRIDGE_INTENTIONALLY_DISABLED";
+const manualSourceCapture = facts.refresh?.automaticBridgeConfiguredAtCapture === false
+  && facts.refresh?.sourceAcquisitionModeAtCapture === "manual-source-bound-snapshot"
+  && facts.refresh?.configurationReasonCodeAtCapture === "MANUAL_SOURCE_SNAPSHOT"
+  && latestRefresh?.disposition === "MANUAL_SOURCE_CAPTURE_CURRENT_OPERATION_UNKNOWN"
+  && latestRefresh?.reasonCode === "MANUAL_SOURCE_SNAPSHOT"
+  && latestRefresh?.observedAt === facts.capturedAt;
+if ((!retiredScheduledCapture && !manualSourceCapture)
   || latestRefresh?.automaticBridgeConfiguredAtObservation !== false
   || latestRefresh?.executionObservationStatus !== "NOT_ATTESTED"
   || latestRefresh?.currentOperationalStatus !== "UNKNOWN"

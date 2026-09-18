@@ -16,7 +16,9 @@ const SNAPSHOT_VERSION = "3.1.0";
 const RENDERER_CONTRACT_PATH = "hiveai/static/living-anatomy/src/galaxy-contract.json";
 const RENDERER_CONTRACT_HASH = "698d9c371ebe98b47cffbf10643080cb06ccb2c06267d580349063fb992230ad";
 const CANONICAL_GEOMETRY_HASH = "29948f2ccbc310eb9ecc802a82ba1ff298aa19bc131ea21ebce85b8db7c5c314";
-const COMPILED_SNAPSHOT_MAX_BYTES = 512 * 1024;
+// Measured 2026-09-18 at Hive-AI 3caf771d: nodes 1.2 MB + edges 0.8 MB + evidence closure 1.4 MB
+// (claims, 8.3 MB, are not consumed here and are stripped from the transport below).
+const COMPILED_SNAPSHOT_MAX_BYTES = 16 * 1024 * 1024;
 const REQUIRED_PUBLISHER_EVIDENCE_PATHS = Object.freeze([
   "data/neuron_swarm/portable_green_evidence_membership_20260722.json",
   "tests/fixtures/physiology/formal_l3_e01_v2/RATIFY_L3_E01_V2.json",
@@ -61,7 +63,11 @@ if errors:
 physiology = v1.get("physiology") or {}
 summary = v1.get("summary") or {}
 payload = {
-    "graph": strip_pr1_meta(v2),
+    "graph": {
+        key: value
+        for key, value in strip_pr1_meta(v2).items()
+        if key != "claims"
+    },
     "public_geometry": build_public_geometry_projection(root, composed),
     "renderer_contract": load_renderer_contract(root),
     "truth_input_commit": (v2.get("_pr1_meta") or {}).get("source_commit"),

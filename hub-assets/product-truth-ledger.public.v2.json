@@ -6,9 +6,9 @@
     "schema": "hive.ecosystem.product-truth.evidence-ledger.v1",
     "version": 1,
     "path": "hub-assets/product-truth-ledger.v1.json",
-    "bytes": 4653,
-    "sha256": "8f38db705bf5e819972d8ec18f35815503d1fdb58bb36b1651e240a2875e1259",
-    "gitBlobOid": "943db0a4b30bb4dba38de3db62c5898fd9785e5c",
+    "bytes": 5866,
+    "sha256": "c8cd901ce6fc424549eb1be32b2316f9dc27fd4db6b2a1994bffb82bb7fae2ce",
+    "gitBlobOid": "154cd81e93f8119fb263ff18851de7e57e68f7ee",
     "publicationDisposition": "PRIVATE_NOT_PUBLISHED",
     "projectionAlgorithm": "hive.product-truth.private-v1-to-public-v2.v1",
     "projectionRule": "Preserve historical identities and dispositions, remove every local scheme, host, port, path, query, and presentation-mode field, omit navigation and fetch targets and action authority, then append the current supersession without rewriting the private ledger."
@@ -128,6 +128,32 @@
         "operatorBodyStatus": "HOLD_NOT_INDEPENDENTLY_OBSERVED",
         "chatStatus": "WAIT",
         "contextDisposition": "OMITTED_FROM_PUBLIC_LEDGER_USE_SEPARATE_ARCHITECTURE_PLANE"
+      }
+    },
+    {
+      "entryId": "canonical-landing-readback-e6067ff9",
+      "recordedAt": "2026-09-18T20:12:10Z",
+      "temporalDisposition": "HISTORICAL_EVIDENCE_ONLY",
+      "claimPlane": "LANDING_CUSTODY",
+      "status": "LANDED_HASH_VERIFIED",
+      "reasonCodes": [
+        "LANDING_BYTES_HASH_AND_BLOB_MATCH",
+        "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE",
+        "STRICT_AUDIT_SOURCE_PLANES_PASS_EXTERNAL_TESTER_READBACK_EXPIRED_HELD"
+      ],
+      "evidence": {
+        "landedCommit": "e6067ff955b67a02d0c6f309f776afbb84b2d271",
+        "landedTree": "9f37ca9524c7bab809c7327cf141f0ec96a5f1f8",
+        "sha256": "965b8a604c2cf235bc53571afe75662686aefcbb92fabef08c66cfaa06224583",
+        "bytes": 49492,
+        "gitBlobOid": "337ffab25d7fd58785e0cf129f856495778d324b",
+        "evidenceBaselineCommit": "3caf771dc7e63f161522b76295413818198b9641",
+        "evidenceBaselineTree": "20963bcda2ed945fc8374181be59412845e9c44f",
+        "canonicalAuditBindingStatus": "SOURCE_BOUND_MATCH",
+        "landingStatus": "LANDED_HASH_VERIFIED",
+        "publicRetrievability": "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE",
+        "strictAuditMode": "allow_expired_external_readback",
+        "supersedesLandingEntryId": "canonical-landing-readback-0ab04f6c"
       }
     },
     {

@@ -110,6 +110,31 @@
         "operatorBodyStatus": "HOLD_NOT_INDEPENDENTLY_OBSERVED",
         "chatStatus": "WAIT"
       }
+    },
+    {
+      "entryId": "canonical-landing-readback-e6067ff9",
+      "recordedAt": "2026-09-18T20:12:10Z",
+      "claimPlane": "LANDING_CUSTODY",
+      "status": "LANDED_HASH_VERIFIED",
+      "reasonCodes": [
+        "LANDING_BYTES_HASH_AND_BLOB_MATCH",
+        "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE",
+        "STRICT_AUDIT_SOURCE_PLANES_PASS_EXTERNAL_TESTER_READBACK_EXPIRED_HELD"
+      ],
+      "evidence": {
+        "landedCommit": "e6067ff955b67a02d0c6f309f776afbb84b2d271",
+        "landedTree": "9f37ca9524c7bab809c7327cf141f0ec96a5f1f8",
+        "sha256": "965b8a604c2cf235bc53571afe75662686aefcbb92fabef08c66cfaa06224583",
+        "bytes": 49492,
+        "gitBlobOid": "337ffab25d7fd58785e0cf129f856495778d324b",
+        "evidenceBaselineCommit": "3caf771dc7e63f161522b76295413818198b9641",
+        "evidenceBaselineTree": "20963bcda2ed945fc8374181be59412845e9c44f",
+        "canonicalAuditBindingStatus": "SOURCE_BOUND_MATCH",
+        "landingStatus": "LANDED_HASH_VERIFIED",
+        "publicRetrievability": "PRIVATE_SOURCE_NOT_PUBLICLY_RETRIEVABLE",
+        "strictAuditMode": "allow_expired_external_readback",
+        "supersedesLandingEntryId": "canonical-landing-readback-0ab04f6c"
+      }
     }
   ]
 }

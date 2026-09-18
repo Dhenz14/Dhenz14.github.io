@@ -52,20 +52,20 @@
   "source": {
     "projectionRole": "Commit-bound reviewed semantics are immutable input. The mutable source snapshot may display validated topology but cannot rewrite reviewed semantic, runtime, product, or authority claims without a fresh review.",
     "currentSnapshotIdentity": {
-      "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
-      "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
-      "snapshotHash": "a5385342050d2458105b007cc5a03d81afd2cd15a0e805d5e5050d2d7e9dd2a1",
-      "capturedAt": "2026-08-23T22:53:32Z"
+      "sourceCommit": "3caf771dc7e63f161522b76295413818198b9641",
+      "graphHash": "57079aa1effd1841ae3509911f2213f3548cc2643dcf17b95e10a4f5a46cc13a",
+      "snapshotHash": "03b8e3635380912d57be960b4cb8f06d90f960150ccd6f9e130c60b1d8e05cc2",
+      "capturedAt": "2026-09-18T19:38:46Z"
     },
     "reviewedSemanticBaseline": {
       "schema": "hive.ecosystem.product-truth.semantic-baseline.ref.v1",
       "path": "hub-assets/product-truth-semantic-baseline.v1.json",
-      "reviewedCommit": "b542be86ddf256bc767124f92d2b1e66c37236bb",
+      "reviewedCommit": "fbc56dc4a02ba06a30a03673acbf9f183081074c",
       "bytes": 621,
-      "sha256": "31a060917fc5aac5dc964cd2db0465eb44881a4a2eb9b36fc3459f61bbc58155",
-      "gitBlobOid": "1636e500e7d5f53a1cfcda2dabf1510bbd377dbe",
-      "canonicalSemanticDigest": "f9022dca084c3fab57caa77a2782ac0d5a2e972d22f0f7d413464ba5ddab3b43",
-      "immutableRawReference": "https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/b542be86ddf256bc767124f92d2b1e66c37236bb/hub-assets/product-truth-semantic-baseline.v1.json",
+      "sha256": "7c901753a1559048c0adb1d20b082cf687c6554d89957470e606cc6e0a54dd33",
+      "gitBlobOid": "3c45f40d7fd3cc6f5620f7112b835c1d2dd855fb",
+      "canonicalSemanticDigest": "94a306e12f793c698a60f7d45a2fbff1ac0e0bc8163201d0042a07505bf0c616",
+      "immutableRawReference": "https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/fbc56dc4a02ba06a30a03673acbf9f183081074c/hub-assets/product-truth-semantic-baseline.v1.json",
       "portableVerificationBoundary": "Exact bytes and independently derived semantic digest can be verified from the public artifact. The reviewed commit:path relation requires Git object custody and is not verified by the browser."
     },
     "allowedSnapshotRelations": [
@@ -146,8 +146,8 @@
       "subject_status": "SOURCE_PRESENT_AT_PIN",
       "claim_plane": "SOURCE_PRESENT",
       "evidence": "Pinned catalog, registry, and public graph projection at the immutable Hive-AI evidence baseline",
-      "evidenceRef": "hub-assets/hub-facts.json; Dhenz14/Hive-AI@0ab04f6c19ffd41bb162bea674e77853fb27cc0e configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 46626c1662d1fe04e056ba1c44926184d523c65d490a76ad89acd2e58e04f62c",
-      "verifiedAt": "2026-08-23T22:53:32Z",
+      "evidenceRef": "hub-assets/hub-facts.json; Dhenz14/Hive-AI@3caf771dc7e63f161522b76295413818198b9641 configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 01818c3a6ade67946d53e1c2634dc27f28412a912182b0f75f9f9f2092389ec0",
+      "verifiedAt": "2026-09-18T19:38:46Z",
       "validUntil": null,
       "freshness": "IMMUTABLE_SOURCE_CUT",
       "invalidators": [
@@ -171,10 +171,10 @@
         "trigger": "EVIDENCE_INPUT_OR_EVALUATOR_CHANGE",
         "expiryAction": "NOT_TIME_EXPIRING_HOLD_ON_REVOCATION_UNTIL_REAUDIT_PASS"
       },
-      "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
-      "sourceTree": "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c",
-      "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
-      "snapshotHash": "a5385342050d2458105b007cc5a03d81afd2cd15a0e805d5e5050d2d7e9dd2a1",
+      "sourceCommit": "3caf771dc7e63f161522b76295413818198b9641",
+      "sourceTree": "20963bcda2ed945fc8374181be59412845e9c44f",
+      "graphHash": "57079aa1effd1841ae3509911f2213f3548cc2643dcf17b95e10a4f5a46cc13a",
+      "snapshotHash": "03b8e3635380912d57be960b4cb8f06d90f960150ccd6f9e130c60b1d8e05cc2",
       "neurons": 640,
       "trainable": 448,
       "deterministic": 192,
@@ -530,9 +530,9 @@
   "relations": {
     "atlasTester": {
       "status": "MISMATCH",
-      "atlasSourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+      "atlasSourceCommit": "3caf771dc7e63f161522b76295413818198b9641",
       "testerEmbeddedHiveAiCommit": "a0fe64832edb801c9944c0923e222a64ef14e498",
-      "claim": "Tester.5 source declarations point to a Hive-AI generation that does not match the mapped 0ab04f6c source atlas; tester.5 must not be presented as realizing that Constellation."
+      "claim": "Tester.5 source declarations point to a Hive-AI generation that does not match the mapped 3caf771d source atlas; tester.5 must not be presented as realizing that Constellation."
     },
     "testerSubjects": {
       "status": "SEPARATE_SUBJECTS",
@@ -643,7 +643,7 @@
       "signingStatus": "NOT_APPLICABLE",
       "evidence": "Linux core source and development paths exist at the evidence baseline. This row makes no native public Hive IDE package claim.",
       "evidenceRef": "truth_subjects.source_atlas; Dhenz14/Hive-AI@472131baa2bc212a043966773bd92477c3a8a16c README.md",
-      "verifiedAt": "2026-08-23T22:53:32Z",
+      "verifiedAt": "2026-09-18T19:38:46Z",
       "validUntil": null,
       "freshness": "IMMUTABLE_SOURCE_CUT"
     },
@@ -696,6 +696,6 @@
     "excluded": [
       "bindingDigest"
     ],
-    "value": "78ed09843aeaa94eb1053c92c0c13f12ff65591306905baf67f5ae8560a3d8bc"
+    "value": "1d214bd2d51f1de1125906472e003f923978987d103734b6812849d36fcd3662"
   }
 }

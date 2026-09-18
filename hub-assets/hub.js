@@ -26,7 +26,7 @@ import {
   snapshotIdentityChanged,
   snapshotResponseCanCommit,
   validSnapshot,
-} from "./galaxy-core.mjs?v=galaxy-stark-v26";
+} from "./galaxy-core.mjs?v=galaxy-stark-v27";
 import {
   IDE_RELEASE_LATEST_BYTES,
   IDE_RELEASE_LATEST_MAX_BYTES,
@@ -37,11 +37,11 @@ import {
   humanInstallerBytes,
   validateIdeReleaseLatest,
   validateIdeReleaseTruthManifest,
-} from "./ide-release-core.mjs?v=galaxy-stark-v26";
+} from "./ide-release-core.mjs?v=galaxy-stark-v27";
 import {
   parseJsonStrict,
-} from "./strict-json.mjs?v=galaxy-stark-v26";
-import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v26";
+} from "./strict-json.mjs?v=galaxy-stark-v27";
+import { acquireStrictJson } from "./strict-json-fetch.mjs?v=galaxy-stark-v27";
 
 const GALAXY_OVERVIEW_LABEL_LIMIT = 1;
 const HUB_FACTS_MAX_BYTES = 512 * 1024;
@@ -740,7 +740,7 @@ function enforceLocalHandoffBoundary() {
 }
 
 const PRODUCT_TRUTH_SCHEMA = "hive.ecosystem.product-truth.public-projection.v2";
-const PRODUCT_TRUTH_PROJECTION_DIGEST = "78ed09843aeaa94eb1053c92c0c13f12ff65591306905baf67f5ae8560a3d8bc";
+const PRODUCT_TRUTH_PROJECTION_DIGEST = "1d214bd2d51f1de1125906472e003f923978987d103734b6812849d36fcd3662";
 const PRODUCT_TRUTH_MAX_BYTES = 128 * 1024;
 const PRODUCT_TRUTH_SUBJECTS = Object.freeze({
   target_architecture: { label: "Target architecture", kind: "ARCHITECTURE_TARGET", status: "SOURCE_BOUND_DOCTRINE", plane: "TARGET" },
@@ -763,7 +763,7 @@ const PRODUCT_TRUTH_SUBJECT_BASE_KEYS = Object.freeze([
 // hashed. They are separate planes and may legitimately differ, so each is pinned against
 // its own producer rather than being forced equal to the other.
 const EVIDENCE_BASELINE_COMMIT = "472131baa2bc212a043966773bd92477c3a8a16c";
-const ATLAS_SOURCE_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
+const ATLAS_SOURCE_TREE = "20963bcda2ed945fc8374181be59412845e9c44f";
 const CANONICAL_GENESIS_SEMANTIC_SHA256 = "8b567a0f9b56470ef808c54bad51bd7857fa4ce54aa8b4b165e02c996e489791";
 const CANONICAL_GENESIS_SHA256 = "9e324cae2a6b8975d0451a1343166d5c802397595fd4b89a8d4af091574b0948";
 const CANONICAL_GENESIS_BYTES = 31198;
@@ -899,10 +899,10 @@ async function validateProductTruthManifest(manifest, snapshot, ledger, semantic
     && semanticBaseline.canonicalSemanticDigest === await sha256Text(canonicalJson(semanticProjection))
     && manifest.source.reviewedSemanticBaseline.schema === "hive.ecosystem.product-truth.semantic-baseline.ref.v1"
     && manifest.source.reviewedSemanticBaseline.path === "hub-assets/product-truth-semantic-baseline.v1.json"
-    && manifest.source.reviewedSemanticBaseline.reviewedCommit === "b542be86ddf256bc767124f92d2b1e66c37236bb"
+    && manifest.source.reviewedSemanticBaseline.reviewedCommit === "fbc56dc4a02ba06a30a03673acbf9f183081074c"
     && manifest.source.reviewedSemanticBaseline.bytes === 621
-    && manifest.source.reviewedSemanticBaseline.sha256 === "31a060917fc5aac5dc964cd2db0465eb44881a4a2eb9b36fc3459f61bbc58155"
-    && manifest.source.reviewedSemanticBaseline.gitBlobOid === "1636e500e7d5f53a1cfcda2dabf1510bbd377dbe"
+    && manifest.source.reviewedSemanticBaseline.sha256 === "7c901753a1559048c0adb1d20b082cf687c6554d89957470e606cc6e0a54dd33"
+    && manifest.source.reviewedSemanticBaseline.gitBlobOid === "3c45f40d7fd3cc6f5620f7112b835c1d2dd855fb"
     && manifest.source.reviewedSemanticBaseline.canonicalSemanticDigest === semanticBaseline.canonicalSemanticDigest
     && /not verified by the browser/i.test(manifest.source.reviewedSemanticBaseline.portableVerificationBoundary), "reviewed semantic baseline identity rejected");
   assertProductTruth(manifest.source.currentSnapshotIdentity.sourceCommit === snapshot.hiveAi.sourceCommit
@@ -1282,7 +1282,7 @@ function wireProductTruthManifest() {
       url: "/hub-assets/product-truth-semantic-baseline.v1.json",
       maximumBytes: 4 * 1024,
       expectedBytes: 621,
-      expectedSha256: "31a060917fc5aac5dc964cd2db0465eb44881a4a2eb9b36fc3459f61bbc58155",
+      expectedSha256: "7c901753a1559048c0adb1d20b082cf687c6554d89957470e606cc6e0a54dd33",
       sha256: sha256Bytes,
       label: "reviewed semantic baseline",
     }),

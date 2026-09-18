@@ -716,7 +716,7 @@ const heroCopyStart = html.indexOf('<div class="hero-copy"');
 const heroCopyEnd = html.indexOf('<div class="hero-system"', heroCopyStart);
 if (heroCopyStart < 0 || heroCopyEnd <= heroCopyStart) throw new Error("bounded opening hero copy is missing");
 const openingHeroCopy = html.slice(heroCopyStart, heroCopyEnd);
-requireNoMatch(openingHeroCopy, /\b(?:H10|BYOM|tester\.\d+|SHA-256|workflow history)\b|472131baa|0ab04f6c/i, "plain-language opening before forensic detail");
+requireNoMatch(openingHeroCopy, /\b(?:H10|BYOM|tester\.\d+|SHA-256|workflow history)\b|472131baa|0ab04f6c|3caf771d/i, "plain-language opening before forensic detail");
 requireNoMatch(html, /class="outcome-grid"/, "duplicate post-hero Ask/Build/Improve outcome grid");
 requireMatch(html, /class="roadmap-rail"[\s\S]*SOURCE-PRESENT[\s\S]*source-authored Constellation Atlas[\s\S]*NEXT PROOF GATES[\s\S]*installed-process evidence[\s\S]*LONG-TERM TARGET[\s\S]*Hive-native generation[\s\S]*explicitly operator-invoked caller/i, "source-present proof-gates long-term roadmap");
 requireMatch(html, /class="hero-status-rail"[\s\S]*SOURCE ATLAS PRESENT · SNAPSHOT FRESHNESS HOLD · RUNTIME NOT ATTESTED[\s\S]*LOCAL BODY LINK · USER INITIATED · OPERATOR HOLD · CHAT WAIT · IDE WAIT · HIVEPOA QUARANTINED/, "compact first-screen truth rail");
@@ -735,12 +735,12 @@ if (constellationIdentityIndex < 0 || publicGalaxyIndex < 0 || constellationIden
   throw new Error("HiveBrain Constellation identity must be explained before the public galaxy");
 }
 requireMatch(html, /id="architecture"[^>]+data-current-legacy-boundary/, "current-versus-legacy architecture section");
-requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ 0ab04f6c · captured 2026-08-23 22:53:32 UTC[\s\S]*640[\s\S]*cataloged capabilities[\s\S]*636[\s\S]*unique row-backed Twitch records[\s\S]*448[\s\S]*trainable-classified identities/i, "published source snapshot metrics");
+requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ 3caf771d · captured 2026-09-18 19:38:46 UTC[\s\S]*640[\s\S]*cataloged capabilities[\s\S]*636[\s\S]*unique row-backed Twitch records[\s\S]*448[\s\S]*trainable-classified identities/i, "published source snapshot metrics");
 requireMatch(html, /data-metaphor-definitions[\s\S]*<h3>Neuron<\/h3>[\s\S]*448 trainable-classified[\s\S]*192 deterministic-classified[\s\S]*<h3>Halo<\/h3>[\s\S]*EVIDENCE BASELINE @ 472131baa:[\s\S]*zero populated Halo sections and zero indexes/i, "separately cut neuron and Halo evidence ceilings");
 const publishedSnapshotSummary = boundedBlock(html, '<article class="constellation-core"', '<div class="doctrine-grid"', "published-snapshot summary");
 requireNoMatch(publishedSnapshotSummary, /\b37\b/, "misleading baseline influence count in published-snapshot summary");
 requireMatch(html, /data-architecture-live-boundary[\s\S]*Source architecture[\s\S]*Presentation body[\s\S]*No local runtime PASS is claimed[\s\S]*Dedicated Operator body[\s\S]*127\.0\.0\.1:5003[\s\S]*not been independently observed or deployed/i, "architecture-versus-local surfaces boundary");
-requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ 0ab04f6c · HISTORICAL CAPTURE[\s\S]*freshness HOLD[\s\S]*SUBJECT-SCOPED DISPOSITIONS[\s\S]*IDE landing is currently UNKNOWN \/ HOLD[\s\S]*2026-08-23 18:46:30 UTC[\s\S]*hive\/wt\/theyc\/ide-electron-final-20260822[\s\S]*then-observed default tip[\s\S]*41df9be[\s\S]*fresh owner-repository readback[\s\S]*UNKNOWN_NOT_INSPECTED[\s\S]*GENERATION BOUNDARY · HOLD[\s\S]*blind evaluation, causal ablation, independent verification, and rollback-safe promotion[\s\S]*Full source-doctrine term[\s\S]*centralized AI-as-user traffic until H10/i, "subject-scoped historical IDE and generation boundary translation");
+requireMatch(html, /PUBLISHED SOURCE SNAPSHOT @ 3caf771d · HISTORICAL CAPTURE[\s\S]*freshness HOLD[\s\S]*SUBJECT-SCOPED DISPOSITIONS[\s\S]*IDE landing is currently UNKNOWN \/ HOLD[\s\S]*2026-08-23 18:46:30 UTC[\s\S]*hive\/wt\/theyc\/ide-electron-final-20260822[\s\S]*then-observed default tip[\s\S]*41df9be[\s\S]*fresh owner-repository readback[\s\S]*UNKNOWN_NOT_INSPECTED[\s\S]*GENERATION BOUNDARY · HOLD[\s\S]*blind evaluation, causal ablation, independent verification, and rollback-safe promotion[\s\S]*Full source-doctrine term[\s\S]*centralized AI-as-user traffic until H10/i, "subject-scoped historical IDE and generation boundary translation");
 requireNoMatch(html, /Electron removal remains unlanded|current default tip is 41df9be/i, "unfresh IDE landing or default-tip assertion");
 requireNoMatch(html, /current Hive IDE trunk uses Tauri|Electron is removed on the current Hive IDE trunk|tester\.5[^<]{0,120}bundles Electron/i, "unsupported current-trunk or package-content claim");
 requireMatch(html, /id="product-truth"[^>]+data-product-truth[^>]+data-state="checking"/, "fail-closed Product Truth root");
@@ -827,7 +827,7 @@ const ideDownloadBlock = boundedBlock(html, '<section class="ide-release', '<sec
 requireMatch(ideDownloadBlock, /Hive IDE integration \/ WAIT[\s\S]*Hive IDE is not available from this public candidate\.[\s\S]*Hive IDE integration is not available from this public candidate\. Status: WAIT\./, "IDE effective WAIT headline");
 requireMatch(ideDownloadBlock, /historical independent observation[\s\S]*outer bytes[\s\S]*evidence window has expired[\s\S]*Current package identity, retrievability, installation, runtime, and product state remain[\s\S]*(?:UNKNOWN|HOLD)/i, "expired outer-byte observation scoped to historical bytes only");
 requireMatch(ideDownloadBlock, /authorizes no download\./, "evidence-only download boundary");
-requireMatch(ideDownloadBlock, /DIFFERENT GENERATION[\s\S]*Tester\.5 must not be presented as realizing the mapped HiveBrain Constellation[\s\S]*0ab04f6c[\s\S]*a0fe6483/, "tester/atlas generation mismatch disclosed at the download surface");
+requireMatch(ideDownloadBlock, /DIFFERENT GENERATION[\s\S]*Tester\.5 must not be presented as realizing the mapped HiveBrain Constellation[\s\S]*3caf771d[\s\S]*a0fe6483/, "tester/atlas generation mismatch disclosed at the download surface");
 requireMatch(ideDownloadBlock, /tester\.6 absence\/readback evidence is also expired[\s\S]*publication remains a separate HOLD pending fresh evidence and authority/i, "expired tester.6 readback remains visible and held");
 requireMatch(ideDownloadBlock, /EVIDENCE LADDER[\s\S]*Remote outer bytes[\s\S]*HISTORICAL \/ EXPIRED[\s\S]*Publisher authentication[\s\S]*NOT SIGNED[\s\S]*Package contents[\s\S]*UNKNOWN[\s\S]*Installation \+ runtime[\s\S]*UNKNOWN[\s\S]*Public functional testing[\s\S]*HOLD/, "five-plane expired evidence ladder");
 requireMatch(html, /A separate, unexpired operator authorization is required before this truth contract can expose an active download\./, "download requires separate operator authority");
@@ -977,7 +977,7 @@ for (const match of inlineScripts) {
 }
 const rootCssVersion = html.match(/hub-assets\/hub\.css\?v=([^"']+)/)?.[1];
 const rootJsVersion = html.match(/hub-assets\/hub\.js\?v=([^"']+)/)?.[1];
-if (rootCssVersion !== "galaxy-stark-v26" || rootCssVersion !== rootJsVersion
+if (rootCssVersion !== "galaxy-stark-v27" || rootCssVersion !== rootJsVersion
   || !notFound.includes(`/hub-assets/hub.css?v=${rootCssVersion}`)
   || !notFound.includes(`/hub-assets/hub.js?v=${rootJsVersion}`)
   || !js.includes(`./galaxy-core.mjs?v=${rootJsVersion}`)
@@ -1116,7 +1116,7 @@ const loadSourceSnapshotBlock = boundedBlock(js, "async function loadSourceSnaps
 requireMatch(js, /const HUB_FACTS_MAX_BYTES = 512 \* 1024;/, "hub-facts browser byte ceiling");
 requireMatch(loadSourceSnapshotBlock, /acquireStrictJson\([\s\S]*\/hub-assets\/hub-facts\.json[\s\S]*HUB_FACTS_MAX_BYTES[\s\S]*hub-facts source snapshot[\s\S]*validSnapshot\(value\)/, "shared bounded raw-byte strict hub-facts browser custody");
 requireMatch(strictJsonFetch, /STRICT_JSON_FETCH_DEADLINE_MS = 8_000[\s\S]*headers\?\.get\?\.\("content-length"\)[\s\S]*content-encoding[\s\S]*response\.body\.getReader\(\)[\s\S]*received > maximumBytes[\s\S]*abortAndCancel[\s\S]*Promise\.race[\s\S]*parseJsonBytesStrict/, "shared streamed strict JSON acquisition primitive");
-requireMatch(generator, /COMPILED_SNAPSHOT_MAX_BYTES = 512 \* 1024[\s\S]*runCompiledJson[\s\S]*parseJsonBytesStrict\(bytes, "compiled source snapshot"\)/, "bounded strict compiler-to-hub-facts custody");
+requireMatch(generator, /COMPILED_SNAPSHOT_MAX_BYTES = 16 \* 1024 \* 1024[\s\S]*runCompiledJson[\s\S]*parseJsonBytesStrict\(bytes, "compiled source snapshot"\)/, "bounded strict compiler-to-hub-facts custody");
 requireNoMatch(generator, /JSON\.parse\(run\(/, "permissive compiler-to-hub-facts JSON boundary");
 requireNoMatch(loadSourceSnapshotBlock, /response\.json\(\)|JSON\.parse/, "loose hub-facts browser parsing");
 requireMatch(js, /SNAPSHOT_REFRESH_MS = 60_000/, "visibility-aware snapshot refresh interval");
@@ -1369,13 +1369,24 @@ const serializedFacts = JSON.stringify(facts);
 for (const forbidden of ["/home/", "C:\\\\"]) {
   if (serializedFacts.includes(forbidden)) throw new Error(`private public-snapshot field leaked: ${forbidden}`);
 }
-const capturedRefresh = facts.refresh?.automaticBridgeConfiguredAtCapture === true
-  && facts.refresh?.sourceAcquisitionModeAtCapture === "scheduled-living-main-publisher"
-  && facts.refresh?.configurationReasonCodeAtCapture === "SCHEDULED_LIVING_MAIN_PUBLISHER";
+// Two capture planes are admitted, and only these two: the retired scheduled bridge
+// (a historical capture with a later "bridge retired" observation) or the manual
+// source-bound compiler (`sync-galaxy-snapshot.mjs --captured-at`), whose only
+// observation is the capture instant itself. Either way the bridge is not configured
+// at the latest observation, execution is not attested, and operation is UNKNOWN.
 const latestRefresh = facts.refresh?.latestRefreshObservation;
-if (!capturedRefresh
-  || latestRefresh?.disposition !== "PUBLIC_PRIVATE_BRIDGE_RETIRED_PRESENTATION_RELEASE"
-  || latestRefresh?.reasonCode !== "AUTOMATIC_PRIVATE_SOURCE_BRIDGE_INTENTIONALLY_DISABLED"
+const retiredScheduledCapture = facts.refresh?.automaticBridgeConfiguredAtCapture === true
+  && facts.refresh?.sourceAcquisitionModeAtCapture === "scheduled-living-main-publisher"
+  && facts.refresh?.configurationReasonCodeAtCapture === "SCHEDULED_LIVING_MAIN_PUBLISHER"
+  && latestRefresh?.disposition === "PUBLIC_PRIVATE_BRIDGE_RETIRED_PRESENTATION_RELEASE"
+  && latestRefresh?.reasonCode === "AUTOMATIC_PRIVATE_SOURCE_BRIDGE_INTENTIONALLY_DISABLED";
+const manualSourceCapture = facts.refresh?.automaticBridgeConfiguredAtCapture === false
+  && facts.refresh?.sourceAcquisitionModeAtCapture === "manual-source-bound-snapshot"
+  && facts.refresh?.configurationReasonCodeAtCapture === "MANUAL_SOURCE_SNAPSHOT"
+  && latestRefresh?.disposition === "MANUAL_SOURCE_CAPTURE_CURRENT_OPERATION_UNKNOWN"
+  && latestRefresh?.reasonCode === "MANUAL_SOURCE_SNAPSHOT"
+  && latestRefresh?.observedAt === facts.capturedAt;
+if ((!retiredScheduledCapture && !manualSourceCapture)
   || latestRefresh?.automaticBridgeConfiguredAtObservation !== false
   || latestRefresh?.executionObservationStatus !== "NOT_ATTESTED"
   || latestRefresh?.currentOperationalStatus !== "UNKNOWN"

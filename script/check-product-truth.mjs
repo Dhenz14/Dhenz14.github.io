@@ -101,11 +101,11 @@ export function verifyReviewedBaselineBinding(reference, localBytes, { requireGi
   ], "reviewed semantic baseline reference");
   assert(reference.schema === "hive.ecosystem.product-truth.semantic-baseline.ref.v1"
     && reference.path === "hub-assets/product-truth-semantic-baseline.v1.json"
-    && reference.reviewedCommit === "b542be86ddf256bc767124f92d2b1e66c37236bb"
+    && reference.reviewedCommit === "fbc56dc4a02ba06a30a03673acbf9f183081074c"
     && reference.bytes === 621
-    && reference.sha256 === "31a060917fc5aac5dc964cd2db0465eb44881a4a2eb9b36fc3459f61bbc58155"
-    && reference.gitBlobOid === "1636e500e7d5f53a1cfcda2dabf1510bbd377dbe"
-    && reference.canonicalSemanticDigest === "f9022dca084c3fab57caa77a2782ac0d5a2e972d22f0f7d413464ba5ddab3b43"
+    && reference.sha256 === "7c901753a1559048c0adb1d20b082cf687c6554d89957470e606cc6e0a54dd33"
+    && reference.gitBlobOid === "3c45f40d7fd3cc6f5620f7112b835c1d2dd855fb"
+    && reference.canonicalSemanticDigest === "94a306e12f793c698a60f7d45a2fbff1ac0e0bc8163201d0042a07505bf0c616"
     && reference.immutableRawReference === `https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/${reference.reviewedCommit}/${reference.path}`
     && /not verified by the browser/i.test(reference.portableVerificationBoundary),
   "reviewed semantic baseline reference drifted", "SEMANTIC_BASELINE_REFERENCE_INVALID");
@@ -175,10 +175,10 @@ const EXPECTED_DEFINITION_IDS = Object.freeze([
 const EXPECTED_PLATFORM_IDS = Object.freeze([
   "windows-x64-remote", "windows-wsl-design", "linux-source", "linux-publication", "macos-publication",
 ]);
-const ATLAS_SOURCE_TREE = "1de15a085a7c41788214d5c0d9c0dfaf4f02eb1c";
+const ATLAS_SOURCE_TREE = "20963bcda2ed945fc8374181be59412845e9c44f";
 const EVIDENCE_BASELINE_COMMIT = "472131baa2bc212a043966773bd92477c3a8a16c";
 const EVIDENCE_BASELINE_TREE = "1910ab8b2bc7bcfe544b2d615f38ce2f9de5ce00";
-const SOURCE_ATLAS_EVIDENCE_REF = "hub-assets/hub-facts.json; Dhenz14/Hive-AI@0ab04f6c19ffd41bb162bea674e77853fb27cc0e configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 46626c1662d1fe04e056ba1c44926184d523c65d490a76ad89acd2e58e04f62c";
+const SOURCE_ATLAS_EVIDENCE_REF = "hub-assets/hub-facts.json; Dhenz14/Hive-AI@3caf771dc7e63f161522b76295413818198b9641 configs/hivebrain/neuron_swarm_full_catalog_20260708.json sha256 01818c3a6ade67946d53e1c2634dc27f28412a912182b0f75f9f9f2092389ec0";
 // The exact candidate-state strings that landing is allowed to replace. A landed
 // manifest must rebuild to this baseline digest, proving the landing changed the
 // custody fields and nothing else.
@@ -453,11 +453,11 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   const baselineReference = manifest.source.reviewedSemanticBaseline;
   assert(baselineReference.schema === "hive.ecosystem.product-truth.semantic-baseline.ref.v1"
     && baselineReference.path === "hub-assets/product-truth-semantic-baseline.v1.json"
-    && baselineReference.reviewedCommit === "b542be86ddf256bc767124f92d2b1e66c37236bb"
+    && baselineReference.reviewedCommit === "fbc56dc4a02ba06a30a03673acbf9f183081074c"
     && baselineReference.bytes === 621
-    && baselineReference.sha256 === "31a060917fc5aac5dc964cd2db0465eb44881a4a2eb9b36fc3459f61bbc58155"
-    && baselineReference.gitBlobOid === "1636e500e7d5f53a1cfcda2dabf1510bbd377dbe"
-    && baselineReference.canonicalSemanticDigest === "f9022dca084c3fab57caa77a2782ac0d5a2e972d22f0f7d413464ba5ddab3b43"
+    && baselineReference.sha256 === "7c901753a1559048c0adb1d20b082cf687c6554d89957470e606cc6e0a54dd33"
+    && baselineReference.gitBlobOid === "3c45f40d7fd3cc6f5620f7112b835c1d2dd855fb"
+    && baselineReference.canonicalSemanticDigest === "94a306e12f793c698a60f7d45a2fbff1ac0e0bc8163201d0042a07505bf0c616"
     && baselineReference.immutableRawReference === `https://raw.githubusercontent.com/Dhenz14/Dhenz14.github.io/${baselineReference.reviewedCommit}/${baselineReference.path}`
     && /not verified by the browser/i.test(baselineReference.portableVerificationBoundary),
   "reviewed semantic baseline reference drifted");
@@ -465,10 +465,10 @@ export function validateProductTruth(manifest, { facts, latest, releaseManifest,
   assert(HEX64.test(snapshotIdentity.graphHash), "product truth graph hash is not exact");
   assert(HEX64.test(snapshotIdentity.snapshotHash), "product truth snapshot hash is not exact");
   assert(UTC_SECONDS.test(snapshotIdentity.capturedAt), "product truth capture time is not canonical UTC seconds");
-  assert(snapshotIdentity.sourceCommit === "0ab04f6c19ffd41bb162bea674e77853fb27cc0e"
-    && snapshotIdentity.graphHash === "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac"
-    && snapshotIdentity.snapshotHash === "a5385342050d2458105b007cc5a03d81afd2cd15a0e805d5e5050d2d7e9dd2a1"
-    && snapshotIdentity.capturedAt === "2026-08-23T22:53:32Z", "mutable snapshot identity drifted");
+  assert(snapshotIdentity.sourceCommit === "3caf771dc7e63f161522b76295413818198b9641"
+    && snapshotIdentity.graphHash === "57079aa1effd1841ae3509911f2213f3548cc2643dcf17b95e10a4f5a46cc13a"
+    && snapshotIdentity.snapshotHash === "03b8e3635380912d57be960b4cb8f06d90f960150ccd6f9e130c60b1d8e05cc2"
+    && snapshotIdentity.capturedAt === "2026-09-18T19:38:46Z", "mutable snapshot identity drifted");
   assert(semanticBaseline && validateSemanticBaseline(semanticBaseline)
     && manifest.source.reviewedSemanticBaseline.canonicalSemanticDigest === semanticBaseline.canonicalSemanticDigest,
   "reviewed semantic baseline was not supplied or digest-bound", "SEMANTIC_BASELINE_NOT_BOUND");

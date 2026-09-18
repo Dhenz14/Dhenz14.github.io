@@ -2,12 +2,12 @@
   "schema": "hive.ecosystem.public-source-snapshot.v3",
   "snapshotVersion": "3.1.0",
   "hiveAi": {
-    "sourceCommit": "0ab04f6c19ffd41bb162bea674e77853fb27cc0e",
+    "sourceCommit": "3caf771dc7e63f161522b76295413818198b9641",
     "sourceBranch": "main",
     "graphSource": "compiled from the source manifest and authored layout; no private graph bytes published",
     "graphSchema": "hiveai.living_anatomy_graph.v2",
-    "graphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
-    "sourceFingerprint": "f177f665aceb2689d69f7bbb283e9165380c306edced348312cd16fb47d4c8bb",
+    "graphHash": "57079aa1effd1841ae3509911f2213f3548cc2643dcf17b95e10a4f5a46cc13a",
+    "sourceFingerprint": "005f0b6d2c0c558ccfe395a93ec323d04fbdbc70178421ff5616a8cee2e3816b",
     "neurons": 640,
     "trainableNeurons": 448,
     "deterministicNeurons": 192,
@@ -15,19 +15,19 @@
     "twitches": 636,
     "pmOnly": 0,
     "notPurposeMastered": 4,
-    "nodes": 1408,
-    "edges": 1470,
+    "nodes": 1409,
+    "edges": 1472,
     "divisions": 16,
     "families": 64,
     "moons": 9,
     "organs": 84,
-    "components": 658,
+    "components": 659,
     "federationRepositories": 20
   },
   "galaxy": {
     "schema": "hive.ecosystem.public-galaxy.v2",
     "generatorVersion": "3.1.0",
-    "sourceGraphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
+    "sourceGraphHash": "57079aa1effd1841ae3509911f2213f3548cc2643dcf17b95e10a4f5a46cc13a",
     "representedNeurons": 640,
     "divisions": [
       {
@@ -1170,7 +1170,7 @@
     "geometry": {
       "schema": "hive.galaxy.public-geometry.v1",
       "projection": "living-anatomy-body",
-      "sourceGraphHash": "b49799d2cc13dc41fead60501c6e7b7aa91722c6bc582214c1c3f8066d9858ac",
+      "sourceGraphHash": "57079aa1effd1841ae3509911f2213f3548cc2643dcf17b95e10a4f5a46cc13a",
       "contractVersion": "1.0.0",
       "contractHash": "698d9c371ebe98b47cffbf10643080cb06ccb2c06267d580349063fb992230ad",
       "coordinateSpace": "hiveai.living_anatomy_layout.v1",
@@ -7648,7 +7648,7 @@
     },
     "statusProjection": "none",
     "claimBoundary": "The public atlas shows topology and family purpose only. Per-neuron Twitch proof, mastery, runtime, work-lane, mission, and urgency projections require a future Living Anatomy surface with separate attestation; no local runtime or authority is inferred.",
-    "projectionHash": "58f8aa20d200bb4ec1bb6d13810bda85b6e1b7c189f8c070b3d9070d67b9d80b"
+    "projectionHash": "fcfba1891efd199e2e41d7410f07033c162ac299eed21de2f2f08de7b47f770f"
   },
   "ecosystem": {
     "schema": "hive.ecosystem.public-organ-map.v2",
@@ -7699,13 +7699,13 @@
     "federationRepositories": 20
   },
   "refresh": {
-    "sourceAcquisitionModeAtCapture": "scheduled-living-main-publisher",
-    "automaticBridgeConfiguredAtCapture": true,
-    "configurationReasonCodeAtCapture": "SCHEDULED_LIVING_MAIN_PUBLISHER",
+    "sourceAcquisitionModeAtCapture": "manual-source-bound-snapshot",
+    "automaticBridgeConfiguredAtCapture": false,
+    "configurationReasonCodeAtCapture": "MANUAL_SOURCE_SNAPSHOT",
     "latestRefreshObservation": {
-      "observedAt": "2026-08-25T01:09:50Z",
-      "disposition": "PUBLIC_PRIVATE_BRIDGE_RETIRED_PRESENTATION_RELEASE",
-      "reasonCode": "AUTOMATIC_PRIVATE_SOURCE_BRIDGE_INTENTIONALLY_DISABLED",
+      "observedAt": "2026-09-18T19:38:46Z",
+      "disposition": "MANUAL_SOURCE_CAPTURE_CURRENT_OPERATION_UNKNOWN",
+      "reasonCode": "MANUAL_SOURCE_SNAPSHOT",
       "automaticBridgeConfiguredAtObservation": false,
       "executionObservationStatus": "NOT_ATTESTED",
       "currentOperationalStatus": "UNKNOWN"
@@ -7732,6 +7732,6 @@
     },
     "chatEffectiveDisposition": "WAIT_NOT_AVAILABLE"
   },
-  "capturedAt": "2026-08-23T22:53:32Z",
-  "snapshotHash": "a5385342050d2458105b007cc5a03d81afd2cd15a0e805d5e5050d2d7e9dd2a1"
+  "capturedAt": "2026-09-18T19:38:46Z",
+  "snapshotHash": "03b8e3635380912d57be960b4cb8f06d90f960150ccd6f9e130c60b1d8e05cc2"
 }
